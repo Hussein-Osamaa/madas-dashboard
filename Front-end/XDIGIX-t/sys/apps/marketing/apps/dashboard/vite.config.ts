@@ -5,6 +5,9 @@ import path from 'path';
 export default defineConfig({
   base: '/dashboard/',
   plugins: [react()],
+  build: {
+    chunkSizeWarningLimit: 1000
+  },
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../../../../shared'),

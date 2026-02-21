@@ -26,6 +26,7 @@ function adminHistoryFallback() {
 export default defineConfig({
   plugins: [react(), adminHistoryFallback()],
   base: '/admin/',
+  build: { chunkSizeWarningLimit: 1000 },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
