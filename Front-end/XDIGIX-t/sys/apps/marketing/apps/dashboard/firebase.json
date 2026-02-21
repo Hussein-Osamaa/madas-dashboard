@@ -1,0 +1,217 @@
+{
+  "hosting": [
+    {
+      "target": "dashboard",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/site/**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "/s/**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=31536000"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=86400"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(html)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ],
+      "cleanUrls": true,
+      "trailingSlash": false
+    },
+    {
+      "target": "sites",
+      "public": "sites-placeholder",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        }
+      ]
+    },
+    {
+      "target": "addict",
+      "public": "public/addict",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**",
+        "**/*.md",
+        "**/*.txt",
+        "**/*.sh",
+        "**/*.bat",
+        "start-server.html"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=31536000"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=86400"
+            }
+          ]
+        }
+      ],
+      "cleanUrls": true,
+      "trailingSlash": false
+    },
+    {
+      "target": "marketing",
+      "public": "madas-store-dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/site/**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "/s/**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "/dashboard",
+          "destination": "/dashboard/index.html"
+        },
+        {
+          "source": "/dashboard/",
+          "destination": "/dashboard/index.html"
+        },
+        {
+          "source": "/dashboard/login",
+          "destination": "/dashboard/index.html"
+        },
+        {
+          "source": "/dashboard/!(assets)/**",
+          "destination": "/dashboard/index.html"
+        },
+        {
+          "source": "/admin",
+          "destination": "/admin/index.html"
+        },
+        {
+          "source": "/admin/",
+          "destination": "/admin/index.html"
+        },
+        {
+          "source": "/admin/login",
+          "destination": "/admin/index.html"
+        },
+        {
+          "source": "/admin/!(assets)/**",
+          "destination": "/admin/index.html"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=31536000"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=86400"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(html)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ],
+      "cleanUrls": true,
+      "trailingSlash": false
+    }
+  ]
+}
+

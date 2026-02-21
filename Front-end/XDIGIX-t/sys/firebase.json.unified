@@ -1,0 +1,173 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs20"
+    }
+  ],
+  "hosting": [
+    {
+      "target": "marketing",
+      "public": "dist-unified",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/site/**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "/s/**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "/dashboard/**",
+          "destination": "/dashboard/index.html"
+        },
+        {
+          "source": "/finance/**",
+          "destination": "/finance/index.html"
+        },
+        {
+          "source": "/admin/**",
+          "destination": "/admin/index.html"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=31536000"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=86400"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(html)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ],
+      "cleanUrls": true,
+      "trailingSlash": false
+    }
+  ]
+}
+
+
+    "rules": "firestore.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs20"
+    }
+  ],
+  "hosting": [
+    {
+      "target": "marketing",
+      "public": "dist-unified",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/site/**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "/s/**",
+          "run": {
+            "serviceId": "servewebsite",
+            "region": "us-central1"
+          }
+        },
+        {
+          "source": "/dashboard/**",
+          "destination": "/dashboard/index.html"
+        },
+        {
+          "source": "/finance/**",
+          "destination": "/finance/index.html"
+        },
+        {
+          "source": "/admin/**",
+          "destination": "/admin/index.html"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=31536000"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=86400"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(html)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ],
+      "cleanUrls": true,
+      "trailingSlash": false
+    }
+  ]
+}
+

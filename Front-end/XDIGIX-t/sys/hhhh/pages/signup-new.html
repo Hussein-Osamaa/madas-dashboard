@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - MADAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --secondary: #EC4899;
+            --success: #10B981;
+            --danger: #EF4444;
+            --dark: #0F172A;
+            --gray: #64748B;
+            --light: #F8FAFC;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .signup-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: var(--light);
+            padding: 2rem;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #E2E8F0;
+            z-index: 0;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            height: 2px;
+            background: var(--primary);
+            z-index: 1;
+            transition: width 0.3s;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--gray);
+            transition: all 0.3s;
+        }
+
+        .progress-step.active .step-circle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .progress-step.completed .step-circle {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .step-label {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--gray);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .progress-step.active .step-label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Form Content */
+        .form-content {
+            padding: 3rem;
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .step-description {
+            color: var(--gray);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .form-label .required {
+            color: var(--danger);
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-input.error {
+            border-color: var(--danger);
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Password Strength */
+        .password-strength {
+            margin-top: 0.5rem;
+            height: 4px;
+            background: #E2E8F0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s;
+        }
+
+        .password-strength-bar.weak { width: 33%; background: var(--danger); }
+        .password-strength-bar.medium { width: 66%; background: var(--secondary); }
+        .password-strength-bar.strong { width: 100%; background: var(--success); }
+
+        .password-hint {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 0.5rem;
+        }
+
+        /* Plan Cards in Step 2 */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .plan-card {
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .plan-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .plan-card.selected {
+            border-color: var(--primary);
+            background: #EEF2FF;
+        }
+
+        .plan-card.popular {
+            border-color: var(--primary);
+        }
+
+        .plan-card .popular-badge {
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .plan-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-card .price {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .plan-card .price span {
+            font-size: 1rem;
+            color: var(--gray);
+        }
+
+        .plan-card ul {
+            list-style: none;
+            font-size: 0.875rem;
+        }
+
+        .plan-card ul li {
+            padding: 0.25rem 0;
+            color: var(--dark);
+        }
+
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 0.875rem;
+            color: var(--dark);
+        }
+
+        .checkbox-group label a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .checkbox-group label a:hover {
+            text-decoration: underline;
+        }
+
+        /* Buttons */
+        .form-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.875rem 1.75rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background: #E2E8F0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #E2E8F0;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Success Message */
+        .success-message {
+            text-align: center;
+            padding: 3rem;
+            display: none;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            margin: 0 auto 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-content {
+                padding: 2rem;
+            }
+
+            .progress-container {
+                padding: 1.5rem;
+            }
+
+            .step-label {
+                display: none;
+            }
+
+            .plans-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-buttons {
+                flex-direction: column-reverse;
+            }
+        }
+    
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            color: var(--text-main) !important;
+        }
+
+        
+
+        
+        
+        /* Override Tailwind text color classes */
+        .sidebar-link.text-gray-700,
+        .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        /* Dark mode text color for sidebar links */
+
+        body.dark-mode .sidebar-link {
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }/* Simple Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+        }/* Simple Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 12px 16px;
+            margin: 0;
+            border-radius: 0;
+            transition: all 0.2s ease;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+                                        /* Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+                /* Original Dropdown Button */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: #f3f4f6;
+        }
+
+        /* Original Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Enhanced dropdown menu container */
+        .inventory-submenu:not(.hidden),
+        .finance-dropdown-menu.show {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(39, 73, 31, 0.1);
+            border-radius: 12px;
+            box-shadow: 
+                0 8px 32px rgba(39, 73, 31, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Enhanced dropdown button hover */
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: rgba(39, 73, 31, 0.05);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 12px;
+            transform: translateX(2px);
+        }
+
+        .sidebar-link.active:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(39, 73, 31, 0.4);
+        }
+
+        /* Icon animation on hover */
+        .sidebar-link:hover .material-icons {
+            transform: scale(1.1) rotate(2deg);
+            transition: all 0.3s ease;
+        }
+
+        /* Submenu link enhancements */
+        .sidebar-link.submenu-link {
+            position: relative;
+            margin-left: 1rem;
+            border-left: 2px solid transparent;
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link:hover {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            transform: translateX(8px);
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link.active {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+        /* Unified Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Unified Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 10px 14px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+        
+        /* Ensure all dropdown text sizes are uniform */
+        .inventory-submenu .sidebar-link span,
+        .finance-dropdown-menu .sidebar-link span,
+        .ecommerce-dropdown-menu .sidebar-link span {
+            font-size: 0.8rem !important;
+        }
+
+        /* Make dropdown icons smaller */
+        .inventory-submenu .material-icons,
+        .finance-dropdown-menu .material-icons,
+        .ecommerce-dropdown-menu .material-icons {
+            font-size: 18px !important;
+        }
+
+/* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Unified Dropdown Button Styling */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent !important;
+            border: none !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            width: 100% !important;
+            text-align: left !important;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: var(--madas-light) !important;
+        }
+
+        /* Unified Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease !important;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg) !important;
+        }
+
+        /* Unified Visible States for Dropdowns - No 3D Effects */
+        .inventory-submenu:not(.hidden) {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .ecommerce-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        </style>
+</head>
+<body>
+    <div class="signup-container">
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-steps">
+                <div class="progress-line" id="progressLine" style="width: 0%"></div>
+                
+                <div class="progress-step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <span class="step-label">Business Info</span>
+                </div>
+                
+                <div class="progress-step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <span class="step-label">Choose Plan</span>
+                </div>
+                
+                <div class="progress-step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Account Setup</span>
+                </div>
+                
+                <div class="progress-step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <span class="step-label">Payment</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Content -->
+        <div class="form-content">
+            <form id="signupForm">
+                <!-- Step 1: Business Information -->
+                <div class="form-step active" data-step="1">
+                    <h2 class="step-title">Tell us about your business</h2>
+                    <p class="step-description">This helps us personalize your experience</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            Business Name <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-input" id="businessName" required>
+                        <span class="error-message" id="businessNameError">Please enter your business name</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Industry <span class="required">*</span>
+                        </label>
+                        <select class="form-select" id="industry" required>
+                            <option value="">Select your industry...</option>
+                            <option value="retail">Retail</option>
+                            <option value="restaurant">Restaurant & Food Service</option>
+                            <option value="ecommerce">E-commerce</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="beauty">Beauty & Wellness</option>
+                            <option value="education">Education</option>
+                            <option value="services">Professional Services</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Business Email <span class="required">*</span>
+                        </label>
+                        <input type="email" class="form-input" id="businessEmail" required>
+                        <span class="error-message" id="businessEmailError">Please enter a valid email</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="phone" placeholder="+1 (555) 123-4567">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Company Size <span class="required">*</span>
+                        </label>
+                        <select class="form-select" id="companySize" required>
+                            <option value="">Select size...</option>
+                            <option value="1-10">1-10 employees</option>
+                            <option value="11-50">11-50 employees</option>
+                            <option value="51-200">51-200 employees</option>
+                            <option value="200+">200+ employees</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 2: Choose Plan -->
+                <div class="form-step" data-step="2">
+                    <h2 class="step-title">Choose your plan</h2>
+                    <p class="step-description">Select the plan that best fits your needs</p>
+                    
+                    <div class="plans-grid">
+                        <div class="plan-card" data-plan="basic">
+                            <h3>Basic</h3>
+                            <div class="price">$29<span>/mo</span></div>
+                            <ul>
+                                <li>✓ 5 staff members</li>
+                                <li>✓ 10GB storage</li>
+                                <li>✓ Core features</li>
+                                <li>✓ Email support</li>
+                            </ul>
+                        </div>
+
+                        <div class="plan-card popular" data-plan="professional">
+                            <div class="popular-badge">Popular</div>
+                            <h3>Professional</h3>
+                            <div class="price">$79<span>/mo</span></div>
+                            <ul>
+                                <li>✓ 20 staff members</li>
+                                <li>✓ 50GB storage</li>
+                                <li>✓ All Basic features</li>
+                                <li>✓ Gamification & Loyalty</li>
+                                <li>✓ Priority support</li>
+                            </ul>
+                        </div>
+
+                        <div class="plan-card" data-plan="enterprise">
+                            <h3>Enterprise</h3>
+                            <div class="price">$199<span>/mo</span></div>
+                            <ul>
+                                <li>✓ Unlimited staff</li>
+                                <li>✓ 500GB storage</li>
+                                <li>✓ All Pro features</li>
+                                <li>✓ Custom integrations</li>
+                                <li>✓ 24/7 support</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="selectedPlan" value="">
+                </div>
+
+                <!-- Step 3: Account Setup -->
+                <div class="form-step" data-step="3">
+                    <h2 class="step-title">Create your account</h2>
+                    <p class="step-description">Set up your admin credentials</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            Your Name <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-input" id="userName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Email <span class="required">*</span>
+                        </label>
+                        <input type="email" class="form-input" id="userEmail" required>
+                        <span class="error-message" id="userEmailError">Please enter a valid email</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Password <span class="required">*</span>
+                        </label>
+                        <input type="password" class="form-input" id="password" required>
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                        </div>
+                        <p class="password-hint">At least 8 characters with uppercase, lowercase, and numbers</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Confirm Password <span class="required">*</span>
+                        </label>
+                        <input type="password" class="form-input" id="confirmPassword" required>
+                        <span class="error-message" id="confirmPasswordError">Passwords don't match</span>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="agreeTerms" required>
+                        <label for="agreeTerms">
+                            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 4: Payment -->
+                <div class="form-step" data-step="4">
+                    <h2 class="step-title">Start your free trial</h2>
+                    <p class="step-description">No payment required. Your 14-day trial starts today!</p>
+                    
+                    <div style="background: var(--light); padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem; color: var(--dark);">Trial Benefits</h3>
+                        <ul style="list-style: none; color: var(--dark);">
+                            <li style="padding: 0.5rem 0;"><i class="fas fa-check" style="color: var(--success);"></i> Full access to all features</li>
+                            <li style="padding: 0.5rem 0;"><i class="fas fa-check" style="color: var(--success);"></i> No credit card required</li>
+                            <li style="padding: 0.5rem 0;"><i class="fas fa-check" style="color: var(--success);"></i> Cancel anytime</li>
+                            <li style="padding: 0.5rem 0;"><i class="fas fa-check" style="color: var(--success);"></i> Setup assistance included</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: #FEF3C7; padding: 1.5rem; border-radius: 12px; border-left: 4px solid #F59E0B; margin-bottom: 2rem;">
+                        <p style="color: #92400E; font-weight: 500;">
+                            <i class="fas fa-info-circle"></i> We'll remind you 3 days before your trial ends. You can add payment information anytime from your dashboard.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div class="loading" id="loadingState">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 1rem; color: var(--gray);">Creating your account...</p>
+                </div>
+
+                <!-- Success Message -->
+                <div class="success-message" id="successMessage">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2 style="margin-bottom: 1rem; color: var(--dark);">Welcome to MADAS!</h2>
+                    <p style="color: var(--gray); margin-bottom: 2rem;">Your account has been created successfully. Redirecting to your dashboard...</p>
+                </div>
+
+                <!-- Form Buttons -->
+                <div class="form-buttons" id="formButtons">
+                    <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                        <i class="fas fa-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextBtn">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+
+            <p style="text-align: center; margin-top: 2rem; color: var(--gray); font-size: 0.875rem;">
+                Already have an account? <a href="/login" style="color: var(--primary); text-decoration: none; font-weight: 600;">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        const formData = {};
+
+        // Get URL parameters for pre-selected plan
+        const urlParams = new URLSearchParams(window.location.search);
+        const preSelectedPlan = urlParams.get('plan');
+        if (preSelectedPlan) {
+            document.getElementById('selectedPlan').value = preSelectedPlan;
+        }
+
+        // Navigation buttons
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        // Step navigation
+        function showStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            
+            // Show current step
+            document.querySelector(`[data-step="${step}"]`).classList.add('active');
+            
+            // Update progress
+            updateProgress(step);
+            
+            // Update buttons
+            if (step === 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+            } else if (step === totalSteps) {
+                prevBtn.style.display = 'block';
+                nextBtn.innerHTML = 'Start Free Trial <i class="fas fa-rocket"></i>';
+            } else {
+                prevBtn.style.display = 'block';
+                nextBtn.innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+            }
+        }
+
+        function updateProgress(step) {
+            const progressWidth = ((step - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressLine').style.width = progressWidth + '%';
+            
+            document.querySelectorAll('.progress-step').forEach((s, index) => {
+                s.classList.remove('active', 'completed');
+                if (index + 1 < step) {
+                    s.classList.add('completed');
+                } else if (index + 1 === step) {
+                    s.classList.add('active');
+                }
+            });
+        }
+
+        // Validation functions
+        function validateStep(step) {
+            if (step === 1) {
+                const businessName = document.getElementById('businessName').value;
+                const industry = document.getElementById('industry').value;
+                const businessEmail = document.getElementById('businessEmail').value;
+                const companySize = document.getElementById('companySize').value;
+                
+                if (!businessName || !industry || !businessEmail || !companySize) {
+                    alert('Please fill in all required fields');
+                    return false;
+                }
+                
+                if (!isValidEmail(businessEmail)) {
+                    showError('businessEmailError');
+                    return false;
+                }
+                
+                formData.businessName = businessName;
+                formData.industry = industry;
+                formData.businessEmail = businessEmail;
+                formData.phone = document.getElementById('phone').value;
+                formData.companySize = companySize;
+                return true;
+            }
+            
+            if (step === 2) {
+                const selectedPlan = document.getElementById('selectedPlan').value;
+                if (!selectedPlan) {
+                    alert('Please select a plan');
+                    return false;
+                }
+                formData.plan = selectedPlan;
+                return true;
+            }
+            
+            if (step === 3) {
+                const userName = document.getElementById('userName').value;
+                const userEmail = document.getElementById('userEmail').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const agreeTerms = document.getElementById('agreeTerms').checked;
+                
+                if (!userName || !userEmail || !password || !confirmPassword) {
+                    alert('Please fill in all required fields');
+                    return false;
+                }
+                
+                if (!isValidEmail(userEmail)) {
+                    showError('userEmailError');
+                    return false;
+                }
+                
+                if (password !== confirmPassword) {
+                    showError('confirmPasswordError');
+                    return false;
+                }
+                
+                if (!isStrongPassword(password)) {
+                    alert('Password must be at least 8 characters with uppercase, lowercase, and numbers');
+                    return false;
+                }
+                
+                if (!agreeTerms) {
+                    alert('You must agree to the Terms of Service and Privacy Policy');
+                    return false;
+                }
+                
+                formData.userName = userName;
+                formData.userEmail = userEmail;
+                formData.password = password;
+                return true;
+            }
+            
+            return true;
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function isStrongPassword(password) {
+            return password.length >= 8 && 
+                   /[A-Z]/.test(password) && 
+                   /[a-z]/.test(password) && 
+                   /[0-9]/.test(password);
+        }
+
+        function showError(errorId) {
+            document.getElementById(errorId).classList.add('show');
+            setTimeout(() => {
+                document.getElementById(errorId).classList.remove('show');
+            }, 3000);
+        }
+
+        // Next button
+        nextBtn.addEventListener('click', async () => {
+            if (validateStep(currentStep)) {
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    showStep(currentStep);
+                } else {
+                    // Submit form
+                    await submitForm();
+                }
+            }
+        });
+
+        // Previous button
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+
+        // Plan selection
+        document.querySelectorAll('.plan-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                document.getElementById('selectedPlan').value = card.dataset.plan;
+            });
+            
+            // Pre-select if from URL
+            if (preSelectedPlan && card.dataset.plan === preSelectedPlan) {
+                card.classList.add('selected');
+            }
+        });
+
+        // Password strength indicator
+        document.getElementById('password').addEventListener('input', (e) => {
+            const password = e.target.value;
+            const strengthBar = document.getElementById('passwordStrengthBar');
+            
+            if (password.length === 0) {
+                strengthBar.className = 'password-strength-bar';
+                return;
+            }
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            strengthBar.className = 'password-strength-bar';
+            if (strength <= 2) {
+                strengthBar.classList.add('weak');
+            } else if (strength <= 4) {
+                strengthBar.classList.add('medium');
+            } else {
+                strengthBar.classList.add('strong');
+            }
+        });
+
+        // Submit form
+        async function submitForm() {
+            // Show loading
+            document.getElementById('formButtons').style.display = 'none';
+            document.querySelectorAll('.form-step').forEach(s => s.style.display = 'none');
+            document.getElementById('loadingState').classList.add('active');
+
+            try {
+                // Send to backend
+                const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/register' : 'https://us-central1-madas-store.cloudfunctions.net/api/api/register';
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    // Success
+                    document.getElementById('loadingState').classList.remove('active');
+                    document.getElementById('successMessage').classList.add('active');
+                    
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = 'analytics.html'; // or dashboard
+                    }, 2000);
+                } else {
+                    throw new Error('Registration failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Registration failed. Please try again.');
+                document.getElementById('loadingState').classList.remove('active');
+                document.getElementById('formButtons').style.display = 'flex';
+                document.querySelector(`[data-step="${currentStep}"]`).style.display = 'block';
+            }
+        }
+
+        // Initialize
+        showStep(1);
+    </script>
+    <script>
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 1024 &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, getDocs, deleteDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+
+                // ============================================
+                // TENANT ISOLATION: Initialize Business Context
+                // ============================================
+
+                // Check for super admin users first (bypass business detection)
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    window.currentUserRole = "super-admin";
+                    window.currentBusinessId = "super-admin";
+                    window.currentBusinessData = {
+                        businessName: "Super Admin",
+                        plan: { type: "enterprise", status: "active" }
+                    };
+                    
+                    // Set super admin permissions
+                    const userData = {
+                        email: user.email,
+                        displayName: user.displayName || "Super Admin",
+                        role: "super-admin",
+                        approved: true,
+                        permissions: {
+                            home: ["view"],
+                            orders: ["view", "search", "create", "edit"],
+                            inventory: ["view", "edit"],
+                            customers: ["view", "edit"],
+                            employees: ["view", "edit"],
+                            finance: ["view", "reports"],
+                            analytics: ["view", "export"],
+                            settings: ["view", "edit"],
+                            admin: ["view", "manage_all_businesses"]
+                        }
+                    };
+
+                    // Store user data
+                    localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                    // Update UI
+                    const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                    const userNameEl = document.getElementById("user-name");
+                    const userEmailEl = document.getElementById("user-email");
+                    const userInitialEl = document.getElementById("user-initial");
+                    
+                    if (userNameEl) userNameEl.textContent = username;
+                    if (userEmailEl) userEmailEl.textContent = user.email;
+                    if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                    // Update business name and plan
+                    const businessNameEl = document.getElementById("business-name");
+                    if (businessNameEl) businessNameEl.textContent = "Super Admin";
+                    
+                    const planBadge = document.getElementById("plan-badge");
+                    if (planBadge) {
+                        planBadge.textContent = "Enterprise Plan";
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    }
+
+                    // Hide loading screen if it exists
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+
+                    return;
+                }
+
+                // Step 1: Find user's business (check if owner)
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    window.currentBusinessId = businessDoc.id;
+                    window.currentBusinessData = businessDoc.data();
+                    window.currentUserRole = 'owner';
+
+                    console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                    console.log('🏢 Business ID:', window.currentBusinessId);
+                    console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    const allBusinesses = await getDocs(collection(db, "businesses"));
+                    let foundBusiness = false;
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                        const staffDoc = await getDoc(staffRef);
+
+                        if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                            window.currentBusinessId = businessId;
+                            window.currentBusinessData = businessDoc.data();
+                            window.currentUserRole = staffData.role;
+                            window.currentUserPermissions = staffData.permissions;
+
+                            console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                            console.log('🏢 Business ID:', window.currentBusinessId);
+                            console.log('👤 Role:', window.currentUserRole);
+
+                            foundBusiness = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundBusiness) {
+                        console.warn("❌ User not associated with any business.");
+                        console.log("🔍 User email:", user.email);
+                        console.log("🔍 User UID:", user.uid);
+                        
+                        // For now, create a temporary business context for testing
+                        console.log("⚠️ Creating temporary business context for testing...");
+                        window.currentBusinessId = "temp-business";
+                        window.currentBusinessData = {
+                            businessName: "Temporary Business",
+                            plan: { type: "basic", status: "active" },
+                            owner: { name: user.displayName || user.email.split("@")[0] }
+                        };
+                        window.currentUserRole = "owner";
+                        
+                        // Set basic permissions
+                        const userData = {
+                            email: user.email,
+                            displayName: user.displayName || user.email.split("@")[0],
+                            role: "owner",
+                            approved: true,
+                            permissions: {
+                                home: ["view"],
+                                orders: ["view", "search", "create", "edit"],
+                                inventory: ["view", "edit"],
+                                customers: ["view", "edit"],
+                                employees: ["view", "edit"],
+                                finance: ["view", "reports"],
+                                analytics: ["view", "export"],
+                                settings: ["view", "edit"]
+                            }
+                        };
+
+                        // Store user data
+                        localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                        // Update UI
+                        const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                        const userNameEl = document.getElementById("user-name");
+                        const userEmailEl = document.getElementById("user-email");
+                        const userInitialEl = document.getElementById("user-initial");
+                        
+                        if (userNameEl) userNameEl.textContent = username;
+                        if (userEmailEl) userEmailEl.textContent = user.email;
+                        if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                        // Update business name and plan
+                        const businessNameEl = document.getElementById("business-name");
+                        if (businessNameEl) businessNameEl.textContent = "Temporary Business";
+                        
+                        const planBadge = document.getElementById("plan-badge");
+                        if (planBadge) {
+                            planBadge.textContent = "Basic Plan";
+                            planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                        }
+
+                        // Hide loading screen if it exists
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+
+                        return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || window.currentBusinessData.owner?.name,
+                    role: window.currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"]
+                    };
+                }
+
+                ;
+                }
+
+                console.log('✅ User data created:', {
+                    email: userData.email,
+                    role: userData.role,
+                    businessId: window.currentBusinessId,
+                    businessName: window.currentBusinessData?.businessName,
+                    approved: userData.approved
+                });
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                currentUserId = user.uid;
+                const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+                
+                // Update user info if elements exist
+                const userNameEl = document.getElementById("user-name");
+                const userEmailEl = document.getElementById("user-email");
+                const userInitialEl = document.getElementById("user-initial");
+                
+                if (userNameEl) userNameEl.textContent = username;
+                if (userEmailEl) userEmailEl.textContent = user.email;
+                if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                // Update business name and plan
+                const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                const planType = window.currentBusinessData?.plan?.type || "basic";
+                const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+                const businessNameEl = document.getElementById("business-name");
+                if (businessNameEl) businessNameEl.textContent = businessName;
+
+                const planBadge = document.getElementById("plan-badge");
+                if (planBadge) {
+                    planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                    // Set plan badge color based on plan type
+                    if (planType === 'enterprise') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    } else if (planType === 'professional') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                    } else {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                    }
+
+                    // Add trial badge if in trial
+                    if (planStatus === 'trial') {
+                        planBadge.textContent += ' (Trial)';
+                    }
+                }
+
+                // Hide loading screen if it exists
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) loadingScreen.style.display = 'none';
+
+            } catch (error) {
+                console.error("Permission check failed:", error);
+                window.location.href = "/login";
+            }
+        });
+
+        // Logout logic
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                auth.signOut().then(() => {
+                    window.location.href = "/login";
+                }).catch((error) => {
+                    console.error("Logout error:", error);
+                    window.location.href = "/login";
+                });
+            });
+        }
+
+        // Profile button
+        const profileBtn = document.getElementById("profile-btn");
+        if (profileBtn) {
+            profileBtn.addEventListener("click", () => {
+                window.location.href = "/pages/profile.html";
+            });
+        }
+
+        // Finance Dropdown functionality
+        const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+        const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+        const financeArrow = document.querySelector("#finance-dropdown-btn .dropdown-arrow");
+
+        if (financeDropdownBtn && financeDropdownMenu) {
+            financeDropdownBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const isOpen = financeDropdownMenu.classList.contains("show");
+
+                if (isOpen) {
+                    financeDropdownMenu.classList.remove("show");
+                    financeDropdownMenu.classList.add("hidden");
+                    if (financeArrow) financeArrow.classList.remove("rotate");
+                } else {
+                    financeDropdownMenu.classList.remove("hidden");
+                    financeDropdownMenu.classList.add("show");
+                    if (financeArrow) financeArrow.classList.add("rotate");
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                    financeDropdownMenu.classList.remove("show");
+                    financeDropdownMenu.classList.add("hidden");
+                    if (financeArrow) financeArrow.classList.remove("rotate");
+                }
+            });
+        }
+
+        // E-commerce Dropdown functionality
+        const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+        const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+        const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+        if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+            ecommerceDropdownBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                if (isOpen) {
+                    ecommerceDropdownMenu.classList.remove("show");
+                    ecommerceDropdownMenu.classList.add("hidden");
+                    if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                } else {
+                    ecommerceDropdownMenu.classList.remove("hidden");
+                    ecommerceDropdownMenu.classList.add("show");
+                    if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                }
+            });
+        }
+
+        // Dark mode toggle logic
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+            }
+        }
+        if (darkToggle) {
+            darkToggle.addEventListener('click', () => {
+                setDarkMode(!document.body.classList.contains('dark-mode'));
+            });
+        }
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+        });
+    
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+            
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+            
+                        // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/dashboard"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+                
+                                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+                
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+                
+                // Skip Dashboard link - already handled above
+                if (href === '/dashboard') return;
+                
+                // COMPLETELY DISABLE Dashboard highlighting on non-dashboard pages
+                                // Handle Dashboard link with PRECISE matching
+                if (href === '/dashboard') {
+                                    // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+                        foundMatch = true;
+                        console.log('Dashboard page detected and highlighted');
+                    }
+                }
+                }
+                
+                // Handle other links with normal matching
+                else {
+                    // Check if current path matches this specific link
+                    if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                        link.classList.add('active');
+                        foundMatch = true;
+                        console.log('Exact match found:', href);
+                    }
+                    // Check page name matching for other links
+                    else if (!foundMatch) {
+                        const linkPageName = href.split('/').pop().replace('.html', '');
+                        if (currentPageName === linkPageName || 
+                            (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                            (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                            link.classList.add('active');
+                            foundMatch = true;
+                            console.log('Page name match found:', href, 'for page:', currentPageName);
+                        }
+                    }
+                }
+            });
+            
+            // Special cases for specific pages with dropdown management
+            if (currentPath.includes('collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Collections page detected');
+                    
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for collections');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Products page detected');
+                    
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for products');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Low Stock page detected');
+                    
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for low-stock');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reviews page detected');
+                    
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for reviews');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Orders page detected');
+                }
+            }
+            
+            if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Customer page detected');
+                }
+            }
+            
+            if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+                const adminLink = document.querySelector('a[href*="Admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Admin page detected');
+                }
+            }
+            
+            if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Settings page detected');
+                }
+            }
+            
+            if (currentPath.includes('finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Finance page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for finance page');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Analytics page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for analytics');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reports page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for reports');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Insights page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for insights');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Expenses page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for expenses');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('POS page detected');
+                }
+            }
+        }
+        
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+        
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Website Settings - MADAS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 1024 &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+</script>
+
+    <script>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/img/madas-logo.png">
+
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--madas-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--madas-accent);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .color-input {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .color-input:hover {
+            border-color: var(--madas-accent);
+        }
+
+        .save-btn {
+            background: var(--madas-primary);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .save-btn:hover {
+            background: #1f3c19;
+        }
+
+        .save-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+    
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        /* Override Tailwind text color classes */
+        .sidebar-link.text-gray-700,
+        .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.text-gray-700,
+        body.dark-mode .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }/* Simple Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+        }/* Simple Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 12px 16px;
+            margin: 0;
+            border-radius: 0;
+            transition: all 0.2s ease;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+                                        /* Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+                /* Original Dropdown Button */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: #f3f4f6;
+        }
+
+        /* Original Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Enhanced dropdown menu container */
+        .inventory-submenu:not(.hidden),
+        .finance-dropdown-menu.show {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(39, 73, 31, 0.1);
+            border-radius: 12px;
+            box-shadow: 
+                0 8px 32px rgba(39, 73, 31, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Enhanced dropdown button hover */
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: rgba(39, 73, 31, 0.05);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 12px;
+            transform: translateX(2px);
+        }
+
+        .sidebar-link.active:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(39, 73, 31, 0.4);
+        }
+
+        /* Icon animation on hover */
+        .sidebar-link:hover .material-icons {
+            transform: scale(1.1) rotate(2deg);
+            transition: all 0.3s ease;
+        }
+
+        /* Submenu link enhancements */
+        .sidebar-link.submenu-link {
+            position: relative;
+            margin-left: 1rem;
+            border-left: 2px solid transparent;
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link:hover {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            transform: translateX(8px);
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link.active {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+        /* Unified Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Unified Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 10px 14px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+        
+        /* Ensure all dropdown text sizes are uniform */
+        .inventory-submenu .sidebar-link span,
+        .finance-dropdown-menu .sidebar-link span,
+        .ecommerce-dropdown-menu .sidebar-link span {
+            font-size: 0.8rem !important;
+        }
+
+        /* Make dropdown icons smaller */
+        .inventory-submenu .material-icons,
+        .finance-dropdown-menu .material-icons,
+        .ecommerce-dropdown-menu .material-icons {
+            font-size: 18px !important;
+        }
+
+/* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Unified Dropdown Button Styling */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent !important;
+            border: none !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            width: 100% !important;
+            text-align: left !important;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: var(--madas-light) !important;
+        }
+
+        /* Unified Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease !important;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg) !important;
+        }
+
+        /* Unified Visible States for Dropdowns - No 3D Effects */
+        .inventory-submenu:not(.hidden) {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .ecommerce-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-spinner">
+        <div class="text-center">
+            <div class="spinner"></div>
+            <p class="text-[var(--madas-primary)] font-medium mt-4">Loading Website Settings...</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="min-h-screen" style="display: none;">
+        <!-- Header -->
+        <div class="bg-white border-b">
+            <div class="max-w-4xl mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <a href="/pages/Web-builder/website-builder.html"
+                            class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+                            <span class="material-icons">arrow_back</span>
+                            Back to Builder
+                        </a>
+                        <div class="h-6 w-px bg-gray-300"></div>
+                        <h1 class="text-xl font-bold">Website Settings</h1>
+                    </div>
+
+                    <button id="save-btn" class="save-btn">
+                        <span class="material-icons mr-2">save</span>
+                        <span id="save-text">Save Changes</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="max-w-4xl mx-auto px-6 py-8">
+            <form id="settings-form" class="space-y-8">
+                <!-- General Settings -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold mb-4">General Information</h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="form-label">Site Name</label>
+                            <input type="text" id="site-name" class="form-input" required />
+                        </div>
+
+                        <div>
+                            <label class="form-label">Description</label>
+                            <textarea id="description" rows="3" class="form-input"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Domain Settings -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold mb-4">Domain Settings</h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="form-label">Subdomain</label>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="subdomain" class="form-input flex-1" pattern="[a-z0-9-]+"
+                                    required />
+                                <span class="text-gray-500">.yoursaas.com</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Your site will be available at: <span
+                                    id="subdomain-preview">subdomain</span>.yoursaas.com
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Custom Domain (Optional)</label>
+                            <input type="text" id="custom-domain" placeholder="www.mystore.com" class="form-input" />
+                            <p class="text-xs text-gray-500 mt-1">
+                                Professional plan required for custom domains
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Design Settings -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold mb-4">Design & Colors</h2>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label">Primary Color</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="primary-color" class="color-input" />
+                                <input type="text" id="primary-color-text" class="form-input flex-1" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Secondary Color</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="secondary-color" class="color-input" />
+                                <input type="text" id="secondary-color-text" class="form-input flex-1" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO & Analytics -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold mb-4">SEO & Analytics</h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="form-label">Google Analytics ID</label>
+                            <input type="text" id="google-analytics" placeholder="G-XXXXXXXXXX" class="form-input" />
+                        </div>
+
+                        <div>
+                            <label class="form-label">Facebook Pixel ID</label>
+                            <input type="text" id="facebook-pixel" placeholder="1234567890" class="form-input" />
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, getDocs, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserId = null;
+        let currentBusinessId = null;
+        let currentWebsite = null;
+
+        // Website Service Functions
+        async function getWebsiteByBusinessId(businessId) {
+            try {
+                const q = query(
+                    collection(db, 'websites'),
+                    where('businessId', '==', businessId)
+                );
+
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    return { success: false, error: 'No website found' };
+                }
+
+                const website = {
+                    id: snapshot.docs[0].id,
+                    ...snapshot.docs[0].data()
+                };
+
+                return { success: true, website };
+            } catch (error) {
+                console.error('Error fetching website:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function updateWebsite(websiteId, updates) {
+            try {
+                await updateDoc(doc(db, 'websites', websiteId), {
+                    ...updates,
+                    'metadata.updatedAt': new Date().toISOString()
+                });
+
+                return { success: true };
+            } catch (error) {
+                console.error('Error updating website:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Load website data
+        async function loadWebsite() {
+            try {
+                const result = await getWebsiteByBusinessId(currentBusinessId);
+
+                if (result.success) {
+                    currentWebsite = result.website;
+
+                    // Populate form fields
+                    document.getElementById('site-name').value = currentWebsite.siteName || '';
+                    document.getElementById('description').value = currentWebsite.description || '';
+                    document.getElementById('subdomain').value = currentWebsite.domain.subdomain || '';
+                    document.getElementById('custom-domain').value = currentWebsite.domain.customDomain || '';
+                    document.getElementById('primary-color').value = currentWebsite.settings.primaryColor || '#3B82F6';
+                    document.getElementById('primary-color-text').value = currentWebsite.settings.primaryColor || '#3B82F6';
+                    document.getElementById('secondary-color').value = currentWebsite.settings.secondaryColor || '#8B5CF6';
+                    document.getElementById('secondary-color-text').value = currentWebsite.settings.secondaryColor || '#8B5CF6';
+                    document.getElementById('google-analytics').value = currentWebsite.settings.googleAnalyticsId || '';
+                    document.getElementById('facebook-pixel').value = currentWebsite.settings.facebookPixelId || '';
+
+                    // Update subdomain preview
+                    updateSubdomainPreview();
+                } else {
+                    alert('Website not found. Please create a website first.');
+                    window.location.href = '/dashboard/pages/Web-builder/website-builder.html';
+                }
+            } catch (error) {
+                console.error('Error loading website:', error);
+            }
+        }
+
+        // Save website settings
+        async function saveSettings() {
+            if (!currentWebsite) return;
+
+            const saveBtn = document.getElementById('save-btn');
+            const saveText = document.getElementById('save-text');
+
+            saveBtn.disabled = true;
+            saveText.textContent = 'Saving...';
+
+            try {
+                const updates = {
+                    siteName: document.getElementById('site-name').value,
+                    description: document.getElementById('description').value,
+                    'domain.subdomain': document.getElementById('subdomain').value,
+                    'domain.customDomain': document.getElementById('custom-domain').value || null,
+                    'settings.primaryColor': document.getElementById('primary-color').value,
+                    'settings.secondaryColor': document.getElementById('secondary-color').value,
+                    'settings.googleAnalyticsId': document.getElementById('google-analytics').value,
+                    'settings.facebookPixelId': document.getElementById('facebook-pixel').value
+                };
+
+                const result = await updateWebsite(currentWebsite.id, updates);
+
+                if (result.success) {
+                    saveText.textContent = 'Saved!';
+                    setTimeout(() => {
+                        saveText.textContent = 'Save Changes';
+                    }, 2000);
+                } else {
+                    saveText.textContent = 'Error';
+                    setTimeout(() => {
+                        saveText.textContent = 'Save Changes';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                saveText.textContent = 'Error';
+                setTimeout(() => {
+                    saveText.textContent = 'Save Changes';
+                }, 2000);
+            } finally {
+                saveBtn.disabled = false;
+            }
+        }
+
+        // Update subdomain preview
+        function updateSubdomainPreview() {
+            const subdomain = document.getElementById('subdomain').value;
+            document.getElementById('subdomain-preview').textContent = subdomain || 'subdomain';
+        }
+
+        // Color input synchronization
+        function syncColorInputs() {
+            const primaryColor = document.getElementById('primary-color');
+            const primaryColorText = document.getElementById('primary-color-text');
+            const secondaryColor = document.getElementById('secondary-color');
+            const secondaryColorText = document.getElementById('secondary-color-text');
+
+            primaryColor.addEventListener('input', () => {
+                primaryColorText.value = primaryColor.value;
+            });
+
+            primaryColorText.addEventListener('input', () => {
+                primaryColor.value = primaryColorText.value;
+            });
+
+            secondaryColor.addEventListener('input', () => {
+                secondaryColorText.value = secondaryColor.value;
+            });
+
+            secondaryColorText.addEventListener('input', () => {
+                secondaryColor.value = secondaryColorText.value;
+            });
+        }
+
+        // Event listeners
+        document.getElementById('save-btn').addEventListener('click', saveSettings);
+        document.getElementById('subdomain').addEventListener('input', updateSubdomainPreview);
+
+        // Authentication and initialization
+                onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+
+                // ============================================
+                // TENANT ISOLATION: Initialize Business Context
+                // ============================================
+
+                // Check for super admin users first (bypass business detection)
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    window.currentUserRole = "super-admin";
+                    window.currentBusinessId = "super-admin";
+                    window.currentBusinessData = {
+                        businessName: "Super Admin",
+                        plan: { type: "enterprise", status: "active" }
+                    };
+                    
+                    // Set super admin permissions
+                    const userData = {
+                        email: user.email,
+                        displayName: user.displayName || "Super Admin",
+                        role: "super-admin",
+                        approved: true,
+                        permissions: {
+                            home: ["view"],
+                            orders: ["view", "search", "create", "edit"],
+                            inventory: ["view", "edit"],
+                            customers: ["view", "edit"],
+                            employees: ["view", "edit"],
+                            finance: ["view", "reports"],
+                            analytics: ["view", "export"],
+                            settings: ["view", "edit"],
+                            admin: ["view", "manage_all_businesses"]
+                        }
+                    };
+
+                    // Store user data
+                    localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                    // Update UI
+                    const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                    const userNameEl = document.getElementById("user-name");
+                    const userEmailEl = document.getElementById("user-email");
+                    const userInitialEl = document.getElementById("user-initial");
+                    
+                    if (userNameEl) userNameEl.textContent = username;
+                    if (userEmailEl) userEmailEl.textContent = user.email;
+                    if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                    // Update business name and plan
+                    const businessNameEl = document.getElementById("business-name");
+                    if (businessNameEl) businessNameEl.textContent = "Super Admin";
+                    
+                    const planBadge = document.getElementById("plan-badge");
+                    if (planBadge) {
+                        planBadge.textContent = "Enterprise Plan";
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    }
+
+                    // Hide loading screen if it exists
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+
+                    return;
+                }
+
+                // Step 1: Find user's business (check if owner)
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    window.currentBusinessId = businessDoc.id;
+                    window.currentBusinessData = businessDoc.data();
+                    window.currentUserRole = 'owner';
+
+                    console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                    console.log('🏢 Business ID:', window.currentBusinessId);
+                    console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    const allBusinesses = await getDocs(collection(db, "businesses"));
+                    let foundBusiness = false;
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                        const staffDoc = await getDoc(staffRef);
+
+                        if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                            window.currentBusinessId = businessId;
+                            window.currentBusinessData = businessDoc.data();
+                            window.currentUserRole = staffData.role;
+                            window.currentUserPermissions = staffData.permissions;
+
+                            console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                            console.log('🏢 Business ID:', window.currentBusinessId);
+                            console.log('👤 Role:', window.currentUserRole);
+
+                            foundBusiness = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundBusiness) {
+                        console.warn("❌ User not associated with any business.");
+                        console.log("🔍 User email:", user.email);
+                        console.log("🔍 User UID:", user.uid);
+                        
+                        // For now, create a temporary business context for testing
+                        console.log("⚠️ Creating temporary business context for testing...");
+                        window.currentBusinessId = "temp-business";
+                        window.currentBusinessData = {
+                            businessName: "Temporary Business",
+                            plan: { type: "basic", status: "active" },
+                            owner: { name: user.displayName || user.email.split("@")[0] }
+                        };
+                        window.currentUserRole = "owner";
+                        
+                        // Set basic permissions
+                        const userData = {
+                            email: user.email,
+                            displayName: user.displayName || user.email.split("@")[0],
+                            role: "owner",
+                            approved: true,
+                            permissions: {
+                                home: ["view"],
+                                orders: ["view", "search", "create", "edit"],
+                                inventory: ["view", "edit"],
+                                customers: ["view", "edit"],
+                                employees: ["view", "edit"],
+                                finance: ["view", "reports"],
+                                analytics: ["view", "export"],
+                                settings: ["view", "edit"]
+                            }
+                        };
+
+                        // Store user data
+                        localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                        // Update UI
+                        const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                        const userNameEl = document.getElementById("user-name");
+                        const userEmailEl = document.getElementById("user-email");
+                        const userInitialEl = document.getElementById("user-initial");
+                        
+                        if (userNameEl) userNameEl.textContent = username;
+                        if (userEmailEl) userEmailEl.textContent = user.email;
+                        if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                        // Update business name and plan
+                        const businessNameEl = document.getElementById("business-name");
+                        if (businessNameEl) businessNameEl.textContent = "Temporary Business";
+                        
+                        const planBadge = document.getElementById("plan-badge");
+                        if (planBadge) {
+                            planBadge.textContent = "Basic Plan";
+                            planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                        }
+
+                        // Hide loading screen if it exists
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+
+                        return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || window.currentBusinessData.owner?.name,
+                    role: window.currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"]
+                    };
+                }
+
+                ;
+                }
+
+                console.log('✅ User data created:', {
+                    email: userData.email,
+                    role: userData.role,
+                    businessId: window.currentBusinessId,
+                    businessName: window.currentBusinessData?.businessName,
+                    approved: userData.approved
+                });
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                currentUserId = user.uid;
+                const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+                
+                // Update user info if elements exist
+                const userNameEl = document.getElementById("user-name");
+                const userEmailEl = document.getElementById("user-email");
+                const userInitialEl = document.getElementById("user-initial");
+                
+                if (userNameEl) userNameEl.textContent = username;
+                if (userEmailEl) userEmailEl.textContent = user.email;
+                if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                // Update business name and plan
+                const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                const planType = window.currentBusinessData?.plan?.type || "basic";
+                const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+                const businessNameEl = document.getElementById("business-name");
+                if (businessNameEl) businessNameEl.textContent = businessName;
+
+                const planBadge = document.getElementById("plan-badge");
+                if (planBadge) {
+                    planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                    // Set plan badge color based on plan type
+                    if (planType === 'enterprise') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    } else if (planType === 'professional') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                    } else {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                    }
+
+                    // Add trial badge if in trial
+                    if (planStatus === 'trial') {
+                        planBadge.textContent += ' (Trial)';
+                    }
+                }
+
+                // Hide loading screen if it exists
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) loadingScreen.style.display = 'none';
+
+            } catch (error) {
+                console.error("Permission check failed:", error);
+                window.location.href = "/login";
+            }
+        });
+    
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+            
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+            
+                        // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/dashboard"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+                
+                                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+                
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+                
+                // Skip Dashboard link - already handled above
+                if (href === '/dashboard') return;
+                
+                // COMPLETELY DISABLE Dashboard highlighting on non-dashboard pages
+                                // Handle Dashboard link with PRECISE matching
+                if (href === '/dashboard') {
+                                    // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+                        foundMatch = true;
+                        console.log('Dashboard page detected and highlighted');
+                    }
+                }
+                }
+                
+                // Handle other links with normal matching
+                else {
+                    // Check if current path matches this specific link
+                    if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                        link.classList.add('active');
+                        foundMatch = true;
+                        console.log('Exact match found:', href);
+                    }
+                    // Check page name matching for other links
+                    else if (!foundMatch) {
+                        const linkPageName = href.split('/').pop().replace('.html', '');
+                        if (currentPageName === linkPageName || 
+                            (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                            (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                            link.classList.add('active');
+                            foundMatch = true;
+                            console.log('Page name match found:', href, 'for page:', currentPageName);
+                        }
+                    }
+                }
+            });
+            
+            // Special cases for specific pages with dropdown management
+            if (currentPath.includes('collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Collections page detected');
+                    
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for collections');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Products page detected');
+                    
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for products');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Low Stock page detected');
+                    
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for low-stock');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reviews page detected');
+                    
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for reviews');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Orders page detected');
+                }
+            }
+            
+            if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Customer page detected');
+                }
+            }
+            
+            if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+                const adminLink = document.querySelector('a[href*="Admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Admin page detected');
+                }
+            }
+            
+            if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Settings page detected');
+                }
+            }
+            
+            if (currentPath.includes('finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Finance page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for finance page');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Analytics page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for analytics');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reports page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for reports');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Insights page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for insights');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Expenses page detected');
+                    
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for expenses');
+                    }
+                }
+            }
+            
+            if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('POS page detected');
+                }
+            }
+        }
+        
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+        
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+        
+    </script>
+</body>
+
+</html>

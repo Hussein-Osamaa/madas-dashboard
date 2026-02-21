@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MADAS! 🎉</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .success-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 4rem 3rem;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #10B981, #14B8A6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            animation: scaleIn 0.5s ease-out 0.3s both;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .success-icon i {
+            font-size: 3rem;
+            color: white;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #0F172A;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: #64748B;
+            margin-bottom: 2rem;
+        }
+
+        .info-box {
+            background: #F8FAFC;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #0F172A;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-item i {
+            color: #10B981;
+            margin-top: 2px;
+            font-size: 1.25rem;
+        }
+
+        .info-item p {
+            color: #64748B;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6366F1, #EC4899);
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 2rem;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .email-sent {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .email-sent p {
+            color: #92400E;
+            font-size: 0.875rem;
+        }
+
+        .email-sent i {
+            color: #F59E0B;
+            margin-right: 0.5rem;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #6366F1;
+            position: absolute;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+
+        <h1>Welcome to MADAS! 🎉</h1>
+        <p class="subtitle">Your account has been created successfully</p>
+
+        <div class="email-sent">
+            <p>
+                <i class="fas fa-envelope"></i>
+                We've sent a confirmation email to your inbox. Please verify your email address to get started.
+            </p>
+        </div>
+
+        <div class="info-box">
+            <h3>What's Next?</h3>
+
+            <div class="info-item">
+                <i class="fas fa-check-circle"></i>
+                <p><strong>Verify your email</strong> - Check your inbox for our welcome email and click the
+                    verification link.</p>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-check-circle"></i>
+                <p><strong>Complete your profile</strong> - Add your business details and customize your account
+                    settings.</p>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-check-circle"></i>
+                <p><strong>Explore features</strong> - Your 14-day free trial has started! No credit card required.</p>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-check-circle"></i>
+                <p><strong>Add your first product</strong> - Start building your catalog and setting up your business.
+                </p>
+            </div>
+        </div>
+
+        <a href="/dashboard" class="cta-button">
+            Go to Dashboard <i class="fas fa-arrow-right"></i>
+        </a>
+
+        <p style="margin-top: 2rem; color: #64748B; font-size: 0.875rem;">
+            Need help? <a href="contact-new.html"
+                style="color: #6366F1; text-decoration: none; font-weight: 600;">Contact our support team</a>
+        </p>
+    </div>
+
+    <script>
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#6366F1', '#EC4899', '#10B981', '#F59E0B'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 3 + 's';
+                    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    document.body.appendChild(confetti);
+
+                    setTimeout(() => confetti.remove(), 5000);
+                }, i * 30);
+            }
+        }
+
+        // Trigger confetti on load
+        window.addEventListener('load', createConfetti);
+
+        // Get business info from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const businessName = urlParams.get('business');
+        if (businessName) {
+            document.querySelector('.subtitle').textContent =
+                `${businessName} is now ready to use!`;
+        }
+    </script>
+</body>
+
+</html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MADAS! 🎉</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .success-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 4rem 3rem;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #10B981, #14B8A6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            animation: scaleIn 0.5s ease-out 0.3s both;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .success-icon i {
+            font-size: 3rem;
+            color: white;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #0F172A;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: #64748B;
+            margin-bottom: 2rem;
+        }
+
+        .info-box {
+            background: #F8FAFC;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #0F172A;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-item i {
+            color: #10B981;
+            margin-top: 2px;
+            font-size: 1.25rem;
+        }
+
+        .info-item p {
+            color: #64748B;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6366F1, #EC4899);
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 2rem;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .email-sent {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .email-sent p {
+            color: #92400E;
+            font-size: 0.875rem;
+        }
+
+        .email-sent i {
+            color: #F59E0B;
+            margin-right: 0.5rem;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #6366F1;
+            position: absolute;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+
+        <h1>Welcome to MADAS! 🎉</h1>
+        <p class="subtitle">Your account has been created successfully</p>
+
+        <div class="email-sent">
+            <p>
+                <i class="fas fa-envelope"></i>
+                We've sent a confirmation email to your inbox. Please verify your email address to get started.
+            </p>
+        </div>
+
+        <div class="info-box">
+            <h3>What's Next?</h3>
+
+            <div class="info-item">
+                <i class="fas fa-check-circle"></i>
+                <p><strong>Verify your email</strong> - Check your inbox for our welcome email and click the
+                    verification link.</p>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-check-circle"></i>
+                <p><strong>Complete your profile</strong> - Add your business details and customize your account
+                    settings.</p>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-check-circle"></i>
+                <p><strong>Explore features</strong> - Your 14-day free trial has started! No credit card required.</p>
+            </div>
+
+            <div class="info-item">
+                <i class="fas fa-check-circle"></i>
+                <p><strong>Add your first product</strong> - Start building your catalog and setting up your business.
+                </p>
+            </div>
+        </div>
+
+        <a href="/dashboard" class="cta-button">
+            Go to Dashboard <i class="fas fa-arrow-right"></i>
+        </a>
+
+        <p style="margin-top: 2rem; color: #64748B; font-size: 0.875rem;">
+            Need help? <a href="contact-new.html"
+                style="color: #6366F1; text-decoration: none; font-weight: 600;">Contact our support team</a>
+        </p>
+    </div>
+
+    <script>
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#6366F1', '#EC4899', '#10B981', '#F59E0B'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 3 + 's';
+                    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    document.body.appendChild(confetti);
+
+                    setTimeout(() => confetti.remove(), 5000);
+                }, i * 30);
+            }
+        }
+
+        // Trigger confetti on load
+        window.addEventListener('load', createConfetti);
+
+        // Get business info from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const businessName = urlParams.get('business');
+        if (businessName) {
+            document.querySelector('.subtitle').textContent =
+                `${businessName} is now ready to use!`;
+        }
+    </script>
+</body>
+
+</html>
+
+

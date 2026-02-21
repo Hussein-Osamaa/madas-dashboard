@@ -1,0 +1,59 @@
+{
+  "name": "madas-mobile-dashboard",
+  "version": "1.0.0",
+  "description": "Mobile dashboard application for MADAS business management system",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "dev": "python3 -m http.server 8080",
+    "build": "node build.js",
+    "build:prod": "NODE_ENV=production node build.js",
+    "setup": "node setup.js",
+    "test": "echo 'Tests would go here'",
+    "lint": "echo 'Linting would go here'",
+    "deploy:vercel": "vercel --prod",
+    "deploy:netlify": "netlify deploy --prod --dir dist",
+    "deploy:firebase": "firebase deploy",
+    "ios:init": "npx cap init 'MADAS Mobile' 'com.madas.mobile' && npx cap add ios",
+    "ios:sync": "npm run build && npx cap sync ios",
+    "ios:open": "npx cap open ios",
+    "ios:run": "npx cap run ios"
+  },
+  "keywords": [
+    "mobile",
+    "dashboard",
+    "business",
+    "management",
+    "pwa",
+    "firebase"
+  ],
+  "author": "MADAS Team",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {
+    "firebase": "^10.12.0",
+    "selfsigned": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "iOS >= 12",
+    "Android >= 8"
+  ],
+  "pwa": {
+    "name": "MADAS Mobile Dashboard",
+    "short_name": "MADAS Mobile",
+    "description": "Mobile dashboard for MADAS business management",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#27491F",
+    "theme_color": "#27491F",
+    "orientation": "portrait-primary"
+  }
+}

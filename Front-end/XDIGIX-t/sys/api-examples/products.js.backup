@@ -1,0 +1,351 @@
+/**
+ * EXAMPLE API ROUTES - PRODUCTS
+ * Shows how to use tenant isolation middleware in your Express.js routes
+ */
+
+const express = require('express');
+const router = express.Router();
+const {
+  tenantIsolation,
+  requirePermission,
+  requireFeature,
+  checkUsageLimit,
+  scopedQuery,
+  addBusinessDocument,
+  updateBusinessDocument,
+  deleteBusinessDocument,
+  getBusinessDocument
+} = require('../middleware/tenantIsolation');
+
+// Apply tenant isolation to all routes
+router.use(tenantIsolation);
+
+/**
+ * GET /api/products
+ * List all products for the current business
+ * 
+ * The businessId is automatically extracted from the user's session
+ * Only products belonging to the current business are returned
+ */
+router.get('/', requirePermission('canViewProducts'), async (req, res) => {
+  try {
+    const { businessId } = req.tenant;
+    const { status, category, search, limit = 50, page = 1 } = req.query;
+    
+    // Use scopedQuery helper to automatically add businessId filter
+    let queryBuilder = scopedQuery(businessId, 'products');
+    
+    // Apply additional filters
+    if (status) {
+      queryBuilder = queryBuilder.where('status', '==', status);
+    }
+    
+    if (category) {
+      queryBuilder = queryBuilder.where('category', '==', category);
+    }
+    
+    // Sort by created date
+    queryBuilder = queryBuilder.orderBy('metadata.createdAt', 'desc');
+    
+    // Apply pagination
+    queryBuilder = queryBuilder.limit(parseInt(limit));
+    
+    // Execute query - businessId is automatically included
+    let products = await queryBuilder.get();
+    
+    // Apply search filter (client-side for demo, use Algolia in production)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      products = products.filter(p => 
+        p.name.toLowerCase().includes(searchLower) ||
+        p.sku?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    res.json({
+      products,
+      businessId, // Return for reference
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: products.length
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch products',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * GET /api/products/:id
+ * Get single product
+ * 
+ * Automatically verifies the product belongs to the current business
+ */
+router.get('/:id', requirePermission('canViewProducts'), async (req, res) => {
+  try {
+    const { businessId } = req.tenant;
+    const { id } = req.params;
+    
+    // getBusinessDocument automatically verifies businessId
+    const product = await getBusinessDocument(businessId, 'products', id);
+    
+    if (!product) {
+      return res.status(404).json({ 
+        error: 'Product not found' 
+      });
+    }
+    
+    res.json({ product });
+  } catch (error) {
+    if (error.message.includes('Unauthorized')) {
+      return res.status(403).json({ 
+        error: 'Forbidden',
+        message: 'This product belongs to a different business' 
+      });
+    }
+    
+    console.error('Error fetching product:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch product',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * POST /api/products
+ * Create new product
+ * 
+ * Checks:
+ * 1. User has permission to create products
+ * 2. Business hasn't exceeded product limit
+ * 3. Automatically sets businessId on the document
+ */
+router.post('/', 
+  requirePermission('canCreateProducts'),
+  checkUsageLimit('productsCount', 'maxProducts'),
+  async (req, res) => {
+    try {
+      const { businessId, userId } = req.tenant;
+      const productData = req.body;
+      
+      // Validate required fields
+      if (!productData.name || !productData.price) {
+        return res.status(400).json({ 
+          error: 'Bad Request',
+          message: 'Product name and price are required' 
+        });
+      }
+      
+      // addBusinessDocument automatically sets businessId
+      const newProduct = await addBusinessDocument(
+        businessId,
+        'products',
+        {
+          ...productData,
+          status: 'active',
+          metadata: {
+            createdBy: userId
+          }
+        },
+        userId
+      );
+      
+      // Update usage count
+      const admin = require('firebase-admin');
+      const db = admin.firestore();
+      await db.collection('businesses').doc(businessId).update({
+        'usage.productsCount': admin.firestore.FieldValue.increment(1)
+      });
+      
+      res.status(201).json({ 
+        message: 'Product created successfully',
+        product: newProduct 
+      });
+    } catch (error) {
+      console.error('Error creating product:', error);
+      res.status(500).json({ 
+        error: 'Failed to create product',
+        message: error.message 
+      });
+    }
+  }
+);
+
+/**
+ * PUT /api/products/:id
+ * Update product
+ * 
+ * Automatically verifies product belongs to current business before updating
+ */
+router.put('/:id', 
+  requirePermission('canEditProducts'),
+  async (req, res) => {
+    try {
+      const { businessId, userId } = req.tenant;
+      const { id } = req.params;
+      const updates = req.body;
+      
+      // updateBusinessDocument verifies businessId automatically
+      const updatedProduct = await updateBusinessDocument(
+        businessId,
+        'products',
+        id,
+        updates,
+        userId
+      );
+      
+      res.json({ 
+        message: 'Product updated successfully',
+        product: updatedProduct 
+      });
+    } catch (error) {
+      if (error.message.includes('Unauthorized')) {
+        return res.status(403).json({ 
+          error: 'Forbidden',
+          message: 'Cannot update product from different business' 
+        });
+      }
+      
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ 
+          error: 'Product not found' 
+        });
+      }
+      
+      console.error('Error updating product:', error);
+      res.status(500).json({ 
+        error: 'Failed to update product',
+        message: error.message 
+      });
+    }
+  }
+);
+
+/**
+ * DELETE /api/products/:id
+ * Delete product
+ * 
+ * Automatically verifies product belongs to current business before deleting
+ */
+router.delete('/:id', 
+  requirePermission('canDeleteProducts'),
+  async (req, res) => {
+    try {
+      const { businessId } = req.tenant;
+      const { id } = req.params;
+      
+      // deleteBusinessDocument verifies businessId automatically
+      await deleteBusinessDocument(businessId, 'products', id);
+      
+      // Update usage count
+      const admin = require('firebase-admin');
+      const db = admin.firestore();
+      await db.collection('businesses').doc(businessId).update({
+        'usage.productsCount': admin.firestore.FieldValue.increment(-1)
+      });
+      
+      res.json({ 
+        message: 'Product deleted successfully',
+        id 
+      });
+    } catch (error) {
+      if (error.message.includes('Unauthorized')) {
+        return res.status(403).json({ 
+          error: 'Forbidden',
+          message: 'Cannot delete product from different business' 
+        });
+      }
+      
+      console.error('Error deleting product:', error);
+      res.status(500).json({ 
+        error: 'Failed to delete product',
+        message: error.message 
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/products/bulk-import
+ * Bulk import products (CSV)
+ * 
+ * Uses createScopedBatch for efficient batch operations
+ * All operations are automatically scoped to current business
+ */
+router.post('/bulk-import',
+  requirePermission('canCreateProducts'),
+  async (req, res) => {
+    try {
+      const { businessId, userId } = req.tenant;
+      const { products } = req.body; // Array of products
+      
+      if (!Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ 
+          error: 'Bad Request',
+          message: 'Products array is required' 
+        });
+      }
+      
+      // Check if would exceed limit
+      const admin = require('firebase-admin');
+      const db = admin.firestore();
+      const businessDoc = await db.collection('businesses').doc(businessId).get();
+      const businessData = businessDoc.data();
+      
+      const currentCount = businessData.usage?.productsCount || 0;
+      const maxLimit = businessData.limits?.maxProducts;
+      
+      if (maxLimit !== -1 && (currentCount + products.length) > maxLimit) {
+        return res.status(403).json({ 
+          error: 'Usage Limit Exceeded',
+          message: `Cannot import ${products.length} products. Would exceed limit of ${maxLimit}`,
+          current: currentCount,
+          limit: maxLimit,
+          requested: products.length
+        });
+      }
+      
+      // Use batch for efficiency
+      const { createScopedBatch } = require('../middleware/tenantIsolation');
+      const batch = createScopedBatch(businessId);
+      
+      products.forEach((product, index) => {
+        const productId = `product_${Date.now()}_${index}`;
+        batch.set('products', productId, {
+          ...product,
+          businessId,
+          status: 'active',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdBy: userId
+        });
+      });
+      
+      await batch.commit();
+      
+      // Update usage count
+      await db.collection('businesses').doc(businessId).update({
+        'usage.productsCount': admin.firestore.FieldValue.increment(products.length)
+      });
+      
+      res.status(201).json({ 
+        message: 'Products imported successfully',
+        count: products.length 
+      });
+    } catch (error) {
+      console.error('Error bulk importing products:', error);
+      res.status(500).json({ 
+        error: 'Failed to import products',
+        message: error.message 
+      });
+    }
+  }
+);
+
+module.exports = router;
+

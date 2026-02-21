@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>General Settings - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/assets/img/madas-logo.png">
+    <link rel="stylesheet" href="../../css/dark-mode.css">
+    <script src="../../js/dark-mode.js"></script>
+    <!-- Firebase Permission Checker -->
+    <script type="module" src="../../js/firebase-permission-check.js"></script>
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles are now handled by dark-mode.css */
+
+        /* Ensure dark mode applies to all elements */
+        body.dark-mode * {
+            border-color: var(--card-border);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        /* Override specific backgrounds */
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Sidebar and header */
+        #sidebar {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Input fields and form elements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"],
+        textarea,
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="tel"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder,
+        input[type="tel"]::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Search bar specific styling */
+        input[type="search"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="search"]:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="search"]::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Select dropdowns */
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* Modal styling */
+        .modal,
+        .modal .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Form labels */
+        label {
+            color: var(--text-main) !important;
+        }
+
+        /* Readonly inputs */
+        input[readonly] {
+            background-color: var(--bg-main) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--madas-accent) !important;
+            border-color: var(--madas-accent) !important;
+        }
+
+        /* Form section styling */
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        /* Input focus improvements */
+        input:focus,
+        textarea:focus,
+        select:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(39, 73, 31, 0.15) !important;
+        }
+
+        /* Button improvements */
+        button {
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Upload Logo button dark mode hover */
+        .bg-\[var\(--madas-primary\)\]:hover {
+            background-color: #1f3c19 !important;
+        }
+
+        body.dark-mode .bg-\[var\(--madas-primary\)\]:hover {
+            background-color: #2d4a25 !important;
+        }
+
+        /* Section headers */
+        .section-header {
+            position: relative;
+        }
+
+        .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--madas-primary);
+            border-radius: 2px;
+        }
+
+        /* Fixed sidebar styling */
+        #sidebar {
+            position: fixed !important;
+            top: 4rem;
+            /* 16 * 0.25rem = 4rem (64px) */
+            left: 0;
+            height: calc(100vh - 4rem);
+            width: 16rem;
+            /* 64 * 0.25rem = 16rem (256px) */
+            z-index: 30;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #sidebar.show {
+            transform: translateX(0);
+        }
+
+        /* Desktop sidebar */
+        @media (min-width: 1024px) {
+            #sidebar {
+                transform: translateX(0);
+            }
+        }
+
+        /* Main content adjustment for fixed sidebar */
+        @media (min-width: 1024px) {
+            .main-content-with-sidebar {
+                margin-left: 16rem;
+            }
+        }
+
+        /* Mobile sidebar backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 25;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .sidebar-backdrop.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Mobile sidebar positioning */
+        @media (max-width: 1023px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+
+            #sidebar.show {
+                transform: translateX(0);
+            }
+        }
+
+        .settings-nav-item {
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+            border-radius: 8px;
+        }
+
+        .settings-nav-item.active {
+            background-color: var(--madas-light);
+            color: var(--text-main) !important;
+            font-weight: 600;
+        }
+
+        .settings-nav-item:hover:not(.active) {
+            background-color: var(--madas-light);
+            color: var(--madas-primary) !important;
+            transform: translateX(4px);
+        }
+
+        .settings-nav-item .material-icons {
+            transition: all 0.3s ease;
+        }
+
+        .settings-nav-item:hover .material-icons {
+            transform: scale(1.1);
+        }
+
+        .settings-section {
+            display: none;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        .main-dashboard-content {
+            padding: 2.5rem 1.5rem 2rem 1.5rem;
+            margin: 1rem;
+            min-height: calc(100vh - 8rem);
+            background: var(--bg-main);
+            border-radius: 18px;
+        }
+
+        .main-dashboard-content h2,
+        .main-dashboard-content h3 {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .shipping-row {
+            transition: all 0.2s ease;
+        }
+
+        .shipping-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background-color: var(--madas-primary);
+            color: white;
+        }
+
+        .tab-button:hover:not(.active) {
+            background-color: #f1f5f9;
+        }
+
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            color: var(--text-main) !important;
+        }
+
+        /* Override Tailwind text color classes */
+        .sidebar-link.text-gray-700,
+        .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        /* Dark mode text color for sidebar links */
+        body.dark-mode .sidebar-link {
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }
+
+        .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600;
+        }
+
+        .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Simple Submenu active state */
+        .sidebar-link.submenu-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600;
+        }
+
+        .sidebar-link.submenu-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Simple Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Simple Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 12px 16px;
+            margin: 0;
+            border-radius: 0;
+            transition: all 0.2s ease;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+        /* Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Original Dropdown Button */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: #f3f4f6;
+        }
+
+        /* Original Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Back Button Styles */
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-button:hover {
+            background: var(--madas-light);
+            border-color: var(--madas-primary);
+            color: var(--madas-primary);
+        }
+
+        .back-button svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: currentColor;
+        }
+
+        .back-button:hover svg {
+            transform: translateX(-2px);
+        }
+
+        /* Dark mode back button */
+        body.dark-mode .back-button {
+            border-color: var(--card-border);
+            color: var(--text-main);
+        }
+
+        body.dark-mode .back-button:hover {
+            background: var(--madas-light);
+            border-color: var(--madas-primary);
+            color: var(--madas-primary);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--madas-primary)] mx-auto mb-4">
+            </div>
+            <p class="text-[var(--madas-primary)] font-medium">Loading General Settings...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16 fixed-header">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <button onclick="window.location.href='../../index.html'" class="back-button">
+                    <svg viewBox="0 0 24 24" class="w-5 h-5">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+                    </svg>
+                    <span>Back to Dashboard</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <div>
+                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                        <button id="plan-badge"
+                            onclick="window.location.href='/pages/settings/general-settings.html#plans'"
+                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                            Loading Plan...
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707-.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar Backdrop for Mobile -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+    <!-- Main Layout Container -->
+    <div class="flex h-screen pt-16">
+
+        <!-- Settings Sidebar -->
+        <aside id="sidebar"
+            class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white shadow-lg z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+                    <a href="general-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all">
+                        <span class="material-icons text-sm">tune</span>
+                        <span>General</span>
+                    </a>
+                    <a href="shipping-delivery-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">local_shipping</span>
+                        <span>Shipping & Delivery</span>
+                    </a>
+                    <a href="payments-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">payment</span>
+                        <span>Payments</span>
+                    </a>
+                    <a href="integrations-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">extension</span>
+                        <span>Integrations</span>
+                    </a>
+                    <a href="social-media-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">share</span>
+                        <span>Social Media</span>
+                    </a>
+                    <a href="plans-billing-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">workspace_premium</span>
+                        <span>Plans & Billing</span>
+                    </a>
+                    <a href="staff-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all">
+                        <span class="material-icons text-sm">people</span>
+                        <span>Staff Management</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2 transition-colors">
+                                <span class="material-icons text-sm">add</span>
+                                <span>New Order</span>
+                            </button>
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2 transition-colors">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add Product</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 main-content-with-sidebar">
+            <div class="main-dashboard-content h-full">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">General Settings</h2>
+                    <p class="text-gray-600">Manage your store configuration and preferences.</p>
+                </div>
+
+                <!-- General Settings -->
+                <div class="settings-section active">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="space-y-8">
+                            <!-- Store Information -->
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center section-header">
+                                    <span class="material-icons text-xl mr-2 text-[var(--madas-primary)]">store</span>
+                                    Store Information
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Store
+                                            Name</label>
+                                        <input type="text" id="storeName" value="MADAS Store"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Store
+                                            Email</label>
+                                        <input type="email" id="storeEmail" value="info@madas.com"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Store
+                                            Phone</label>
+                                        <input type="tel" id="storePhone" value="+20 123 456 7890"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                                        <select id="currency"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all">
+                                            <option value="EGP" selected>Egyptian Pound (EGP)</option>
+                                            <option value="USD">US Dollar (USD)</option>
+                                            <option value="EUR">Euro (EUR)</option>
+                                            <option value="GBP">British Pound (GBP)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Store Description -->
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center section-header">
+                                    <span
+                                        class="material-icons text-xl mr-2 text-[var(--madas-primary)]">description</span>
+                                    Store Description
+                                </h3>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                    <textarea id="storeDescription" rows="4"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all resize-none"
+                                        placeholder="Describe your store...">Welcome to MADAS Store - Your premier destination for quality products and exceptional service.</textarea>
+                                </div>
+                            </div>
+
+                            <!-- Store Logo -->
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center section-header">
+                                    <span class="material-icons text-xl mr-2 text-[var(--madas-primary)]">image</span>
+                                    Store Logo
+                                </h3>
+                                <div class="flex items-center space-x-6">
+                                    <div
+                                        class="w-20 h-20 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                                        <span class="text-gray-400 text-sm">Logo</span>
+                                    </div>
+                                    <div class="flex flex-col space-y-2">
+                                        <button
+                                            class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors font-medium">
+                                            Upload Logo
+                                        </button>
+                                        <p class="text-xs text-gray-500">Recommended: 200x200px, PNG or JPG</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Admin Information -->
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center section-header">
+                                    <span
+                                        class="material-icons text-xl mr-2 text-[var(--madas-primary)]">admin_panel_settings</span>
+                                    Admin Information
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Admin Name</label>
+                                        <input type="text" id="adminName"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all"
+                                            placeholder="Enter admin name">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Admin Email</label>
+                                        <input type="email" id="adminEmail"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all"
+                                            placeholder="admin@example.com">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Admin Phone</label>
+                                        <input type="tel" id="adminPhone"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all"
+                                            placeholder="+20 123 456 7890">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Admin Role</label>
+                                        <select id="adminRole"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent transition-all">
+                                            <option value="owner">Owner</option>
+                                            <option value="admin">Administrator</option>
+                                            <option value="manager">Manager</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end space-x-4">
+                            <button type="button"
+                                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                                Cancel
+                            </button>
+                            <button id="saveGeneralSettingsBtn"
+                                class="bg-[var(--madas-primary)] text-white px-8 py-3 rounded-lg hover:bg-[#1f3c19] transition-colors font-medium flex items-center space-x-2">
+                                <span class="material-icons text-sm">save</span>
+                                <span>Save Settings</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include shared authentication system -->
+    <script type="module" src="../js/shared-auth.js"></script>
+
+    <script type="module">
+        import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3",
+            measurementId: "G-NQVR1F4N3Q"
+        };
+
+        // Try to get existing app, or initialize if it doesn't exist
+        let app;
+        try {
+            app = getApp(); // Get existing Firebase app
+        } catch (error) {
+            // If no app exists, initialize a new one
+            app = initializeApp(firebaseConfig);
+        }
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Wait for shared auth to initialize
+        let authInitialized = false;
+
+        // Initialize shared authentication first
+        if (typeof initializeAuth === 'function') {
+            initializeAuth();
+            authInitialized = true;
+        } else {
+            // Fallback: wait for shared auth to load
+            const checkAuth = setInterval(() => {
+                if (typeof initializeAuth === 'function') {
+                    initializeAuth();
+                    authInitialized = true;
+                    clearInterval(checkAuth);
+                }
+            }, 100);
+        }
+
+        // Simple authentication check - let shared auth handle the complex logic
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                // Only redirect if shared auth hasn't handled it
+                setTimeout(() => {
+                    if (!auth.currentUser) {
+                        window.location.href = "/login";
+                    }
+                }, 2000);
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+
+                // ============================================
+                // TENANT ISOLATION: Initialize Business Context
+                // ============================================
+
+                // Check for super admin users first (bypass business detection)
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    window.currentUserRole = "super-admin";
+                    window.currentBusinessId = "super-admin";
+                    window.currentBusinessData = {
+                        businessName: "Super Admin",
+                        plan: { type: "enterprise", status: "active" }
+                    };
+
+                    // Set super admin permissions
+                    const userData = {
+                        email: user.email,
+                        displayName: user.displayName || "Super Admin",
+                        role: "super-admin",
+                        approved: true,
+                        permissions: {
+                            home: ["view"],
+                            orders: ["view", "search", "create", "edit"],
+                            inventory: ["view", "edit"],
+                            customers: ["view", "edit"],
+                            employees: ["view", "edit"],
+                            finance: ["view", "reports"],
+                            analytics: ["view", "export"],
+                            settings: ["view", "edit"],
+                            admin: ["view", "manage_all_businesses"]
+                        }
+                    };
+
+                    // Store user data
+                    localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                    // Update UI
+                    const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                    const userNameEl = document.getElementById("user-name");
+                    const userEmailEl = document.getElementById("user-email");
+                    const userInitialEl = document.getElementById("user-initial");
+
+                    if (userNameEl) userNameEl.textContent = username;
+                    if (userEmailEl) userEmailEl.textContent = user.email;
+                    if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                    // Update business name and plan
+                    const businessNameEl = document.getElementById("business-name");
+                    if (businessNameEl) businessNameEl.textContent = "Super Admin";
+
+                    const planBadge = document.getElementById("plan-badge");
+                    if (planBadge) {
+                        planBadge.textContent = "Enterprise Plan";
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    }
+
+                    // Hide loading screen if it exists
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+
+                    // Load business settings (super admin can still view settings)
+                    loadBusinessSettings();
+
+                    return;
+                }
+
+                // Step 1: Find user's business (check if owner)
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    window.currentBusinessId = businessDoc.id;
+                    window.currentBusinessData = businessDoc.data();
+                    window.currentUserRole = 'owner';
+
+                    console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                    console.log('🏢 Business ID:', window.currentBusinessId);
+                    console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    const allBusinesses = await getDocs(collection(db, "businesses"));
+                    let foundBusiness = false;
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                        const staffDoc = await getDoc(staffRef);
+
+                        if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                            window.currentBusinessId = businessId;
+                            window.currentBusinessData = businessDoc.data();
+                            window.currentUserRole = staffData.role;
+                            window.currentUserPermissions = staffData.permissions;
+
+                            console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                            console.log('🏢 Business ID:', window.currentBusinessId);
+                            console.log('👤 Role:', window.currentUserRole);
+
+                            foundBusiness = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundBusiness) {
+                        console.warn("❌ User not associated with any business.");
+                        console.log("🔍 User email:", user.email);
+                        console.log("🔍 User UID:", user.uid);
+
+                        // For now, create a temporary business context for testing
+                        console.log("⚠️ Creating temporary business context for testing...");
+                        window.currentBusinessId = "temp-business";
+                        window.currentBusinessData = {
+                            businessName: "Temporary Business",
+                            plan: { type: "basic", status: "active" },
+                            owner: { name: user.displayName || user.email.split("@")[0] }
+                        };
+                        window.currentUserRole = "owner";
+
+                        // Set basic permissions
+                        const userData = {
+                            email: user.email,
+                            displayName: user.displayName || user.email.split("@")[0],
+                            role: "owner",
+                            approved: true,
+                            permissions: {
+                                home: ["view"],
+                                orders: ["view", "search", "create", "edit"],
+                                inventory: ["view", "edit"],
+                                customers: ["view", "edit"],
+                                employees: ["view", "edit"],
+                                finance: ["view", "reports"],
+                                analytics: ["view", "export"],
+                                settings: ["view", "edit"]
+                            }
+                        };
+
+                        // Store user data
+                        localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                        // Update UI
+                        const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                        const userNameEl = document.getElementById("user-name");
+                        const userEmailEl = document.getElementById("user-email");
+                        const userInitialEl = document.getElementById("user-initial");
+
+                        if (userNameEl) userNameEl.textContent = username;
+                        if (userEmailEl) userEmailEl.textContent = user.email;
+                        if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                        // Update business name and plan
+                        const businessNameEl = document.getElementById("business-name");
+                        if (businessNameEl) businessNameEl.textContent = "Temporary Business";
+
+                        const planBadge = document.getElementById("plan-badge");
+                        if (planBadge) {
+                            planBadge.textContent = "Basic Plan";
+                            planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                        }
+
+                        // Hide loading screen if it exists
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+
+                        // Load business settings (will handle temporary business case)
+                        loadBusinessSettings();
+
+                        return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || window.currentBusinessData.owner?.name,
+                    role: window.currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"]
+                    };
+                }
+
+                console.log('✅ User data created:', {
+                    email: userData.email,
+                    role: userData.role,
+                    businessId: window.currentBusinessId,
+                    businessName: window.currentBusinessData?.businessName,
+                    approved: userData.approved
+                });
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+
+                // Update user info if elements exist
+                const userNameEl = document.getElementById("user-name");
+                const userEmailEl = document.getElementById("user-email");
+                const userInitialEl = document.getElementById("user-initial");
+
+                if (userNameEl) userNameEl.textContent = username;
+                if (userEmailEl) userEmailEl.textContent = user.email;
+                if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                // Update business name and plan
+                const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                const planType = window.currentBusinessData?.plan?.type || "basic";
+                const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+                const businessNameEl = document.getElementById("business-name");
+                if (businessNameEl) businessNameEl.textContent = businessName;
+
+                const planBadge = document.getElementById("plan-badge");
+                if (planBadge) {
+                    planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                    // Set plan badge color based on plan type
+                    if (planType === 'enterprise') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    } else if (planType === 'professional') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                    } else {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                    }
+
+                    // Add trial badge if in trial
+                    if (planStatus === 'trial') {
+                        planBadge.textContent += ' (Trial)';
+                    }
+                }
+
+                // Hide loading screen if it exists
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) loadingScreen.style.display = 'none';
+
+                // Load business settings after context is established
+                loadBusinessSettings();
+
+            } catch (error) {
+                console.error("Permission check failed:", error);
+                // Let shared auth handle the error - don't redirect immediately
+                console.log("Error handled by shared authentication system");
+            }
+        });
+
+        // Load business settings from Firebase
+        async function loadBusinessSettings() {
+            if (!window.currentBusinessId) {
+                console.warn('⚠️ No business ID available yet, retrying...');
+                // Retry after a short delay if business context isn't ready
+                setTimeout(loadBusinessSettings, 500);
+                return;
+            }
+
+            try {
+                console.log('📥 Loading business settings for:', window.currentBusinessId);
+
+                // Fetch the latest business document directly from Firebase
+                const businessRef = doc(db, "businesses", window.currentBusinessId);
+                const businessDoc = await getDoc(businessRef);
+
+                // Also check for saved settings
+                const settingsRef = doc(db, "businesses", window.currentBusinessId, "settings", "general");
+                const settingsDoc = await getDoc(settingsRef);
+
+                // Start with business document data
+                let businessData = {};
+                if (businessDoc.exists()) {
+                    businessData = businessDoc.data();
+                    console.log('✅ Business document loaded:', businessData);
+                } else {
+                    console.warn('⚠️ Business document not found');
+                }
+
+                // Merge with settings data (settings take priority)
+                let settings = {};
+                if (settingsDoc.exists()) {
+                    settings = settingsDoc.data();
+                    console.log('✅ Settings document loaded:', settings);
+                } else {
+                    console.log('ℹ️ No saved settings document, using business data');
+                }
+
+                // Populate form fields - prioritize settings, fall back to business data
+                const storeName = settings.storeName || businessData.businessName || 'MADAS Store';
+                const storeEmail = settings.storeEmail || businessData.contact?.email || businessData.email || '';
+                const storePhone = settings.storePhone || businessData.contact?.phone || businessData.phone || '';
+                const currency = settings.currency || businessData.currency || 'EGP';
+                const storeDescription = settings.storeDescription || businessData.description || businessData.storeDescription || '';
+
+                // Admin information - prioritize settings, fall back to owner data
+                const adminName = settings.adminName || businessData.owner?.name || businessData.adminName || '';
+                const adminEmail = settings.adminEmail || businessData.owner?.email || businessData.adminEmail || '';
+                const adminPhone = settings.adminPhone || businessData.owner?.phone || businessData.adminPhone || '';
+                const adminRole = settings.adminRole || businessData.owner?.role || businessData.adminRole || 'owner';
+
+                // Update form fields
+                const storeNameEl = document.getElementById('storeName');
+                const storeEmailEl = document.getElementById('storeEmail');
+                const storePhoneEl = document.getElementById('storePhone');
+                const currencyEl = document.getElementById('currency');
+                const storeDescriptionEl = document.getElementById('storeDescription');
+                const adminNameEl = document.getElementById('adminName');
+                const adminEmailEl = document.getElementById('adminEmail');
+                const adminPhoneEl = document.getElementById('adminPhone');
+                const adminRoleEl = document.getElementById('adminRole');
+
+                if (storeNameEl) storeNameEl.value = storeName;
+                if (storeEmailEl) storeEmailEl.value = storeEmail;
+                if (storePhoneEl) storePhoneEl.value = storePhone;
+                if (currencyEl) currencyEl.value = currency;
+                if (storeDescriptionEl) storeDescriptionEl.value = storeDescription;
+                if (adminNameEl) adminNameEl.value = adminName;
+                if (adminEmailEl) adminEmailEl.value = adminEmail;
+                if (adminPhoneEl) adminPhoneEl.value = adminPhone;
+                if (adminRoleEl) adminRoleEl.value = adminRole;
+
+                console.log('✅ All settings populated:', {
+                    storeName,
+                    storeEmail,
+                    storePhone,
+                    currency,
+                    adminName,
+                    adminEmail,
+                    adminPhone,
+                    adminRole
+                });
+
+            } catch (error) {
+                console.error('❌ Error loading settings:', error);
+                // Show user-friendly error
+                const errorMsg = error.message || 'Failed to load settings';
+                console.error('Error details:', errorMsg);
+            }
+        }
+
+        // Save general settings to Firebase
+        async function saveGeneralSettings() {
+            if (!window.currentBusinessId) {
+                alert('No business context available');
+                return;
+            }
+
+            try {
+                const settings = {
+                    storeName: document.getElementById('storeName').value,
+                    storeEmail: document.getElementById('storeEmail').value,
+                    storePhone: document.getElementById('storePhone').value,
+                    currency: document.getElementById('currency').value,
+                    storeDescription: document.getElementById('storeDescription').value,
+                    adminName: document.getElementById('adminName').value,
+                    adminEmail: document.getElementById('adminEmail').value,
+                    adminPhone: document.getElementById('adminPhone').value,
+                    adminRole: document.getElementById('adminRole').value,
+                    updatedAt: new Date().toISOString()
+                };
+
+                const settingsRef = doc(db, "businesses", window.currentBusinessId, "settings", "general");
+                await setDoc(settingsRef, settings, { merge: true });
+
+                // Also update business contact info
+                const businessRef = doc(db, "businesses", window.currentBusinessId);
+                await updateDoc(businessRef, {
+                    businessName: settings.storeName,
+                    'contact.email': settings.storeEmail,
+                    'contact.phone': settings.storePhone,
+                    'owner.name': settings.adminName,
+                    'owner.email': settings.adminEmail,
+                    'owner.phone': settings.adminPhone
+                });
+
+                alert('✅ Settings saved successfully!');
+                console.log('✅ Settings saved to Firebase');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                alert('❌ Failed to save settings. Please try again.');
+            }
+        }
+
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+
+            // OTHER LINKS - Handle all other links
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            let foundMatch = false;
+
+            // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/index.html"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+
+                if (currentPath.endsWith('index.html') || currentPath === '/' || currentPath === '/dashboard' || currentPath.includes('dashboard')) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page highlighted');
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard page not active');
+                }
+            }
+
+            // INVENTORY LINKS - Handle inventory submenu
+            if (currentPath.includes('Inventory/products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products.html"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Products page highlighted');
+                }
+            }
+
+            if (currentPath.includes('Inventory/collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections.html"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Collections page highlighted');
+                }
+            }
+
+            if (currentPath.includes('Inventory/low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock.html"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Low Stock page highlighted');
+                }
+            }
+
+            if (currentPath.includes('Inventory/product-reviews') || currentPageName === 'product-reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews.html"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reviews page highlighted');
+                }
+            }
+
+            // ORDERS LINK
+            if (currentPath.includes('Orders/orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders.html"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Orders page highlighted');
+                }
+            }
+
+            // CUSTOMERS LINK
+            if (currentPath.includes('Customers/Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer.html"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Customer page highlighted');
+                }
+            }
+
+            // ADMIN LINK
+            if (currentPath.includes('admin') || currentPageName === 'admin') {
+                const adminLink = document.querySelector('a[href*="admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Admin page highlighted');
+                }
+            }
+
+            // Special case for general-settings page (must come before general settings)
+            if (currentPath.includes('general-settings') || currentPageName === 'general-settings') {
+                const generalLink = document.querySelector('a[href*="general-settings"]');
+                if (generalLink) {
+                    generalLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('General Settings page detected');
+                }
+            }
+
+            // SETTINGS LINK
+            if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Settings page highlighted');
+                }
+            }
+
+            // STAFF LINK
+            if (currentPath.includes('staff-settings') || currentPageName === 'staff-settings') {
+                const staffLink = document.querySelector('a[href*="staff-settings"]');
+                if (staffLink) {
+                    staffLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Staff Management page highlighted');
+                }
+            }
+
+            // FINANCE LINKS
+            if (currentPath.includes('Finance/finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Finance page highlighted');
+                }
+            }
+
+            if (currentPath.includes('Finance/analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Analytics page highlighted');
+                }
+            }
+
+            if (currentPath.includes('Finance/reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reports page highlighted');
+                }
+            }
+
+            if (currentPath.includes('Finance/insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Insights page highlighted');
+                }
+            }
+
+            if (currentPath.includes('Finance/expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Expenses page highlighted');
+                }
+            }
+
+            // POS LINK
+            if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos.html"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('POS page highlighted');
+                }
+            }
+
+            console.log('Active page highlighting complete. Found match:', foundMatch);
+        }
+
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+
+            if (menuToggle && sidebar) {
+                menuToggle.addEventListener('click', function () {
+                    sidebar.classList.toggle('show');
+                    if (backdrop) {
+                        backdrop.classList.toggle('show');
+                    }
+                });
+            }
+
+            // Close sidebar when clicking backdrop
+            if (backdrop) {
+                backdrop.addEventListener('click', function () {
+                    sidebar.classList.remove('show');
+                    backdrop.classList.remove('show');
+                });
+            }
+
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth < 1024 && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                    sidebar.classList.remove('show');
+                    if (backdrop) {
+                        backdrop.classList.remove('show');
+                    }
+                }
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', function () {
+                if (window.innerWidth >= 1024) {
+                    sidebar.classList.add('show');
+                    if (backdrop) {
+                        backdrop.classList.remove('show');
+                    }
+                } else {
+                    sidebar.classList.remove('show');
+                    if (backdrop) {
+                        backdrop.classList.remove('show');
+                    }
+                }
+            });
+
+            // Highlight active page
+            highlightActivePage();
+
+            // Load business settings
+            loadBusinessSettings();
+
+            // General settings save button
+            const saveGeneralSettingsBtn = document.getElementById('saveGeneralSettingsBtn');
+            if (saveGeneralSettingsBtn) {
+                saveGeneralSettingsBtn.addEventListener('click', saveGeneralSettings);
+            }
+        });
+    </script>
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

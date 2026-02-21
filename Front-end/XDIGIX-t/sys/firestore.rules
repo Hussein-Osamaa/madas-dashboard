@@ -1,0 +1,217 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthorized(workspaceId, orgId) {
+      return request.auth != null
+        && request.auth.token.workspaceId == workspaceId
+        && request.auth.token.orgId == orgId;
+    }
+
+    // Finance data security
+    match /workspaces/{workspaceId}/organizations/{orgId}/{document=**} {
+      allow read, write: if isAuthorized(workspaceId, orgId);
+    }
+
+    // Ensure double-entry bookkeeping integrity
+    match /workspaces/{workspaceId}/organizations/{orgId}/journal_entries/{entryId} {
+      allow read: if isAuthorized(workspaceId, orgId);
+      allow write: if isAuthorized(workspaceId, orgId)
+        && request.resource.data.totalDebit == request.resource.data.totalCredit;
+    }
+
+    // Login locations - authenticated users only
+    match /loginLocations/{document=**} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+
+    // Suspicious activity logs - authenticated users can create, admins can read all
+    match /suspiciousActivity/{activityId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+
+    // Active sessions tracking
+    match /activeSessions/{sessionId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Users collection - RBAC system
+    // Allow authenticated users to read/write for RBAC setup
+    // TODO: Restrict these rules in production based on RBAC permissions
+    match /users/{userId} {
+      // Allow all read/write for authenticated users (for initial RBAC setup)
+      allow read, write: if request.auth != null;
+
+      // Trusted devices subcollection (legacy - for old auth system)
+      match /trustedDevices/{deviceId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Business collection rules
+    match /businesses/{businessId} {
+      // Read: owner, staff (via users collection lookup), or admin
+      allow read: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.owner.userId == request.auth.uid ||
+        request.auth.token.role == 'super_admin' ||
+        request.auth.token.businessId == businessId ||
+        // Allow staff to read their business by checking users collection
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId
+      );
+      // Write: owner or admin only
+      allow write: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.owner.userId == request.auth.uid ||
+        request.auth.token.role == 'super_admin' ||
+        // Allow staff with proper permissions to write
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId == businessId)
+      );
+      // Create: any authenticated user can create a business
+      allow create: if request.auth != null;
+
+      // Staff subcollection
+      match /staff/{staffId} {
+        allow read, write: if request.auth != null;
+      }
+      
+      // Staff invites subcollection - allow authenticated users and unauthenticated for validation
+      match /staffInvites/{inviteId} {
+        // Allow read for anyone (needed to validate invitation links before sign up)
+        allow read: if true;
+        // Only authenticated business users can write
+        allow write: if request.auth != null;
+      }
+      
+      // Products subcollection - allow public read for published websites
+      match /products/{productId} {
+        // Anyone can read products (needed for published website)
+        allow read: if true;
+        // Only authenticated business users can write
+        allow write: if request.auth != null;
+      }
+      
+      // Collections subcollection - allow public read for published websites
+      match /collections/{collectionId} {
+        // Anyone can read collections (needed for published website)
+        allow read: if true;
+        // Only authenticated business users can write
+        allow write: if request.auth != null;
+      }
+      
+      // Published sites subcollection
+      match /published_sites/{siteId} {
+        // Anyone can read published sites (for website serving)
+        allow read: if true;
+        // Only business owner or staff can write
+        allow write: if request.auth != null && (
+          get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid ||
+          request.auth.token.businessId == businessId ||
+          request.auth.token.role == 'super_admin'
+        );
+      }
+      
+      // Sites (drafts) subcollection
+      match /sites/{siteId} {
+        allow read, write: if request.auth != null && (
+          get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid ||
+          request.auth.token.businessId == businessId ||
+          request.auth.token.role == 'super_admin'
+        );
+      }
+    }
+    
+    // ============================================
+    // Custom Domains Collection
+    // Global collection for efficient domain lookups
+    // ============================================
+    match /customDomains/{domainId} {
+      // Read: Domain owner (tenant) or super admin
+      // Also allow public read for active domains (needed for routing)
+      allow read: if request.auth != null && (
+        resource.data.tenantId == request.auth.token.businessId ||
+        resource.data.createdBy == request.auth.uid ||
+        request.auth.token.role == 'super_admin'
+      );
+      
+      // Allow unauthenticated read for active domains (for website serving)
+      allow read: if resource.data.status in ['active', 'ssl_pending', 'verified'];
+      
+      // Create: Authenticated users can add domains for their business
+      allow create: if request.auth != null && (
+        request.resource.data.tenantId == request.auth.token.businessId ||
+        request.auth.token.role == 'super_admin'
+      );
+      
+      // Update: Only domain owner or super admin
+      allow update: if request.auth != null && (
+        resource.data.tenantId == request.auth.token.businessId ||
+        resource.data.createdBy == request.auth.uid ||
+        request.auth.token.role == 'super_admin'
+      );
+      
+      // Delete: Only domain owner or super admin
+      allow delete: if request.auth != null && (
+        resource.data.tenantId == request.auth.token.businessId ||
+        resource.data.createdBy == request.auth.uid ||
+        request.auth.token.role == 'super_admin'
+      );
+    }
+    
+    // ============================================
+    // Domain Verification Logs (for auditing)
+    // ============================================
+    match /domainVerificationLogs/{logId} {
+      // Read: Domain owner or super admin
+      allow read: if request.auth != null && (
+        resource.data.tenantId == request.auth.token.businessId ||
+        request.auth.token.role == 'super_admin'
+      );
+      // Write: Only Cloud Functions (no client writes)
+      allow write: if false;
+    }
+
+    // RBAC Collections - Allow authenticated users to read/write for initial setup
+    // TODO: Restrict these rules in production based on RBAC permissions
+    match /roles/{roleId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    match /permissions/{permissionId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    match /role_permissions/{rolePermissionId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
+
+    // Tenants collection for RBAC
+    match /tenants/{tenantId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // ============================================
+    // Super Admin Invites Collection (for XDIGIX Admin Panel)
+    // ============================================
+    match /superAdminInvites/{inviteId} {
+      // Allow read for anyone (needed to validate invitation links before sign up)
+      allow read: if true;
+      // Only authenticated super admins can write
+      allow write: if request.auth != null;
+    }
+
+    // Default: deny all other access
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

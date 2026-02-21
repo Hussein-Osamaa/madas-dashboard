@@ -1,0 +1,2978 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory - MADAS Dashboard</title>
+    <!-- Remove local Tailwind CSS build -->
+    <!-- <link href="../css/tailwind-output.css" rel="stylesheet" /> -->
+    <!-- Add Tailwind Play CDN for development -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/assets/img/madas-logo.png">
+
+    <!-- Firebase Permission Checker -->
+    <script type="module" src="../../js/firebase-permission-check.js"></script>
+
+    <!-- External CSS for better performance -->
+    <link rel="stylesheet" href="../../css/products-page.css">
+
+    <script>
+
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 1024 &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+    </script>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 z-50 flex items-center justify-center"
+        style="background-color: var(--card-bg);">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--madas-primary)] mx-auto mb-4">
+            </div>
+            <p class="text-[var(--madas-primary)] font-medium">Loading Products...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <div>
+                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                        <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                            Loading Plan...
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <a href="/dashboard"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/pages/Orders/orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                    <a href="/pages/pos.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">point_of_sale</span>
+                        <span>POS</span>
+                    </a>
+
+                    <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button
+                            class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all"
+                            id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200"
+                                id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="/pages/Inventory/products.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="/pages/Inventory/collections.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="/pages/Inventory/product-reviews.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="/pages/Inventory/low-stock.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/Customers/Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+
+                    <!-- E-commerce Dropdown -->
+                    <div class="ecommerce-dropdown">
+                        <button id="ecommerce-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">storefront</span>
+                                <span>E-commerce</span>
+                            </div>
+                            <span class="material-icons dropdown-arrow transition-transform duration-200"
+                                id="ecommerce-arrow">expand_more</span>
+                        </button>
+                        <div id="ecommerce-dropdown-menu" class="ecommerce-dropdown-menu hidden">
+                            <a href="/pages/Web-builder/theme-library.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">web</span>
+                                <span>Website Builder</span>
+                            </a>
+                            <a href="/pages/shoes-store.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">shopping_bag</span>
+                                <span>Shoes Store</span>
+                            </a>
+                            <a href="/pages/advanced/domains.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">language</span>
+                                <span>Custom Domains</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Finance Dropdown -->
+                    <div class="finance-dropdown">
+                        <button id="finance-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">account_balance_wallet</span>
+                                <span>Finance</span>
+                            </div>
+                            <span
+                                class="material-icons dropdown-arrow transition-transform duration-200">expand_more</span>
+                        </button>
+                        <div id="finance-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/Finance/finance.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">account_balance</span>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/pages/Finance/expenses.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">receipt</span>
+                                <span>Expenses</span>
+                            </a>
+                            <a href="/pages/Finance/analytics.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">analytics</span>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="/pages/Finance/reports.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">assessment</span>
+                                <span>Reports</span>
+                            </a>
+                            <a href="/pages/Finance/insights.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">lightbulb</span>
+                                <span>Insights</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/settings/general-settings.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">settings</span>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>New Order</span>
+                            </button>
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add Product</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+            <div class="p-6 lg:p-8">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Inventory Management</h2>
+                            <p class="text-gray-600">Manage your product inventory and stock levels</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 sm:gap-2 md:gap-2 lg:gap-2 xl:gap-2 w-full sm:w-auto">
+                            <div class="flex items-center space-x-4 mb-2 sm:mb-0">
+                                <!-- Select All Checkbox -->
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" id="selectAllCheckbox"
+                                        class="w-4 h-4 text-[var(--madas-primary)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--madas-accent)] focus:ring-2">
+                                    <span class="text-sm font-medium text-gray-700">Select All</span>
+                                </label>
+                                <!-- Selected Count -->
+                                <span id="selectedCount" class="text-sm text-gray-500">0 selected</span>
+                            </div>
+                            <button id="addProductBtn"
+                                class="bg-[var(--madas-primary)] text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2 w-full sm:w-auto text-sm sm:text-base">
+                                <span class="material-icons text-base sm:text-lg">add</span>
+                                <span>Add Product</span>
+                            </button>
+                            <button id="uploadExcelBtn"
+                                class="bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 w-full sm:w-auto text-sm sm:text-base">
+                                <span class="material-icons text-base sm:text-lg">upload_file</span>
+                                <span>Upload Excel</span>
+                            </button>
+                            <button id="downloadExcelBtn"
+                                class="bg-green-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 w-full sm:w-auto text-sm sm:text-base">
+                                <span class="material-icons text-base sm:text-lg">download</span>
+                                <span>Download Excel</span>
+                            </button>
+                            <button id="printProductsBtn"
+                                class="bg-[var(--madas-accent)] text-[var(--madas-primary)] px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-yellow-400 transition-colors flex items-center space-x-2 w-full sm:w-auto text-sm sm:text-base">
+                                <span class="material-icons text-base sm:text-lg">print</span>
+                                <span>Print Selected</span>
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Storage Selector -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)]">Storage Management</h3>
+                        <button id="addStorageBtn"
+                            class="bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                            <span class="material-icons text-sm">add</span>
+                            <span>Add Storage</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex items-center space-x-2">
+                            <label class="text-sm font-medium text-gray-700">Current Storage:</label>
+                            <select id="storageSelector"
+                                class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]">
+                                <option value="all">All Storages</option>
+                                <!-- Storage options will be loaded here -->
+                            </select>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-600">Total Storages:</span>
+                            <span id="total-storages" class="text-sm font-semibold text-[var(--madas-primary)]">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Products</p>
+                                <p id="total-products" class="text-2xl font-bold text-[var(--madas-primary)]">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-blue-600">inventory_2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-gray-100 cursor-pointer"
+                        id="lowStockCard" onclick="openLowStockPage()">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Low Stock</p>
+                                <p id="low-stock" class="text-2xl font-bold text-orange-600">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-orange-600">warning</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Out of Stock</p>
+                                <p id="out-of-stock" class="text-2xl font-bold text-red-600">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-red-600">cancel</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Value</p>
+                                <p id="total-value" class="text-2xl font-bold text-[var(--madas-primary)]">$0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-green-600">attach_money</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+                    <div class="flex flex-col lg:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="material-icons text-gray-400">search</span>
+                                </span>
+                                <input type="text" id="searchInput"
+                                    placeholder="Search products by name, category, or SKU..."
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <select id="categoryFilter"
+                                class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]">
+                                <option value="">All Categories</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="clothing">Clothing</option>
+                                <option value="books">Books</option>
+                                <option value="home">Home & Garden</option>
+                            </select>
+                            <select id="stockFilter"
+                                class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]">
+                                <option value="">All Stock</option>
+                                <option value="in-stock">In Stock</option>
+                                <option value="low-stock">Low Stock</option>
+                                <option value="out-of-stock">Out of Stock</option>
+                            </select>
+                            <button id="lastPieceBtn"
+                                class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2">
+                                <span class="material-icons text-sm">warning</span>
+                                <span>Last</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="productsGrid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden file input for Excel upload -->
+    <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+
+    <!-- Add JsBarcode CDN for barcode generation -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js" defer></script>
+    <!-- Add SheetJS CDN for Excel import -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+
+    <!-- Add ExcelJS for styled Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" defer></script>
+
+    <!-- Add Storage Modal -->
+    <div id="addStorageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <form id="addStorageForm" class="space-y-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-[var(--madas-primary)]">Add New Storage</h3>
+                    <button type="button" id="closeStorageModalBtn" class="text-gray-500 hover:text-gray-700">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Storage Name *</label>
+                        <input type="text" id="storageName" placeholder="Enter storage name" required
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Storage Type</label>
+                        <select id="storageType"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent">
+                            <option value="warehouse">Warehouse</option>
+                            <option value="store">Store</option>
+                            <option value="showroom">Showroom</option>
+                            <option value="office">Office</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <input type="text" id="storageLocation" placeholder="Enter storage location"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="storageDescription" placeholder="Enter storage description"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent"
+                            rows="3"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Capacity (Optional)</label>
+                        <input type="number" id="storageCapacity" placeholder="Enter storage capacity" min="0"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button type="button" id="cancelStorageBtn"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="saveStorageBtn"
+                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                        Save Storage
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <form id="addProductForm" class="space-y-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-[var(--madas-primary)]" id="modalTitle">Add New Product</h3>
+                    <button type="button" id="closeAddModalBtn" class="text-gray-500 hover:text-gray-700">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                        <input type="text" id="productName" placeholder="Enter product name" required
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="productDescription" placeholder="Enter product description"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent"
+                            rows="3"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cost Price *</label>
+                        <input type="number" id="productPrice" placeholder="0.00" min="0" step="0.01" required
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price (Optional)</label>
+                        <input type="number" id="productSellingPrice" placeholder="0.00" min="0" step="0.01"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                        <p class="text-xs text-gray-500 mt-1">Leave empty to use cost price as selling price</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                        <input type="text" id="productSKU" placeholder="Auto-generated when you type product name"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Storage Location</label>
+                        <select id="productStorage"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent">
+                            <option value="">Select Storage</option>
+                            <!-- Storage options will be loaded here -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Low Stock Alert</label>
+                        <input type="number" id="productLowStock" placeholder="5" min="0"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product Images
+                            (Optional)</label>
+                        <div id="imageUploadArea"
+                            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[var(--madas-primary)] transition-colors cursor-pointer">
+                            <div id="imagePreview" class="hidden mb-4">
+                                <div class="grid grid-cols-2 gap-2" id="imageGrid"></div>
+                            </div>
+                            <div id="imageUploadPlaceholder">
+                                <span class="material-icons text-4xl text-gray-400 mb-2">cloud_upload</span>
+                                <p class="text-gray-600 mb-2">Click to upload product images</p>
+                                <p class="text-xs text-gray-500">Supports JPG, PNG, GIF (Max 5MB each)</p>
+                            </div>
+                            <input type="file" id="imageFileInput" multiple accept="image/*" class="hidden">
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-2" id="imageActions" style="display: none;">
+                            <button type="button" id="addMoreImages"
+                                class="text-sm text-[var(--madas-primary)] hover:text-[#1f3c19] flex items-center space-x-1">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add More</span>
+                            </button>
+                            <button type="button" id="clearAllImages"
+                                class="text-sm text-red-600 hover:text-red-800 flex items-center space-x-1">
+                                <span class="material-icons text-sm">clear</span>
+                                <span>Clear All</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center space-x-3">
+                            <input type="checkbox" id="unlimitedStock"
+                                class="w-4 h-4 text-[var(--madas-primary)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--madas-accent)] focus:ring-2">
+                            <span class="text-sm font-medium text-gray-700">Unlimited Stock</span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1 ml-7">Check this if the product has unlimited stock
+                            (e.g.,
+                            digital products, services)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Main Barcode</label>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="mainBarcode"
+                                class="border border-gray-300 px-3 py-2 rounded-lg w-40 bg-gray-50" readonly />
+                            <svg id="mainBarcodeSvg" class="border p-1 bg-white"></svg>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Size Variants</label>
+                        <div id="sizeVariantsList" class="space-y-2"></div>
+                        <button type="button" id="addSizeBtn" onclick="addSizeVariant()"
+                            class="mt-2 bg-[var(--madas-primary)] text-white px-3 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                            <span class="material-icons text-sm">add</span>
+                            <span>Add Size</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button type="button" id="cancelAddBtn"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="saveProductBtn"
+                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                        Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        /*
+         * FIREBASE STORAGE INTEGRATION FOR PRODUCT IMAGES
+         * ================================================
+         * 
+         * This file now includes full Firebase Storage integration for product images:
+         * 
+         * Features:
+         * - Upload multiple images to Firebase Storage
+         * - Automatic image organization by business ID
+         * - Visual upload status indicators (Pending/Uploaded)
+         * - Image deletion from Firebase Storage
+         * - Integration with product saving process
+         * - Support for editing existing products with images
+         * 
+         * Storage Structure:
+         * products/{businessId}/{productId}_{index}_{timestamp}.{extension}
+         * 
+         * Usage:
+         * 1. Select images using the upload area
+         * 2. Images show as "Pending" until product is saved
+         * 3. When saving product, images are uploaded to Firebase Storage
+         * 4. Product data includes array of image URLs and paths
+         * 5. Images can be deleted individually or all at once
+         * 
+         * Testing:
+         * - Use window.testFirebaseStorage() in console to test connection
+         * - Check browser console for detailed upload logs
+         */
+
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, getDocs, addDoc, query, where, doc, getDoc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { initializeProducts } from '../../js/products-fixed.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:70470e2204065b4590583d3"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // Global error handler for Firebase connection issues
+        window.addEventListener('unhandledrejection', (event) => {
+            if (event.reason && event.reason.message && event.reason.message.includes('Firestore')) {
+                console.error('🚨 Unhandled Firebase error:', event.reason);
+                showError('Database connection error. Please refresh the page.');
+                event.preventDefault();
+            }
+        });
+
+        // Add connection monitoring (optimized - checks every 5 minutes)
+        const monitorConnection = () => {
+            const connectionCheck = setInterval(async () => {
+                try {
+                    // Simple connection test - only check if we have a business context
+                    if (window.currentBusinessId) {
+                        const testQuery = query(collection(db, "businesses", window.currentBusinessId, "products"));
+                        await getDocs(testQuery);
+                    }
+                } catch (error) {
+                    // Only show error if it's a real connection issue, not permission issues
+                    if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+                        console.warn('⚠️ Connection monitoring detected real connection issues:', error);
+                        clearInterval(connectionCheck);
+                        showError('Connection lost. Please refresh the page.');
+                    } else {
+                        // Log but don't show error for permission or other issues
+                        console.log('Connection check completed (non-critical error):', error.message);
+                    }
+                }
+            }, 300000); // Check every 5 minutes (300 seconds) - optimized for performance
+        };
+
+        // Global variables
+        let currentUser = null;
+        let connectionMonitoringStarted = false;
+
+        // Error display function
+        function showError(message) {
+            console.error('❌ Error:', message);
+
+            // Create or update error display
+            let errorDiv = document.getElementById('connection-error');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.id = 'connection-error';
+                errorDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50';
+                errorDiv.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="material-icons text-red-500 mr-2">error</span>
+                        <span id="error-message">${message}</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-red-500 hover:text-red-700">
+                            <span class="material-icons text-sm">close</span>
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(errorDiv);
+            } else {
+                const errorMessageElement = document.getElementById('error-message');
+                if (errorMessageElement) {
+                    errorMessageElement.textContent = message;
+                }
+            }
+
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (errorDiv && errorDiv.parentNode) {
+                    errorDiv.remove();
+                }
+            }, 10000);
+        }
+
+        // Update user info in header
+        function updateUserInfo(user) {
+            const userNameElement = document.getElementById('user-name');
+            const userEmailElement = document.getElementById('user-email');
+            const userInitialElement = document.getElementById('user-initial');
+
+            if (user) {
+                const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+                const email = user.email || 'No email';
+                const initial = displayName.charAt(0).toUpperCase();
+
+                if (userNameElement) userNameElement.textContent = displayName;
+                if (userEmailElement) userEmailElement.textContent = email;
+                if (userInitialElement) userInitialElement.textContent = initial;
+            } else {
+                if (userNameElement) userNameElement.textContent = 'Guest';
+                if (userEmailElement) userEmailElement.textContent = 'guest@example.com';
+                if (userInitialElement) userInitialElement.textContent = 'G';
+            }
+        }
+
+        // Auth state change listener with multi-tenancy
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+
+                // Add connection retry logic for Firestore
+                let retryCount = 0;
+                const maxRetries = 3;
+
+                const attemptFirestoreConnection = async () => {
+                    try {
+                        // Test Firestore connection with a simple query
+                        const testQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                        const testSnapshot = await getDocs(testQuery);
+                        console.log('✅ Firestore connection successful');
+                        return true;
+                    } catch (error) {
+                        console.warn(`⚠️ Firestore connection attempt ${retryCount + 1} failed:`, error);
+                        retryCount++;
+
+                        if (retryCount < maxRetries) {
+                            console.log(`🔄 Retrying Firestore connection in 2 seconds... (${retryCount}/${maxRetries})`);
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                            return attemptFirestoreConnection();
+                        } else {
+                            console.error('❌ Firestore connection failed after all retries');
+                            showError('Database connection failed. Please refresh the page or try again later.');
+                            // Don't return false immediately, let the user try to continue
+                            return false;
+                        }
+                    }
+                };
+
+                // Test connection before proceeding
+                const connectionSuccess = await attemptFirestoreConnection();
+                if (!connectionSuccess) {
+                    // Show error but don't redirect to login for connection issues
+                    showError('Database connection failed. Some features may not work properly. Please refresh the page to try again.');
+                    return;
+                }
+
+                // ============================================
+                // TENANT ISOLATION: Detect Business Context
+                // ============================================
+
+                // Find user's business (check if owner)
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                let businessSnapshot;
+
+                try {
+                    businessSnapshot = await getDocs(businessesQuery);
+                } catch (error) {
+                    console.error('❌ Error querying businesses:', error);
+                    showError('Failed to load business data. Please check your connection and try again.');
+                    // Don't redirect to login for business query errors
+                    return;
+                }
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    window.currentBusinessId = businessDoc.id;
+                    window.currentBusinessData = businessDoc.data();
+                    window.currentUserRole = 'owner';
+
+                    console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                    console.log('🏢 Business ID:', window.currentBusinessId);
+                    console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    let allBusinesses;
+                    try {
+                        allBusinesses = await getDocs(collection(db, "businesses"));
+                    } catch (error) {
+                        console.error('❌ Error querying all businesses:', error);
+                        showError('Failed to load business data. Please check your connection and try again.');
+                        // Don't redirect to login for business query errors
+                        return;
+                    }
+
+                    let foundBusiness = false;
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                        let staffDoc;
+
+                        try {
+                            staffDoc = await getDoc(staffRef);
+                        } catch (error) {
+                            console.warn(`⚠️ Error checking staff for business ${businessId}:`, error);
+                            continue; // Skip this business and try the next one
+                        }
+
+                        if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                            window.currentBusinessId = businessId;
+                            window.currentBusinessData = businessDoc.data();
+                            window.currentUserRole = staffData.role;
+                            window.currentUserPermissions = staffData.permissions;
+
+                            console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                            console.log('🏢 Business ID:', window.currentBusinessId);
+                            console.log('👤 Role:', window.currentUserRole);
+
+                            foundBusiness = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundBusiness) {
+                        console.warn("❌ User not associated with any business. Redirecting to no-access.");
+                        window.location.href = "/no-access.html";
+                        return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || window.currentBusinessData?.owner?.name,
+                    role: window.currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"],
+                        inventory: ["view"] // Default inventory permission
+                    };
+                }
+
+                // Auto-approve super admin users
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    userData.role = "super-admin";
+                    userData.approved = true;
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"],
+                        admin: ["view", "manage_all_businesses"]
+                    };
+                }
+
+                console.log('✅ User data created for products page:', {
+                    email: userData.email,
+                    role: userData.role,
+                    businessId: window.currentBusinessId,
+                    approved: userData.approved
+                });
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                currentUser = user;
+                const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+
+                // Safely update UI elements if they exist
+                const userNameElement = document.getElementById("user-name");
+                const userEmailElement = document.getElementById("user-email");
+
+                if (userNameElement) {
+                    userNameElement.textContent = username;
+                }
+                if (userEmailElement) {
+                    userEmailElement.textContent = user.email;
+                }
+
+                // Update business name and plan
+                const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                const planType = window.currentBusinessData?.plan?.type || "basic";
+                const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+                // Safely update business name and user initial
+                const businessNameElement = document.getElementById("business-name");
+                const userInitialElement = document.getElementById("user-initial");
+
+                if (businessNameElement) {
+                    businessNameElement.textContent = businessName;
+                }
+                if (userInitialElement) {
+                    userInitialElement.textContent = username.charAt(0).toUpperCase();
+                }
+
+                // Update plan badge
+                const planBadge = document.getElementById("plan-badge");
+                if (planBadge) {
+                    planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                    // Set plan badge color based on plan type
+                    if (planType === 'enterprise') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    } else if (planType === 'professional') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                    } else {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                    }
+
+                    // Add trial badge if in trial
+                    if (planStatus === 'trial') {
+                        planBadge.textContent += ' (Trial)';
+                    }
+                }
+
+                // Initialize products with business context
+                await initializeProducts();
+
+                // Start connection monitoring only after successful initialization
+                if (!connectionMonitoringStarted) {
+                    setTimeout(() => {
+                        monitorConnection();
+                        connectionMonitoringStarted = true;
+                    }, 5000); // Wait 5 seconds after initialization
+                }
+
+                // Hide loading screen after everything is loaded
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error("❌ Authentication error:", error);
+                // Hide loading screen on error
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
+
+                // Only redirect to login for critical authentication errors
+                // Don't redirect for network issues or temporary errors
+                if (error.message && (
+                    error.message.includes('permission-denied') ||
+                    error.message.includes('unauthenticated') ||
+                    error.message.includes('user-not-found') ||
+                    error.message.includes('invalid-credential')
+                )) {
+                    console.log("Critical auth error, redirecting to login");
+                    window.location.href = "/login";
+                } else {
+                    console.log("Non-critical error, showing user-friendly message");
+                    showError("Unable to load products. Please check your connection and try refreshing the page.");
+                }
+            }
+        });
+
+        // Logout functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    try {
+                        await signOut(auth);
+                        window.location.href = '/login';
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                        alert('Error signing out. Please try again.');
+                    }
+                });
+            }
+
+            // Profile button
+            const profileBtn = document.getElementById('profile-btn');
+            if (profileBtn) {
+                profileBtn.addEventListener('click', () => {
+                    window.location.href = './profile.html';
+                });
+            }
+        });
+
+        // Initialize products functionality after auth is ready
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait a bit for auth to initialize
+            setTimeout(async () => {
+                await initializeProducts();
+            }, 100);
+        });
+
+        // Finance Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+            const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+            const dropdownArrow = document.querySelector(".finance-arrow");
+
+            if (financeDropdownBtn && financeDropdownMenu) {
+                financeDropdownBtn.addEventListener("click", () => {
+                    const isOpen = financeDropdownMenu.classList.contains("show");
+
+                    if (isOpen) {
+                        financeDropdownMenu.classList.remove("show");
+                        financeDropdownMenu.classList.add("hidden");
+                        if (dropdownArrow) dropdownArrow.classList.remove("rotate");
+                    } else {
+                        financeDropdownMenu.classList.remove("hidden");
+                        financeDropdownMenu.classList.add("show");
+                        if (dropdownArrow) dropdownArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                        financeDropdownMenu.classList.remove("show");
+                        financeDropdownMenu.classList.add("hidden");
+                        if (dropdownArrow) if (dropdownArrow) if (dropdownArrow) dropdownArrow.classList.remove("rotate");
+                    }
+                });
+            }
+
+            // Notification Dropdown functionality
+            const notificationBell = document.getElementById("notificationBell");
+            const notificationDropdown = document.getElementById("notificationDropdown");
+            const markAllReadBtn = document.getElementById("markAllReadBtn");
+
+            if (notificationBell && notificationDropdown) {
+                notificationBell.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const isOpen = notificationDropdown.classList.contains("show");
+
+                    if (isOpen) {
+                        notificationDropdown.classList.remove("show");
+                    } else {
+                        notificationDropdown.classList.add("show");
+                        loadNotifications();
+                    }
+                });
+
+                // Close notification dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                        notificationDropdown.classList.remove("show");
+                    }
+                });
+
+                // Mark all as read functionality
+                if (markAllReadBtn) {
+                    markAllReadBtn.addEventListener("click", () => {
+                        markAllNotificationsAsRead();
+                    });
+
+                }
+            }
+        });
+
+        // Notification system functions
+        async function loadNotifications() {
+            try {
+                // Sample notifications - in a real app, these would come from Firestore
+                const sampleNotifications = [
+                    {
+                        id: 1,
+                        title: "Low Stock Alert",
+                        message: "Product 'Nike Air Max' is running low on stock (5 items remaining)",
+                        type: "warning",
+                        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+                        read: false,
+                        icon: "warning"
+                    },
+                    {
+                        id: 2,
+                        title: "New Order Received",
+                        message: "Order #ORD-2024-001 has been placed by customer John Doe",
+                        type: "info",
+                        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+                        read: false,
+                        icon: "receipt_long"
+                    },
+                    {
+                        id: 3,
+                        title: "Product Added",
+                        message: "New product 'Adidas Ultraboost' has been added to inventory",
+                        type: "success",
+                        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+                        read: true,
+                        icon: "add_circle"
+                    },
+                    {
+                        id: 4,
+                        title: "System Update",
+                        message: "System maintenance completed successfully",
+                        type: "info",
+                        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
+                        read: true,
+                        icon: "system_update"
+                    }
+                ];
+
+                displayNotifications(sampleNotifications);
+                updateNotificationCount(sampleNotifications.filter(n => !n.read).length);
+            } catch (error) {
+                console.error("Error loading notifications:", error);
+                displayError("Failed to load notifications");
+            }
+        }
+
+        function displayNotifications(notifications) {
+            const notificationList = document.getElementById("notificationList");
+
+            if (!notifications || notifications.length === 0) {
+                notificationList.innerHTML = `
+                    <div class="p-4 text-center text-gray-500">
+                        <span class="material-icons text-4xl text-gray-300 mb-2">notifications_none</span>
+                        <p>No notifications</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const notificationsHtml = notifications.map(notification => `
+                <div class="notification-item ${notification.read ? '' : 'unread'}" data-id="${notification.id}">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <span class="material-icons text-lg ${getNotificationIconColor(notification.type)}">
+                                ${notification.icon}
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900">${notification.title}</p>
+                            <p class="text-sm text-gray-600 mt-1">${notification.message}</p>
+                            <p class="text-xs text-gray-400 mt-2">${formatTimestamp(notification.timestamp)}</p>
+                        </div>
+                        ${!notification.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            notificationList.innerHTML = notificationsHtml;
+
+            // Add click handlers for notification items
+            notificationList.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const notificationId = item.dataset.id;
+                    markNotificationAsRead(notificationId);
+                    item.classList.remove('unread');
+                    item.querySelector('.w-2.h-2')?.remove();
+                });
+            });
+        }
+
+        function getNotificationIconColor(type) {
+            switch (type) {
+                case 'warning': return 'text-orange-500';
+                case 'error': return 'text-red-500';
+                case 'success': return 'text-green-500';
+                case 'info':
+                default: return 'text-blue-500';
+            }
+        }
+
+        function formatTimestamp(timestamp) {
+            const now = new Date();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / (1000 * 60));
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            if (minutes < 60) {
+                return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            } else if (hours < 24) {
+                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            } else {
+                return `${days} day${days !== 1 ? 's' : ''} ago`;
+            }
+        }
+
+        function updateNotificationCount(count) {
+            const notificationCount = document.getElementById("notificationCount");
+            if (notificationCount) {
+                if (count > 0) {
+                    notificationCount.textContent = count > 99 ? '99+' : count;
+                    notificationCount.style.display = 'flex';
+                } else {
+                    notificationCount.style.display = 'none';
+                }
+            }
+        }
+
+        function markNotificationAsRead(notificationId) {
+            // In a real app, this would update the notification in Firestore
+            console.log(`Marking notification ${notificationId} as read`);
+            // Update the notification count
+            const notificationCountElement = document.getElementById("notificationCount");
+            if (notificationCountElement) {
+                const currentCount = parseInt(notificationCountElement.textContent) || 0;
+                updateNotificationCount(Math.max(0, currentCount - 1));
+            }
+        }
+
+        function markAllNotificationsAsRead() {
+            // In a real app, this would update all notifications in Firestore
+            console.log("Marking all notifications as read");
+            updateNotificationCount(0);
+
+            // Update UI
+            const notificationList = document.getElementById("notificationList");
+            notificationList.querySelectorAll('.notification-item').forEach(item => {
+                item.classList.remove('unread');
+                item.querySelector('.w-2.h-2')?.remove();
+            });
+        }
+
+        function displayError(message) {
+            const notificationList = document.getElementById("notificationList");
+            notificationList.innerHTML = `
+                <div class="p-4 text-center text-red-500">
+                    <span class="material-icons text-4xl text-red-300 mb-2">error</span>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        // Last Piece button
+        const lastPieceBtn = document.getElementById("lastPieceBtn");
+        if (lastPieceBtn) {
+            lastPieceBtn.addEventListener("click", () => {
+                window.location.href = "./fixed-last-piece.html";
+            });
+        }
+
+        // Dark mode toggle logic
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+
+            // Safely update dark icon if it exists
+            if (darkIcon) {
+                if (on) {
+                    darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+                } else {
+                    darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z"/>';
+                }
+            }
+        }
+        if (darkToggle) {
+            darkToggle.addEventListener('click', () => {
+                setDarkMode(!document.body.classList.contains('dark-mode'));
+            });
+        }
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+
+        // E-commerce Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+            const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+            const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+            if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+                ecommerceDropdownBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                    if (isOpen) {
+                        ecommerceDropdownMenu.classList.remove("show");
+                        ecommerceDropdownMenu.classList.add("hidden");
+                        if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                    } else {
+                        ecommerceDropdownMenu.classList.remove("hidden");
+                        ecommerceDropdownMenu.classList.add("show");
+                        if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!ecommerceDropdownBtn.contains(e.target) && !ecommerceDropdownMenu.contains(e.target)) {
+                        ecommerceDropdownMenu.classList.remove("show");
+                        ecommerceDropdownMenu.classList.add("hidden");
+                        if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                    }
+                });
+            }
+        });
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+        });
+
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Initialize foundMatch variable
+            let foundMatch = false;
+
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+
+            // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/dashboard"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+
+                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+
+                // Skip Dashboard link - already handled above
+                if (href === '/dashboard') return;
+
+                // Handle other links with normal matching
+                // Check if current path matches this specific link
+                if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                    link.classList.add('active');
+                    foundMatch = true;
+                    console.log('Exact match found:', href);
+                }
+                // Check page name matching for other links
+                else if (!foundMatch) {
+                    const linkPageName = href.split('/').pop().replace('.html', '');
+                    if (currentPageName === linkPageName ||
+                        (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                        (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                        link.classList.add('active');
+                        foundMatch = true;
+                        console.log('Page name match found:', href, 'for page:', currentPageName);
+                    }
+                }
+            });
+
+            // Special cases for specific pages with dropdown management
+            if (currentPath.includes('collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Collections page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for collections');
+                    }
+                }
+            }
+
+            if (currentPath.includes('products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Products page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for products');
+                    }
+                }
+            }
+
+            if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Low Stock page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for low-stock');
+                    }
+                }
+            }
+
+            if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reviews page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for reviews');
+                    }
+                }
+            }
+
+            if (currentPath.includes('orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Orders page detected');
+                }
+            }
+
+            if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Customer page detected');
+                }
+            }
+
+            if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+                const adminLink = document.querySelector('a[href*="Admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Admin page detected');
+                }
+            }
+
+            if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Settings page detected');
+                }
+            }
+
+            if (currentPath.includes('finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Finance page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for finance page');
+                    }
+                }
+            }
+
+            if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Analytics page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for analytics');
+                    }
+                }
+            }
+
+            if (currentPath.includes('reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reports page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for reports');
+                    }
+                }
+            }
+
+            if (currentPath.includes('insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Insights page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for insights');
+                    }
+                }
+            }
+
+            if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Expenses page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for expenses');
+                    }
+                }
+            }
+
+            if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('POS page detected');
+                }
+            }
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+
+        // Image upload functionality
+        let uploadedImages = [];
+
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('🔧 Setting up image upload functionality...');
+
+            const imageUploadArea = document.getElementById('imageUploadArea');
+            const imageFileInput = document.getElementById('imageFileInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const imageGrid = document.getElementById('imageGrid');
+            const imageUploadPlaceholder = document.getElementById('imageUploadPlaceholder');
+            const imageActions = document.getElementById('imageActions');
+            const addMoreImages = document.getElementById('addMoreImages');
+            const clearAllImages = document.getElementById('clearAllImages');
+            const unlimitedStockCheckbox = document.getElementById('unlimitedStock');
+            const productLowStock = document.getElementById('productLowStock');
+
+            console.log('Image upload elements found:', {
+                imageUploadArea: !!imageUploadArea,
+                imageFileInput: !!imageFileInput,
+                imagePreview: !!imagePreview,
+                imageGrid: !!imageGrid
+            });
+
+            // Image upload area click handler
+            if (imageUploadArea) {
+                console.log('✅ Adding click handler to image upload area');
+                imageUploadArea.addEventListener('click', (e) => {
+                    console.log('🖱️ Image upload area clicked');
+                    e.preventDefault();
+                    if (imageFileInput) {
+                        imageFileInput.click();
+                    } else {
+                        console.error('❌ Image file input not found');
+                    }
+                });
+
+                // Drag and drop functionality
+                imageUploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    imageUploadArea.classList.add('dragover');
+                });
+
+                imageUploadArea.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    imageUploadArea.classList.remove('dragover');
+                });
+
+                imageUploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    imageUploadArea.classList.remove('dragover');
+
+                    const files = Array.from(e.dataTransfer.files);
+                    handleFiles(files);
+                });
+            }
+
+            // File input change handler
+            if (imageFileInput) {
+                console.log('✅ Adding change handler to file input');
+                imageFileInput.addEventListener('change', (e) => {
+                    console.log('📁 File input changed, files selected:', e.target.files.length);
+                    handleImageUpload(e);
+                });
+            } else {
+                console.error('❌ Image file input not found');
+            }
+
+            // Add more images button
+            if (addMoreImages) {
+                addMoreImages.addEventListener('click', () => {
+                    imageFileInput.click();
+                });
+            }
+
+            // Clear all images button
+            if (clearAllImages) {
+                clearAllImages.addEventListener('click', clearAllImagesHandler);
+            }
+
+            // Unlimited stock checkbox handler
+            if (unlimitedStockCheckbox) {
+                unlimitedStockCheckbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        productLowStock.disabled = true;
+                        productLowStock.value = '';
+                        productLowStock.placeholder = 'Unlimited stock enabled';
+                    } else {
+                        productLowStock.disabled = false;
+                        productLowStock.placeholder = '5';
+                    }
+                });
+            }
+        });
+
+        function handleImageUpload(event) {
+            const files = Array.from(event.target.files);
+            handleFiles(files);
+
+            // Clear the input so the same file can be selected again
+            event.target.value = '';
+        }
+
+
+        function displayImages() {
+            console.log('🖼️ displayImages called with uploadedImages:', uploadedImages);
+            console.log('🖼️ uploadedImages length:', uploadedImages.length);
+
+            const imagePreview = document.getElementById('imagePreview');
+            const imageGrid = document.getElementById('imageGrid');
+            const imageUploadPlaceholder = document.getElementById('imageUploadPlaceholder');
+            const imageActions = document.getElementById('imageActions');
+
+            console.log('🖼️ DOM elements found:', {
+                imagePreview: !!imagePreview,
+                imageGrid: !!imageGrid,
+                imageUploadPlaceholder: !!imageUploadPlaceholder,
+                imageActions: !!imageActions
+            });
+
+            if (uploadedImages.length > 0) {
+                console.log('🖼️ Showing images, count:', uploadedImages.length);
+                imagePreview.classList.remove('hidden');
+                imageUploadPlaceholder.style.display = 'none';
+                imageActions.style.display = 'flex';
+
+                imageGrid.innerHTML = '';
+                uploadedImages.forEach((image, index) => {
+                    console.log(`🖼️ Rendering image ${index}:`, image);
+                    const imageItem = document.createElement('div');
+                    imageItem.className = 'image-item relative';
+
+                    // Upload status indicator
+                    let statusIndicator;
+                    if (image.isExisting) {
+                        statusIndicator = '<div class="status-indicator existing"><span class="material-icons">photo_library</span><span>Existing</span></div>';
+                    } else if (image.uploaded) {
+                        statusIndicator = '<div class="status-indicator uploaded"><span class="material-icons">cloud_done</span><span>Uploaded</span></div>';
+                    } else {
+                        statusIndicator = '<div class="status-indicator pending"><span class="material-icons">schedule</span><span>Pending</span></div>';
+                    }
+
+                    imageItem.innerHTML = `
+                        <img src="${image.data}" alt="${image.name}" class="w-full h-24 object-cover rounded-lg">
+                        <button type="button" onclick="removeImage(${index})" 
+                            class="remove-image-btn">
+                            <span class="material-icons text-sm">close</span>
+                        </button>
+                        ${statusIndicator}
+                        <p class="text-xs text-gray-600 mt-1 truncate">${image.name}</p>
+                    `;
+                    imageGrid.appendChild(imageItem);
+                });
+            } else {
+                console.log('🖼️ No images to show, hiding preview');
+                imagePreview.classList.add('hidden');
+                imageUploadPlaceholder.style.display = 'block';
+                imageActions.style.display = 'none';
+            }
+        }
+
+        async function removeImage(index) {
+            const image = uploadedImages[index];
+
+            if (!image) {
+                console.error('Image not found at index:', index);
+                return;
+            }
+
+            // Show confirmation for existing images
+            if (image.isExisting) {
+                const confirmed = confirm('Are you sure you want to delete this image? This will permanently remove it from Firebase Storage.');
+                if (!confirmed) {
+                    return;
+                }
+            }
+
+            try {
+                // If it's an existing image with Firebase path, delete from Firebase Storage
+                if (image.isExisting && image.firebasePath) {
+                    console.log('🗑️ Deleting existing image from Firebase Storage:', image.firebasePath);
+                    await deleteImageFromFirebase(image.firebasePath);
+                    console.log('✅ Existing image deleted from Firebase Storage');
+                }
+                // If it's a newly uploaded image, delete from Firebase Storage
+                else if (image.firebasePath && !image.isExisting) {
+                    console.log('🗑️ Deleting uploaded image from Firebase Storage:', image.firebasePath);
+                    await deleteImageFromFirebase(image.firebasePath);
+                    console.log('✅ Uploaded image deleted from Firebase Storage');
+                }
+
+                // Remove from local array
+                uploadedImages.splice(index, 1);
+                displayImages();
+
+                console.log('✅ Image removed successfully');
+            } catch (error) {
+                console.error('❌ Error removing image:', error);
+                showError('Failed to delete image from storage. Please try again.');
+            }
+        }
+
+        async function clearAllImagesHandler() {
+            if (confirm('Are you sure you want to remove all images? This will also delete them from Firebase Storage.')) {
+                await clearAllImagesWithCleanup();
+            }
+        }
+
+        // Make functions globally available
+        window.removeImage = removeImage;
+
+        // ============================================
+        // FIREBASE STORAGE IMAGE UPLOAD FUNCTIONS
+        // ============================================
+
+        // Upload single image to Firebase Storage
+        async function uploadImageToFirebase(file, productId, imageIndex) {
+            try {
+                console.log('📤 Uploading image to Firebase Storage:', file.name);
+
+                // Create a unique filename with timestamp
+                const timestamp = Date.now();
+                const fileExtension = file.name.split('.').pop();
+                const fileName = `product_${productId}_${imageIndex}_${timestamp}.${fileExtension}`;
+
+                // Create storage reference
+                const storageRef = ref(storage, `products/${window.currentBusinessId}/${fileName}`);
+
+                // Upload file
+                const snapshot = await uploadBytes(storageRef, file);
+
+                // Get download URL
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                console.log('✅ Image uploaded successfully:', downloadURL);
+                return {
+                    success: true,
+                    url: downloadURL,
+                    fileName: fileName,
+                    path: `products/${window.currentBusinessId}/${fileName}`
+                };
+
+            } catch (error) {
+                console.error('❌ Failed to upload image:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // Upload multiple images to Firebase Storage
+        async function uploadImagesToFirebase(files, productId) {
+            const uploadPromises = files.map((file, index) =>
+                uploadImageToFirebase(file, productId, index)
+            );
+
+            try {
+                const results = await Promise.all(uploadPromises);
+                const successfulUploads = results.filter(result => result.success);
+                const failedUploads = results.filter(result => !result.success);
+
+                if (failedUploads.length > 0) {
+                    console.warn('⚠️ Some images failed to upload:', failedUploads);
+                }
+
+                return {
+                    success: successfulUploads.length > 0,
+                    images: successfulUploads,
+                    failed: failedUploads
+                };
+
+            } catch (error) {
+                console.error('❌ Failed to upload images:', error);
+                return {
+                    success: false,
+                    error: error.message,
+                    images: [],
+                    failed: []
+                };
+            }
+        }
+
+        // Delete image from Firebase Storage
+        async function deleteImageFromFirebase(imagePath) {
+            try {
+                console.log('🗑️ Deleting image from Firebase Storage:', imagePath);
+
+                const imageRef = ref(storage, imagePath);
+                await deleteObject(imageRef);
+
+                console.log('✅ Image deleted successfully');
+                return { success: true };
+
+            } catch (error) {
+                console.error('❌ Failed to delete image:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Enhanced image handling with Firebase Storage
+        function handleFiles(files) {
+            console.log('📁 handleFiles called with', files.length, 'files');
+            files.forEach((file, index) => {
+                console.log(`Processing file ${index + 1}:`, file.name, file.size, file.type);
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    alert(`File ${file.name} is too large. Maximum size is 5MB.`);
+                    return;
+                }
+
+                if (!file.type.startsWith('image/')) {
+                    alert(`File ${file.name} is not an image.`);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const imageData = {
+                        id: Date.now() + Math.random(),
+                        name: file.name,
+                        data: e.target.result,
+                        file: file,
+                        uploaded: false, // Track upload status
+                        firebaseUrl: null,
+                        firebasePath: null
+                    };
+
+                    uploadedImages.push(imageData);
+                    displayImages();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Upload all pending images when saving product
+        async function uploadPendingImages(productId) {
+            const pendingImages = uploadedImages.filter(img => !img.uploaded);
+
+            if (pendingImages.length === 0) {
+                return { success: true, images: [] };
+            }
+
+            console.log(`📤 Uploading ${pendingImages.length} pending images for product ${productId}`);
+
+            const files = pendingImages.map(img => img.file);
+            const uploadResult = await uploadImagesToFirebase(files, productId);
+
+            if (uploadResult.success) {
+                // Update the uploaded images with Firebase URLs
+                uploadResult.images.forEach((uploadedImg, index) => {
+                    const originalImg = pendingImages[index];
+                    if (originalImg) {
+                        originalImg.uploaded = true;
+                        originalImg.firebaseUrl = uploadedImg.url;
+                        originalImg.firebasePath = uploadedImg.path;
+                    }
+                });
+            }
+
+            return uploadResult;
+        }
+
+        // Get image URLs for product data
+        function getImageUrls() {
+            return uploadedImages
+                .filter(img => img.uploaded && img.firebaseUrl)
+                .map(img => ({
+                    url: img.firebaseUrl,
+                    path: img.firebasePath,
+                    name: img.name
+                }));
+        }
+
+        // Clear uploaded images (including Firebase cleanup)
+        async function clearAllImagesWithCleanup() {
+            if (uploadedImages.length === 0) return;
+
+            // Delete images from Firebase Storage
+            const deletePromises = uploadedImages
+                .filter(img => img.uploaded && img.firebasePath)
+                .map(img => deleteImageFromFirebase(img.firebasePath));
+
+            try {
+                await Promise.all(deletePromises);
+                console.log('✅ All images deleted from Firebase Storage');
+            } catch (error) {
+                console.warn('⚠️ Some images could not be deleted from Firebase:', error);
+            }
+
+            // Clear local array
+            uploadedImages = [];
+            displayImages();
+        }
+
+        // ============================================
+        // ENHANCED PRODUCT SAVING WITH IMAGE UPLOAD
+        // ============================================
+
+        // Function to wait for business context
+        async function waitForBusinessContext(maxWaitTime = 10000) {
+            const startTime = Date.now();
+
+            while (!window.currentBusinessId && (Date.now() - startTime) < maxWaitTime) {
+                console.log('⏳ Waiting for business context...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            if (window.currentBusinessId) {
+                console.log('✅ Business context available after waiting');
+                return true;
+            } else {
+                console.error('❌ Business context not available after waiting');
+                return false;
+            }
+        }
+
+        // Function to try to get business context from products-fixed.js
+        async function tryGetBusinessContextFromProducts() {
+            try {
+                // Check if products-fixed.js has loaded and has business context
+                if (typeof window.loadProducts === 'function') {
+                    console.log('🔄 Trying to get business context from products-fixed.js...');
+
+                    // Wait a bit more for products-fixed.js to initialize
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    if (window.currentBusinessId) {
+                        console.log('✅ Business context found after waiting for products-fixed.js');
+                        return true;
+                    }
+                }
+
+                return false;
+            } catch (error) {
+                console.error('❌ Error getting business context from products-fixed.js:', error);
+                return false;
+            }
+        }
+
+        // Override the product saving function to include image uploads
+        // This function will replace the one from products-fixed.js
+        async function handleAddProductSubmit(event) {
+            event.preventDefault();
+            console.log('🚀 Enhanced handleAddProductSubmit called with Firebase Storage integration');
+
+            // Initialize variables outside try block for proper scope
+            const saveBtn = document.getElementById('saveProductBtn');
+            const originalText = saveBtn ? saveBtn.textContent : 'Save Product';
+
+            try {
+                // Wait for business context if not available
+                if (!window.currentBusinessId) {
+                    console.log('⏳ Business context not immediately available, waiting...');
+                    let contextAvailable = await waitForBusinessContext();
+
+                    if (!contextAvailable) {
+                        console.log('🔄 Trying fallback method to get business context...');
+                        contextAvailable = await tryGetBusinessContextFromProducts();
+                    }
+
+                    if (!contextAvailable) {
+                        console.error('❌ All methods failed to get business context');
+                        showError('Business context not available. Please refresh the page and try again.');
+                        return;
+                    }
+                }
+
+                console.log('✅ Business context available:', {
+                    businessId: window.currentBusinessId,
+                    businessName: window.currentBusinessData?.businessName
+                });
+
+                // Double-check business ID before proceeding
+                if (!window.currentBusinessId) {
+                    console.error('❌ Business ID is still undefined after waiting');
+                    showError('Business ID not available. Please refresh the page and try again.');
+                    return;
+                }
+
+                const modal = document.getElementById("addProductModal");
+                const editProductId = modal?.dataset?.editProductId;
+                const isEditing = !!(modal && editProductId && editProductId !== 'undefined' && editProductId !== 'null');
+
+                console.log('🔍 Modal and editing state:', {
+                    modalExists: !!modal,
+                    editProductId: editProductId,
+                    editProductIdType: typeof editProductId,
+                    isEditing: isEditing,
+                    modalDataset: modal?.dataset
+                });
+
+                // Show loading state
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<span class="material-icons animate-spin mr-2">refresh</span>Uploading Images...';
+                }
+
+                // Upload images first if there are any
+                let imageUrls = [];
+                if (uploadedImages.length > 0) {
+                    console.log('📤 Uploading images before saving product...');
+
+                    // Generate a temporary product ID for image naming
+                    const tempProductId = isEditing ? modal.dataset.editProductId : `temp_${Date.now()}`;
+
+                    const uploadResult = await uploadPendingImages(tempProductId);
+
+                    if (uploadResult.success) {
+                        imageUrls = getImageUrls();
+                        console.log('✅ Images uploaded successfully:', imageUrls);
+                    } else {
+                        console.warn('⚠️ Some images failed to upload, continuing without them');
+                        if (uploadResult.failed && uploadResult.failed.length > 0) {
+                            showError(`Some images failed to upload: ${uploadResult.failed.map(f => f.error).join(', ')}`);
+                        }
+                    }
+                }
+
+                // Prepare product data with safe field access
+                const getFieldValue = (id, defaultValue = '') => {
+                    const element = document.getElementById(id);
+                    return element ? element.value : defaultValue;
+                };
+
+                const getFieldNumber = (id, defaultValue = 0) => {
+                    const element = document.getElementById(id);
+                    return element ? parseFloat(element.value) || defaultValue : defaultValue;
+                };
+
+                const getFieldInt = (id, defaultValue = 0) => {
+                    const element = document.getElementById(id);
+                    return element ? parseInt(element.value) || defaultValue : defaultValue;
+                };
+
+                const getFieldBoolean = (id, defaultValue = false) => {
+                    const element = document.getElementById(id);
+                    return element ? element.checked : defaultValue;
+                };
+
+                const productData = {
+                    name: getFieldValue("productName"),
+                    description: getFieldValue("productDescription"),
+                    price: getFieldNumber("productPrice"),
+                    sellingPrice: getFieldNumber("productSellingPrice") || getFieldNumber("productPrice"),
+                    sku: getFieldValue("productSKU"),
+                    storageId: getFieldValue("productStorage"),
+                    lowStockAlert: getFieldInt("productLowStock", 5),
+                    mainBarcode: getFieldValue("mainBarcode"),
+                    sizeVariants: getSizeVariantsFromForm(),
+                    unlimitedStock: getFieldBoolean("unlimitedStock"),
+                    images: imageUrls, // Include uploaded image URLs
+                    updatedAt: new Date(),
+                };
+
+                // Add selling price if provided
+                if (productData.sellingPrice && productData.sellingPrice !== productData.price) {
+                    productData.sellingPrice = productData.sellingPrice;
+                }
+
+                // Final check before Firestore operations
+                console.log('🔍 Current business ID before Firestore operations:', window.currentBusinessId);
+                console.log('🔍 Type of business ID:', typeof window.currentBusinessId);
+
+                if (!window.currentBusinessId || window.currentBusinessId === 'undefined' || window.currentBusinessId === 'null') {
+                    console.error('❌ Business ID is still undefined/invalid at Firestore operation time');
+                    console.log('🔄 Attempting to use fallback business ID...');
+
+                    // Try multiple fallback methods
+                    let fallbackBusinessId = localStorage.getItem('madasBusinessId') ||
+                        localStorage.getItem('currentBusinessId') ||
+                        'test-business-' + Date.now();
+
+                    window.currentBusinessId = fallbackBusinessId;
+                    window.currentBusinessData = window.currentBusinessData || { businessName: 'Test Business' };
+
+                    console.log('⚠️ Using fallback business ID:', window.currentBusinessId);
+                }
+
+                // Validate the business ID one more time
+                if (!window.currentBusinessId || window.currentBusinessId === 'undefined' || window.currentBusinessId === 'null') {
+                    console.error('❌ All fallback methods failed');
+                    showError('Business ID not available. Please refresh the page and try again.');
+                    return;
+                }
+
+                console.log('🔥 Creating Firestore document with business ID:', window.currentBusinessId);
+                console.log('🔥 Business ID length:', window.currentBusinessId.length);
+                console.log('🔥 Business ID characters:', window.currentBusinessId.split('').map(c => c.charCodeAt(0)));
+
+                try {
+                    console.log('🔍 Debug info before Firestore operation:', {
+                        isEditing: isEditing,
+                        modalExists: !!modal,
+                        editProductId: modal?.dataset?.editProductId,
+                        editProductIdType: typeof modal?.dataset?.editProductId
+                    });
+
+                    if (isEditing && editProductId) {
+                        // Update existing product
+                        console.log('🔄 Updating product with ID:', editProductId);
+                        const productRef = doc(db, "businesses", window.currentBusinessId, "products", editProductId);
+                        await updateDoc(productRef, productData);
+                        console.log("Product updated successfully with images");
+                    } else {
+                        // Add new product (default path)
+                        console.log('🔄 Adding new product to collection');
+                        console.log('🔄 Reason for adding new:', {
+                            isEditing: isEditing,
+                            editProductId: editProductId,
+                            hasValidEditId: !!(editProductId && editProductId !== 'undefined' && editProductId !== 'null')
+                        });
+
+                        productData.createdAt = new Date();
+                        const productsRef = collection(db, "businesses", window.currentBusinessId, "products");
+                        const docRef = await addDoc(productsRef, productData);
+                        console.log("Product added successfully with images:", docRef.id);
+                    }
+                } catch (firestoreError) {
+                    console.error('❌ Firestore operation failed:', firestoreError);
+                    console.error('❌ Error details:', {
+                        message: firestoreError.message,
+                        code: firestoreError.code,
+                        businessId: window.currentBusinessId,
+                        businessIdType: typeof window.currentBusinessId,
+                        businessIdLength: window.currentBusinessId ? window.currentBusinessId.length : 'N/A'
+                    });
+                    throw firestoreError; // Re-throw to be caught by outer try-catch
+                }
+
+                // Reset form and close modal
+                closeAddProductModal();
+                document.getElementById("addProductForm").reset();
+                uploadedImages = [];
+                displayImages();
+
+                // Reload products
+                await loadProducts();
+                showSuccess(isEditing ? "Product updated successfully!" : "Product added successfully!");
+
+            } catch (error) {
+                console.error("Failed to save product:", error);
+                showError("Failed to save product. Please try again.");
+            } finally {
+                // Reset button state
+                const saveBtn = document.getElementById('saveProductBtn');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = originalText || 'Save Product';
+                }
+            }
+        };
+
+        // Helper function to get size variants from form (returns object keyed by size)
+        function getSizeVariantsFromForm() {
+            const result = {};
+            const sizeInputs = document.querySelectorAll('#sizeVariantsList .size-input');
+            const quantityInputs = document.querySelectorAll('#sizeVariantsList .qty-input');
+            const barcodeInputs = document.querySelectorAll('#sizeVariantsList .barcode-input');
+
+            const skuElement = document.getElementById("productSKU");
+            const sku = skuElement ? skuElement.value : '';
+
+            const maxLen = Math.max(sizeInputs.length, quantityInputs.length, barcodeInputs.length);
+            for (let i = 0; i < maxLen; i++) {
+                const size = sizeInputs[i] ? (sizeInputs[i].value || '').trim() : '';
+                if (!size) continue;
+
+                const quantity = quantityInputs[i] ? parseInt(quantityInputs[i].value || '0', 10) || 0 : 0;
+                const existingBarcode = barcodeInputs[i] ? (barcodeInputs[i].value || '').trim() : '';
+                const barcode = existingBarcode || generateBarcode(`${sku}_${size}`);
+
+                result[size] = { quantity, barcode };
+            }
+
+            return result;
+        }
+
+        // Helper function to generate barcode
+        function generateBarcode(text) {
+            return text.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        }
+
+        // Helper function to close add product modal
+        function closeAddProductModal() {
+            const modal = document.getElementById("addProductModal");
+            if (modal) {
+                modal.classList.add("hidden");
+                // Clear edit state
+                delete modal.dataset.editProductId;
+            }
+        }
+
+        // Make loadProducts available globally (it should be from products-fixed.js)
+        window.loadProducts = window.loadProducts || async function () {
+            console.log('loadProducts called - this should be implemented by products-fixed.js');
+        };
+
+        // Override the openEditProductModal function to load existing images
+        const originalOpenEditProductModal = window.openEditProductModal;
+        window.openEditProductModal = function (product) {
+            console.log('🔄 Enhanced openEditProductModal called for product:', product);
+            console.log('🔄 Product images data:', product.images);
+            console.log('🔄 Product keys:', Object.keys(product));
+
+            // Call the original function first
+            if (originalOpenEditProductModal) {
+                originalOpenEditProductModal(product);
+            }
+
+            // Ensure selling price field is populated when editing
+            try {
+                const sellingPriceInput = document.getElementById('productSellingPrice');
+                if (sellingPriceInput) {
+                    const valueToSet = typeof product.sellingPrice === 'number' && !isNaN(product.sellingPrice)
+                        ? product.sellingPrice
+                        : (typeof product.price === 'number' ? product.price : '');
+                    sellingPriceInput.value = valueToSet;
+                    console.log('💲 Set selling price in edit modal:', valueToSet);
+                }
+            } catch (e) {
+                console.warn('Could not set selling price in edit modal', e);
+            }
+
+            // Load existing images after a short delay to ensure modal is open
+            setTimeout(() => {
+                console.log('🔄 Loading existing images for product:', product);
+                loadExistingProductImages(product);
+            }, 200);
+        };
+
+        // Function to load existing product images for editing
+        function loadExistingProductImages(product) {
+            console.log('📷 loadExistingProductImages called with product:', product);
+            console.log('📷 Product has images:', !!product.images);
+            console.log('📷 Images array length:', product.images ? product.images.length : 0);
+            console.log('📷 Images data:', product.images);
+
+            if (product.images && product.images.length > 0) {
+                console.log('📷 Loading existing product images:', product.images);
+
+                // Clear current images
+                uploadedImages = [];
+                console.log('📷 Cleared uploadedImages array');
+
+                // Add existing images to the array
+                product.images.forEach((imageData, index) => {
+                    console.log(`📷 Processing image ${index}:`, imageData);
+
+                    const imageItem = {
+                        id: Date.now() + Math.random() + index,
+                        name: imageData.name || `image_${index + 1}`,
+                        data: imageData.url, // Use the Firebase URL as the data URL
+                        file: null, // No file object for existing images
+                        uploaded: true, // Mark as already uploaded
+                        firebaseUrl: imageData.url,
+                        firebasePath: imageData.path,
+                        isExisting: true // Flag to identify existing images
+                    };
+
+                    uploadedImages.push(imageItem);
+                    console.log(`📷 Added image ${index} to uploadedImages:`, imageItem);
+                });
+
+                console.log('📷 Final uploadedImages array:', uploadedImages);
+                // Update the display
+                displayImages();
+                console.log('📷 Called displayImages()');
+            } else {
+                console.log('📷 No existing images found for product');
+                // Clear any existing images
+                uploadedImages = [];
+                displayImages();
+            }
+        }
+
+        // Function to test Firebase Storage connection
+        async function testFirebaseStorage() {
+            try {
+                console.log('🧪 Testing Firebase Storage connection...');
+
+                // Create a test file
+                const testBlob = new Blob(['test'], { type: 'text/plain' });
+                const testFileName = `test_${Date.now()}.txt`;
+                const testRef = ref(storage, `test/${testFileName}`);
+
+                // Upload test file
+                await uploadBytes(testRef, testBlob);
+                console.log('✅ Firebase Storage test upload successful');
+
+                // Get download URL
+                const downloadURL = await getDownloadURL(testRef);
+                console.log('✅ Firebase Storage test download URL:', downloadURL);
+
+                // Clean up test file
+                await deleteObject(testRef);
+                console.log('✅ Firebase Storage test cleanup successful');
+
+                return { success: true, message: 'Firebase Storage is working correctly' };
+
+            } catch (error) {
+                console.error('❌ Firebase Storage test failed:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Make test function available globally for debugging
+        window.testFirebaseStorage = testFirebaseStorage;
+        window.loadExistingProductImages = loadExistingProductImages;
+
+        // Override the form submit event listener after products-fixed.js loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait a bit for products-fixed.js to initialize
+            setTimeout(() => {
+                const addProductForm = document.getElementById('addProductForm');
+                if (addProductForm) {
+                    // Remove existing event listeners by cloning the form
+                    const newForm = addProductForm.cloneNode(true);
+                    addProductForm.parentNode.replaceChild(newForm, addProductForm);
+
+                    // Add our enhanced event listener
+                    newForm.addEventListener('submit', handleAddProductSubmit);
+                    console.log('✅ Enhanced product form with Firebase Storage integration attached');
+                }
+
+                // Set up image upload for modal
+                setupImageUploadForModal();
+
+                // Ensure our openEditProductModal override is active
+                console.log('🔄 Setting up enhanced openEditProductModal override');
+                if (window.openEditProductModal) {
+                    console.log('✅ openEditProductModal override is active');
+                } else {
+                    console.log('⚠️ openEditProductModal not found, products-fixed.js may not be loaded yet');
+                }
+            }, 1000);
+        });
+
+        // Also override the global function to ensure it's used
+        window.handleAddProductSubmit = handleAddProductSubmit;
+
+        // Set up a MutationObserver to watch for modal changes
+        function setupModalWatcher() {
+            const modal = document.getElementById('addProductModal');
+            if (modal) {
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach(async (mutation) => {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            const target = mutation.target;
+                            if (!target.classList.contains('hidden')) {
+                                // Modal is now visible, check if we're editing
+                                const editProductId = target.dataset.editProductId;
+                                if (editProductId) {
+                                    console.log('🔍 Modal opened for editing product:', editProductId);
+                                    console.log('🔍 Available currentProducts:', window.currentProducts);
+
+                                    // Find the product in currentProducts
+                                    let product = window.currentProducts?.find(p => p.id === editProductId);
+
+                                    if (!product) {
+                                        console.log('🔄 Product not found in currentProducts, trying to fetch from Firestore...');
+                                        // Try to fetch the product directly from Firestore
+                                        try {
+                                            const productRef = doc(db, "businesses", window.currentBusinessId, "products", editProductId);
+                                            const productSnap = await getDoc(productRef);
+                                            if (productSnap.exists()) {
+                                                product = { id: productSnap.id, ...productSnap.data() };
+                                                console.log('📦 Fetched product from Firestore:', product);
+                                            }
+                                        } catch (error) {
+                                            console.error('❌ Error fetching product from Firestore:', error);
+                                        }
+                                    }
+
+                                    if (product) {
+                                        console.log('📦 Found product for editing:', product);
+                                        console.log('📷 Product images:', product.images);
+                                        setTimeout(() => {
+                                            loadExistingProductImages(product);
+                                        }, 100);
+                                    } else {
+                                        console.log('❌ Product not found in currentProducts or Firestore');
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+                console.log('✅ Modal watcher set up');
+            }
+        }
+
+        // Set up the modal watcher after DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(setupModalWatcher, 1500);
+        });
+
+        // Additional setup for image upload when modal is opened
+        function setupImageUploadForModal() {
+            const imageUploadArea = document.getElementById('imageUploadArea');
+            const imageFileInput = document.getElementById('imageFileInput');
+
+            if (imageUploadArea && imageFileInput) {
+                console.log('🔄 Re-setting up image upload for modal');
+
+                // Remove existing listeners by cloning
+                const newImageUploadArea = imageUploadArea.cloneNode(true);
+                const newImageFileInput = newImageUploadArea.querySelector('#imageFileInput');
+                imageUploadArea.parentNode.replaceChild(newImageUploadArea, imageUploadArea);
+
+                // Add click handler
+                newImageUploadArea.addEventListener('click', (e) => {
+                    console.log('🖱️ Modal image upload area clicked');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (newImageFileInput) {
+                        newImageFileInput.click();
+                    } else {
+                        console.error('❌ File input not found after cloning');
+                    }
+                });
+
+                // Add file change handler
+                if (newImageFileInput) {
+                    newImageFileInput.addEventListener('change', (e) => {
+                        console.log('📁 Modal file input changed, files selected:', e.target.files.length);
+                        handleImageUpload(e);
+                    });
+                }
+
+                console.log('✅ Image upload re-setup complete');
+            } else {
+                console.error('❌ Image upload elements not found in modal');
+            }
+        }
+
+        // Simple and direct approach - use a global file input
+        let globalFileInput = null;
+
+        function createGlobalFileInput() {
+            if (globalFileInput) {
+                globalFileInput.remove();
+            }
+
+            globalFileInput = document.createElement('input');
+            globalFileInput.type = 'file';
+            globalFileInput.multiple = true;
+            globalFileInput.accept = 'image/*';
+            globalFileInput.style.position = 'fixed';
+            globalFileInput.style.top = '-1000px';
+            globalFileInput.style.left = '-1000px';
+            globalFileInput.style.opacity = '0';
+            globalFileInput.style.pointerEvents = 'none';
+            document.body.appendChild(globalFileInput);
+
+            globalFileInput.addEventListener('change', (e) => {
+                console.log('📁 Global file input changed, files selected:', e.target.files.length);
+                if (e.target.files.length > 0) {
+                    handleImageUpload(e);
+                }
+                // Clear for next use
+                e.target.value = '';
+            });
+
+            console.log('✅ Global file input created');
+        }
+
+        // Use event delegation for more reliable click handling
+        document.addEventListener('click', (e) => {
+            // Check if click is on upload area or any of its children
+            const uploadArea = e.target.closest('#imageUploadArea');
+            if (uploadArea) {
+                console.log('🖱️ Image upload area clicked via delegation');
+                console.log('Clicked element:', e.target);
+                console.log('Upload area found:', uploadArea);
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Always use the global file input
+                if (!globalFileInput) {
+                    createGlobalFileInput();
+                }
+
+                console.log('✅ Triggering global file input click');
+                globalFileInput.click();
+            }
+        });
+
+        // Also add a more specific click handler directly to the upload area
+        function attachDirectClickHandler() {
+            const uploadArea = document.getElementById('imageUploadArea');
+            if (uploadArea) {
+                console.log('✅ Attaching direct click handler to upload area');
+                uploadArea.addEventListener('click', (e) => {
+                    console.log('🖱️ Direct click handler triggered');
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (!globalFileInput) {
+                        createGlobalFileInput();
+                    }
+
+                    globalFileInput.click();
+                });
+            } else {
+                console.log('❌ Upload area not found for direct handler');
+            }
+        }
+
+        // Try to attach direct handler when modal opens
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) { // Element node
+                            if (node.id === 'imageUploadArea' || node.querySelector('#imageUploadArea')) {
+                                console.log('🔄 Upload area detected in DOM, attaching handler');
+                                setTimeout(attachDirectClickHandler, 100);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Make setup function available globally
+        window.setupImageUploadForModal = setupImageUploadForModal;
+
+        // Test function for manual testing
+        window.testImageUpload = function () {
+            console.log('🧪 Testing image upload...');
+            const fileInput = document.getElementById('imageFileInput');
+            if (fileInput) {
+                console.log('✅ File input found, triggering click');
+                fileInput.click();
+            } else {
+                console.error('❌ File input not found');
+            }
+        };
+
+        // Debug function to check business context
+        window.debugBusinessContext = function () {
+            console.log('🔍 Business Context Debug:', {
+                currentBusinessId: window.currentBusinessId,
+                currentBusinessData: window.currentBusinessData,
+                currentUserRole: window.currentUserRole,
+                currentUserPermissions: window.currentUserPermissions
+            });
+
+            // Also check if products-fixed.js is loaded
+            console.log('🔍 Products-fixed.js status:', {
+                loadProductsFunction: typeof window.loadProducts,
+                firebaseInstance: typeof window.firebaseInstance,
+                allWindowKeys: Object.keys(window).filter(key => key.includes('current') || key.includes('business'))
+            });
+        };
+
+        // Function to manually set a test business ID for testing
+        window.setTestBusinessId = function (businessId) {
+            window.currentBusinessId = businessId;
+            window.currentBusinessData = { businessName: 'Test Business' };
+            window.currentUserRole = 'owner';
+            localStorage.setItem('madasBusinessId', businessId);
+            console.log('✅ Test business context set:', { businessId, businessName: 'Test Business' });
+        };
+
+        // Function to check if we can access Firestore at all
+        window.testFirestoreAccess = async function () {
+            try {
+                console.log('🧪 Testing Firestore access...');
+                const testRef = collection(db, "test");
+                console.log('✅ Firestore collection reference created successfully');
+                return true;
+            } catch (error) {
+                console.error('❌ Firestore access failed:', error);
+                return false;
+            }
+        };
+
+        // Function to test Firestore with a specific business ID
+        window.testFirestoreWithBusinessId = async function (businessId) {
+            try {
+                console.log('🧪 Testing Firestore with business ID:', businessId);
+                const testRef = collection(db, "businesses", businessId, "test");
+                console.log('✅ Firestore collection reference created successfully with business ID');
+                return true;
+            } catch (error) {
+                console.error('❌ Firestore access failed with business ID:', error);
+                return false;
+            }
+        };
+
+        // Quick fix function - sets a business ID and tests it
+        window.quickFix = function () {
+            const testBusinessId = 'test-business-' + Date.now();
+            console.log('🔧 Quick fix: Setting business ID to:', testBusinessId);
+            window.setTestBusinessId(testBusinessId);
+            window.testFirestoreWithBusinessId(testBusinessId);
+        };
+
+        // Test function to manually test image loading
+        window.testImageLoading = function () {
+            console.log('🧪 Testing image loading with sample data...');
+            const testProduct = {
+                id: 'test-product-123',
+                name: 'Test Product',
+                images: [
+                    {
+                        url: 'https://via.placeholder.com/300x200/FF0000/FFFFFF?text=Test+Image+1',
+                        path: 'test/path/image1.jpg',
+                        name: 'test-image-1.jpg'
+                    },
+                    {
+                        url: 'https://via.placeholder.com/300x200/00FF00/FFFFFF?text=Test+Image+2',
+                        path: 'test/path/image2.jpg',
+                        name: 'test-image-2.jpg'
+                    }
+                ]
+            };
+
+            console.log('🧪 Calling loadExistingProductImages with test product:', testProduct);
+            loadExistingProductImages(testProduct);
+        };
+
+        // Function to check if a product has images and display them
+        window.checkProductImages = function (productId) {
+            console.log('🔍 Checking images for product:', productId);
+            const product = currentProducts?.find(p => p.id === productId);
+            if (product) {
+                console.log('📦 Product found:', product);
+                console.log('📷 Product images:', product.images);
+                console.log('📷 Has images:', !!product.images);
+                console.log('📷 Images count:', product.images ? product.images.length : 0);
+
+                if (product.images && product.images.length > 0) {
+                    console.log('✅ Product has images, loading them...');
+                    loadExistingProductImages(product);
+                } else {
+                    console.log('❌ Product has no images');
+                }
+            } else {
+                console.log('❌ Product not found');
+            }
+        };
+
+        // Function to manually load images for the currently editing product
+        window.loadCurrentProductImages = async function () {
+            const modal = document.getElementById('addProductModal');
+            const editProductId = modal?.dataset?.editProductId;
+
+            if (!editProductId) {
+                console.log('❌ No product being edited');
+                return;
+            }
+
+            console.log('🔄 Manually loading images for product:', editProductId);
+
+            try {
+                // Try to fetch the product from Firestore
+                const productRef = doc(db, "businesses", window.currentBusinessId, "products", editProductId);
+                const productSnap = await getDoc(productRef);
+
+                if (productSnap.exists()) {
+                    const product = { id: productSnap.id, ...productSnap.data() };
+                    console.log('📦 Fetched product from Firestore:', product);
+                    console.log('📷 Product images:', product.images);
+
+                    if (product.images && product.images.length > 0) {
+                        console.log('✅ Product has images, loading them...');
+                        loadExistingProductImages(product);
+                    } else {
+                        console.log('❌ Product has no images in database');
+                    }
+                } else {
+                    console.log('❌ Product not found in Firestore');
+                }
+            } catch (error) {
+                console.error('❌ Error fetching product:', error);
+            }
+        };
+
+        // Create a permanent file input that's always available
+        function createPermanentFileInput() {
+            // Remove existing permanent input if any
+            const existing = document.getElementById('permanentFileInput');
+            if (existing) {
+                existing.remove();
+            }
+
+            const permanentInput = document.createElement('input');
+            permanentInput.id = 'permanentFileInput';
+            permanentInput.type = 'file';
+            permanentInput.multiple = true;
+            permanentInput.accept = 'image/*';
+            permanentInput.style.display = 'none';
+            document.body.appendChild(permanentInput);
+
+            permanentInput.addEventListener('change', (e) => {
+                console.log('📁 Permanent file input changed, files selected:', e.target.files.length);
+                handleImageUpload(e);
+                // Clear the input for next use
+                e.target.value = '';
+            });
+
+            console.log('✅ Permanent file input created');
+            return permanentInput;
+        }
+
+        // Create the permanent file input on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            createPermanentFileInput();
+            createGlobalFileInput();
+        });
+
+
+        // Helper function to show success message
+        function showSuccess(message) {
+            // Create success notification
+            const successDiv = document.createElement('div');
+            successDiv.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg z-50';
+            successDiv.innerHTML = `
+                <div class="flex items-center">
+                    <span class="material-icons text-green-500 mr-2">check_circle</span>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-green-500 hover:text-green-700">
+                        <span class="material-icons text-sm">close</span>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(successDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (successDiv && successDiv.parentNode) {
+                    successDiv.remove();
+                }
+            }, 5000);
+        }
+
+
+        // ============================================
+        // EXCEL IMPORT/EXPORT FUNCTIONALITY
+        // NOTE: Excel functions are handled by products-fixed.js
+        // The module includes proper size variant separation (one row per size)
+        // ============================================
+
+    </script>
+
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

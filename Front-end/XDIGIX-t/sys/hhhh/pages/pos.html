@@ -1,0 +1,2130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS - MADAS Dashboard</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- Firebase Permission Checker -->
+    <script type="module" src="../js/firebase-permission-check.js"></script>
+
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-secondary: #4A7C59;
+            --madas-accent: #6B8E4E;
+            --madas-light: #F5F7F4;
+            --madas-dark: #1A2E1A;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Smooth transitions for all elements */
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--madas-secondary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--madas-primary);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--madas-primary) 0%, var(--madas-secondary) 100%);
+            padding: 20px;
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .header-subtitle {
+            margin: 4px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-role {
+            font-size: 12px;
+            opacity: 0.8;
+            color: white;
+        }
+
+        .pos-container {
+            display: flex;
+            height: calc(100vh - 80px);
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 20px;
+            margin: 10px;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+        }
+
+        .products-section {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .cart-section {
+            width: 400px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-left: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .cart-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--madas-primary), var(--madas-secondary));
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--madas-primary), var(--madas-secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--madas-accent);
+        }
+
+        .product-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 120px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .product-info h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .product-category {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .product-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--madas-primary);
+        }
+
+        .product-stock {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .cart-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: var(--madas-primary);
+            color: white;
+        }
+
+        .cart-items {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cart-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--madas-primary);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .cart-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--madas-accent);
+        }
+
+        .cart-item:hover::before {
+            transform: scaleY(1);
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 500;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .cart-item-price {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quantity-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quantity-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .quantity-display {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .cart-total {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .total-final {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--madas-primary);
+            border-top: 1px solid #d1d5db;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .pos-actions {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .pos-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--madas-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--madas-dark);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+            width: 100%;
+            display: block;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 32px 24px 32px 64px;
+            border: 3px solid #e5e7eb;
+            border-radius: 20px;
+            font-size: 22px;
+            background: white;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease;
+            min-height: 80px;
+            box-sizing: border-box;
+            display: block;
+            font-weight: 500;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--madas-primary);
+            box-shadow: 0 0 0 3px rgba(39, 73, 31, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 24px;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+
+        .empty-cart .material-icons {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #d1d5db;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.hidden {
+            display: none !important;
+        }
+
+        /* Loading animations */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            animation: pulse 2s infinite;
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Improved focus states */
+        .btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(39, 73, 31, 0.3);
+        }
+
+        .product-card:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(39, 73, 31, 0.3);
+        }
+
+        /* Scanner Modal Styles */
+        .scanner-container {
+            position: relative;
+            text-align: center;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .scanner-frame {
+            width: 200px;
+            height: 100px;
+            border: 3px solid #00ff00;
+            border-radius: 8px;
+            background: transparent;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
+        }
+
+        .scanner-text {
+            color: white;
+            margin-top: 20px;
+            font-size: 16px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .scanner-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        /* Notification System */
+        .pos-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            max-width: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-xl);
+            border-left: 4px solid;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .pos-notification-success {
+            border-left-color: #10b981;
+        }
+
+        .pos-notification-error {
+            border-left-color: #ef4444;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .notification-content .material-icons {
+            font-size: 20px;
+        }
+
+        .pos-notification-success .notification-content .material-icons {
+            color: #10b981;
+        }
+
+        .pos-notification-error .notification-content .material-icons {
+            color: #ef4444;
+        }
+
+        .notification-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            color: #6b7280;
+        }
+
+        .notification-close:hover {
+            background: #f3f4f6;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--madas-primary);
+            box-shadow: 0 0 0 3px rgba(39, 73, 31, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-save {
+            background: var(--madas-primary);
+            color: white;
+        }
+
+        .receipt-content {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            background: white;
+            padding: 20px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #d1d5db;
+            padding-bottom: 10px;
+        }
+
+        .receipt-items {
+            margin-bottom: 20px;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .receipt-total {
+            border-top: 1px dashed #d1d5db;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        @media (max-width: 768px) {
+            .pos-container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .cart-section {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid #e5e7eb;
+            }
+
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            color: var(--text-main) !important;
+        }
+
+
+
+
+
+        /* Override Tailwind text color classes */
+        .sidebar-link.text-gray-700,
+        .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        /* Dark mode text color for sidebar links */
+
+        body.dark-mode .sidebar-link {
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }/* Simple Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+        }/* Simple Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 12px 16px;
+            margin: 0;
+            border-radius: 0;
+            transition: all 0.2s ease;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+        /* Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Original Dropdown Button */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: #f3f4f6;
+        }
+
+        /* Original Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Enhanced dropdown menu container */
+        .inventory-submenu:not(.hidden),
+        .finance-dropdown-menu.show {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(39, 73, 31, 0.1);
+            border-radius: 12px;
+            box-shadow:
+                0 8px 32px rgba(39, 73, 31, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Enhanced dropdown button hover */
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: rgba(39, 73, 31, 0.05);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 12px;
+            transform: translateX(2px);
+        }
+
+        .sidebar-link.active:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(39, 73, 31, 0.4);
+        }
+
+        /* Icon animation on hover */
+        .sidebar-link:hover .material-icons {
+            transform: scale(1.1) rotate(2deg);
+            transition: all 0.3s ease;
+        }
+
+        /* Submenu link enhancements */
+        .sidebar-link.submenu-link {
+            position: relative;
+            margin-left: 1rem;
+            border-left: 2px solid transparent;
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link:hover {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            transform: translateX(8px);
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link.active {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+        /* Unified Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Unified Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 10px 14px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+
+        /* Ensure all dropdown text sizes are uniform */
+        .inventory-submenu .sidebar-link span,
+        .finance-dropdown-menu .sidebar-link span,
+        .ecommerce-dropdown-menu .sidebar-link span {
+            font-size: 0.8rem !important;
+        }
+
+        /* Make dropdown icons smaller */
+        .inventory-submenu .material-icons,
+        .finance-dropdown-menu .material-icons,
+        .ecommerce-dropdown-menu .material-icons {
+            font-size: 18px !important;
+        }
+
+        /* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Unified Dropdown Button Styling */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent !important;
+            border: none !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            width: 100% !important;
+            text-align: left !important;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: var(--madas-light) !important;
+        }
+
+        /* Unified Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease !important;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg) !important;
+        }
+
+        /* Unified Visible States for Dropdowns - No 3D Effects */
+        .inventory-submenu:not(.hidden) {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .ecommerce-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <div>
+                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                        <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                            Loading Plan...
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main POS Container -->
+    <div class="pos-container">
+        <!-- Products Section -->
+        <div class="products-section">
+            <!-- Search Bar -->
+            <div class="search-container">
+                <span class="material-icons search-icon">search</span>
+                <input type="text" id="product-search" class="search-input"
+                    placeholder="Search products or scan barcode...">
+            </div>
+
+            <!-- Actions -->
+            <div class="pos-actions">
+                <button id="scan-barcode-btn" class="pos-btn btn-primary">
+                    <span class="material-icons">qr_code_scanner</span>
+                    Scan
+                </button>
+                <button id="add-customer-btn" class="pos-btn btn-secondary">
+                    <span class="material-icons">person_add</span>
+                    Customer
+                </button>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="product-grid" class="product-grid">
+                <!-- Products will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Cart Section -->
+        <div class="cart-section">
+            <!-- Cart Header -->
+            <div class="cart-header">
+                <h2 style="margin: 0; font-size: 18px;">Shopping Cart</h2>
+                <div id="customer-display" style="margin-top: 8px; font-size: 14px; opacity: 0.9;">
+                    <!-- Customer info will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Cart Items -->
+            <div class="cart-items" id="cart-items">
+                <div class="empty-cart">
+                    <span class="material-icons">shopping_cart</span>
+                    <p>Cart is empty</p>
+                </div>
+            </div>
+
+            <!-- Cart Total -->
+            <div class="cart-total">
+                <div class="total-line">
+                    <span>Subtotal:</span>
+                    <span id="cart-subtotal">$0.00</span>
+                </div>
+                <div class="total-line">
+                    <span>Tax (8%):</span>
+                    <span id="cart-tax">$0.00</span>
+                </div>
+                <div class="total-line">
+                    <span>Discount:</span>
+                    <span id="cart-discount">$0.00</span>
+                </div>
+                <div class="total-line total-final">
+                    <span>Total:</span>
+                    <span id="cart-total">$0.00</span>
+                </div>
+
+                <div style="margin-top: 16px; display: flex; gap: 8px;">
+                    <button id="apply-discount-btn" class="pos-btn btn-secondary" style="flex: 1;">
+                        <span class="material-icons">local_offer</span>
+                        Discount
+                    </button>
+                    <button id="process-payment-btn" class="pos-btn btn-success" style="flex: 1;" disabled>
+                        <span class="material-icons">payment</span>
+                        Pay Now
+                    </button>
+                </div>
+                <button id="clear-cart-btn" class="pos-btn"
+                    style="width: 100%; margin-top: 8px; background: #ef4444; color: white;">
+                    <span class="material-icons">clear</span>
+                    Clear Cart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customer-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Customer</h3>
+                <button class="close-modal" onclick="closeCustomerModal()">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Name *</label>
+                <input type="text" id="customer-name" class="form-input" placeholder="Customer name">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="customer-email" class="form-input" placeholder="customer@example.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="tel" id="customer-phone" class="form-input" placeholder="+1 (555) 123-4567">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeCustomerModal()">Cancel</button>
+                <button class="btn btn-save" onclick="saveCustomer()">Save Customer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Payment</h3>
+                <button class="close-modal" onclick="closePaymentModal()">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <select id="payment-method" class="form-input" onchange="togglePaymentFields()">
+                    <option value="cash">Cash</option>
+                    <option value="card">Credit/Debit Card</option>
+                </select>
+            </div>
+
+            <div id="cash-fields">
+                <div class="form-group">
+                    <label class="form-label">Cash Amount</label>
+                    <input type="number" id="cash-amount" class="form-input" placeholder="0.00" step="0.01">
+                </div>
+            </div>
+
+            <div id="card-fields" class="hidden">
+                <div class="form-group">
+                    <label class="form-label">Card Number</label>
+                    <input type="text" id="card-number" class="form-input" placeholder="1234 5678 9012 3456">
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label">Expiry</label>
+                        <input type="text" id="card-expiry" class="form-input" placeholder="MM/YY">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label">CVV</label>
+                        <input type="text" id="card-cvv" class="form-input" placeholder="123">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closePaymentModal()">Cancel</button>
+                <button class="btn btn-save" onclick="processPayment()">Process Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receipt-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Receipt</h3>
+                <button class="close-modal" onclick="closeReceiptModal()">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+
+            <div id="receipt-content" class="receipt-content">
+                <!-- Receipt content will be generated here -->
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="printReceipt()">Print</button>
+                <button class="btn btn-save" onclick="emailReceipt()">Email</button>
+                <button class="btn btn-save" onclick="closeReceiptModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="../js/pos.js"></script>
+    <script>
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 1024 &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, getDocs, deleteDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+
+                // ============================================
+                // TENANT ISOLATION: Initialize Business Context
+                // ============================================
+
+                // Check for super admin users first (bypass business detection)
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    window.currentUserRole = "super-admin";
+                    window.currentBusinessId = "super-admin";
+                    window.currentBusinessData = {
+                        businessName: "Super Admin",
+                        plan: { type: "enterprise", status: "active" }
+                    };
+
+                    // Set super admin permissions
+                    const userData = {
+                        email: user.email,
+                        displayName: user.displayName || "Super Admin",
+                        role: "super-admin",
+                        approved: true,
+                        permissions: {
+                            home: ["view"],
+                            orders: ["view", "search", "create", "edit"],
+                            inventory: ["view", "edit"],
+                            customers: ["view", "edit"],
+                            employees: ["view", "edit"],
+                            finance: ["view", "reports"],
+                            analytics: ["view", "export"],
+                            settings: ["view", "edit"],
+                            admin: ["view", "manage_all_businesses"]
+                        }
+                    };
+
+                    // Store user data
+                    localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                    // Update UI
+                    const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                    const userNameEl = document.getElementById("user-name");
+                    const userEmailEl = document.getElementById("user-email");
+                    const userInitialEl = document.getElementById("user-initial");
+
+                    if (userNameEl) userNameEl.textContent = username;
+                    if (userEmailEl) userEmailEl.textContent = user.email;
+                    if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                    // Update business name and plan
+                    const businessNameEl = document.getElementById("business-name");
+                    if (businessNameEl) businessNameEl.textContent = "Super Admin";
+
+                    const planBadge = document.getElementById("plan-badge");
+                    if (planBadge) {
+                        planBadge.textContent = "Enterprise Plan";
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    }
+
+                    // Hide loading screen if it exists
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+
+                    return;
+                }
+
+                // Step 1: Find user's business (check if owner)
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    window.currentBusinessId = businessDoc.id;
+                    window.currentBusinessData = businessDoc.data();
+                    window.currentUserRole = 'owner';
+
+                    console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                    console.log('🏢 Business ID:', window.currentBusinessId);
+                    console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    const allBusinesses = await getDocs(collection(db, "businesses"));
+                    let foundBusiness = false;
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                        const staffDoc = await getDoc(staffRef);
+
+                        if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                            window.currentBusinessId = businessId;
+                            window.currentBusinessData = businessDoc.data();
+                            window.currentUserRole = staffData.role;
+                            window.currentUserPermissions = staffData.permissions;
+
+                            console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                            console.log('🏢 Business ID:', window.currentBusinessId);
+                            console.log('👤 Role:', window.currentUserRole);
+
+                            foundBusiness = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundBusiness) {
+                        console.warn("❌ User not associated with any business.");
+                        console.log("🔍 User email:", user.email);
+                        console.log("🔍 User UID:", user.uid);
+
+                        // For now, create a temporary business context for testing
+                        console.log("⚠️ Creating temporary business context for testing...");
+                        window.currentBusinessId = "temp-business";
+                        window.currentBusinessData = {
+                            businessName: "Temporary Business",
+                            plan: { type: "basic", status: "active" },
+                            owner: { name: user.displayName || user.email.split("@")[0] }
+                        };
+                        window.currentUserRole = "owner";
+
+                        // Set basic permissions
+                        const userData = {
+                            email: user.email,
+                            displayName: user.displayName || user.email.split("@")[0],
+                            role: "owner",
+                            approved: true,
+                            permissions: {
+                                home: ["view"],
+                                orders: ["view", "search", "create", "edit"],
+                                inventory: ["view", "edit"],
+                                customers: ["view", "edit"],
+                                employees: ["view", "edit"],
+                                finance: ["view", "reports"],
+                                analytics: ["view", "export"],
+                                settings: ["view", "edit"]
+                            }
+                        };
+
+                        // Store user data
+                        localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                        // Update UI
+                        const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                        const userNameEl = document.getElementById("user-name");
+                        const userEmailEl = document.getElementById("user-email");
+                        const userInitialEl = document.getElementById("user-initial");
+
+                        if (userNameEl) userNameEl.textContent = username;
+                        if (userEmailEl) userEmailEl.textContent = user.email;
+                        if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                        // Update business name and plan
+                        const businessNameEl = document.getElementById("business-name");
+                        if (businessNameEl) businessNameEl.textContent = "Temporary Business";
+
+                        const planBadge = document.getElementById("plan-badge");
+                        if (planBadge) {
+                            planBadge.textContent = "Basic Plan";
+                            planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                        }
+
+                        // Hide loading screen if it exists
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+
+                        return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || window.currentBusinessData.owner?.name,
+                    role: window.currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"]
+                    };
+                }
+
+                ;
+            }
+
+                console.log('✅ User data created:', {
+                email: userData.email,
+                role: userData.role,
+                businessId: window.currentBusinessId,
+                businessName: window.currentBusinessData?.businessName,
+                approved: userData.approved
+            });
+
+            // Store user data
+            localStorage.setItem("madasUser", JSON.stringify(userData));
+
+            // Update UI
+            currentUserId = user.uid;
+            const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+
+            // Update user info if elements exist
+            const userNameEl = document.getElementById("user-name");
+            const userEmailEl = document.getElementById("user-email");
+            const userInitialEl = document.getElementById("user-initial");
+
+            if (userNameEl) userNameEl.textContent = username;
+            if (userEmailEl) userEmailEl.textContent = user.email;
+            if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+            // Update business name and plan
+            const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+            const planType = window.currentBusinessData?.plan?.type || "basic";
+            const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+            const businessNameEl = document.getElementById("business-name");
+            if (businessNameEl) businessNameEl.textContent = businessName;
+
+            const planBadge = document.getElementById("plan-badge");
+            if (planBadge) {
+                planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                // Set plan badge color based on plan type
+                if (planType === 'enterprise') {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                } else if (planType === 'professional') {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                } else {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                }
+
+                // Add trial badge if in trial
+                if (planStatus === 'trial') {
+                    planBadge.textContent += ' (Trial)';
+                }
+            }
+
+            // Hide loading screen if it exists
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) loadingScreen.style.display = 'none';
+
+        } catch (error) {
+            console.error("Permission check failed:", error);
+            window.location.href = "/login";
+        }
+        });
+
+        // Logout logic
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                auth.signOut().then(() => {
+                    window.location.href = "/login";
+                }).catch((error) => {
+                    console.error("Logout error:", error);
+                    window.location.href = "/login";
+                });
+            });
+        }
+
+        // Profile button
+        const profileBtn = document.getElementById("profile-btn");
+        if (profileBtn) {
+            profileBtn.addEventListener("click", () => {
+                window.location.href = "/pages/profile.html";
+            });
+        }
+
+        // Finance Dropdown functionality
+        const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+        const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+        const financeArrow = document.querySelector("#finance-dropdown-btn .dropdown-arrow");
+
+        if (financeDropdownBtn && financeDropdownMenu) {
+            financeDropdownBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const isOpen = financeDropdownMenu.classList.contains("show");
+
+                if (isOpen) {
+                    financeDropdownMenu.classList.remove("show");
+                    financeDropdownMenu.classList.add("hidden");
+                    if (financeArrow) financeArrow.classList.remove("rotate");
+                } else {
+                    financeDropdownMenu.classList.remove("hidden");
+                    financeDropdownMenu.classList.add("show");
+                    if (financeArrow) financeArrow.classList.add("rotate");
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                    financeDropdownMenu.classList.remove("show");
+                    financeDropdownMenu.classList.add("hidden");
+                    if (financeArrow) financeArrow.classList.remove("rotate");
+                }
+            });
+        }
+
+        // E-commerce Dropdown functionality
+        const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+        const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+        const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+        if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+            ecommerceDropdownBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                if (isOpen) {
+                    ecommerceDropdownMenu.classList.remove("show");
+                    ecommerceDropdownMenu.classList.add("hidden");
+                    if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                } else {
+                    ecommerceDropdownMenu.classList.remove("hidden");
+                    ecommerceDropdownMenu.classList.add("show");
+                    if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                }
+            });
+        }
+
+        // Dark mode toggle logic
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+            }
+        }
+        if (darkToggle) {
+            darkToggle.addEventListener('click', () => {
+                setDarkMode(!document.body.classList.contains('dark-mode'));
+            });
+        }
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+        });
+
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Initialize foundMatch variable
+            let foundMatch = false;
+
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+
+            // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/dashboard"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+
+                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+
+                // Skip Dashboard link - already handled above
+                if (href === '/dashboard') return;
+
+                // COMPLETELY DISABLE Dashboard highlighting on non-dashboard pages
+                // Handle Dashboard link with PRECISE matching
+                if (href === '/dashboard') {
+                    // Dashboard should ONLY be active on dashboard page
+                    const isDashboardPage = (
+                        currentPath === '/' ||
+                        currentPath === '/dashboard' ||
+                        currentPath === '/dashboard/' ||
+                        currentPath.endsWith('/dashboard/index.html') ||
+                        currentPath.endsWith('/index.html') ||
+                        (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                        currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                    );
+                    foundMatch = true;
+                    console.log('Dashboard page detected and highlighted');
+                }
+            }
+                }
+
+                // Handle other links with normal matching
+                else {
+            // Check if current path matches this specific link
+            if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                link.classList.add('active');
+                foundMatch = true;
+                console.log('Exact match found:', href);
+            }
+            // Check page name matching for other links
+            else if (!foundMatch) {
+                const linkPageName = href.split('/').pop().replace('.html', '');
+                if (currentPageName === linkPageName ||
+                    (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                    (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                    link.classList.add('active');
+                    foundMatch = true;
+                    console.log('Page name match found:', href, 'for page:', currentPageName);
+                }
+            }
+        }
+            });
+
+        // Special cases for specific pages with dropdown management
+        if (currentPath.includes('collections') || currentPageName === 'collections') {
+            const collectionsLink = document.querySelector('a[href*="collections"]');
+            if (collectionsLink) {
+                collectionsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Collections page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                    inventoryArrow.style.transform = 'rotate(180deg)';
+                    console.log('Inventory dropdown kept open for collections');
+                }
+            }
+        }
+
+        if (currentPath.includes('products') || currentPageName === 'products') {
+            const productsLink = document.querySelector('a[href*="products"]');
+            if (productsLink) {
+                productsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Products page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                    inventoryArrow.style.transform = 'rotate(180deg)';
+                    console.log('Inventory dropdown kept open for products');
+                }
+            }
+        }
+
+        if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+            const lowStockLink = document.querySelector('a[href*="low-stock"]');
+            if (lowStockLink) {
+                lowStockLink.classList.add('active');
+                foundMatch = true;
+                console.log('Low Stock page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                    inventoryArrow.style.transform = 'rotate(180deg)';
+                    console.log('Inventory dropdown kept open for low-stock');
+                }
+            }
+        }
+
+        if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+            const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+            if (reviewsLink) {
+                reviewsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Reviews page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                    inventoryArrow.style.transform = 'rotate(180deg)';
+                    console.log('Inventory dropdown kept open for reviews');
+                }
+            }
+        }
+
+        if (currentPath.includes('orders') || currentPageName === 'orders') {
+            const ordersLink = document.querySelector('a[href*="orders"]');
+            if (ordersLink) {
+                ordersLink.classList.add('active');
+                foundMatch = true;
+                console.log('Orders page detected');
+            }
+        }
+
+        if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+            const customerLink = document.querySelector('a[href*="Customer"]');
+            if (customerLink) {
+                customerLink.classList.add('active');
+                foundMatch = true;
+                console.log('Customer page detected');
+            }
+        }
+
+        if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+            const adminLink = document.querySelector('a[href*="Admin"]');
+            if (adminLink) {
+                adminLink.classList.add('active');
+                foundMatch = true;
+                console.log('Admin page detected');
+            }
+        }
+
+        if (currentPath.includes('settings') || currentPageName === 'settings') {
+            const settingsLink = document.querySelector('a[href*="settings"]');
+            if (settingsLink) {
+                settingsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Settings page detected');
+            }
+        }
+
+        if (currentPath.includes('finance') || currentPageName === 'finance') {
+            const financeLink = document.querySelector('a[href*="finance"]');
+            if (financeLink) {
+                financeLink.classList.add('active');
+                foundMatch = true;
+                console.log('Finance page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for finance page');
+                }
+            }
+        }
+
+        if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+            const analyticsLink = document.querySelector('a[href*="analytics"]');
+            if (analyticsLink) {
+                analyticsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Analytics page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for analytics');
+                }
+            }
+        }
+
+        if (currentPath.includes('reports') || currentPageName === 'reports') {
+            const reportsLink = document.querySelector('a[href*="reports"]');
+            if (reportsLink) {
+                reportsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Reports page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for reports');
+                }
+            }
+        }
+
+        if (currentPath.includes('insights') || currentPageName === 'insights') {
+            const insightsLink = document.querySelector('a[href*="insights"]');
+            if (insightsLink) {
+                insightsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Insights page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for insights');
+                }
+            }
+        }
+
+        if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+            const expensesLink = document.querySelector('a[href*="expenses"]');
+            if (expensesLink) {
+                expensesLink.classList.add('active');
+                foundMatch = true;
+                console.log('Expenses page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for expenses');
+                }
+            }
+        }
+
+        if (currentPath.includes('pos') || currentPageName === 'pos') {
+            const posLink = document.querySelector('a[href*="pos"]');
+            if (posLink) {
+                posLink.classList.add('active');
+                foundMatch = true;
+                console.log('POS page detected');
+            }
+        }
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+
+    </script>
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

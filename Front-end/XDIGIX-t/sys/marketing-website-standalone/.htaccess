@@ -1,0 +1,18 @@
+# Clean URL Rewrites for Marketing Website
+RewriteEngine On
+
+# Redirect root to index
+RewriteRule ^$ index.html [L]
+
+# Clean URLs for main pages
+RewriteRule ^pricing/?$ pricing.html [L]
+RewriteRule ^signup/?$ signup.html [L]
+RewriteRule ^about/?$ about.html [L]
+RewriteRule ^contact/?$ contact.html [L]
+
+# Success and error pages
+RewriteRule ^signup/success/?$ signup-success.html [L]
+RewriteRule ^signup/error/?$ signup-error.html [L]
+
+# API routes (if using Apache)
+RewriteRule ^api/(.*)$ api/$1 [L]

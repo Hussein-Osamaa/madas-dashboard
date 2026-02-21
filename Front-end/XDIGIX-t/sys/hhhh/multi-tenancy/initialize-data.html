@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialize Multi-Tenancy Data - MADAS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+        }
+
+        .log-entry.success {
+            color: #28a745;
+        }
+
+        .log-entry.error {
+            color: #dc3545;
+        }
+
+        .log-entry.info {
+            color: #17a2b8;
+        }
+
+        .summary {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .summary.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Initialize Multi-Tenancy</h1>
+        <p>Set up plans and features for your multi-tenant system</p>
+
+        <div class="info">
+            <strong>📝 What this will do:</strong><br>
+            • Create 3 subscription plans (Basic, Professional, Enterprise)<br>
+            • Create 19 features across categories<br>
+            • Set up plan limits and pricing<br>
+            <br>
+            <strong>⚠️ Note:</strong> This is a one-time setup. Run this before creating businesses.
+        </div>
+
+        <button id="initializeBtn" onclick="initializeData()">
+            🚀 Initialize Plans & Features
+        </button>
+
+        <button onclick="window.location.href='admin-interface.html'" style="background: #6c757d;">
+            📊 Go to Admin Interface
+        </button>
+
+        <div id="log" class="log" style="display: none;"></div>
+
+        <div id="summary" class="summary"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3",
+            measurementId: "G-NQVR1F4N3Q"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const logDiv = document.getElementById('log');
+        const summaryDiv = document.getElementById('summary');
+        const initializeBtn = document.getElementById('initializeBtn');
+
+        function addLog(message, type = 'info') {
+            logDiv.style.display = 'block';
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = message;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Define Plans
+        const plans = [
+            {
+                planId: 'basic',
+                name: 'Basic',
+                displayName: 'Basic Plan',
+                description: 'Perfect for small businesses just getting started',
+                pricing: {
+                    monthly: 29,
+                    yearly: 290,
+                    currency: 'USD',
+                    trialDays: 14
+                },
+                features: [
+                    'pos', 'inventory', 'orders', 'customers', 'analytics', 'reports'
+                ],
+                limits: {
+                    maxStaff: 5,
+                    maxProducts: 500,
+                    maxOrders: -1,
+                    maxStorage: 1,
+                    maxApiCalls: 1000,
+                    maxLocations: 1
+                },
+                isPopular: false,
+                order: 1,
+                status: 'active'
+            },
+            {
+                planId: 'professional',
+                name: 'Professional',
+                displayName: 'Professional Plan',
+                description: 'Best for growing businesses',
+                pricing: {
+                    monthly: 79,
+                    yearly: 790,
+                    currency: 'USD',
+                    trialDays: 14
+                },
+                features: [
+                    'pos', 'inventory', 'orders', 'customers', 'analytics', 'reports',
+                    'advancedReports', 'insights', 'gamification', 'loyalty',
+                    'madasPass', 'reviews', 'collections', 'websiteBuilder', 'apiAccess'
+                ],
+                limits: {
+                    maxStaff: 20,
+                    maxProducts: 5000,
+                    maxOrders: -1,
+                    maxStorage: 10,
+                    maxApiCalls: 50000,
+                    maxLocations: 5
+                },
+                isPopular: true,
+                order: 2,
+                status: 'active'
+            },
+            {
+                planId: 'enterprise',
+                name: 'Enterprise',
+                displayName: 'Enterprise Plan',
+                description: 'For large organizations with advanced needs',
+                pricing: {
+                    monthly: 199,
+                    yearly: 1990,
+                    currency: 'USD',
+                    trialDays: 30
+                },
+                features: [
+                    'pos', 'inventory', 'orders', 'customers', 'analytics', 'reports',
+                    'advancedReports', 'insights', 'gamification', 'loyalty',
+                    'madasPass', 'reviews', 'collections', 'websiteBuilder', 'apiAccess',
+                    'customDomain', 'multiLocation', 'shares', 'wallet'
+                ],
+                limits: {
+                    maxStaff: -1,
+                    maxProducts: -1,
+                    maxOrders: -1,
+                    maxStorage: 100,
+                    maxApiCalls: -1,
+                    maxLocations: -1
+                },
+                isPopular: false,
+                order: 3,
+                status: 'active'
+            }
+        ];
+
+        // Define Features
+        const features = [
+            { featureId: 'pos', name: 'POS System', category: 'core', description: 'Point of Sale system' },
+            { featureId: 'inventory', name: 'Inventory Management', category: 'core', description: 'Track stock and inventory' },
+            { featureId: 'orders', name: 'Order Management', category: 'core', description: 'Manage customer orders' },
+            { featureId: 'customers', name: 'Customer Management', category: 'core', description: 'Manage customer data' },
+            { featureId: 'analytics', name: 'Basic Analytics', category: 'analytics', description: 'View basic reports' },
+            { featureId: 'reports', name: 'Reports', category: 'analytics', description: 'Generate reports' },
+            { featureId: 'advancedReports', name: 'Advanced Reports', category: 'analytics', description: 'Detailed analytics' },
+            { featureId: 'insights', name: 'Insights', category: 'analytics', description: 'Business insights' },
+            { featureId: 'gamification', name: 'Gamification Hub', category: 'engagement', description: 'Gamification features' },
+            { featureId: 'loyalty', name: 'Loyalty Program', category: 'engagement', description: 'Customer loyalty' },
+            { featureId: 'madasPass', name: 'MADAS Pass', category: 'engagement', description: 'Membership system' },
+            { featureId: 'reviews', name: 'Product Reviews', category: 'engagement', description: 'Customer reviews' },
+            { featureId: 'collections', name: 'Product Collections', category: 'engagement', description: 'Organize products' },
+            { featureId: 'wallet', name: 'Customer Wallet', category: 'engagement', description: 'Digital wallet' },
+            { featureId: 'websiteBuilder', name: 'Website Builder', category: 'advanced', description: 'Build website' },
+            { featureId: 'apiAccess', name: 'API Access', category: 'advanced', description: 'API integration' },
+            { featureId: 'customDomain', name: 'Custom Domain', category: 'advanced', description: 'Your own domain' },
+            { featureId: 'multiLocation', name: 'Multi-Location', category: 'advanced', description: 'Multiple stores' },
+            { featureId: 'shares', name: 'Shares Management', category: 'advanced', description: 'Manage shares' }
+        ];
+
+        window.initializeData = async function() {
+            initializeBtn.disabled = true;
+            logDiv.innerHTML = '';
+            summaryDiv.classList.remove('show');
+
+            addLog('🚀 Starting initialization...', 'info');
+
+            try {
+                // Check if plans already exist
+                const plansSnap = await getDocs(collection(db, 'plans'));
+                if (!plansSnap.empty) {
+                    addLog('⚠️  Plans already exist!', 'error');
+                    const confirmed = confirm('Plans already exist. Do you want to overwrite them?');
+                    if (!confirmed) {
+                        addLog('❌ Initialization cancelled', 'error');
+                        initializeBtn.disabled = false;
+                        return;
+                    }
+                    addLog('✓ Proceeding with overwrite...', 'info');
+                }
+
+                // Add plans
+                addLog('📋 Creating plans...', 'info');
+                for (const plan of plans) {
+                    await setDoc(doc(db, 'plans', plan.planId), plan);
+                    addLog(`✓ Created plan: ${plan.name} ($${plan.pricing.monthly}/month)`, 'success');
+                }
+
+                // Add features
+                addLog('🎯 Creating features...', 'info');
+                for (const feature of features) {
+                    await setDoc(doc(db, 'features', feature.featureId), feature);
+                    addLog(`✓ Created feature: ${feature.name}`, 'success');
+                }
+
+                addLog('✅ Initialization complete!', 'success');
+
+                // Show summary
+                summaryDiv.innerHTML = `
+                    <strong>🎉 Success!</strong><br><br>
+                    <strong>Created:</strong><br>
+                    • ${plans.length} subscription plans<br>
+                    • ${features.length} features<br><br>
+                    <strong>Next steps:</strong><br>
+                    1. Go to Admin Interface<br>
+                    2. Create your first business<br>
+                    3. Assign staff and test the system
+                `;
+                summaryDiv.classList.add('show');
+
+            } catch (error) {
+                console.error('Error:', error);
+                addLog(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                initializeBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html, body, #root {
+    height: 100%;
+    min-height: 100dvh;
+  }
+  body {
+    margin: 0;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    @apply bg-gray-50 text-gray-900 transition-colors;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    overflow-x: hidden;
+  }
+  html.dark body {
+    @apply bg-[#0a0b1a] text-gray-100;
+  }
+}
+
+@layer utilities {
+  .safe-area-inset-top {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+  .safe-area-inset-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Management - DIGIX Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+    if (window.innerWidth < 1024 && !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        sidebar.classList.add('-translate-x-full'); } }); </script>
+
+        <script>
+
+            <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+                    <style>
+                        :root {
+                            --primary: #3B82F6;
+                        --success: #10B981;
+                        --warning: #F59E0B;
+                        --danger: #EF4444;
+        }
+
+                        body {
+                            font - family: 'Inter', sans-serif;
+        }
+
+                        .modal {
+                            display: none;
+                        position: fixed;
+                        z-index: 50;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0,0,0,0.5);
+        }
+
+                        .modal.active {
+                            display: flex;
+                        align-items: center;
+                        justify-content: center;
+        }
+
+                        .modal-content {
+                            background: white;
+                        border-radius: 12px;
+                        max-width: 600px;
+                        width: 90%;
+                        max-height: 90vh;
+                        overflow-y: auto;
+        }
+
+                        .tab-button {
+                            border - bottom: 3px solid transparent;
+                        transition: all 0.3s;
+        }
+
+                        .tab-button.active {
+                            border - bottom - color: var(--primary);
+                        color: var(--primary);
+        }
+
+                        .status-badge {
+                            padding: 4px 12px;
+                        border-radius: 9999px;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+        }
+
+                        .status-active {
+                            background: #D1FAE5;
+                        color: #065F46;
+        }
+
+                        .status-trial {
+                            background: #FEF3C7;
+                        color: #92400E;
+        }
+
+                        .status-suspended {
+                            background: #FEE2E2;
+                        color: #991B1B;
+        }
+
+                        .plan-badge {
+                            padding: 4px 12px;
+                        border-radius: 9999px;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+        }
+
+                        .plan-basic {
+                            background: #E0E7FF;
+                        color: #3730A3;
+        }
+
+                        .plan-professional {
+                            background: #DDD6FE;
+                        color: #5B21B6;
+        }
+
+                        .plan-enterprise {
+                            background: #FCE7F3;
+                        color: #831843;
+        }
+
+                        .checkbox-feature {
+                            width: 20px;
+                        height: 20px;
+                        cursor: pointer;
+        }
+
+                        .feature-category {
+                            background: #F9FAFB;
+                        padding: 12px;
+                        border-radius: 8px;
+                        margin-bottom: 12px;
+        }
+
+                        .action-btn {
+                            padding: 8px;
+                        border-radius: 6px;
+                        transition: all 0.2s;
+        }
+
+                        .action-btn:hover {
+                            transform: scale(1.1);
+        }
+
+                        /* Enhanced Sidebar Link Styles */
+                        .sidebar-link {
+                            position: relative;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        overflow: hidden;
+                        color: var(--text-main) !important;
+        }
+
+
+
+
+
+                        /* Override Tailwind text color classes */
+                        .sidebar-link.text-gray-700,
+                        .sidebar-link.text-gray-600 {
+                            color: var(--text-main) !important;
+        }
+
+                        /* Dark mode text color for sidebar links */
+
+                        body.dark-mode .sidebar-link {
+                            color: var(--text-main) !important;
+        }
+
+                        .sidebar-link:hover {
+                            transform: translateX(6px) scale(1.02);
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                        background: var(--madas-light);
+        }
+
+                        .sidebar-link:active {
+                            transform: translateX(3px) scale(0.98);
+                        transition: all 0.1s ease;
+        }/* Simple Dropdown Menu Styling - No 3D Effects */
+                        .inventory-submenu,
+                        .finance-dropdown-menu,
+                        .ecommerce-dropdown-menu {
+                            background: transparent;
+                        border: none;
+                        border-radius: 0;
+                        box-shadow: none;
+                        margin: 0;
+                        padding: 0;
+        }/* Simple Dropdown Items - Same as Main Navigation */
+                        .inventory-submenu .sidebar-link,
+                        .finance-dropdown-menu .sidebar-link,
+                        .ecommerce-dropdown-menu .sidebar-link {
+                            padding: 12px 16px;
+                        margin: 0;
+                        border-radius: 0;
+                        transition: all 0.2s ease;
+        }
+
+                        .inventory-submenu .sidebar-link:hover,
+                        .finance-dropdown-menu .sidebar-link:hover,
+                        .ecommerce-dropdown-menu .sidebar-link:hover {
+                            background: var(--madas-light);
+                        color: var(--madas-primary);
+        }
+
+                        /* Ensure dropdown hover maintains color in dark mode */
+                        body.dark-mode .inventory-submenu .sidebar-link:hover,
+                        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+                        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+                            color: var(--madas-primary) !important;
+        }
+
+                        /* Dark mode submenu text color */
+                        body.dark-mode .sidebar-link.submenu-link {
+                            color: var(--text-main) !important;
+        }
+
+                        body.dark-mode .sidebar-link.submenu-link:hover {
+                            color: var(--text-main) !important;
+        }
+
+                        /* Dropdown Items Active State - EXACT Same as Main Navigation */
+                        .inventory-submenu .sidebar-link.active,
+                        .finance-dropdown-menu .sidebar-link.active,
+                        .ecommerce-dropdown-menu .sidebar-link.active {
+                            background: var(--madas-light) !important;
+                        color: var(--madas-primary) !important;
+                        font-weight: 600 !important;
+        }
+
+                        .inventory-submenu .sidebar-link.active .material-icons,
+                        .finance-dropdown-menu .sidebar-link.active .material-icons,
+                        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+                            color: var(--madas-primary) !important;
+        }
+
+                        /* Original Dropdown Button */
+                        .inventory-dropdown button,
+                        .finance-dropdown button,
+                        .ecommerce-dropdown button {
+                            background: transparent;
+                        border: none;
+                        padding: 12px 16px;
+                        border-radius: 8px;
+                        transition: all 0.2s ease;
+                        width: 100%;
+                        text-align: left;
+        }
+
+                        .inventory-dropdown button:hover,
+                        .finance-dropdown button:hover,
+                        .ecommerce-dropdown button:hover {
+                            background: #f3f4f6;
+        }
+
+                        /* Original Dropdown Arrow */
+                        .dropdown-arrow {
+                            transition: transform 0.2s ease;
+        }
+
+                        .dropdown-arrow.rotate {
+                            transform: rotate(180deg);
+        }
+
+                        /* Enhanced dropdown menu container */
+                        .inventory-submenu:not(.hidden),
+                        .finance-dropdown-menu.show {
+                            background: rgba(255, 255, 255, 0.05);
+                        backdrop-filter: blur(10px);
+                        -webkit-backdrop-filter: blur(10px);
+                        border: 1px solid rgba(39, 73, 31, 0.1);
+                        border-radius: 12px;
+                        box-shadow:
+                        0 8px 32px rgba(39, 73, 31, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+                        /* Enhanced dropdown button hover */
+                        .inventory-dropdown button:hover,
+                        .finance-dropdown button:hover,
+                        .ecommerce-dropdown button:hover {
+                            background: rgba(39, 73, 31, 0.05);
+                        backdrop-filter: blur(5px);
+                        -webkit-backdrop-filter: blur(5px);
+                        border-radius: 12px;
+                        transform: translateX(2px);
+        }
+
+                        .sidebar-link.active:hover {
+                            transform: translateX(6px) scale(1.02);
+                        box-shadow: 0 6px 20px rgba(39, 73, 31, 0.4);
+        }
+
+                        /* Icon animation on hover */
+                        .sidebar-link:hover .material-icons {
+                            transform: scale(1.1) rotate(2deg);
+                        transition: all 0.3s ease;
+        }
+
+                        /* Submenu link enhancements */
+                        .sidebar-link.submenu-link {
+                            position: relative;
+                        margin-left: 1rem;
+                        border-left: 2px solid transparent;
+                        transition: all 0.3s ease;
+                        color: var(--text-main) !important;
+        }
+
+                        .sidebar-link.submenu-link:hover {
+                            border - left - color: var(--madas-primary);
+                        background: var(--madas-light);
+                        transform: translateX(8px);
+                        color: var(--text-main) !important;
+        }
+
+                        .sidebar-link.submenu-link.active {
+                            border - left - color: var(--madas-primary);
+                        background: var(--madas-light);
+                        color: var(--madas-primary);
+        }
+
+                        /* Dark mode submenu text color */
+                        body.dark-mode .sidebar-link.submenu-link {
+                            color: var(--text-main) !important;
+        }
+
+                        body.dark-mode .sidebar-link.submenu-link:hover {
+                            color: var(--text-main) !important;
+        }
+                        /* Unified Dropdown Menu Styling - No 3D Effects */
+                        .inventory-submenu,
+                        .finance-dropdown-menu,
+                        .ecommerce-dropdown-menu {
+                            background: transparent !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+        }
+
+                        /* Unified Dropdown Items - Same as Main Navigation */
+                        .inventory-submenu .sidebar-link,
+                        .finance-dropdown-menu .sidebar-link,
+                        .ecommerce-dropdown-menu .sidebar-link {
+                            padding: 10px 14px !important;
+                        margin: 0 !important;
+                        border-radius: 0 !important;
+                        transition: all 0.2s ease !important;
+        }
+
+                        .inventory-submenu .sidebar-link:hover,
+                        .finance-dropdown-menu .sidebar-link:hover,
+                        .ecommerce-dropdown-menu .sidebar-link:hover {
+                            background: var(--madas-light) !important;
+                        color: var(--madas-primary) !important;
+        }
+
+                        /* Ensure dropdown hover maintains color in dark mode */
+                        body.dark-mode .inventory-submenu .sidebar-link:hover,
+                        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+                        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+                            color: var(--madas-primary) !important;
+        }
+
+
+                        /* Ensure all dropdown text sizes are uniform */
+                        .inventory-submenu .sidebar-link span,
+                        .finance-dropdown-menu .sidebar-link span,
+                        .ecommerce-dropdown-menu .sidebar-link span {
+                            font - size: 0.8rem !important;
+        }
+
+                        /* Make dropdown icons smaller */
+                        .inventory-submenu .material-icons,
+                        .finance-dropdown-menu .material-icons,
+                        .ecommerce-dropdown-menu .material-icons {
+                            font - size: 18px !important;
+        }
+
+                        /* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+                        .inventory-submenu .sidebar-link.active,
+                        .finance-dropdown-menu .sidebar-link.active,
+                        .ecommerce-dropdown-menu .sidebar-link.active {
+                            background: var(--madas-light) !important;
+                        color: var(--madas-primary) !important;
+                        font-weight: 600 !important;
+        }
+
+                        .inventory-submenu .sidebar-link.active .material-icons,
+                        .finance-dropdown-menu .sidebar-link.active .material-icons,
+                        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+                            color: var(--madas-primary) !important;
+        }
+
+                        /* Unified Dropdown Button Styling */
+                        .inventory-dropdown button,
+                        .finance-dropdown button,
+                        .ecommerce-dropdown button {
+                            background: transparent !important;
+                        border: none !important;
+                        padding: 10px 14px !important;
+                        border-radius: 8px !important;
+                        transition: all 0.2s ease !important;
+                        width: 100% !important;
+                        text-align: left !important;
+        }
+
+                        .inventory-dropdown button:hover,
+                        .finance-dropdown button:hover,
+                        .ecommerce-dropdown button:hover {
+                            background: var(--madas-light) !important;
+        }
+
+                        /* Unified Dropdown Arrow */
+                        .dropdown-arrow {
+                            transition: transform 0.2s ease !important;
+        }
+
+                        .dropdown-arrow.rotate {
+                            transform: rotate(180deg) !important;
+        }
+
+                        /* Unified Visible States for Dropdowns - No 3D Effects */
+                        .inventory-submenu:not(.hidden) {
+                            opacity: 1 !important;
+                        transform: translateY(0) !important;
+                        pointer-events: auto !important;
+                        background: transparent !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+        }
+
+                        .finance-dropdown-menu.show {
+                            display: block !important;
+                        animation: slideDown 0.3s ease !important;
+                        background: transparent !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+        }
+
+                        .ecommerce-dropdown-menu.show {
+                            display: block !important;
+                        animation: slideDown 0.3s ease !important;
+                        background: transparent !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+        }
+
+                    </style>
+                </head>
+                <body class="bg-gray-50">
+    <!-- Header -->
+                    <!-- Header -->
+                    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+                        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+                            <div class="flex items-center space-x-4">
+                                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                                    <span class="material-icons">menu</span>
+                                </button>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                                        <span class="text-white font-bold text-sm">M</span>
+                                    </div>
+                                    <div>
+                                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                                        <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                                            Loading Plan...
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center space-x-4">
+                                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <!-- Dark mode toggle button -->
+                                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                                            <path
+                                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                                        </svg>
+                                    </button>
+                                    <div class="hidden md:block text-right">
+                                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                                    </div>
+                                    <button id="profile-btn"
+                                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                                    </button>
+                                    <button id="logout-btn"
+                                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                                        <span class="material-icons">logout</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Tabs -->
+                    <div class="bg-white border-b">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <nav class="flex space-x-8">
+                                <button class="tab-button active px-4 py-4 font-medium flex items-center gap-2" data-tab="businesses">
+                                    <span class="material-icons text-sm">business</span>
+                                    Businesses
+                                </button>
+                                <button class="tab-button px-4 py-4 font-medium text-gray-500 flex items-center gap-2" data-tab="staff">
+                                    <span class="material-icons text-sm">people</span>
+                                    Staff Management
+                                </button>
+                                <button class="tab-button px-4 py-4 font-medium text-gray-500 flex items-center gap-2" data-tab="analytics">
+                                    <span class="material-icons text-sm">analytics</span>
+                                    Analytics
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+                        <!-- Tab 1: Businesses -->
+                        <div id="tab-businesses" class="tab-content">
+                            <!-- Stats Cards -->
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                                <div class="bg-white rounded-lg shadow p-6">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-gray-500 text-sm">Total Businesses</p>
+                                            <p class="text-3xl font-bold text-gray-900" id="stat-total">0</p>
+                                        </div>
+                                        <span class="material-icons text-blue-500 text-4xl">business</span>
+                                    </div>
+                                    <p class="text-green-500 text-sm mt-2">↑ 12% from last month</p>
+                                </div>
+
+                                <div class="bg-white rounded-lg shadow p-6">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-gray-500 text-sm">Active</p>
+                                            <p class="text-3xl font-bold text-green-600" id="stat-active">0</p>
+                                        </div>
+                                        <span class="material-icons text-green-500 text-4xl">check_circle</span>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-lg shadow p-6">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-gray-500 text-sm">Trial</p>
+                                            <p class="text-3xl font-bold text-orange-600" id="stat-trial">0</p>
+                                        </div>
+                                        <span class="material-icons text-orange-500 text-4xl">schedule</span>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-lg shadow p-6">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-gray-500 text-sm">Suspended</p>
+                                            <p class="text-3xl font-bold text-red-600" id="stat-suspended">0</p>
+                                        </div>
+                                        <span class="material-icons text-red-500 text-4xl">block</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Bar -->
+                            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                    <div class="flex-1">
+                                        <div class="relative">
+                                            <span class="material-icons absolute left-3 top-3 text-gray-400">search</span>
+                                            <input type="text" id="search-businesses" placeholder="Search businesses..."
+                                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <select id="filter-plan" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">All Plans</option>
+                                            <option value="basic">Basic</option>
+                                            <option value="professional">Professional</option>
+                                            <option value="enterprise">Enterprise</option>
+                                        </select>
+                                        <select id="filter-status" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">All Status</option>
+                                            <option value="active">Active</option>
+                                            <option value="trial">Trial</option>
+                                            <option value="suspended">Suspended</option>
+                                        </select>
+                                        <button id="add-business-btn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2">
+                                            <span class="material-icons">add</span>
+                                            Add Business
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Businesses Table -->
+                            <div class="bg-white rounded-lg shadow overflow-hidden">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="businesses-tbody" class="bg-white divide-y divide-gray-200">
+                                        <!-- Rows will be inserted here -->
+                                        <tr>
+                                            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                                <div class="flex flex-col items-center">
+                                                    <span class="material-icons text-6xl text-gray-300 mb-4">business</span>
+                                                    <p class="text-lg">No businesses yet</p>
+                                                    <p class="text-sm">Click "Add Business" to create your first business account</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Staff Management -->
+                        <div id="tab-staff" class="tab-content hidden">
+                            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                                <h3 class="text-lg font-medium mb-4">Select Business to Manage Staff</h3>
+                                <select id="business-selector" class="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-lg">
+                                    <option value="">Select a business...</option>
+                                </select>
+                            </div>
+
+                            <div id="staff-content" class="hidden">
+                                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <h3 class="text-xl font-bold" id="selected-business-name">Business Name</h3>
+                                            <p class="text-sm text-gray-500" id="selected-business-plan">Plan: Professional</p>
+                                        </div>
+                                        <button id="add-staff-btn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2">
+                                            <span class="material-icons">person_add</span>
+                                            Add Staff
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Staff Table -->
+                                <div class="bg-white rounded-lg shadow overflow-hidden">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff Member</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="staff-tbody" class="bg-white divide-y divide-gray-200">
+                                            <tr>
+                                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                                    No staff members yet
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Analytics -->
+                        <div id="tab-analytics" class="tab-content hidden">
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h3 class="text-xl font-bold mb-4">Platform Analytics</h3>
+                                <p class="text-gray-500">Analytics dashboard coming soon...</p>
+                            </div>
+                        </div>
+
+                    </main>
+
+                    <!-- Add/Edit Business Modal -->
+                    <div id="business-modal" class="modal">
+                        <div class="modal-content">
+                            <div class="p-6 border-b">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-xl font-bold" id="modal-title">Add New Business</h3>
+                                    <button class="text-gray-400 hover:text-gray-600" onclick="closeModal('business-modal')">
+                                        <span class="material-icons">close</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <form id="business-form" class="p-6">
+                                <input type="hidden" id="business-id">
+
+                                    <!-- Business Name -->
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Business Name *</label>
+                                        <input type="text" id="business-name" required
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g. Acme Corporation">
+                                    </div>
+
+                                    <!-- Contact Email -->
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Email *</label>
+                                        <input type="email" id="business-email" required
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="admin@business.com">
+                                    </div>
+
+                                    <!-- Phone (optional) -->
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                                        <input type="tel" id="business-phone"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="+1234567890">
+                                    </div>
+
+                                    <!-- Plan Selection -->
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Subscription Plan *</label>
+                                        <select id="business-plan" required
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">Select a plan...</option>
+                                            <option value="basic">Basic - $29/month</option>
+                                            <option value="professional">Professional - $79/month</option>
+                                            <option value="enterprise">Enterprise - $199/month</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Features Selection -->
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-3">Features (Customize per business)</label>
+
+                                        <div class="feature-category">
+                                            <h4 class="font-semibold text-sm mb-2">Core Features</h4>
+                                            <div class="space-y-2">
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="pos" checked>
+                                                        <span class="text-sm">Point of Sale (POS)</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="inventory" checked>
+                                                        <span class="text-sm">Inventory Management</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="orders" checked>
+                                                        <span class="text-sm">Order Management</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="customers" checked>
+                                                        <span class="text-sm">Customer Management</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="feature-category">
+                                            <h4 class="font-semibold text-sm mb-2">Analytics & Reports</h4>
+                                            <div class="space-y-2">
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="analytics" checked>
+                                                        <span class="text-sm">Basic Analytics</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="advanced_reports">
+                                                        <span class="text-sm">Advanced Reports</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="insights">
+                                                        <span class="text-sm">Advanced Insights</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="feature-category">
+                                            <h4 class="font-semibold text-sm mb-2">Engagement Features</h4>
+                                            <div class="space-y-2">
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="gamification">
+                                                        <span class="text-sm">🎮 Gamification Hub</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="loyalty">
+                                                        <span class="text-sm">💎 Loyalty Program</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="madas_pass">
+                                                        <span class="text-sm">🎫 MADAS Pass</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="reviews">
+                                                        <span class="text-sm">⭐ Product Reviews</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="feature-category">
+                                            <h4 class="font-semibold text-sm mb-2">Advanced Features</h4>
+                                            <div class="space-y-2">
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="website_builder">
+                                                        <span class="text-sm">Website Builder</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="api_access">
+                                                        <span class="text-sm">API Access</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="custom_domain">
+                                                        <span class="text-sm">Custom Domain</span>
+                                                </label>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" class="checkbox-feature" name="feature" value="multi_location">
+                                                        <span class="text-sm">Multi-Location</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Trial Period -->
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Trial Days</label>
+                                        <input type="number" id="trial-days" value="14"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="14">
+                                            <p class="text-xs text-gray-500 mt-1">Number of days for free trial</p>
+                                    </div>
+
+                                    <!-- Submit Button -->
+                                    <div class="flex gap-3 mt-6">
+                                        <button type="submit" class="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
+                                            Create Business
+                                        </button>
+                                        <button type="button" onclick="closeModal('business-modal')" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                            Cancel
+                                        </button>
+                                    </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Add Staff Modal -->
+                    <div id="staff-modal" class="modal">
+                        <div class="modal-content">
+                            <div class="p-6 border-b">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-xl font-bold">Add Staff Member</h3>
+                                    <button class="text-gray-400 hover:text-gray-600" onclick="closeModal('staff-modal')">
+                                        <span class="material-icons">close</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <form id="staff-form" class="p-6">
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                                    <input type="email" id="staff-email" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="staff@business.com">
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                                    <input type="text" id="staff-name" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="John Doe">
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+                                    <select id="staff-role" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select role...</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="staff">Staff</option>
+                                        <option value="cashier">Cashier</option>
+                                    </select>
+                                </div>
+
+                                <div class="flex gap-3 mt-6">
+                                    <button type="submit" class="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-medium">
+                                        Send Invitation
+                                    </button>
+                                    <button type="button" onclick="closeModal('staff-modal')" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <script type="module">
+                        import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+                        import {getAuth, onAuthStateChanged, signOut} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+                        import {getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, Timestamp} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+                        // Firebase configuration
+                        const firebaseConfig = {
+                            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+                        authDomain: "madas-store.firebaseapp.com",
+                        projectId: "madas-store",
+                        storageBucket: "madas-store.firebasestorage.app",
+                        messagingSenderId: "527071300010",
+                        appId: "1:527071300010:web:70470e2204065b4590583d3"
+        };
+
+                        // Initialize Firebase
+                        const app = initializeApp(firebaseConfig);
+                        const auth = getAuth(app);
+                        const db = getFirestore(app);
+
+                        // Global variables
+                        let currentUser = null;
+                        let businesses = [];
+                        let selectedBusinessId = null;
+
+        // Auth state
+        onAuthStateChanged(auth, (user) => {
+                            currentUser = user;
+                        if (user) {
+                            document.getElementById('user-name').textContent = user.displayName || user.email?.split('@')[0] || 'Admin';
+                        document.getElementById('user-email').textContent = user.email || '';
+                        document.getElementById('user-initial').textContent = (user.displayName || user.email || 'A').charAt(0).toUpperCase();
+
+                        // Load data
+                        loadBusinesses();
+            } else {
+                            window.location.href = "/login";
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+                            await signOut(auth);
+                        window.location.href = "/login";
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(button => {
+                            button.addEventListener('click', () => {
+                                const tabName = button.dataset.tab;
+
+                                // Update buttons
+                                document.querySelectorAll('.tab-button').forEach(btn => {
+                                    btn.classList.remove('active', 'text-blue-600');
+                                    btn.classList.add('text-gray-500');
+                                });
+                                button.classList.add('active', 'text-blue-600');
+                                button.classList.remove('text-gray-500');
+
+                                // Show/hide content
+                                document.querySelectorAll('.tab-content').forEach(content => {
+                                    content.classList.add('hidden');
+                                });
+                                document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+                            });
+        });
+
+        // Modal functions
+        window.openModal = (modalId) => {
+                            document.getElementById(modalId).classList.add('active');
+        };
+
+        window.closeModal = (modalId) => {
+                            document.getElementById(modalId).classList.remove('active');
+        };
+
+        // Add Business button
+        document.getElementById('add-business-btn').addEventListener('click', () => {
+                            document.getElementById('business-form').reset();
+                        document.getElementById('modal-title').textContent = 'Add New Business';
+                        openModal('business-modal');
+        });
+
+        // Add Staff button
+        document.getElementById('add-staff-btn')?.addEventListener('click', () => {
+                            document.getElementById('staff-form').reset();
+                        openModal('staff-modal');
+        });
+
+        // Business form submission
+        document.getElementById('business-form').addEventListener('submit', async (e) => {
+                            e.preventDefault();
+
+                        const name = document.getElementById('business-name').value;
+                        const email = document.getElementById('business-email').value;
+                        const phone = document.getElementById('business-phone').value;
+                        const plan = document.getElementById('business-plan').value;
+                        const trialDays = parseInt(document.getElementById('trial-days').value) || 14;
+
+                        // Get selected features
+                        const features = { };
+            document.querySelectorAll('input[name="feature"]:checked').forEach(checkbox => {
+                            features[checkbox.value] = true;
+            });
+
+                        const businessData = {
+                            businessName: name,
+                        plan: {
+                            type: plan,
+                        status: 'trial'
+                },
+                        contact: {
+                            email: email,
+                        phone: phone
+                },
+                        features: features,
+                        status: 'active',
+                        staffCount: 0,
+                        createdAt: Timestamp.now(),
+                        createdBy: currentUser.uid
+            };
+
+                        try {
+                            await addDoc(collection(db, 'businesses'), businessData);
+                        alert('Business created successfully!');
+                        closeModal('business-modal');
+                        loadBusinesses();
+            } catch (error) {
+                            console.error('Error creating business:', error);
+                        alert('Failed to create business. Please try again.');
+            }
+        });
+
+                        // Load businesses
+                        async function loadBusinesses() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'businesses'));
+                        businesses = [];
+                
+                querySnapshot.forEach((doc) => {
+                            businesses.push({
+                                id: doc.id,
+                                ...doc.data()
+                            });
+                });
+
+                        updateStats();
+                        renderBusinesses();
+                        updateBusinessSelector();
+            } catch (error) {
+                            console.error('Error loading businesses:', error);
+            }
+        }
+
+                        // Update stats
+                        function updateStats() {
+            const total = businesses.length;
+            const active = businesses.filter(b => b.status === 'active').length;
+            const trial = businesses.filter(b => b.plan?.status === 'trial').length;
+            const suspended = businesses.filter(b => b.status === 'suspended').length;
+
+                        document.getElementById('stat-total').textContent = total;
+                        document.getElementById('stat-active').textContent = active;
+                        document.getElementById('stat-trial').textContent = trial;
+                        document.getElementById('stat-suspended').textContent = suspended;
+        }
+
+                        // Render businesses table
+                        function renderBusinesses() {
+            const tbody = document.getElementById('businesses-tbody');
+                        const searchTerm = document.getElementById('search-businesses')?.value.toLowerCase() || '';
+                        const filterPlan = document.getElementById('filter-plan')?.value || '';
+                        const filterStatus = document.getElementById('filter-status')?.value || '';
+
+                        let filtered = businesses;
+
+                        // Apply filters
+                        if (searchTerm) {
+                            filtered = filtered.filter(b =>
+                                b.businessName.toLowerCase().includes(searchTerm) ||
+                                b.contact.email.toLowerCase().includes(searchTerm)
+                            );
+            }
+                        if (filterPlan) {
+                            filtered = filtered.filter(b => b.plan?.type === filterPlan);
+            }
+                        if (filterStatus) {
+                            filtered = filtered.filter(b => b.status === filterStatus);
+            }
+
+                        if (filtered.length === 0) {
+                            tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            No businesses found
+                        </td>
+                    </tr>
+                `;
+                        return;
+            }
+            
+            tbody.innerHTML = filtered.map(business => {
+                const date = business.createdAt?.toDate?.() || new Date();
+                        const dateStr = date.toLocaleDateString();
+
+                        return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                            ${business.businessName.charAt(0).toUpperCase()}
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">${business.businessName}</div>
+                                        <div class="text-sm text-gray-500">${business.contact.email}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="plan-badge plan-${business.plan?.type || 'basic'}">
+                                    ${(business.plan?.type || 'basic').charAt(0).toUpperCase() + (business.plan?.type || 'basic').slice(1)}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="status-badge status-${business.status || 'active'}">
+                                    ${(business.status || 'active').charAt(0).toUpperCase() + (business.status || 'active').slice(1)}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                ${business.staffCount || 0}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                ${dateStr}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button class="action-btn text-blue-600 hover:bg-blue-50" onclick="editBusiness('${business.id}')" title="Edit">
+                                    <span class="material-icons text-sm">edit</span>
+                                </button>
+                                <button class="action-btn text-green-600 hover:bg-green-50" onclick="viewStaff('${business.id}')" title="View Staff">
+                                    <span class="material-icons text-sm">people</span>
+                                </button>
+                                <button class="action-btn text-orange-600 hover:bg-orange-50" onclick="suspendBusiness('${business.id}')" title="Suspend">
+                                    <span class="material-icons text-sm">pause_circle</span>
+                                </button>
+                                <button class="action-btn text-red-600 hover:bg-red-50" onclick="deleteBusiness('${business.id}')" title="Delete">
+                                    <span class="material-icons text-sm">delete</span>
+                                </button>
+                            </td>
+                        </tr>
+                        `;
+            }).join('');
+        }
+
+                        // Update business selector
+                        function updateBusinessSelector() {
+            const selector = document.getElementById('business-selector');
+                        selector.innerHTML = '<option value="">Select a business...</option>' +
+                businesses.map(b => `<option value="${b.id}">${b.businessName}</option>`).join('');
+        }
+
+        // Business selector change
+        document.getElementById('business-selector').addEventListener('change', (e) => {
+                            selectedBusinessId = e.target.value;
+                        if (selectedBusinessId) {
+                const business = businesses.find(b => b.id === selectedBusinessId);
+                        document.getElementById('selected-business-name').textContent = business.businessName;
+                        document.getElementById('selected-business-plan').textContent = `Plan: ${business.plan?.type || 'Basic'}`;
+                        document.getElementById('staff-content').classList.remove('hidden');
+                        loadStaff(selectedBusinessId);
+            } else {
+                            document.getElementById('staff-content').classList.add('hidden');
+            }
+        });
+
+                        // Load staff for selected business
+                        async function loadStaff(businessId) {
+                            // Implementation here - load staff from businesses/{businessId}/staff
+                            document.getElementById('staff-tbody').innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                        No staff members yet. Click "Add Staff" to invite team members.
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Global functions for actions
+        window.editBusiness = (id) => {
+            const business = businesses.find(b => b.id === id);
+                        if (business) {
+                            document.getElementById('business-id').value = id;
+                        document.getElementById('business-name').value = business.businessName;
+                        document.getElementById('business-email').value = business.contact.email;
+                        document.getElementById('business-phone').value = business.contact.phone || '';
+                        document.getElementById('business-plan').value = business.plan?.type || 'basic';
+
+                // Set features
+                document.querySelectorAll('input[name="feature"]').forEach(checkbox => {
+                            checkbox.checked = business.features?.[checkbox.value] || false;
+                });
+
+                        document.getElementById('modal-title').textContent = 'Edit Business';
+                        openModal('business-modal');
+            }
+        };
+
+        window.viewStaff = (id) => {
+            const business = businesses.find(b => b.id === id);
+                        if (business) {
+                            document.getElementById('business-selector').value = id;
+                        document.getElementById('business-selector').dispatchEvent(new Event('change'));
+
+                        // Switch to staff tab
+                        document.querySelector('[data-tab="staff"]').click();
+            }
+        };
+
+        window.suspendBusiness = async (id) => {
+            if (confirm('Are you sure you want to suspend this business?')) {
+                try {
+                            await updateDoc(doc(db, 'businesses', id), {
+                                status: 'suspended',
+                                suspendedAt: Timestamp.now()
+                            });
+                        alert('Business suspended successfully');
+                        loadBusinesses();
+                } catch (error) {
+                            console.error('Error suspending business:', error);
+                        alert('Failed to suspend business');
+                }
+            }
+        };
+
+        window.deleteBusiness = async (id) => {
+            if (confirm('Are you sure you want to delete this business? This action cannot be undone.')) {
+                try {
+                            await deleteDoc(doc(db, 'businesses', id));
+                        alert('Business deleted successfully');
+                        loadBusinesses();
+                } catch (error) {
+                            console.error('Error deleting business:', error);
+                        alert('Failed to delete business');
+                }
+            }
+        };
+
+                        // Search and filter handlers
+                        document.getElementById('search-businesses').addEventListener('input', renderBusinesses);
+                        document.getElementById('filter-plan').addEventListener('change', renderBusinesses);
+                        document.getElementById('filter-status').addEventListener('change', renderBusinesses);
+        </script>
+        <script type="module">
+                import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+                import {getFirestore, doc, getDoc, collection, addDoc, getDocs, deleteDoc, query, where, updateDoc} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+                import {getAuth, onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+                const firebaseConfig = {
+                    apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+                authDomain: "madas-store.firebaseapp.com",
+                projectId: "madas-store",
+                storageBucket: "madas-store.firebasestorage.app",
+                messagingSenderId: "527071300010",
+                appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+
+                let currentUserId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                    window.location.href = "/login";
+                return;
+            }
+
+                try {
+                    console.log('🔐 User authenticated:', user.email);
+
+                // ============================================
+                // TENANT ISOLATION: Initialize Business Context
+                // ============================================
+
+                // Check for super admin users first (bypass business detection)
+                const superAdminEmails = [
+                "hesainosama@gmail.com",
+                "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                window.currentUserRole = "super-admin";
+                window.currentBusinessId = "super-admin";
+                window.currentBusinessData = {
+                    businessName: "Super Admin",
+                plan: {type: "enterprise", status: "active" }
+                    };
+
+                // Set super admin permissions
+                const userData = {
+                    email: user.email,
+                displayName: user.displayName || "Super Admin",
+                role: "super-admin",
+                approved: true,
+                permissions: {
+                    home: ["view"],
+                orders: ["view", "search", "create", "edit"],
+                inventory: ["view", "edit"],
+                customers: ["view", "edit"],
+                employees: ["view", "edit"],
+                finance: ["view", "reports"],
+                analytics: ["view", "export"],
+                settings: ["view", "edit"],
+                admin: ["view", "manage_all_businesses"]
+                        }
+                    };
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                const userNameEl = document.getElementById("user-name");
+                const userEmailEl = document.getElementById("user-email");
+                const userInitialEl = document.getElementById("user-initial");
+
+                if (userNameEl) userNameEl.textContent = username;
+                if (userEmailEl) userEmailEl.textContent = user.email;
+                if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                // Update business name and plan
+                const businessNameEl = document.getElementById("business-name");
+                if (businessNameEl) businessNameEl.textContent = "Super Admin";
+
+                const planBadge = document.getElementById("plan-badge");
+                if (planBadge) {
+                    planBadge.textContent = "Enterprise Plan";
+                planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    }
+
+                // Hide loading screen if it exists
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) loadingScreen.style.display = 'none';
+
+                return;
+                }
+
+                // Step 1: Find user's business (check if owner)
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                window.currentBusinessId = businessDoc.id;
+                window.currentBusinessData = businessDoc.data();
+                window.currentUserRole = 'owner';
+
+                console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                console.log('🏢 Business ID:', window.currentBusinessId);
+                console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    const allBusinesses = await getDocs(collection(db, "businesses"));
+                let foundBusiness = false;
+
+                for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                const staffDoc = await getDoc(staffRef);
+
+                if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                window.currentBusinessId = businessId;
+                window.currentBusinessData = businessDoc.data();
+                window.currentUserRole = staffData.role;
+                window.currentUserPermissions = staffData.permissions;
+
+                console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                console.log('🏢 Business ID:', window.currentBusinessId);
+                console.log('👤 Role:', window.currentUserRole);
+
+                foundBusiness = true;
+                break;
+                        }
+                    }
+
+                if (!foundBusiness) {
+                    console.warn("❌ User not associated with any business.");
+                console.log("🔍 User email:", user.email);
+                console.log("🔍 User UID:", user.uid);
+
+                // For now, create a temporary business context for testing
+                console.log("⚠️ Creating temporary business context for testing...");
+                window.currentBusinessId = "temp-business";
+                window.currentBusinessData = {
+                    businessName: "Temporary Business",
+                plan: {type: "basic", status: "active" },
+                owner: {name: user.displayName || user.email.split("@")[0] }
+                        };
+                window.currentUserRole = "owner";
+
+                // Set basic permissions
+                const userData = {
+                    email: user.email,
+                displayName: user.displayName || user.email.split("@")[0],
+                role: "owner",
+                approved: true,
+                permissions: {
+                    home: ["view"],
+                orders: ["view", "search", "create", "edit"],
+                inventory: ["view", "edit"],
+                customers: ["view", "edit"],
+                employees: ["view", "edit"],
+                finance: ["view", "reports"],
+                analytics: ["view", "export"],
+                settings: ["view", "edit"]
+                            }
+                        };
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                const userNameEl = document.getElementById("user-name");
+                const userEmailEl = document.getElementById("user-email");
+                const userInitialEl = document.getElementById("user-initial");
+
+                if (userNameEl) userNameEl.textContent = username;
+                if (userEmailEl) userEmailEl.textContent = user.email;
+                if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                // Update business name and plan
+                const businessNameEl = document.getElementById("business-name");
+                if (businessNameEl) businessNameEl.textContent = "Temporary Business";
+
+                const planBadge = document.getElementById("plan-badge");
+                if (planBadge) {
+                    planBadge.textContent = "Basic Plan";
+                planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                        }
+
+                // Hide loading screen if it exists
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) loadingScreen.style.display = 'none';
+
+                return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                displayName: user.displayName || window.currentBusinessData.owner?.name,
+                role: window.currentUserRole,
+                approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"]
+                    };
+                }
+
+                ;
+                }
+
+                console.log('✅ User data created:', {
+                    email: userData.email,
+                role: userData.role,
+                businessId: window.currentBusinessId,
+                businessName: window.currentBusinessData?.businessName,
+                approved: userData.approved
+                });
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                currentUserId = user.uid;
+                const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+
+                // Update user info if elements exist
+                const userNameEl = document.getElementById("user-name");
+                const userEmailEl = document.getElementById("user-email");
+                const userInitialEl = document.getElementById("user-initial");
+
+                if (userNameEl) userNameEl.textContent = username;
+                if (userEmailEl) userEmailEl.textContent = user.email;
+                if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                // Update business name and plan
+                const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                const planType = window.currentBusinessData?.plan?.type || "basic";
+                const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+                const businessNameEl = document.getElementById("business-name");
+                if (businessNameEl) businessNameEl.textContent = businessName;
+
+                const planBadge = document.getElementById("plan-badge");
+                if (planBadge) {
+                    planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                // Set plan badge color based on plan type
+                if (planType === 'enterprise') {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    } else if (planType === 'professional') {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                    } else {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                    }
+
+                // Add trial badge if in trial
+                if (planStatus === 'trial') {
+                    planBadge.textContent += ' (Trial)';
+                    }
+                }
+
+                // Hide loading screen if it exists
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) loadingScreen.style.display = 'none';
+
+            } catch (error) {
+                    console.error("Permission check failed:", error);
+                window.location.href = "/login";
+            }
+        });
+
+                // Logout logic
+                const logoutBtn = document.getElementById("logout-btn");
+                if (logoutBtn) {
+                    logoutBtn.addEventListener("click", () => {
+                        auth.signOut().then(() => {
+                            window.location.href = "/login";
+                        }).catch((error) => {
+                            console.error("Logout error:", error);
+                            window.location.href = "/login";
+                        });
+                    });
+        }
+
+                // Profile button
+                const profileBtn = document.getElementById("profile-btn");
+                if (profileBtn) {
+                    profileBtn.addEventListener("click", () => {
+                        window.location.href = "/pages/profile.html";
+                    });
+        }
+
+                // Finance Dropdown functionality
+                const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+                const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+                const financeArrow = document.querySelector("#finance-dropdown-btn .dropdown-arrow");
+
+                if (financeDropdownBtn && financeDropdownMenu) {
+                    financeDropdownBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        const isOpen = financeDropdownMenu.classList.contains("show");
+
+                        if (isOpen) {
+                            financeDropdownMenu.classList.remove("show");
+                            financeDropdownMenu.classList.add("hidden");
+                            if (financeArrow) financeArrow.classList.remove("rotate");
+                        } else {
+                            financeDropdownMenu.classList.remove("hidden");
+                            financeDropdownMenu.classList.add("show");
+                            if (financeArrow) financeArrow.classList.add("rotate");
+                        }
+                    });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                    financeDropdownMenu.classList.remove("show");
+                financeDropdownMenu.classList.add("hidden");
+                if (financeArrow) financeArrow.classList.remove("rotate");
+                }
+            });
+        }
+
+                // E-commerce Dropdown functionality
+                const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+                const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+                const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+                if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+                    ecommerceDropdownBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                        if (isOpen) {
+                            ecommerceDropdownMenu.classList.remove("show");
+                            ecommerceDropdownMenu.classList.add("hidden");
+                            if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                        } else {
+                            ecommerceDropdownMenu.classList.remove("hidden");
+                            ecommerceDropdownMenu.classList.add("show");
+                            if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                        }
+                    });
+        }
+
+                // Dark mode toggle logic
+                const darkToggle = document.getElementById('darkToggle');
+                const darkIcon = document.getElementById('darkToggleIcon');
+                function setDarkMode(on) {
+                    document.body.classList.toggle('dark-mode', on);
+                localStorage.setItem('dark-mode', on ? '1' : '0');
+                if (on) {
+                    darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                    darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+            }
+        }
+                if (darkToggle) {
+                    darkToggle.addEventListener('click', () => {
+                        setDarkMode(!document.body.classList.contains('dark-mode'));
+                    });
+        }
+                if (localStorage.getItem('dark-mode') === '1') {
+                    setDarkMode(true);
+        }
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+                const inventorySubmenu = document.getElementById("inventory-submenu");
+                const inventoryArrow = document.getElementById("inventory-arrow");
+
+                if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                    inventoryToggle.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                        if (isOpen) {
+                            inventorySubmenu.classList.add("hidden");
+                            inventoryArrow.style.transform = "rotate(0deg)";
+                        } else {
+                            inventorySubmenu.classList.remove("hidden");
+                            inventoryArrow.style.transform = "rotate(180deg)";
+                        }
+                    });
+            }
+        });
+
+                // Active Page Highlighting and Dropdown Management
+                function highlightActivePage() {
+                    // Remove all active classes first
+                    document.querySelectorAll('.sidebar-link').forEach(link => {
+                        link.classList.remove('active');
+                    });
+
+                // Get current page path
+                const currentPath = window.location.pathname;
+                const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+
+                console.log('Current path:', currentPath);
+                console.log('Current page name:', currentPageName);
+
+                // DASHBOARD LINK - Handle separately and FIRST
+                const dashboardLink = document.querySelector('a[href="/dashboard"]');
+                if (dashboardLink) {
+                    console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                endsWithIndex: currentPath.endsWith('index.html'),
+                includesPages: currentPath.includes('pages'),
+                isRoot: currentPath === '/',
+                isDashboard: currentPath === '/dashboard'
+                });
+
+                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                currentPath === '/' ||
+                currentPath === '/dashboard' ||
+                currentPath === '/dashboard/' ||
+                currentPath.endsWith('/dashboard/index.html') ||
+                currentPath.endsWith('/index.html') ||
+                (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                foundMatch = true;
+                console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+
+                // Skip Dashboard link - already handled above
+                if (href === '/dashboard') return;
+
+                // COMPLETELY DISABLE Dashboard highlighting on non-dashboard pages
+                // Handle Dashboard link with PRECISE matching
+                if (href === '/dashboard') {
+                                    // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                currentPath === '/' ||
+                currentPath === '/dashboard' ||
+                currentPath === '/dashboard/' ||
+                currentPath.endsWith('/dashboard/index.html') ||
+                currentPath.endsWith('/index.html') ||
+                (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+                foundMatch = true;
+                console.log('Dashboard page detected and highlighted');
+                    }
+                }
+                }
+
+                // Handle other links with normal matching
+                else {
+                    // Check if current path matches this specific link
+                    if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                    link.classList.add('active');
+                foundMatch = true;
+                console.log('Exact match found:', href);
+                    }
+                // Check page name matching for other links
+                else if (!foundMatch) {
+                        const linkPageName = href.split('/').pop().replace('.html', '');
+                if (currentPageName === linkPageName ||
+                (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                    link.classList.add('active');
+                foundMatch = true;
+                console.log('Page name match found:', href, 'for page:', currentPageName);
+                        }
+                    }
+                }
+            });
+
+                // Special cases for specific pages with dropdown management
+                if (currentPath.includes('collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Collections page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                inventoryArrow.style.transform = 'rotate(180deg)';
+                console.log('Inventory dropdown kept open for collections');
+                    }
+                }
+            }
+
+                if (currentPath.includes('products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Products page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                inventoryArrow.style.transform = 'rotate(180deg)';
+                console.log('Inventory dropdown kept open for products');
+                    }
+                }
+            }
+
+                if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                foundMatch = true;
+                console.log('Low Stock page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                inventoryArrow.style.transform = 'rotate(180deg)';
+                console.log('Inventory dropdown kept open for low-stock');
+                    }
+                }
+            }
+
+                if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Reviews page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                inventoryArrow.style.transform = 'rotate(180deg)';
+                console.log('Inventory dropdown kept open for reviews');
+                    }
+                }
+            }
+
+                if (currentPath.includes('orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                foundMatch = true;
+                console.log('Orders page detected');
+                }
+            }
+
+                if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                foundMatch = true;
+                console.log('Customer page detected');
+                }
+            }
+
+                if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+                const adminLink = document.querySelector('a[href*="Admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                foundMatch = true;
+                console.log('Admin page detected');
+                }
+            }
+
+                if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Settings page detected');
+                }
+            }
+
+                if (currentPath.includes('finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                foundMatch = true;
+                console.log('Finance page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                financeDropdown.classList.add('show');
+                financeArrow.classList.add('rotated');
+                console.log('Finance dropdown kept open for finance page');
+                    }
+                }
+            }
+
+                if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Analytics page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                financeDropdown.classList.add('show');
+                financeArrow.classList.add('rotated');
+                console.log('Finance dropdown kept open for analytics');
+                    }
+                }
+            }
+
+                if (currentPath.includes('reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Reports page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                financeDropdown.classList.add('show');
+                financeArrow.classList.add('rotated');
+                console.log('Finance dropdown kept open for reports');
+                    }
+                }
+            }
+
+                if (currentPath.includes('insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Insights page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                financeDropdown.classList.add('show');
+                financeArrow.classList.add('rotated');
+                console.log('Finance dropdown kept open for insights');
+                    }
+                }
+            }
+
+                if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                foundMatch = true;
+                console.log('Expenses page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                financeDropdown.classList.add('show');
+                financeArrow.classList.add('rotated');
+                console.log('Finance dropdown kept open for expenses');
+                    }
+                }
+            }
+
+                if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                foundMatch = true;
+                console.log('POS page detected');
+                }
+            }
+        }
+
+                // Run on page load
+                document.addEventListener('DOMContentLoaded', highlightActivePage);
+
+                // Also run when navigation changes (for SPA-like behavior)
+                window.addEventListener('popstate', highlightActivePage);
+
+        </script>
+        </body>
+        <script src="/js/sidebar.js"></script>
+
+</html>

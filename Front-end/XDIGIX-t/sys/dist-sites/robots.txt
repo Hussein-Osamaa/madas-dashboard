@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /site/
+Disallow: /s/
+Disallow: /*?*
+
+# Crawl-delay for politeness
+Crawl-delay: 1
+
+# Note: For sitemap, please check /sitemap.xml on this domain

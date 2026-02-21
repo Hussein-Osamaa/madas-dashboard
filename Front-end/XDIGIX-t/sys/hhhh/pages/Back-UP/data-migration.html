@@ -1,0 +1,1953 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Migration - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="assets/img/madas-logo.png">
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+            background: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        /* Override specific backgrounds */
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Sidebar and header */
+        #sidebar {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Input fields and form elements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        textarea,
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Search bar specific styling */
+        input[type="search"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="search"]:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="search"]::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Select dropdowns */
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* Modal styling */
+        .modal,
+        .modal .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Form labels */
+        label {
+            color: var(--text-main) !important;
+        }
+
+        /* Readonly inputs */
+        input[readonly] {
+            background-color: var(--bg-main) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--madas-accent) !important;
+            border-color: var(--madas-accent) !important;
+        }
+
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        /* Override Tailwind text color classes */
+        .sidebar-link.text-gray-700,
+        .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.text-gray-700,
+        body.dark-mode .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }/* Simple Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+        }/* Simple Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 12px 16px;
+            margin: 0;
+            border-radius: 0;
+            transition: all 0.2s ease;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+        /* Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Original Dropdown Button */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: #f3f4f6;
+        }
+
+        /* Original Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Enhanced dropdown menu container */
+        .inventory-submenu:not(.hidden),
+        .finance-dropdown-menu.show {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(39, 73, 31, 0.1);
+            border-radius: 12px;
+            box-shadow:
+                0 8px 32px rgba(39, 73, 31, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Enhanced dropdown button hover */
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: rgba(39, 73, 31, 0.05);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 12px;
+            transform: translateX(2px);
+        }
+
+        .sidebar-link.active:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(39, 73, 31, 0.4);
+        }
+
+        /* Icon animation on hover */
+        .sidebar-link:hover .material-icons {
+            transform: scale(1.1) rotate(2deg);
+            transition: all 0.3s ease;
+        }
+
+        /* Submenu link enhancements */
+        .sidebar-link.submenu-link {
+            position: relative;
+            margin-left: 1rem;
+            border-left: 2px solid transparent;
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link:hover {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            transform: translateX(8px);
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link.active {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(4px);
+        }
+
+        /* Migration Progress Styles */
+        .migration-step {
+            transition: all 0.3s ease;
+        }
+
+        .migration-step.completed {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .migration-step.in-progress {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+
+        .migration-step.pending {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 2px solid var(--card-border);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #10B981, #059669);
+            transition: width 0.5s ease;
+        }
+
+        .migration-log {
+            background: #1F2937;
+            color: #F9FAFB;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        .log-entry.success {
+            color: #10B981;
+        }
+
+        .log-entry.error {
+            color: #EF4444;
+        }
+
+        .log-entry.warning {
+            color: #F59E0B;
+        }
+
+        .log-entry.info {
+            color: #3B82F6;
+        }
+
+        /* Unified Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Unified Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 10px 14px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+
+        /* Ensure all dropdown text sizes are uniform */
+        .inventory-submenu .sidebar-link span,
+        .finance-dropdown-menu .sidebar-link span,
+        .ecommerce-dropdown-menu .sidebar-link span {
+            font-size: 0.8rem !important;
+        }
+
+        /* Make dropdown icons smaller */
+        .inventory-submenu .material-icons,
+        .finance-dropdown-menu .material-icons,
+        .ecommerce-dropdown-menu .material-icons {
+            font-size: 18px !important;
+        }
+
+        /* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Unified Dropdown Button Styling */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent !important;
+            border: none !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            width: 100% !important;
+            text-align: left !important;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: var(--madas-light) !important;
+        }
+
+        /* Unified Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease !important;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg) !important;
+        }
+
+        /* Unified Visible States for Dropdowns - No 3D Effects */
+        .inventory-submenu:not(.hidden) {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .ecommerce-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--madas-primary)] mx-auto mb-4">
+            </div>
+            <p class="text-[var(--madas-primary)] font-medium">Loading Migration Tool...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <div>
+                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                        <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                            Loading Plan...
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <a href="/dashboard"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/pages/Orders/orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                    <a href="/pages/pos.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">point_of_sale</span>
+                        <span>POS</span>
+                    </a>
+
+                    <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button
+                            class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all"
+                            id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200"
+                                id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="/pages/products.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="/pages/collections.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="/pages/product-reviews.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="/pages/low-stock.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+
+                    <!-- E-commerce Dropdown -->
+                    <div class="ecommerce-dropdown">
+                        <button id="ecommerce-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">storefront</span>
+                                <span>E-commerce</span>
+                            </div>
+                            <span class="material-icons dropdown-arrow transition-transform duration-200"
+                                id="ecommerce-arrow">expand_more</span>
+                        </button>
+                        <div id="ecommerce-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/Web-builder/theme-library.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">web</span>
+                                <span>Website Builder</span>
+                            </a>
+                            <a href="/pages/shoes-store.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">shopping_bag</span>
+                                <span>Shoes Store</span>
+                            </a>
+                            <a href="/pages/advanced/domains.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">language</span>
+                                <span>Custom Domains</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Finance Dropdown -->
+                    <div class="finance-dropdown">
+                        <button id="finance-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">account_balance_wallet</span>
+                                <span>Finance</span>
+                            </div>
+                            <span
+                                class="material-icons dropdown-arrow transition-transform duration-200">expand_more</span>
+                        </button>
+                        <div id="finance-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/Finance/finance.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">account_balance</span>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/pages/advanced/deposit-money-simple.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">add_circle</span>
+                                <span>Add Money Transfer</span>
+                            </a>
+                            <a href="/pages/Finance/expenses.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">receipt</span>
+                                <span>Expenses</span>
+                            </a>
+                            <a href="/pages/Finance/analytics.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">analytics</span>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="/pages/Finance/reports.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">assessment</span>
+                                <span>Reports</span>
+                            </a>
+                            <a href="/pages/Finance/insights.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">lightbulb</span>
+                                <span>Insights</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/settings.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">settings</span>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>New Order</span>
+                            </button>
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add Product</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+            <div class="p-6">
+                <!-- Migration Header -->
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Data Migration Tool</h2>
+                    <p class="text-gray-600">Transfer your existing data to the new tenant-based system.</p>
+                </div>
+
+                <!-- Migration Overview -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Migration Status -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-4">Migration Status</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Overall Progress</span>
+                                <span id="overall-progress" class="text-sm font-semibold">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="progress-bar" class="progress-bar h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                <span id="completed-steps">0</span> of <span id="total-steps">8</span> steps completed
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Info -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-4">Target Business</h3>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Business Name:</span>
+                                <span id="business-name" class="text-sm font-medium">Loading...</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Business ID:</span>
+                                <span id="business-id" class="text-sm font-mono text-gray-500">Loading...</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Plan:</span>
+                                <span id="business-plan" class="text-sm font-medium">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Migration Actions -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-4">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button id="start-migration"
+                                class="w-full bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                Start Migration
+                            </button>
+                            <button id="reset-migration"
+                                class="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                                Reset Progress
+                            </button>
+                            <button id="export-log"
+                                class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                                Export Log
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Migration Steps -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-6">Migration Steps</h3>
+
+                    <div class="space-y-4">
+                        <!-- Step 1: Products -->
+                        <div id="step-products" class="migration-step p-4 rounded-lg border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span class="material-icons text-sm">inventory</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Products Migration</h4>
+                                        <p class="text-sm text-gray-500">Transfer all products to tenant system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span id="products-count" class="text-sm text-gray-500">0 products</span>
+                                    <button id="migrate-products"
+                                        class="text-[var(--madas-primary)] hover:bg-[var(--madas-light)] p-2 rounded-lg">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Orders -->
+                        <div id="step-orders" class="migration-step p-4 rounded-lg border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span class="material-icons text-sm">receipt_long</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Orders Migration</h4>
+                                        <p class="text-sm text-gray-500">Transfer all orders to tenant system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span id="orders-count" class="text-sm text-gray-500">0 orders</span>
+                                    <button id="migrate-orders"
+                                        class="text-[var(--madas-primary)] hover:bg-[var(--madas-light)] p-2 rounded-lg">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Customers -->
+                        <div id="step-customers" class="migration-step p-4 rounded-lg border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span class="material-icons text-sm">group</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Customers Migration</h4>
+                                        <p class="text-sm text-gray-500">Transfer all customers to tenant system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span id="customers-count" class="text-sm text-gray-500">0 customers</span>
+                                    <button id="migrate-customers"
+                                        class="text-[var(--madas-primary)] hover:bg-[var(--madas-light)] p-2 rounded-lg">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Staff -->
+                        <div id="step-staff" class="migration-step p-4 rounded-lg border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span class="material-icons text-sm">supervisor_account</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Staff Migration</h4>
+                                        <p class="text-sm text-gray-500">Transfer staff members to tenant system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span id="staff-count" class="text-sm text-gray-500">0 staff</span>
+                                    <button id="migrate-staff"
+                                        class="text-[var(--madas-primary)] hover:bg-[var(--madas-light)] p-2 rounded-lg">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 5: Settings -->
+                        <div id="step-settings" class="migration-step p-4 rounded-lg border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span class="material-icons text-sm">settings</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Settings Migration</h4>
+                                        <p class="text-sm text-gray-500">Transfer business settings to tenant system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span id="settings-count" class="text-sm text-gray-500">0 settings</span>
+                                    <button id="migrate-settings"
+                                        class="text-[var(--madas-primary)] hover:bg-[var(--madas-light)] p-2 rounded-lg">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 6: Expenses -->
+                        <div id="step-expenses" class="migration-step p-4 rounded-lg border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span class="material-icons text-sm">money_off</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Expenses Migration</h4>
+                                        <p class="text-sm text-gray-500">Transfer expense records to tenant system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span id="expenses-count" class="text-sm text-gray-500">0 expenses</span>
+                                    <button id="migrate-expenses"
+                                        class="text-[var(--madas-primary)] hover:bg-[var(--madas-light)] p-2 rounded-lg">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 7: Deposits -->
+                        <div id="step-deposits" class="migration-step p-4 rounded-lg border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span class="material-icons text-sm">account_balance_wallet</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Deposits Migration</h4>
+                                        <p class="text-sm text-gray-500">Transfer deposit records to tenant system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span id="deposits-count" class="text-sm text-gray-500">0 deposits</span>
+                                    <button id="migrate-deposits"
+                                        class="text-[var(--madas-primary)] hover:bg-[var(--madas-light)] p-2 rounded-lg">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 8: Scan Logs -->
+                        <div id="step-scan-logs" class="migration-step p-4 rounded-lg border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span class="material-icons text-sm">qr_code_scanner</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Scan Logs Migration</h4>
+                                        <p class="text-sm text-gray-500">Transfer scan log records to tenant system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span id="scan-logs-count" class="text-sm text-gray-500">0 scan logs</span>
+                                    <button id="migrate-scan-logs"
+                                        class="text-[var(--madas-primary)] hover:bg-[var(--madas-light)] p-2 rounded-lg">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Migration Log -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-4">Migration Log</h3>
+                    <div id="migration-log" class="migration-log p-4 rounded-lg">
+                        <div class="log-entry info">Migration tool initialized. Ready to start data transfer.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, getDocs, deleteDoc, query, where, updateDoc, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserId = null;
+        let currentBusinessId = null;
+        let currentBusinessData = null;
+        let migrationProgress = {
+            products: { completed: false, count: 0 },
+            orders: { completed: false, count: 0 },
+            customers: { completed: false, count: 0 },
+            staff: { completed: false, count: 0 },
+            settings: { completed: false, count: 0 },
+            expenses: { completed: false, count: 0 },
+            deposits: { completed: false, count: 0 },
+            scanLogs: { completed: false, count: 0 }
+        };
+
+        // Initialize the migration tool
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+                currentUserId = user.uid;
+
+                // Find user's business
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    const businessDoc = businessSnapshot.docs[0];
+                    currentBusinessId = businessDoc.id;
+                    currentBusinessData = businessDoc.data();
+
+                    console.log('✅ Business found:', currentBusinessData.businessName);
+
+                    // Update UI
+                    document.getElementById("business-name").textContent = currentBusinessData.businessName;
+                    document.getElementById("business-id").textContent = currentBusinessId;
+                    document.getElementById("business-plan").textContent = currentBusinessData.plan?.type || "basic";
+
+                    // Update user info
+                    document.getElementById("user-name").textContent = currentBusinessData.owner?.name || user.displayName || user.email.split("@")[0];
+                    document.getElementById("user-email").textContent = user.email;
+                    document.getElementById("user-initial").textContent = (currentBusinessData.owner?.name || user.displayName || user.email.split("@")[0]).charAt(0).toUpperCase();
+
+                    // Load existing data counts
+                    await loadDataCounts();
+
+                    // Hide loading screen
+                    document.getElementById('loadingScreen').style.display = 'none';
+                } else {
+                    console.warn("❌ No business found for user");
+                    addLogEntry("error", "No business found for this user. Please contact support.");
+                    document.getElementById('loadingScreen').style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Error initializing migration tool:", error);
+                addLogEntry("error", "Failed to initialize migration tool: " + error.message);
+                document.getElementById('loadingScreen').style.display = 'none';
+            }
+        });
+
+        // Load data counts from old system
+        async function loadDataCounts() {
+            try {
+                // Load counts from old collections (pre-tenant system)
+                const [productsSnapshot, ordersSnapshot, customersSnapshot, staffSnapshot, settingsSnapshot, expensesSnapshot, depositsSnapshot, scanLogsSnapshot] = await Promise.all([
+                    getDocs(collection(db, "products")),
+                    getDocs(collection(db, "orders")),
+                    getDocs(collection(db, "customers")),
+                    getDocs(collection(db, "staff")),
+                    getDocs(collection(db, "settings")),
+                    getDocs(collection(db, "expenses")),
+                    getDocs(collection(db, "deposits")),
+                    getDocs(collection(db, "scan_log"))
+                ]);
+
+                migrationProgress.products.count = productsSnapshot.size;
+                migrationProgress.orders.count = ordersSnapshot.size;
+                migrationProgress.customers.count = customersSnapshot.size;
+                migrationProgress.staff.count = staffSnapshot.size;
+                migrationProgress.settings.count = settingsSnapshot.size;
+                migrationProgress.expenses.count = expensesSnapshot.size;
+                migrationProgress.deposits.count = depositsSnapshot.size;
+                migrationProgress.scanLogs.count = scanLogsSnapshot.size;
+
+                // Analyze products to check for size variants
+                let productsWithSizes = 0;
+                let totalSizeVariants = 0;
+                productsSnapshot.forEach((productDoc) => {
+                    const productData = productDoc.data();
+                    const variants = productData.sizeVariants || productData.sizes || {};
+                    const variantCount = Object.keys(variants).length;
+                    if (variantCount > 0) {
+                        productsWithSizes++;
+                        totalSizeVariants += variantCount;
+                    }
+                });
+
+                // Update UI
+                document.getElementById("products-count").textContent = `${migrationProgress.products.count} products`;
+                document.getElementById("orders-count").textContent = `${migrationProgress.orders.count} orders`;
+                document.getElementById("customers-count").textContent = `${migrationProgress.customers.count} customers`;
+                document.getElementById("staff-count").textContent = `${migrationProgress.staff.count} staff`;
+                document.getElementById("settings-count").textContent = `${migrationProgress.settings.count} settings`;
+                document.getElementById("expenses-count").textContent = `${migrationProgress.expenses.count} expenses`;
+                document.getElementById("deposits-count").textContent = `${migrationProgress.deposits.count} deposits`;
+                document.getElementById("scan-logs-count").textContent = `${migrationProgress.scanLogs.count} scan logs`;
+
+                addLogEntry("info", `Found ${migrationProgress.products.count} products, ${migrationProgress.orders.count} orders, ${migrationProgress.customers.count} customers, ${migrationProgress.staff.count} staff, ${migrationProgress.settings.count} settings, ${migrationProgress.expenses.count} expenses, ${migrationProgress.deposits.count} deposits, and ${migrationProgress.scanLogs.count} scan logs to migrate.`);
+
+                if (productsWithSizes > 0) {
+                    addLogEntry("info", `Found ${productsWithSizes} products with size variants (${totalSizeVariants} total variants)`);
+                } else {
+                    addLogEntry("warning", "No products with size variants found. This may indicate they were stored differently in the old system.");
+                }
+
+            } catch (error) {
+                console.error("Error loading data counts:", error);
+                addLogEntry("error", "Failed to load data counts: " + error.message);
+            }
+        }
+
+        // Migration functions
+        async function migrateProducts() {
+            if (!currentBusinessId) return;
+
+            try {
+                addLogEntry("info", "Starting products migration...");
+                setStepStatus("step-products", "in-progress");
+
+                const productsSnapshot = await getDocs(collection(db, "products"));
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+                let sizeVariantsCount = 0;
+
+                productsSnapshot.forEach((productDoc) => {
+                    const productData = productDoc.data();
+
+                    // Log product data for debugging
+                    console.log(`Migrating product: ${productData.name || 'Unknown'}`, {
+                        hasSizeVariants: !!(productData.sizeVariants || productData.sizes),
+                        sizeVariantsCount: Object.keys(productData.sizeVariants || productData.sizes || {}).length,
+                        sizeVariants: productData.sizeVariants || productData.sizes
+                    });
+
+                    // Count size variants
+                    const variants = productData.sizeVariants || productData.sizes || {};
+                    sizeVariantsCount += Object.keys(variants).length;
+
+                    const newProductRef = doc(collection(db, "businesses", currentBusinessId, "products"));
+                    batch.set(newProductRef, {
+                        ...productData,
+                        // Ensure both sizeVariants and sizes fields are preserved
+                        sizeVariants: productData.sizeVariants || productData.sizes || {},
+                        sizes: productData.sizes || productData.sizeVariants || {},
+                        migratedAt: new Date(),
+                        originalId: productDoc.id
+                    });
+                    migratedCount++;
+                });
+
+                await batch.commit();
+
+                migrationProgress.products.completed = true;
+                setStepStatus("step-products", "completed");
+                addLogEntry("success", `Successfully migrated ${migratedCount} products with ${sizeVariantsCount} size variants total.`);
+                updateOverallProgress();
+
+            } catch (error) {
+                console.error("Error migrating products:", error);
+                addLogEntry("error", "Failed to migrate products: " + error.message);
+                setStepStatus("step-products", "pending");
+            }
+        }
+
+        async function migrateOrders() {
+            if (!currentBusinessId) return;
+
+            try {
+                addLogEntry("info", "Starting orders migration...");
+                setStepStatus("step-orders", "in-progress");
+
+                const ordersSnapshot = await getDocs(collection(db, "orders"));
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+
+                ordersSnapshot.forEach((orderDoc) => {
+                    const orderData = orderDoc.data();
+                    const newOrderRef = doc(collection(db, "businesses", currentBusinessId, "orders"));
+                    batch.set(newOrderRef, {
+                        ...orderData,
+                        migratedAt: new Date(),
+                        originalId: orderDoc.id
+                    });
+                    migratedCount++;
+                });
+
+                await batch.commit();
+
+                migrationProgress.orders.completed = true;
+                setStepStatus("step-orders", "completed");
+                addLogEntry("success", `Successfully migrated ${migratedCount} orders.`);
+                updateOverallProgress();
+
+            } catch (error) {
+                console.error("Error migrating orders:", error);
+                addLogEntry("error", "Failed to migrate orders: " + error.message);
+                setStepStatus("step-orders", "pending");
+            }
+        }
+
+        async function migrateCustomers() {
+            if (!currentBusinessId) return;
+
+            try {
+                addLogEntry("info", "Starting customers migration...");
+                setStepStatus("step-customers", "in-progress");
+
+                const customersSnapshot = await getDocs(collection(db, "customers"));
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+
+                customersSnapshot.forEach((customerDoc) => {
+                    const customerData = customerDoc.data();
+                    const newCustomerRef = doc(collection(db, "businesses", currentBusinessId, "customers"));
+                    batch.set(newCustomerRef, {
+                        ...customerData,
+                        migratedAt: new Date(),
+                        originalId: customerDoc.id
+                    });
+                    migratedCount++;
+                });
+
+                await batch.commit();
+
+                migrationProgress.customers.completed = true;
+                setStepStatus("step-customers", "completed");
+                addLogEntry("success", `Successfully migrated ${migratedCount} customers.`);
+                updateOverallProgress();
+
+            } catch (error) {
+                console.error("Error migrating customers:", error);
+                addLogEntry("error", "Failed to migrate customers: " + error.message);
+                setStepStatus("step-customers", "pending");
+            }
+        }
+
+        async function migrateStaff() {
+            if (!currentBusinessId) return;
+
+            try {
+                addLogEntry("info", "Starting staff migration...");
+                setStepStatus("step-staff", "in-progress");
+
+                const staffSnapshot = await getDocs(collection(db, "staff"));
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+
+                staffSnapshot.forEach((staffDoc) => {
+                    const staffData = staffDoc.data();
+                    const newStaffRef = doc(collection(db, "businesses", currentBusinessId, "staff"));
+                    batch.set(newStaffRef, {
+                        ...staffData,
+                        migratedAt: new Date(),
+                        originalId: staffDoc.id
+                    });
+                    migratedCount++;
+                });
+
+                await batch.commit();
+
+                migrationProgress.staff.completed = true;
+                setStepStatus("step-staff", "completed");
+                addLogEntry("success", `Successfully migrated ${migratedCount} staff members.`);
+                updateOverallProgress();
+
+            } catch (error) {
+                console.error("Error migrating staff:", error);
+                addLogEntry("error", "Failed to migrate staff: " + error.message);
+                setStepStatus("step-staff", "pending");
+            }
+        }
+
+        async function migrateSettings() {
+            if (!currentBusinessId) return;
+
+            try {
+                addLogEntry("info", "Starting settings migration...");
+                setStepStatus("step-settings", "in-progress");
+
+                const settingsSnapshot = await getDocs(collection(db, "settings"));
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+
+                settingsSnapshot.forEach((settingsDoc) => {
+                    const settingsData = settingsDoc.data();
+                    const newSettingsRef = doc(collection(db, "businesses", currentBusinessId, "settings"));
+                    batch.set(newSettingsRef, {
+                        ...settingsData,
+                        migratedAt: new Date(),
+                        originalId: settingsDoc.id
+                    });
+                    migratedCount++;
+                });
+
+                await batch.commit();
+
+                migrationProgress.settings.completed = true;
+                setStepStatus("step-settings", "completed");
+                addLogEntry("success", `Successfully migrated ${migratedCount} settings.`);
+                updateOverallProgress();
+
+            } catch (error) {
+                console.error("Error migrating settings:", error);
+                addLogEntry("error", "Failed to migrate settings: " + error.message);
+                setStepStatus("step-settings", "pending");
+            }
+        }
+
+        async function migrateExpenses() {
+            if (!currentBusinessId) return;
+
+            try {
+                addLogEntry("info", "Starting expenses migration...");
+                setStepStatus("step-expenses", "in-progress");
+
+                const expensesSnapshot = await getDocs(collection(db, "expenses"));
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+
+                expensesSnapshot.forEach((expenseDoc) => {
+                    const expenseData = expenseDoc.data();
+                    const newExpenseRef = doc(collection(db, "businesses", currentBusinessId, "expenses"));
+                    batch.set(newExpenseRef, {
+                        ...expenseData,
+                        migratedAt: new Date(),
+                        originalId: expenseDoc.id
+                    });
+                    migratedCount++;
+                });
+
+                await batch.commit();
+
+                migrationProgress.expenses.completed = true;
+                setStepStatus("step-expenses", "completed");
+                addLogEntry("success", `Successfully migrated ${migratedCount} expenses.`);
+                updateOverallProgress();
+
+            } catch (error) {
+                console.error("Error migrating expenses:", error);
+                addLogEntry("error", "Failed to migrate expenses: " + error.message);
+                setStepStatus("step-expenses", "pending");
+            }
+        }
+
+        async function migrateDeposits() {
+            if (!currentBusinessId) return;
+
+            try {
+                addLogEntry("info", "Starting deposits migration...");
+                setStepStatus("step-deposits", "in-progress");
+
+                const depositsSnapshot = await getDocs(collection(db, "deposits"));
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+
+                depositsSnapshot.forEach((depositDoc) => {
+                    const depositData = depositDoc.data();
+                    const newDepositRef = doc(collection(db, "businesses", currentBusinessId, "deposits"));
+                    batch.set(newDepositRef, {
+                        ...depositData,
+                        migratedAt: new Date(),
+                        originalId: depositDoc.id
+                    });
+                    migratedCount++;
+                });
+
+                await batch.commit();
+
+                migrationProgress.deposits.completed = true;
+                setStepStatus("step-deposits", "completed");
+                addLogEntry("success", `Successfully migrated ${migratedCount} deposits.`);
+                updateOverallProgress();
+
+            } catch (error) {
+                console.error("Error migrating deposits:", error);
+                addLogEntry("error", "Failed to migrate deposits: " + error.message);
+                setStepStatus("step-deposits", "pending");
+            }
+        }
+
+        async function migrateScanLogs() {
+            if (!currentBusinessId) return;
+
+            try {
+                addLogEntry("info", "Starting scan logs migration...");
+                setStepStatus("step-scan-logs", "in-progress");
+
+                const scanLogsSnapshot = await getDocs(collection(db, "scan_log"));
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+
+                scanLogsSnapshot.forEach((scanLogDoc) => {
+                    const scanLogData = scanLogDoc.data();
+                    const newScanLogRef = doc(collection(db, "businesses", currentBusinessId, "scan_log"));
+                    batch.set(newScanLogRef, {
+                        ...scanLogData,
+                        migratedAt: new Date(),
+                        originalId: scanLogDoc.id
+                    });
+                    migratedCount++;
+                });
+
+                await batch.commit();
+
+                migrationProgress.scanLogs.completed = true;
+                setStepStatus("step-scan-logs", "completed");
+                addLogEntry("success", `Successfully migrated ${migratedCount} scan logs.`);
+                updateOverallProgress();
+
+            } catch (error) {
+                console.error("Error migrating scan logs:", error);
+                addLogEntry("error", "Failed to migrate scan logs: " + error.message);
+                setStepStatus("step-scan-logs", "pending");
+            }
+        }
+
+        // UI Helper functions
+        function setStepStatus(stepId, status) {
+            const step = document.getElementById(stepId);
+            step.className = `migration-step p-4 rounded-lg border-2 ${status}`;
+        }
+
+        function updateOverallProgress() {
+            const steps = Object.values(migrationProgress);
+            const completedSteps = steps.filter(step => step.completed).length;
+            const totalSteps = steps.length;
+            const progress = (completedSteps / totalSteps) * 100;
+
+            document.getElementById("overall-progress").textContent = `${Math.round(progress)}%`;
+            document.getElementById("progress-bar").style.width = `${progress}%`;
+            document.getElementById("completed-steps").textContent = completedSteps;
+            document.getElementById("total-steps").textContent = totalSteps;
+
+            if (completedSteps === totalSteps) {
+                addLogEntry("success", "🎉 Migration completed successfully! All data has been transferred to the tenant system.");
+            }
+        }
+
+        function addLogEntry(type, message) {
+            const log = document.getElementById("migration-log");
+            const entry = document.createElement("div");
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Event listeners
+        document.getElementById("migrate-products").addEventListener("click", migrateProducts);
+        document.getElementById("migrate-orders").addEventListener("click", migrateOrders);
+        document.getElementById("migrate-customers").addEventListener("click", migrateCustomers);
+        document.getElementById("migrate-staff").addEventListener("click", migrateStaff);
+        document.getElementById("migrate-settings").addEventListener("click", migrateSettings);
+        document.getElementById("migrate-expenses").addEventListener("click", migrateExpenses);
+        document.getElementById("migrate-deposits").addEventListener("click", migrateDeposits);
+        document.getElementById("migrate-scan-logs").addEventListener("click", migrateScanLogs);
+
+        document.getElementById("start-migration").addEventListener("click", async () => {
+            addLogEntry("info", "Starting full migration process...");
+            await migrateProducts();
+            await migrateOrders();
+            await migrateCustomers();
+            await migrateStaff();
+            await migrateSettings();
+            await migrateExpenses();
+            await migrateDeposits();
+            await migrateScanLogs();
+        });
+
+        document.getElementById("reset-migration").addEventListener("click", () => {
+            if (confirm("Are you sure you want to reset the migration progress? This will not delete migrated data.")) {
+                // Reset progress
+                Object.keys(migrationProgress).forEach(key => {
+                    migrationProgress[key].completed = false;
+                });
+
+                // Reset UI
+                document.querySelectorAll('.migration-step').forEach(step => {
+                    step.className = 'migration-step p-4 rounded-lg border-2 pending';
+                });
+
+                document.getElementById("overall-progress").textContent = "0%";
+                document.getElementById("progress-bar").style.width = "0%";
+                document.getElementById("completed-steps").textContent = "0";
+
+                addLogEntry("info", "Migration progress reset.");
+            }
+        });
+
+        document.getElementById("export-log").addEventListener("click", () => {
+            const log = document.getElementById("migration-log");
+            const logText = Array.from(log.children).map(entry => entry.textContent).join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `migration-log-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 1024 &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+
+        // Logout logic
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                auth.signOut().then(() => {
+                    window.location.href = "/login";
+                }).catch((error) => {
+                    console.error("Logout error:", error);
+                    window.location.href = "/login";
+                });
+            });
+        }
+
+        // Dark mode toggle logic
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+            }
+        }
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+            let foundMatch = false;
+
+            // Get all sidebar links
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+
+            // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/dashboard"]');
+            if (dashboardLink) {
+                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                } else {
+                    dashboardLink.classList.remove('active');
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+
+                // Skip Dashboard link - already handled above
+                if (href === '/dashboard') return;
+
+                // Handle other links with normal matching
+                // Check if current path matches this specific link
+                if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                    link.classList.add('active');
+                    foundMatch = true;
+                }
+                // Check page name matching for other links
+                else if (!foundMatch) {
+                    const linkPageName = href.split('/').pop().replace('.html', '');
+                    if (currentPageName === linkPageName ||
+                        (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                        (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                        link.classList.add('active');
+                        foundMatch = true;
+                    }
+                }
+            });
+
+            // Special cases for specific pages with dropdown management
+            if (currentPath.includes('collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                    }
+                }
+            }
+
+            if (currentPath.includes('products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                    }
+                }
+            }
+
+            if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                    }
+                }
+            }
+
+            if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                    }
+                }
+            }
+
+            if (currentPath.includes('orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                    foundMatch = true;
+                }
+            }
+
+            if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                    foundMatch = true;
+                }
+            }
+
+            if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+                const adminLink = document.querySelector('a[href*="Admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                    foundMatch = true;
+                }
+            }
+
+            if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    foundMatch = true;
+                }
+            }
+
+            if (currentPath.includes('finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                    }
+                }
+            }
+
+            if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                    }
+                }
+            }
+
+            if (currentPath.includes('reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                    }
+                }
+            }
+
+            if (currentPath.includes('insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                    }
+                }
+            }
+
+            if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                    foundMatch = true;
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                    }
+                }
+            }
+
+            if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                    foundMatch = true;
+                }
+            }
+        }
+
+        // Dropdown event handlers
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inventory dropdown
+            const inventoryToggle = document.getElementById('inventory-toggle');
+            const inventorySubmenu = document.getElementById('inventory-submenu');
+            const inventoryArrow = document.getElementById('inventory-arrow');
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener('click', () => {
+                    inventorySubmenu.classList.toggle('hidden');
+                    inventoryArrow.classList.toggle('rotate');
+                });
+            }
+
+            // Finance dropdown
+            const financeToggle = document.getElementById('finance-dropdown-btn');
+            const financeSubmenu = document.getElementById('finance-dropdown-menu');
+            const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+
+            if (financeToggle && financeSubmenu && financeArrow) {
+                financeToggle.addEventListener('click', () => {
+                    financeSubmenu.classList.toggle('hidden');
+                    financeSubmenu.classList.toggle('show');
+                    financeArrow.classList.toggle('rotate');
+                });
+            }
+
+            // E-commerce dropdown
+            const ecommerceToggle = document.getElementById('ecommerce-dropdown-btn');
+            const ecommerceSubmenu = document.getElementById('ecommerce-dropdown-menu');
+            const ecommerceArrow = document.getElementById('ecommerce-arrow');
+
+            if (ecommerceToggle && ecommerceSubmenu && ecommerceArrow) {
+                ecommerceToggle.addEventListener('click', () => {
+                    ecommerceSubmenu.classList.toggle('hidden');
+                    ecommerceSubmenu.classList.toggle('show');
+                    ecommerceArrow.classList.toggle('rotate');
+                });
+            }
+        });
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+
+    </script>
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

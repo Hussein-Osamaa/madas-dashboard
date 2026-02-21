@@ -1,0 +1,3275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Collections - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/assets/img/madas-logo.png">
+    <link rel="stylesheet" href="../css/dark-mode.css">
+    <script src="../js/dark-mode.js"></script>
+    <!-- Firebase Permission Checker -->
+    <script type="module" src="../../js/firebase-permission-check.js"></script>
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        /* Override specific backgrounds */
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        /* Override Tailwind text color classes */
+        .sidebar-link.text-gray-700,
+        .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.text-gray-700,
+        body.dark-mode .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }
+
+        /* Simple Active state for current page */
+        .sidebar-link.active {
+            background: var(--madas-light);
+            color: var(--madas-primary) !important;
+            font-weight: 600;
+        }
+
+        .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Simple Submenu active state */
+        .sidebar-link.submenu-link.active {
+            background: var(--madas-light);
+            color: var(--madas-primary) !important;
+            font-weight: 600;
+        }
+
+        .sidebar-link.submenu-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+            background: white !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+            margin: 8px 0 !important;
+            padding: 8px 0 !important;
+        }
+
+        /* Navigation Section Headers */
+        .nav-section-header {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Logo Enhancement */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.02);
+        }
+
+        /* Header Icon Enhancement */
+        .header-icon {
+            color: var(--madas-primary);
+            font-size: 2rem;
+            margin-right: 0.75rem;
+        }
+
+        /* Improved Sidebar Spacing */
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Finance Dropdown Styles */
+        .finance-dropdown {
+            position: relative;
+        }
+
+        .finance-dropdown-menu {
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .finance-dropdown-menu.hidden {
+            display: none;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Sidebar specific styling */
+        aside {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }
+
+        /* Simple Active state for current page */
+        .sidebar-link.active {
+            background: var(--madas-light);
+            color: var(--madas-primary) !important;
+            font-weight: 600;
+        }
+
+        .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Simple Submenu active state */
+        .sidebar-link.submenu-link.active {
+            background: var(--madas-light);
+            color: var(--madas-primary) !important;
+            font-weight: 600;
+        }
+
+        .sidebar-link.submenu-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Simple Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Simple Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 12px 16px;
+            margin: 0;
+            border-radius: 0;
+            transition: all 0.2s ease;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+        /* Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Original Dropdown Button */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: #f3f4f6;
+        }
+
+        /* Original Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Enhanced dropdown menu container */
+        .inventory-submenu:not(.hidden),
+        .finance-dropdown-menu.show {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(39, 73, 31, 0.1);
+            border-radius: 12px;
+            box-shadow:
+                0 8px 32px rgba(39, 73, 31, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Enhanced dropdown button hover */
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: rgba(39, 73, 31, 0.05);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 12px;
+            transform: translateX(2px);
+        }
+
+        .sidebar-link.active:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(39, 73, 31, 0.4);
+        }
+
+        /* Icon animation on hover */
+        .sidebar-link:hover .material-icons {
+            transform: scale(1.1) rotate(2deg);
+            transition: all 0.3s ease;
+        }
+
+        /* Submenu link enhancements */
+        .sidebar-link.submenu-link {
+            position: relative;
+            margin-left: 1rem;
+            border-left: 2px solid transparent;
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link:hover {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            transform: translateX(8px);
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link.active {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link:hover {
+            background-color: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+        }
+
+        /* Ensure proper header spacing */
+        .fixed.top-0 {
+            height: 4rem;
+            /* 64px - matches h-16 */
+        }
+
+        /* Sidebar scrolling styles */
+        .overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: var(--madas-primary) transparent;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background-color: var(--madas-primary);
+            border-radius: 3px;
+            opacity: 0.3;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            opacity: 0.6;
+        }
+
+        /* Unified Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Unified Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 10px 14px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+        }
+
+        /* Ensure all dropdown text sizes are uniform */
+        .inventory-submenu .sidebar-link span,
+        .finance-dropdown-menu .sidebar-link span,
+        .ecommerce-dropdown-menu .sidebar-link span {
+            font-size: 0.8rem !important;
+        }
+
+        /* Make dropdown icons smaller */
+        .inventory-submenu .material-icons,
+        .finance-dropdown-menu .material-icons,
+        .ecommerce-dropdown-menu .material-icons {
+            font-size: 18px !important;
+        }
+
+        /* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Unified Dropdown Button Styling */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent !important;
+            border: none !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            width: 100% !important;
+            text-align: left !important;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: var(--madas-light) !important;
+        }
+
+        /* Unified Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease !important;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg) !important;
+        }
+
+        /* Unified Visible States for Dropdowns - No 3D Effects */
+        .inventory-submenu:not(.hidden) {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .ecommerce-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // DOM loaded successfully
+        });
+    </script>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 z-50 flex items-center justify-center"
+        style="background-color: var(--card-bg);">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--madas-primary)] mx-auto mb-4">
+            </div>
+            <p class="text-[var(--madas-primary)] font-medium">Loading Collections...</p>
+        </div>
+    </div>
+
+    <div class="flex h-screen bg-gray-50 pt-16">
+        <!-- Unified Header -->
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+            <div class="flex items-center justify-between h-full px-4 lg:px-6">
+                <div class="flex items-center space-x-4">
+                    <button id="menu-toggle"
+                        class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">menu</span>
+                    </button>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">M</span>
+                        </div>
+                        <div>
+                            <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                            <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                                class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                                Loading Plan...
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                        <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                        <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <!-- Dark mode toggle button -->
+                        <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                            <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                            </svg>
+                        </button>
+                        <div class="hidden md:block text-right">
+                            <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                            <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                        </div>
+                        <button id="profile-btn"
+                            class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                            <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                        </button>
+                        <button id="logout-btn"
+                            class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                            <span class="material-icons">logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <a href="/dashboard"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/pages/Orders/orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                    <a href="/pages/pos.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">point_of_sale</span>
+                        <span>POS</span>
+                    </a>
+
+                    <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button
+                            class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all"
+                            id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200"
+                                id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="/pages/products.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="/pages/collections.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="/pages/product-reviews.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="/pages/low-stock.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+
+                    <!-- E-commerce Dropdown -->
+                    <div class="ecommerce-dropdown">
+                        <button id="ecommerce-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">storefront</span>
+                                <span>E-commerce</span>
+                            </div>
+                            <span class="material-icons dropdown-arrow transition-transform duration-200"
+                                id="ecommerce-arrow">expand_more</span>
+                        </button>
+                        <div id="ecommerce-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/Web-builder/theme-library.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">web</span>
+                                <span>Website Builder</span>
+                            </a>
+                            <a href="/pages/shoes-store.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">shopping_bag</span>
+                                <span>Shoes Store</span>
+                            </a>
+                            <a href="/pages/advanced/domains.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">language</span>
+                                <span>Custom Domains</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Finance Dropdown -->
+                    <div class="finance-dropdown">
+                        <button id="finance-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">account_balance_wallet</span>
+                                <span>Finance</span>
+                            </div>
+                            <span
+                                class="material-icons dropdown-arrow transition-transform duration-200">expand_more</span>
+                        </button>
+                        <div id="finance-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/finance.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">account_balance</span>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/pages/advanced/deposit-money-simple.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">add_circle</span>
+                                <span>Add Money Transfer</span>
+                            </a>
+                            <a href="/pages/expenses.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">receipt</span>
+                                <span>Expenses</span>
+                            </a>
+                            <a href="/pages/analytics.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">analytics</span>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="/pages/reports.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">assessment</span>
+                                <span>Reports</span>
+                            </a>
+                            <a href="/pages/insights.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">lightbulb</span>
+                                <span>Insights</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/settings.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">settings</span>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>New Order</span>
+                            </button>
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add Product</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Content -->
+            <main class="flex-1 overflow-auto p-6">
+                <!-- Page Header with New Collection Button -->
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Collections</h1>
+                        <p class="text-gray-600 mt-1">Manage your product collections</p>
+                    </div>
+                    <button class="btn-primary px-4 py-2 rounded-lg flex items-center space-x-2"
+                        onclick="openCreateCollectionModal()">
+                        <span class="material-icons">add</span>
+                        <span>New Collection</span>
+                    </button>
+                </div>
+
+                <!-- Filters and Search -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                            <div class="relative">
+                                <span
+                                    class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">search</span>
+                                <input type="text" placeholder="Search collections..."
+                                    class="search-input pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent w-full sm:w-64">
+                            </div>
+                            <select
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="draft">Draft</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-600">12 collections</span>
+                            <div class="flex space-x-1">
+                                <button
+                                    class="p-2 rounded-lg border border-gray-300 bg-[var(--madas-primary)] text-white"
+                                    title="Grid View" id="gridViewBtn">
+                                    <span class="material-icons">grid_view</span>
+                                </button>
+                                <button class="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-600"
+                                    title="List View" id="listViewBtn">
+                                    <span class="material-icons">list</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collections Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Collection Card 1 - Manual Collection -->
+                    <div class="collection-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="collection-image h-32 flex items-center justify-center">
+                            <span class="material-icons text-white text-4xl">collections</span>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="font-semibold text-gray-900">Summer Collection</h3>
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">Manual</span>
+                                </div>
+                                <span class="status-badge status-active">Active</span>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-3">Fresh summer styles for the season</p>
+                            <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+                                <span>24 products</span>
+                                <span>Created 2 days ago</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button
+                                    class="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                    Edit
+                                </button>
+                                <button
+                                    class="px-3 py-2 text-sm bg-[var(--madas-primary)] text-white rounded-lg hover:bg-[#1a3316] transition-colors"
+                                    onclick="window.location.href='./collection-display.html?id=sample-1'">
+                                    <span class="material-icons text-sm">visibility</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Collection Card 2 - Smart Collection -->
+                    <div class="collection-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="collection-image h-32 flex items-center justify-center"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <span class="material-icons text-white text-4xl">auto_awesome</span>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="font-semibold text-gray-900">Bestseller Electronics</h3>
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">Smart</span>
+                                </div>
+                                <span class="status-badge status-active">Active</span>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-3">Auto-collected high-performing electronics</p>
+                            <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+                                <span>12 products</span>
+                                <span>Auto-updated 2 hours ago</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button
+                                    class="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                    Edit Rules
+                                </button>
+                                <button
+                                    class="px-3 py-2 text-sm bg-[var(--madas-primary)] text-white rounded-lg hover:bg-[#1a3316] transition-colors"
+                                    onclick="window.location.href='./collection-display.html?id=sample-2'">
+                                    <span class="material-icons text-sm">visibility</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Collection Card 3 -->
+                    <div class="collection-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="collection-image h-32 flex items-center justify-center">
+                            <span class="material-icons text-white text-4xl">home</span>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-semibold text-gray-900">Home & Garden</h3>
+                                <span class="status-badge status-draft">Draft</span>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-3">Beautiful home decor and garden tools</p>
+                            <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+                                <span>32 products</span>
+                                <span>Created 3 days ago</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button
+                                    class="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                    Edit
+                                </button>
+                                <button
+                                    class="px-3 py-2 text-sm bg-[var(--madas-primary)] text-white rounded-lg hover:bg-[#1a3316] transition-colors"
+                                    onclick="window.location.href='./collection-display.html?id=sample-3'">
+                                    <span class="material-icons text-sm">visibility</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Collection Card 4 -->
+                    <div class="collection-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="collection-image h-32 flex items-center justify-center">
+                            <span class="material-icons text-white text-4xl">fitness_center</span>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-semibold text-gray-900">Sports & Fitness</h3>
+                                <span class="status-badge status-active">Active</span>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-3">Everything for an active lifestyle</p>
+                            <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+                                <span>15 products</span>
+                                <span>Created 5 days ago</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button
+                                    class="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                    Edit
+                                </button>
+                                <button
+                                    class="px-3 py-2 text-sm bg-[var(--madas-primary)] text-white rounded-lg hover:bg-[#1a3316] transition-colors"
+                                    onclick="window.location.href='./collection-display.html?id=sample-4'">
+                                    <span class="material-icons text-sm">visibility</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="hidden text-center py-12">
+                    <span class="material-icons text-gray-300 text-6xl mb-4">collections</span>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No collections found</h3>
+                    <p class="text-gray-600 mb-6">Get started by creating your first collection</p>
+                    <button class="btn-primary px-6 py-3 rounded-lg flex items-center space-x-2 mx-auto">
+                        <span class="material-icons">add</span>
+                        <span>Create Collection</span>
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create Collection Modal -->
+    <div id="createCollectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] flex flex-col">
+                <div class="p-6 flex-shrink-0 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Create New Collection</h3>
+                        <button onclick="closeCreateCollectionModal()" class="text-gray-400 hover:text-gray-600">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Form Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Collection Name</label>
+                            <input type="text"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent"
+                                placeholder="Enter collection name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent"
+                                rows="3" placeholder="Enter collection description"></textarea>
+                        </div>
+
+                        <!-- Manual Product Selection (Hidden by default) -->
+                        <div id="manual-product-selection" class="hidden space-y-4">
+                            <div class="border-t pt-4">
+                                <h4 class="text-sm font-medium text-gray-700 mb-3">Select Products</h4>
+
+                                <!-- Browse Products Button -->
+                                <div class="space-y-3">
+                                    <button type="button" onclick="openProductBrowser()"
+                                        class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-[var(--madas-primary)] hover:bg-[var(--madas-light)] transition-colors flex items-center justify-center space-x-2">
+                                        <span class="material-icons text-[var(--madas-primary)]">folder_open</span>
+                                        <span class="text-[var(--madas-primary)] font-medium">Browse Products from
+                                            Inventory</span>
+                                    </button>
+
+                                    <!-- Selected Products Summary -->
+                                    <div id="selected-products-summary" class="hidden">
+                                        <div class="bg-gray-50 rounded-lg p-3">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-sm font-medium text-gray-700">
+                                                    <span id="selected-count">0</span> products selected
+                                                </span>
+                                                <button type="button" onclick="clearAllSelections()"
+                                                    class="text-sm text-red-600 hover:text-red-700">
+                                                    Clear All
+                                                </button>
+                                            </div>
+                                            <div id="selected-products-list" class="space-y-1">
+                                                <!-- Selected products will be listed here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Collection Type</label>
+                            <div class="space-y-3">
+                                <div class="flex items-center space-x-3">
+                                    <input type="radio" id="manual-collection" name="collection-type" value="manual"
+                                        class="text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]" checked>
+                                    <label for="manual-collection" class="text-sm text-gray-700">Manual
+                                        Collection</label>
+                                    <span class="text-xs text-gray-500">(Select products manually)</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <input type="radio" id="smart-collection" name="collection-type" value="smart"
+                                        class="text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                    <label for="smart-collection" class="text-sm text-gray-700">Smart Collection</label>
+                                    <span class="text-xs text-gray-500">(Auto-collect based on rules)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Smart Collection Rules (Hidden by default) -->
+                        <div id="smart-rules" class="hidden space-y-4">
+                            <div class="border-t pt-4">
+                                <h4 class="text-sm font-medium text-gray-700 mb-3">Smart Collection Rules</h4>
+
+                                <!-- Rule 1: Product Type -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-600">Product Type</label>
+                                    <select id="product-type-rule"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                        <option value="">Any type</option>
+                                        <option value="electronics">Electronics</option>
+                                        <option value="clothing">Clothing</option>
+                                        <option value="home">Home & Garden</option>
+                                        <option value="sports">Sports & Fitness</option>
+                                        <option value="books">Books</option>
+                                        <option value="beauty">Beauty & Health</option>
+                                    </select>
+                                </div>
+
+                                <!-- Rule 2: Price Range -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-600">Price Range</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="number" id="min-price" placeholder="Min price"
+                                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                        <input type="number" id="max-price" placeholder="Max price"
+                                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                    </div>
+                                </div>
+
+                                <!-- Rule 3: Stock Status -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-600">Stock Status</label>
+                                    <select id="stock-status-rule"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                        <option value="">Any stock status</option>
+                                        <option value="in-stock">In Stock</option>
+                                        <option value="low-stock">Low Stock</option>
+                                        <option value="out-of-stock">Out of Stock</option>
+                                    </select>
+                                </div>
+
+                                <!-- Rule 4: Tags -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-600">Product Tags</label>
+                                    <input type="text" id="product-tags" placeholder="Enter tags (comma separated)"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                    <p class="text-xs text-gray-500">Products must have ALL specified tags</p>
+                                </div>
+
+                                <!-- Rule 5: Vendor -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-600">Vendor/Brand</label>
+                                    <select id="vendor-rule"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                        <option value="">Any vendor</option>
+                                        <option value="apple">Apple</option>
+                                        <option value="samsung">Samsung</option>
+                                        <option value="nike">Nike</option>
+                                        <option value="adidas">Adidas</option>
+                                        <option value="sony">Sony</option>
+                                        <option value="lg">LG</option>
+                                    </select>
+                                </div>
+
+                                <!-- Rule 6: Date Added -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-600">Products Added</label>
+                                    <select id="date-added-rule"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                        <option value="">Any time</option>
+                                        <option value="last-7-days">Last 7 days</option>
+                                        <option value="last-30-days">Last 30 days</option>
+                                        <option value="last-3-months">Last 3 months</option>
+                                        <option value="this-year">This year</option>
+                                    </select>
+                                </div>
+
+                                <!-- Rule 7: Sales Performance -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-gray-600">Sales Performance</label>
+                                    <select id="sales-performance-rule"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                        <option value="">Any performance</option>
+                                        <option value="bestsellers">Bestsellers (Top 20%)</option>
+                                        <option value="slow-moving">Slow Moving</option>
+                                        <option value="no-sales">No Sales</option>
+                                        <option value="high-rating">High Rating (4+ stars)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Preview Button -->
+                                <div class="pt-3">
+                                    <button type="button" onclick="previewSmartCollection()"
+                                        class="w-full px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2">
+                                        <span class="material-icons text-sm">visibility</span>
+                                        <span>Preview Collection</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                <option value="draft">Draft</option>
+                                <option value="active">Active</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Fixed Footer with Buttons -->
+                <div class="flex-shrink-0 p-6 border-t border-gray-200 bg-gray-50">
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="closeCreateCollectionModal()"
+                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="button" onclick="createCollection()"
+                            class="flex-1 px-4 py-2 bg-[var(--madas-primary)] text-white rounded-lg hover:bg-[#1a3316]">
+                            Create Collection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Collection Preview Modal -->
+    <div id="smartCollectionPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+                <div class="p-6 border-b border-gray-200 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Smart Collection Preview</h3>
+                        <button onclick="closeSmartCollectionPreview()" class="text-gray-400 hover:text-gray-600">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">Products that match your smart collection rules</p>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div id="preview-content" class="space-y-4">
+                        <!-- Preview content will be loaded here -->
+                    </div>
+                </div>
+                <div class="p-6 border-t border-gray-200 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            <span id="preview-count">0</span> products match your criteria
+                        </div>
+                        <div class="space-x-3">
+                            <button onclick="closeSmartCollectionPreview()"
+                                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                Close
+                            </button>
+                            <button onclick="createSmartCollection()"
+                                class="px-4 py-2 bg-[var(--madas-primary)] text-white rounded-lg hover:bg-[#1a3316]">
+                                Create Collection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Browser Modal -->
+    <div id="productBrowserModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+                <div class="p-6 border-b border-gray-200 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Browse Products from Inventory</h3>
+                            <p class="text-sm text-gray-600 mt-1">Select products to add to your collection</p>
+                        </div>
+                        <button onclick="closeProductBrowser()" class="text-gray-400 hover:text-gray-600">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="p-6 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+                    <div class="space-y-4">
+                        <div class="flex space-x-4">
+                            <div class="flex-1">
+                                <input type="text" id="browser-product-search" placeholder="Search products..."
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                            </div>
+                            <select id="browser-product-category-filter"
+                                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                <option value="">All Categories</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="clothing">Clothing</option>
+                                <option value="home">Home & Garden</option>
+                                <option value="sports">Sports & Fitness</option>
+                                <option value="books">Books</option>
+                                <option value="beauty">Beauty & Health</option>
+                            </select>
+                            <select id="browser-stock-filter"
+                                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                <option value="">All Stock Status</option>
+                                <option value="in-stock">In Stock</option>
+                                <option value="low-stock">Low Stock</option>
+                                <option value="out-of-stock">Out of Stock</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">
+                                <span id="browser-selected-count">0</span> products selected
+                            </span>
+                            <div class="space-x-2">
+                                <button onclick="selectAllVisibleInBrowser()"
+                                    class="px-3 py-1 text-sm text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg">
+                                    Select All Visible
+                                </button>
+                                <button onclick="clearBrowserSelections()"
+                                    class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg">
+                                    Clear All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div id="browser-products-grid"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <!-- Products will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            <span id="browser-total-count">0</span> products available
+                        </div>
+                        <div class="space-x-3">
+                            <button onclick="closeProductBrowser()"
+                                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button onclick="confirmProductSelection()"
+                                class="px-4 py-2 bg-[var(--madas-primary)] text-white rounded-lg hover:bg-[#1a3316]">
+                                Add <span id="confirm-selected-count">0</span> Products
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        // Helper function for business-scoped collections
+        window.getScopedCollection = function (db, collectionName) {
+            if (!window.currentBusinessId) {
+                console.error('❌ No business context available for scoped collection');
+                return collection(db, collectionName); // Fallback
+            }
+            return collection(db, "businesses", window.currentBusinessId, collectionName);
+        };
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Global variables
+        let currentUser = null;
+        let allProducts = [];
+        let selectedProducts = [];
+        let browserSelectedProducts = [];
+
+        // Initialize auth state with multi-tenancy
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+
+                // ============================================
+                // TENANT ISOLATION: Initialize Business Context
+                // ============================================
+
+                // Check for super admin users first (bypass business detection)
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    window.currentUserRole = "super-admin";
+                    window.currentBusinessId = "super-admin";
+                    window.currentBusinessData = {
+                        businessName: "Super Admin",
+                        plan: { type: "enterprise", status: "active" }
+                    };
+
+                    // Set super admin permissions
+                    const userData = {
+                        email: user.email,
+                        displayName: user.displayName || "Super Admin",
+                        role: "super-admin",
+                        approved: true,
+                        permissions: {
+                            home: ["view"],
+                            orders: ["view", "search", "create", "edit"],
+                            inventory: ["view", "edit"],
+                            customers: ["view", "edit"],
+                            employees: ["view", "edit"],
+                            finance: ["view", "reports"],
+                            analytics: ["view", "export"],
+                            settings: ["view", "edit"],
+                            admin: ["view", "manage_all_businesses"]
+                        }
+                    };
+
+                    // Store user data
+                    localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                    // Update UI
+                    const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                    const userNameEl = document.getElementById("user-name");
+                    const userEmailEl = document.getElementById("user-email");
+                    const userInitialEl = document.getElementById("user-initial");
+
+                    if (userNameEl) userNameEl.textContent = username;
+                    if (userEmailEl) userEmailEl.textContent = user.email;
+                    if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                    // Update business name and plan
+                    const businessNameEl = document.getElementById("business-name");
+                    if (businessNameEl) businessNameEl.textContent = "Super Admin";
+
+                    const planBadge = document.getElementById("plan-badge");
+                    if (planBadge) {
+                        planBadge.textContent = "Enterprise Plan";
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    }
+
+                    // Hide loading screen if it exists
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+
+                    return;
+                }
+
+                // Step 1: Find user's business (check if owner)
+                let businessSnapshot;
+                try {
+                    const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                    businessSnapshot = await getDocs(businessesQuery);
+                } catch (error) {
+                    console.error("❌ Error querying businesses:", error);
+                    // If Firestore query fails, create temporary business context
+                    console.log("⚠️ Creating temporary business context due to Firestore error...");
+                    window.currentBusinessId = "temp-business";
+                    window.currentBusinessData = {
+                        businessName: "Temporary Business",
+                        plan: { type: "basic", status: "active" },
+                        owner: { name: user.displayName || user.email.split("@")[0] }
+                    };
+                    window.currentUserRole = "owner";
+
+                    // Hide loading screen
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+
+                    return;
+                }
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    window.currentBusinessId = businessDoc.id;
+                    window.currentBusinessData = businessDoc.data();
+                    window.currentUserRole = 'owner';
+
+                    console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                    console.log('🏢 Business ID:', window.currentBusinessId);
+                    console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    let allBusinesses;
+                    let foundBusiness = false;
+
+                    try {
+                        allBusinesses = await getDocs(collection(db, "businesses"));
+                    } catch (error) {
+                        console.error("❌ Error querying all businesses:", error);
+                        // If query fails, create temporary business context
+                        console.log("⚠️ Creating temporary business context due to Firestore error...");
+                        window.currentBusinessId = "temp-business";
+                        window.currentBusinessData = {
+                            businessName: "Temporary Business",
+                            plan: { type: "basic", status: "active" },
+                            owner: { name: user.displayName || user.email.split("@")[0] }
+                        };
+                        window.currentUserRole = "owner";
+
+                        // Hide loading screen
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+
+                        return;
+                    }
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+
+                        try {
+                            const staffDoc = await getDoc(staffRef);
+
+                            if (staffDoc.exists()) {
+                                const staffData = staffDoc.data();
+                                window.currentBusinessId = businessId;
+                                window.currentBusinessData = businessDoc.data();
+                                window.currentUserRole = staffData.role;
+                                window.currentUserPermissions = staffData.permissions;
+
+                                console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                                console.log('🏢 Business ID:', window.currentBusinessId);
+                                console.log('👤 Role:', window.currentUserRole);
+
+                                foundBusiness = true;
+                                break;
+                            }
+                        } catch (error) {
+                            console.error(`❌ Error checking staff for business ${businessId}:`, error);
+                            // Continue to next business if this one fails
+                        }
+                    }
+
+                    if (!foundBusiness) {
+                        console.warn("❌ User not associated with any business.");
+                        console.log("🔍 User email:", user.email);
+                        console.log("🔍 User UID:", user.uid);
+
+                        // Create a temporary business context for testing
+                        console.log("⚠️ Creating temporary business context for testing...");
+                        window.currentBusinessId = "temp-business";
+                        window.currentBusinessData = {
+                            businessName: "Temporary Business",
+                            plan: { type: "basic", status: "active" },
+                            owner: { name: user.displayName || user.email.split("@")[0] }
+                        };
+                        window.currentUserRole = "owner";
+
+                        // Set basic permissions
+                        const userData = {
+                            email: user.email,
+                            displayName: user.displayName || user.email.split("@")[0],
+                            role: "owner",
+                            approved: true,
+                            permissions: {
+                                home: ["view"],
+                                orders: ["view", "search", "create", "edit"],
+                                inventory: ["view", "edit"],
+                                customers: ["view", "edit"],
+                                employees: ["view", "edit"],
+                                finance: ["view", "reports"],
+                                analytics: ["view", "export"],
+                                settings: ["view", "edit"]
+                            }
+                        };
+
+                        // Store user data
+                        localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                        // Update UI
+                        const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                        const userNameEl = document.getElementById("user-name");
+                        const userEmailEl = document.getElementById("user-email");
+                        const userInitialEl = document.getElementById("user-initial");
+
+                        if (userNameEl) userNameEl.textContent = username;
+                        if (userEmailEl) userEmailEl.textContent = user.email;
+                        if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                        // Update business name and plan
+                        const businessNameEl = document.getElementById("business-name");
+                        if (businessNameEl) businessNameEl.textContent = "Temporary Business";
+
+                        const planBadge = document.getElementById("plan-badge");
+                        if (planBadge) {
+                            planBadge.textContent = "Basic Plan";
+                            planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                        }
+
+                        // Hide loading screen if it exists
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+
+                        // Load collections for temporary business
+                        try {
+                            await loadCollectionsFromDatabase();
+                        } catch (error) {
+                            console.error("Error loading collections for temporary business:", error);
+                        }
+
+                        return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || window.currentBusinessData.owner?.name,
+                    role: window.currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"]
+                    };
+                }
+
+                console.log('✅ User data created:', {
+                    email: userData.email,
+                    role: userData.role,
+                    businessId: window.currentBusinessId,
+                    businessName: window.currentBusinessData?.businessName,
+                    approved: userData.approved
+                });
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                window.currentUserId = user.uid;
+                const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+
+                // Update user info if elements exist
+                const userNameEl = document.getElementById("user-name");
+                const userEmailEl = document.getElementById("user-email");
+                const userInitialEl = document.getElementById("user-initial");
+
+                if (userNameEl) userNameEl.textContent = username;
+                if (userEmailEl) userEmailEl.textContent = user.email;
+                if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                // Update business name and plan
+                const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                const planType = window.currentBusinessData?.plan?.type || "basic";
+                const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+                const businessNameEl = document.getElementById("business-name");
+                if (businessNameEl) businessNameEl.textContent = businessName;
+
+                const planBadge = document.getElementById("plan-badge");
+                if (planBadge) {
+                    planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                    // Set plan badge color based on plan type
+                    if (planType === 'enterprise') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    } else if (planType === 'professional') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                    } else {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                    }
+
+                    // Add trial badge if in trial
+                    if (planStatus === 'trial') {
+                        planBadge.textContent += ' (Trial)';
+                    }
+                }
+
+                // Hide loading screen if it exists
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) loadingScreen.style.display = 'none';
+
+                // Load collections after authentication is complete
+                try {
+                    await loadCollectionsFromDatabase();
+                } catch (error) {
+                    console.error("Error loading collections:", error);
+                    // Don't redirect to login for collection loading errors
+                }
+
+            } catch (error) {
+                console.error("Authentication error:", error);
+                // Only redirect to login for critical authentication errors
+                if (error.message && error.message.includes('auth')) {
+                    window.location.href = "/login";
+                } else {
+                    console.log("Non-critical error, continuing with temporary business context");
+                    // Create temporary business context as fallback
+                    window.currentBusinessId = "temp-business";
+                    window.currentBusinessData = {
+                        businessName: "Temporary Business",
+                        plan: { type: "basic", status: "active" },
+                        owner: { name: user.displayName || user.email.split("@")[0] }
+                    };
+                    window.currentUserRole = "owner";
+
+                    // Hide loading screen
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+                }
+            }
+        });
+
+        // Function to update user information in header
+        function updateUserInfo(user) {
+            const username = user.displayName || user.email.split("@")[0];
+            const userInitial = username.charAt(0).toUpperCase();
+
+            const userNameElement = document.getElementById("user-name");
+            const userEmailElement = document.getElementById("user-email");
+            const userInitialElement = document.getElementById("user-initial");
+
+            if (userNameElement) userNameElement.textContent = username;
+            if (userEmailElement) userEmailElement.textContent = user.email;
+            if (userInitialElement) userInitialElement.textContent = userInitial;
+        }
+
+        // Logout functionality
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                auth.signOut().then(() => {
+                    window.location.href = "/login";
+                });
+            });
+        }
+
+        // Profile button functionality
+        const profileBtn = document.getElementById("profile-btn");
+        if (profileBtn) {
+            profileBtn.addEventListener("click", () => {
+                window.location.href = "./profile.html";
+            });
+        }
+
+        // Load products from Firebase database
+        async function loadProductsFromDatabase() {
+            try {
+                if (!window.currentBusinessId) {
+                    console.error('❌ No business context available');
+                    return;
+                }
+
+                const productsRef = collection(db, "businesses", window.currentBusinessId, "products");
+                const productsSnapshot = await getDocs(productsRef);
+                allProducts = [];
+
+                productsSnapshot.forEach((doc) => {
+                    const productData = doc.data();
+                    allProducts.push({
+                        id: doc.id,
+                        name: productData.name || "Unnamed Product",
+                        type: productData.category || "uncategorized",
+                        price: productData.price || 0,
+                        stock: productData.stock || 0,
+                        stockStatus: getStockStatus(productData.stock),
+                        image: getProductIcon(productData.category),
+                        vendor: productData.brand || productData.vendor || "Unknown",
+                        description: productData.description || "",
+                        sku: productData.sku || "",
+                        tags: productData.tags || []
+                    });
+                });
+
+                console.log(`Loaded ${allProducts.length} products from database`);
+            } catch (error) {
+                console.error("Error loading products:", error);
+                // Fallback to mock data if database fails
+                loadMockProducts();
+            }
+        }
+
+        // Get stock status based on quantity
+        function getStockStatus(stock) {
+            if (stock <= 0) return "out-of-stock";
+            if (stock <= 10) return "low-stock";
+            return "in-stock";
+        }
+
+        // Get product icon based on category
+        function getProductIcon(category) {
+            const icons = {
+                electronics: "📱",
+                clothing: "👕",
+                home: "🏠",
+                sports: "⚽",
+                books: "📚",
+                beauty: "💄",
+                automotive: "🚗",
+                toys: "🧸",
+                food: "🍎",
+                jewelry: "💍"
+            };
+            return icons[category] || "📦";
+        }
+
+        // Fallback mock data if database fails
+        function loadMockProducts() {
+            allProducts = [
+                { id: 1, name: "iPhone 15 Pro", type: "electronics", price: 999, stock: 25, stockStatus: "in-stock", image: "📱", vendor: "Apple" },
+                { id: 2, name: "Samsung Galaxy S24", type: "electronics", price: 899, stock: 5, stockStatus: "low-stock", image: "📱", vendor: "Samsung" },
+                { id: 3, name: "Nike Air Max", type: "clothing", price: 120, stock: 15, stockStatus: "in-stock", image: "👟", vendor: "Nike" },
+                { id: 4, name: "Adidas Ultraboost", type: "clothing", price: 180, stock: 0, stockStatus: "out-of-stock", image: "👟", vendor: "Adidas" }
+            ];
+            console.log("Using mock data - database connection failed");
+        }
+
+        // Save collection to database
+        async function saveCollectionToDatabase(collectionData) {
+            try {
+                if (!window.currentBusinessId) {
+                    throw new Error('No business context available');
+                }
+                const collectionsRef = collection(db, "businesses", window.currentBusinessId, "collections");
+                const collectionRef = await addDoc(collectionsRef, {
+                    ...collectionData,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: currentUser.uid
+                });
+
+                console.log("Collection saved with ID:", collectionRef.id);
+                return collectionRef.id;
+            } catch (error) {
+                console.error("Error saving collection:", error);
+                throw error;
+            }
+        }
+
+        // Load collections from database
+        async function loadCollectionsFromDatabase() {
+            try {
+                if (!window.currentBusinessId) {
+                    console.error('❌ No business context available');
+                    // Show empty state instead of error
+                    displayCollections([]);
+                    return;
+                }
+
+                const collectionsRef = collection(db, "businesses", window.currentBusinessId, "collections");
+                const collectionsSnapshot = await getDocs(collectionsRef);
+                const collections = [];
+
+                collectionsSnapshot.forEach((doc) => {
+                    const collectionData = doc.data();
+                    collections.push({
+                        id: doc.id,
+                        ...collectionData
+                    });
+                });
+
+                console.log(`Loaded ${collections.length} collections from database`);
+                displayCollections(collections);
+                saveCollectionsToStorage(collections); // Save to localStorage for other pages
+            } catch (error) {
+                console.error("Error loading collections:", error);
+                // Show empty state instead of crashing
+                displayCollections([]);
+            }
+        }
+
+        // Save collections to localStorage for other pages to access
+        function saveCollectionsToStorage(collections) {
+            try {
+                localStorage.setItem('collections', JSON.stringify(collections));
+                // Dispatch custom event to notify other pages
+                window.dispatchEvent(new CustomEvent('collectionsUpdated', {
+                    detail: { collections: collections }
+                }));
+            } catch (error) {
+                console.error('Error saving collections to storage:', error);
+            }
+        }
+
+        // Display collections in the grid
+        function displayCollections(collections) {
+            const collectionsGrid = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.xl\\:grid-cols-4.gap-6');
+
+            if (collections.length === 0) {
+                collectionsGrid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <span class="material-icons text-gray-300 text-6xl mb-4">collections</span>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No collections found</h3>
+                        <p class="text-gray-600 mb-6">Get started by creating your first collection</p>
+                        <button onclick="openCreateCollectionModal()" class="btn-primary px-6 py-3 rounded-lg flex items-center space-x-2 mx-auto">
+                            <span class="material-icons">add</span>
+                            <span>Create Collection</span>
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            collectionsGrid.innerHTML = collections.map(collection => `
+                <div class="collection-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="collection-image h-32 flex items-center justify-center" style="background: ${collection.type === 'smart' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}">
+                        <span class="material-icons text-white text-4xl">${collection.type === 'smart' ? 'auto_awesome' : 'collections'}</span>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-semibold text-gray-900">${collection.name}</h3>
+                                <span class="px-2 py-1 ${collection.type === 'smart' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'} text-xs rounded-full">${collection.type === 'smart' ? 'Smart' : 'Manual'}</span>
+                            </div>
+                            <span class="status-badge ${collection.status === 'active' ? 'status-active' : collection.status === 'draft' ? 'status-draft' : 'status-archived'}">${collection.status}</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">${collection.description || 'No description'}</p>
+                        <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+                            <span>${collection.productCount || 0} products</span>
+                            <span>Created ${formatDate(collection.createdAt)}</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors" onclick="editCollection('${collection.id}')">
+                                Edit
+                            </button>
+                            <button class="px-3 py-2 text-sm bg-[var(--madas-primary)] text-white rounded-lg hover:bg-[#1a3316] transition-colors" onclick="window.location.href='./collection-display.html?id=${collection.id}'">
+                                <span class="material-icons text-sm">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Format date for display
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleDateString();
+        }
+
+        // Edit collection function
+        window.editCollection = async function (collectionId) {
+            try {
+                if (!window.currentBusinessId) {
+                    alert('No business context available');
+                    return;
+                }
+                // Get collection data from database
+                const collectionDoc = await getDoc(doc(db, "businesses", window.currentBusinessId, "collections", collectionId));
+                if (!collectionDoc.exists()) {
+                    alert('Collection not found');
+                    return;
+                }
+
+                const collectionData = collectionDoc.data();
+
+                // Populate the create collection modal with existing data
+                populateEditForm(collectionData);
+
+                // Store the collection ID for updating
+                window.currentEditingCollectionId = collectionId;
+
+                // Show the modal
+                document.getElementById('createCollectionModal').classList.remove('hidden');
+
+                // Change modal title to indicate editing
+                document.querySelector('#createCollectionModal h3').textContent = 'Edit Collection';
+
+                // Change button text
+                const createButton = document.querySelector('#createCollectionModal button[onclick="createCollection()"]');
+                createButton.textContent = 'Update Collection';
+                createButton.setAttribute('onclick', 'updateCollection()');
+
+            } catch (error) {
+                console.error('Error loading collection for edit:', error);
+                alert('Error loading collection. Please try again.');
+            }
+        };
+
+        // Populate edit form with existing collection data
+        function populateEditForm(collectionData) {
+            // Basic info
+            document.querySelector('#createCollectionModal input[type="text"]').value = collectionData.name || '';
+            document.querySelector('#createCollectionModal textarea').value = collectionData.description || '';
+            document.querySelector('#createCollectionModal select').value = collectionData.status || 'draft';
+
+            // Collection type
+            const typeRadio = document.querySelector(`input[name="collection-type"][value="${collectionData.type}"]`);
+            if (typeRadio) {
+                typeRadio.checked = true;
+            }
+
+            // Show appropriate section based on type
+            if (collectionData.type === 'smart') {
+                document.getElementById('smart-rules').classList.remove('hidden');
+                document.getElementById('manual-product-selection').classList.add('hidden');
+                populateSmartRules(collectionData.rules || {});
+            } else {
+                document.getElementById('smart-rules').classList.add('hidden');
+                document.getElementById('manual-product-selection').classList.remove('hidden');
+                populateManualProducts(collectionData.productIds || []);
+            }
+        }
+
+        // Populate smart collection rules
+        function populateSmartRules(rules) {
+            document.getElementById('product-type-rule').value = rules.productType || '';
+            document.getElementById('min-price').value = rules.minPrice || '';
+            document.getElementById('max-price').value = rules.maxPrice || '';
+            document.getElementById('stock-status-rule').value = rules.stockStatus || '';
+            document.getElementById('product-tags').value = rules.tags || '';
+            document.getElementById('vendor-rule').value = rules.vendor || '';
+            document.getElementById('date-added-rule').value = rules.dateAdded || '';
+            document.getElementById('sales-performance-rule').value = rules.salesPerformance || '';
+        }
+
+        // Populate manual collection products
+        function populateManualProducts(productIds) {
+            selectedProducts = [...productIds];
+            updateSelectedProductsSummary();
+        }
+
+        // Update collection function
+        window.updateCollection = async function () {
+            const collectionId = window.currentEditingCollectionId;
+            if (!collectionId) {
+                alert('No collection selected for editing');
+                return;
+            }
+
+            const collectionType = document.querySelector('input[name="collection-type"]:checked').value;
+            const collectionName = document.querySelector('#createCollectionModal input[type="text"]').value;
+            const collectionDescription = document.querySelector('#createCollectionModal textarea').value;
+            const collectionStatus = document.querySelector('#createCollectionModal select').value;
+
+            let updateData = {
+                name: collectionName,
+                description: collectionDescription,
+                status: collectionStatus,
+                type: collectionType,
+                updatedAt: new Date()
+            };
+
+            try {
+                if (collectionType === 'manual') {
+                    if (selectedProducts.length === 0) {
+                        alert('Please select at least one product for your collection.');
+                        return;
+                    }
+
+                    const selectedProductsData = getSelectedProducts();
+                    updateData.products = selectedProductsData;
+                    updateData.productIds = selectedProducts;
+                    updateData.productCount = selectedProducts.length;
+                } else {
+                    const rules = {
+                        productType: document.getElementById('product-type-rule').value,
+                        minPrice: document.getElementById('min-price').value,
+                        maxPrice: document.getElementById('max-price').value,
+                        stockStatus: document.getElementById('stock-status-rule').value,
+                        tags: document.getElementById('product-tags').value,
+                        vendor: document.getElementById('vendor-rule').value,
+                        dateAdded: document.getElementById('date-added-rule').value,
+                        salesPerformance: document.getElementById('sales-performance-rule').value
+                    };
+                    updateData.rules = rules;
+                }
+
+                // Update in Firebase
+                if (!window.currentBusinessId) {
+                    throw new Error('No business context available');
+                }
+                await updateDoc(doc(db, "businesses", window.currentBusinessId, "collections", collectionId), updateData);
+
+                alert(`Collection "${collectionName}" updated successfully!`);
+
+                // Close modal and reset
+                window.closeCreateCollectionModal();
+                resetEditForm();
+
+                // Reload collections
+                loadCollectionsFromDatabase();
+
+            } catch (error) {
+                console.error('Error updating collection:', error);
+                alert('Error updating collection. Please try again.');
+            }
+        };
+
+        // Reset edit form to create mode
+        function resetEditForm() {
+            window.currentEditingCollectionId = null;
+
+            // Reset modal title
+            document.querySelector('#createCollectionModal h3').textContent = 'Create New Collection';
+
+            // Reset button
+            const updateButton = document.querySelector('#createCollectionModal button[onclick="updateCollection()"]');
+            if (updateButton) {
+                updateButton.textContent = 'Create Collection';
+                updateButton.setAttribute('onclick', 'createCollection()');
+            }
+
+            // Reset form
+            document.querySelector('#createCollectionModal form').reset();
+            document.getElementById('smart-rules').classList.add('hidden');
+            document.getElementById('manual-product-selection').classList.add('hidden');
+            selectedProducts = [];
+            updateSelectedProductsSummary();
+        }
+
+        // View collection function
+        window.viewCollection = async function (collectionId) {
+            try {
+                if (!window.currentBusinessId) {
+                    alert('No business context available');
+                    return;
+                }
+                // Get collection data from database
+                const collectionDoc = await getDoc(doc(db, "businesses", window.currentBusinessId, "collections", collectionId));
+                if (!collectionDoc.exists()) {
+                    alert('Collection not found');
+                    return;
+                }
+
+                const collectionData = collectionDoc.data();
+
+                // Show collection details in a modal
+                showCollectionDetailsModal(collectionData);
+
+            } catch (error) {
+                console.error('Error loading collection for view:', error);
+                alert('Error loading collection. Please try again.');
+            }
+        };
+
+        // Show collection details modal
+        function showCollectionDetailsModal(collectionData) {
+            // Create or update the details modal
+            let detailsModal = document.getElementById('collectionDetailsModal');
+            if (!detailsModal) {
+                detailsModal = createCollectionDetailsModal();
+                document.body.appendChild(detailsModal);
+            }
+
+            // Populate with collection data
+            populateCollectionDetails(collectionData);
+
+            // Show modal
+            detailsModal.classList.remove('hidden');
+        }
+
+        // Create collection details modal
+        function createCollectionDetailsModal() {
+            const modal = document.createElement('div');
+            modal.id = 'collectionDetailsModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden z-50';
+            modal.innerHTML = `
+                <div class="flex items-center justify-center min-h-screen p-4">
+                    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+                        <div class="p-6 border-b border-gray-200 flex-shrink-0">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-gray-900">Collection Details</h3>
+                                <button onclick="closeCollectionDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                                    <span class="material-icons">close</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-6">
+                            <div id="collection-details-content">
+                                <!-- Collection details will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Close on outside click
+            modal.addEventListener('click', function (e) {
+                if (e.target === this) {
+                    closeCollectionDetailsModal();
+                }
+            });
+
+            return modal;
+        }
+
+        // Populate collection details
+        function populateCollectionDetails(collectionData) {
+            const content = document.getElementById('collection-details-content');
+
+            let productsHtml = '';
+            if (collectionData.type === 'manual' && collectionData.products) {
+                productsHtml = `
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Products in Collection</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${collectionData.products.map(product => `
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white">
+                                            ${product.image || '📦'}
+                                        </div>
+                                        <div class="flex-1">
+                                            <h5 class="font-medium text-gray-900">${product.name}</h5>
+                                            <p class="text-sm text-gray-600">$${product.price}</p>
+                                            <p class="text-xs text-gray-500">Stock: ${product.stock}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (collectionData.type === 'smart' && collectionData.rules) {
+                productsHtml = `
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Smart Collection Rules</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                ${Object.entries(collectionData.rules).map(([key, value]) =>
+                    value ? `
+                                        <div class="flex justify-between">
+                                            <span class="text-sm font-medium text-gray-600 capitalize">${key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                                            <span class="text-sm text-gray-900">${value}</span>
+                                        </div>
+                                    ` : ''
+                ).filter(Boolean).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">${collectionData.name}</h2>
+                            <p class="text-gray-600 mt-1">${collectionData.description || 'No description'}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 ${collectionData.type === 'smart' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'} text-sm rounded-full">
+                                ${collectionData.type === 'smart' ? 'Smart Collection' : 'Manual Collection'}
+                            </span>
+                            <span class="px-3 py-1 ${collectionData.status === 'active' ? 'bg-green-100 text-green-700' : collectionData.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'} text-sm rounded-full">
+                                ${collectionData.status}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-2xl font-bold text-gray-900">${collectionData.productCount || 0}</div>
+                            <div class="text-sm text-gray-600">Products</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">Created</div>
+                            <div class="text-lg font-semibold text-gray-900">${formatDate(collectionData.createdAt)}</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">Last Updated</div>
+                            <div class="text-lg font-semibold text-gray-900">${formatDate(collectionData.updatedAt)}</div>
+                        </div>
+                    </div>
+                    
+                    ${productsHtml}
+                </div>
+            `;
+        }
+
+        // Close collection details modal
+        window.closeCollectionDetailsModal = function () {
+            const modal = document.getElementById('collectionDetailsModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        };
+
+        // Dark mode toggle functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            const darkToggle = document.getElementById('darkToggle');
+            const darkIcon = document.getElementById('darkToggleIcon');
+
+            if (!darkToggle || !darkIcon) {
+                console.error('Dark mode toggle elements not found');
+                return;
+            }
+
+            function setDarkMode(on) {
+                document.body.classList.toggle('dark-mode', on);
+                localStorage.setItem('dark-mode', on ? '1' : '0');
+                if (on) {
+                    darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+                } else {
+                    darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+                }
+            }
+            darkToggle.addEventListener('click', () => {
+                setDarkMode(!document.body.classList.contains('dark-mode'));
+            });
+
+            // Initialize dark mode from localStorage
+            if (localStorage.getItem('dark-mode') === '1') {
+                setDarkMode(true);
+            }
+        });
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+
+            // E-commerce Dropdown functionality
+            const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+            const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+            const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+            if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+                ecommerceDropdownBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                    if (isOpen) {
+                        ecommerceDropdownMenu.classList.remove("show");
+                        ecommerceDropdownMenu.classList.add("hidden");
+                        if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                    } else {
+                        ecommerceDropdownMenu.classList.remove("hidden");
+                        ecommerceDropdownMenu.classList.add("show");
+                        if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!ecommerceDropdownBtn.contains(e.target) && !ecommerceDropdownMenu.contains(e.target)) {
+                        ecommerceDropdownMenu.classList.remove("show");
+                        ecommerceDropdownMenu.classList.add("hidden");
+                        if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                    }
+                });
+            }
+
+            // Finance Dropdown functionality
+            const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+            const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+            const financeDropdownArrow = document.querySelector("#finance-dropdown-btn .dropdown-arrow");
+
+            if (financeDropdownBtn && financeDropdownMenu && financeDropdownArrow) {
+                financeDropdownBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !financeDropdownMenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        financeDropdownMenu.classList.add("hidden");
+                        financeDropdownArrow.classList.remove("rotate");
+                    } else {
+                        financeDropdownMenu.classList.remove("hidden");
+                        financeDropdownMenu.classList.add("show");
+                        financeDropdownArrow.classList.add("rotate");
+                    }
+                });
+            }
+
+            // Grid/List View Toggle functionality
+            const gridViewBtn = document.getElementById("gridViewBtn");
+            const listViewBtn = document.getElementById("listViewBtn");
+            const collectionsGrid = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.xl\\:grid-cols-4.gap-6');
+
+            if (gridViewBtn && listViewBtn && collectionsGrid) {
+                gridViewBtn.addEventListener("click", () => {
+                    // Switch to grid view
+                    gridViewBtn.classList.add("bg-[var(--madas-primary)]", "text-white");
+                    gridViewBtn.classList.remove("hover:bg-gray-50", "text-gray-600");
+
+                    listViewBtn.classList.remove("bg-[var(--madas-primary)]", "text-white");
+                    listViewBtn.classList.add("hover:bg-gray-50", "text-gray-600");
+
+                    // Update grid layout
+                    collectionsGrid.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
+                });
+
+                listViewBtn.addEventListener("click", () => {
+                    // Switch to list view
+                    listViewBtn.classList.add("bg-[var(--madas-primary)]", "text-white");
+                    listViewBtn.classList.remove("hover:bg-gray-50", "text-gray-600");
+
+                    gridViewBtn.classList.remove("bg-[var(--madas-primary)]", "text-white");
+                    gridViewBtn.classList.add("hover:bg-gray-50", "text-gray-600");
+
+                    // Update grid layout to list
+                    collectionsGrid.className = "grid grid-cols-1 gap-4";
+                });
+            }
+        });
+
+        // Modal functions - Make them globally accessible
+        window.openCreateCollectionModal = function () {
+            // Reset form to create mode
+            resetEditForm();
+            document.getElementById('createCollectionModal').classList.remove('hidden');
+        };
+
+        window.closeCreateCollectionModal = function () {
+            document.getElementById('createCollectionModal').classList.add('hidden');
+            // Reset form when closing
+            resetEditForm();
+        };
+
+        // Close modal on outside click
+        document.getElementById('createCollectionModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeCreateCollectionModal();
+            }
+        });
+
+        // Collection type toggle functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            const manualRadio = document.getElementById('manual-collection');
+            const smartRadio = document.getElementById('smart-collection');
+            const smartRules = document.getElementById('smart-rules');
+            const manualProductSelection = document.getElementById('manual-product-selection');
+
+            function toggleCollectionOptions() {
+                if (smartRadio.checked) {
+                    smartRules.classList.remove('hidden');
+                    manualProductSelection.classList.add('hidden');
+                } else {
+                    smartRules.classList.add('hidden');
+                    manualProductSelection.classList.remove('hidden');
+                    loadProductsForSelection();
+                }
+            }
+
+            manualRadio.addEventListener('change', toggleCollectionOptions);
+            smartRadio.addEventListener('change', toggleCollectionOptions);
+
+            // Load products when manual collection is selected by default
+            if (manualRadio.checked) {
+                toggleCollectionOptions();
+            }
+        });
+
+        // Smart Collection Preview Function
+        window.previewSmartCollection = function () {
+            const rules = {
+                productType: document.getElementById('product-type-rule').value,
+                minPrice: document.getElementById('min-price').value,
+                maxPrice: document.getElementById('max-price').value,
+                stockStatus: document.getElementById('stock-status-rule').value,
+                tags: document.getElementById('product-tags').value,
+                vendor: document.getElementById('vendor-rule').value,
+                dateAdded: document.getElementById('date-added-rule').value,
+                salesPerformance: document.getElementById('sales-performance-rule').value
+            };
+
+            // Simulate API call to get matching products
+            const matchingProducts = getMatchingProducts(rules);
+
+            // Display preview
+            displaySmartCollectionPreview(matchingProducts);
+
+            // Show preview modal
+            document.getElementById('smartCollectionPreviewModal').classList.remove('hidden');
+        }
+
+        // Mock function to simulate getting matching products
+        function getMatchingProducts(rules) {
+            // This would typically make an API call to your backend
+            // For demo purposes, we'll return mock data
+            const allProducts = [
+                { id: 1, name: "iPhone 15 Pro", type: "electronics", price: 999, stock: "in-stock", tags: ["smartphone", "apple"], vendor: "apple", rating: 4.8, sales: 150 },
+                { id: 2, name: "Samsung Galaxy S24", type: "electronics", price: 899, stock: "in-stock", tags: ["smartphone", "android"], vendor: "samsung", rating: 4.7, sales: 120 },
+                { id: 3, name: "Nike Air Max", type: "clothing", price: 120, stock: "in-stock", tags: ["shoes", "sports"], vendor: "nike", rating: 4.6, sales: 80 },
+                { id: 4, name: "Adidas Ultraboost", type: "clothing", price: 180, stock: "low-stock", tags: ["shoes", "running"], vendor: "adidas", rating: 4.5, sales: 60 },
+                { id: 5, name: "Sony WH-1000XM5", type: "electronics", price: 399, stock: "in-stock", tags: ["headphones", "audio"], vendor: "sony", rating: 4.9, sales: 90 },
+                { id: 6, name: "LG OLED TV", type: "electronics", price: 1299, stock: "in-stock", tags: ["tv", "display"], vendor: "lg", rating: 4.8, sales: 45 },
+                { id: 7, name: "MacBook Pro", type: "electronics", price: 1999, stock: "in-stock", tags: ["laptop", "apple"], vendor: "apple", rating: 4.9, sales: 75 },
+                { id: 8, name: "Garden Tools Set", type: "home", price: 89, stock: "in-stock", tags: ["tools", "garden"], vendor: "", rating: 4.3, sales: 30 }
+            ];
+
+            return allProducts.filter(product => {
+                // Apply filtering rules
+                if (rules.productType && product.type !== rules.productType) return false;
+                if (rules.minPrice && product.price < parseFloat(rules.minPrice)) return false;
+                if (rules.maxPrice && product.price > parseFloat(rules.maxPrice)) return false;
+                if (rules.stockStatus && product.stock !== rules.stockStatus) return false;
+                if (rules.vendor && product.vendor !== rules.vendor) return false;
+
+                // Tags filtering
+                if (rules.tags) {
+                    const requiredTags = rules.tags.split(',').map(tag => tag.trim().toLowerCase());
+                    const productTags = product.tags.map(tag => tag.toLowerCase());
+                    if (!requiredTags.every(tag => productTags.includes(tag))) return false;
+                }
+
+                // Sales performance filtering
+                if (rules.salesPerformance) {
+                    if (rules.salesPerformance === 'bestsellers' && product.sales < 100) return false;
+                    if (rules.salesPerformance === 'slow-moving' && product.sales >= 50) return false;
+                    if (rules.salesPerformance === 'no-sales' && product.sales > 0) return false;
+                    if (rules.salesPerformance === 'high-rating' && product.rating < 4.5) return false;
+                }
+
+                return true;
+            });
+        }
+
+        // Display smart collection preview
+        function displaySmartCollectionPreview(products) {
+            const previewContent = document.getElementById('preview-content');
+            const previewCount = document.getElementById('preview-count');
+
+            previewCount.textContent = products.length;
+
+            if (products.length === 0) {
+                previewContent.innerHTML = `
+                    <div class="text-center py-8">
+                        <span class="material-icons text-gray-300 text-6xl mb-4">search_off</span>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                        <p class="text-gray-600">Try adjusting your smart collection rules to match more products.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            previewContent.innerHTML = products.map(product => `
+                <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="material-icons text-white">inventory</span>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-medium text-gray-900">${product.name}</h4>
+                        <div class="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                            <span>Type: ${product.type}</span>
+                            <span>Price: $${product.price}</span>
+                            <span>Stock: ${product.stock}</span>
+                            <span>Sales: ${product.sales}</span>
+                            <span>Rating: ${product.rating}★</span>
+                        </div>
+                        <div class="flex items-center space-x-2 mt-2">
+                            ${product.tags.map(tag => `<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Close smart collection preview
+        window.closeSmartCollectionPreview = function () {
+            document.getElementById('smartCollectionPreviewModal').classList.add('hidden');
+        }
+
+        // Create smart collection
+        window.createSmartCollection = async function () {
+            const collectionName = document.querySelector('#createCollectionModal input[type="text"]').value;
+            const collectionDescription = document.querySelector('#createCollectionModal textarea').value;
+            const collectionStatus = document.querySelector('#createCollectionModal select').value;
+
+            const rules = {
+                productType: document.getElementById('product-type-rule').value,
+                minPrice: document.getElementById('min-price').value,
+                maxPrice: document.getElementById('max-price').value,
+                stockStatus: document.getElementById('stock-status-rule').value,
+                tags: document.getElementById('product-tags').value,
+                vendor: document.getElementById('vendor-rule').value,
+                dateAdded: document.getElementById('date-added-rule').value,
+                salesPerformance: document.getElementById('sales-performance-rule').value
+            };
+
+            const collectionData = {
+                name: collectionName,
+                description: collectionDescription,
+                status: collectionStatus,
+                type: 'smart',
+                rules: rules,
+                productCount: 0 // Will be calculated when collection is evaluated
+            };
+
+            try {
+                // Save to Firebase database
+                const collectionId = await saveCollectionToDatabase(collectionData);
+
+                // Show success message
+                alert('Smart collection created successfully!');
+
+                // Close modals
+                window.closeSmartCollectionPreview();
+                window.closeCreateCollectionModal();
+
+                // Reset form
+                document.querySelector('#createCollectionModal form').reset();
+                document.getElementById('smart-rules').classList.add('hidden');
+
+                // Reload collections
+                loadCollectionsFromDatabase();
+
+            } catch (error) {
+                console.error('Error creating smart collection:', error);
+                alert('Error creating collection. Please try again.');
+            }
+        }
+
+        // Main create collection function
+        window.createCollection = function () {
+            const collectionType = document.querySelector('input[name="collection-type"]:checked').value;
+
+            if (collectionType === 'manual') {
+                window.createManualCollection();
+            } else {
+                window.createSmartCollection();
+            }
+        }
+
+        // Create manual collection
+        window.createManualCollection = async function () {
+            const collectionName = document.querySelector('#createCollectionModal input[type="text"]').value;
+            const collectionDescription = document.querySelector('#createCollectionModal textarea').value;
+            const collectionStatus = document.querySelector('#createCollectionModal select').value;
+
+            if (selectedProducts.length === 0) {
+                alert('Please select at least one product for your collection.');
+                return;
+            }
+
+            const selectedProductsData = getSelectedProducts();
+
+            const collectionData = {
+                name: collectionName,
+                description: collectionDescription,
+                status: collectionStatus,
+                type: 'manual',
+                products: selectedProductsData,
+                productIds: selectedProducts,
+                productCount: selectedProducts.length
+            };
+
+            try {
+                // Save to Firebase database
+                const collectionId = await saveCollectionToDatabase(collectionData);
+
+                // Show success message
+                alert(`Manual collection "${collectionName}" created successfully with ${selectedProducts.length} products!`);
+
+                // Close modal
+                window.closeCreateCollectionModal();
+
+                // Reset form
+                document.querySelector('#createCollectionModal form').reset();
+                document.getElementById('manual-product-selection').classList.add('hidden');
+                selectedProducts = [];
+                updateSelectedProductsSummary();
+
+                // Reload collections
+                loadCollectionsFromDatabase();
+
+            } catch (error) {
+                console.error('Error creating collection:', error);
+                alert('Error creating collection. Please try again.');
+            }
+        }
+
+        // Close smart collection preview on outside click
+        document.getElementById('smartCollectionPreviewModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeSmartCollectionPreview();
+            }
+        });
+
+        // Manual Collection Product Selection Functions
+        // Variables are already declared above in the module scope
+
+        // Load products for manual selection
+        function loadProductsForSelection() {
+            // This function is now just for initialization - actual loading happens when browse button is clicked
+            updateSelectedProductsSummary();
+        }
+
+        // Open Product Browser Modal
+        window.openProductBrowser = function () {
+            // Check if products are loaded
+            if (allProducts.length === 0) {
+                console.log("No products loaded, attempting to load from database...");
+                loadProductsFromDatabase().then(() => {
+                    initializeProductBrowser();
+                });
+            } else {
+                initializeProductBrowser();
+            }
+        }
+
+        // Initialize product browser with current data
+        function initializeProductBrowser() {
+            // Initialize browser selections with currently selected products
+            browserSelectedProducts = [...selectedProducts];
+
+            // Display products in browser
+            displayBrowserProducts(allProducts);
+            setupBrowserSearchAndFilter();
+
+            // Show modal
+            document.getElementById('productBrowserModal').classList.remove('hidden');
+        }
+
+        // Close Product Browser Modal
+        window.closeProductBrowser = function () {
+            document.getElementById('productBrowserModal').classList.add('hidden');
+            // Reset browser selections
+            browserSelectedProducts = [];
+        }
+
+        // Display products in the browser modal
+        function displayBrowserProducts(products) {
+            const productsGrid = document.getElementById('browser-products-grid');
+            const totalCount = document.getElementById('browser-total-count');
+
+            totalCount.textContent = products.length;
+
+            if (products.length === 0) {
+                productsGrid.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <span class="material-icons text-gray-300 text-6xl mb-4">inventory_2</span>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                        <p class="text-gray-600">Try adjusting your search or filters.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            productsGrid.innerHTML = products.map(product => `
+                <div class="product-card border border-gray-200 rounded-lg p-4 hover:border-[var(--madas-primary)] transition-colors cursor-pointer ${browserSelectedProducts.includes(product.id) ? 'ring-2 ring-[var(--madas-primary)] bg-[var(--madas-light)]' : ''}" 
+                     onclick="toggleBrowserProductSelection(${product.id})">
+                    <div class="flex flex-col space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xl">
+                                ${product.image}
+                            </div>
+                            <input type="checkbox" class="w-4 h-4 text-[var(--madas-primary)] border-gray-300 rounded focus:ring-[var(--madas-primary)]" 
+                                   ${browserSelectedProducts.includes(product.id) ? 'checked' : ''} 
+                                   onchange="toggleBrowserProductSelection(${product.id})">
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900 text-sm">${product.name}</h4>
+                            <p class="text-xs text-gray-600">${product.vendor}</p>
+                            <p class="text-xs text-gray-500">$${product.price} • Stock: ${product.stock}</p>
+                            <p class="text-xs ${product.stockStatus === 'in-stock' ? 'text-green-600' : product.stockStatus === 'low-stock' ? 'text-yellow-600' : 'text-red-600'}">
+                                ${product.stockStatus === 'in-stock' ? 'In Stock' : product.stockStatus === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            updateBrowserSelectionCount();
+        }
+
+        // Toggle browser product selection
+        window.toggleBrowserProductSelection = function (productId) {
+            const index = browserSelectedProducts.indexOf(productId);
+            if (index > -1) {
+                browserSelectedProducts.splice(index, 1);
+            } else {
+                browserSelectedProducts.push(productId);
+            }
+
+            updateBrowserSelectionCount();
+            displayBrowserProducts(getBrowserFilteredProducts());
+        }
+
+        // Update browser selection count
+        function updateBrowserSelectionCount() {
+            const count = browserSelectedProducts.length;
+            document.getElementById('browser-selected-count').textContent = count;
+            document.getElementById('confirm-selected-count').textContent = count;
+        }
+
+        // Setup browser search and filter functionality
+        function setupBrowserSearchAndFilter() {
+            const searchInput = document.getElementById('browser-product-search');
+            const categoryFilter = document.getElementById('browser-product-category-filter');
+            const stockFilter = document.getElementById('browser-stock-filter');
+
+            searchInput.addEventListener('input', () => {
+                displayBrowserProducts(getBrowserFilteredProducts());
+            });
+
+            categoryFilter.addEventListener('change', () => {
+                displayBrowserProducts(getBrowserFilteredProducts());
+            });
+
+            stockFilter.addEventListener('change', () => {
+                displayBrowserProducts(getBrowserFilteredProducts());
+            });
+        }
+
+        // Get filtered products for browser based on search, category, and stock
+        function getBrowserFilteredProducts() {
+            const searchTerm = document.getElementById('browser-product-search').value.toLowerCase();
+            const category = document.getElementById('browser-product-category-filter').value;
+            const stock = document.getElementById('browser-stock-filter').value;
+
+            return allProducts.filter(product => {
+                const matchesSearch = product.name.toLowerCase().includes(searchTerm) ||
+                    product.vendor.toLowerCase().includes(searchTerm);
+                const matchesCategory = !category || product.type === category;
+                const matchesStock = !stock || product.stockStatus === stock;
+
+                return matchesSearch && matchesCategory && matchesStock;
+            });
+        }
+
+        // Select all visible products in browser
+        window.selectAllVisibleInBrowser = function () {
+            const visibleProducts = getBrowserFilteredProducts();
+            const visibleProductIds = visibleProducts.map(p => p.id);
+
+            // Add all visible products that aren't already selected
+            visibleProductIds.forEach(id => {
+                if (!browserSelectedProducts.includes(id)) {
+                    browserSelectedProducts.push(id);
+                }
+            });
+
+            updateBrowserSelectionCount();
+            displayBrowserProducts(visibleProducts);
+        }
+
+        // Clear browser selections
+        window.clearBrowserSelections = function () {
+            browserSelectedProducts = [];
+            updateBrowserSelectionCount();
+            displayBrowserProducts(getBrowserFilteredProducts());
+        }
+
+        // Confirm product selection and close browser
+        window.confirmProductSelection = function () {
+            selectedProducts = [...browserSelectedProducts];
+            updateSelectedProductsSummary();
+            window.closeProductBrowser();
+        }
+
+        // Update selected products summary in main form
+        function updateSelectedProductsSummary() {
+            const count = selectedProducts.length;
+            const summaryDiv = document.getElementById('selected-products-summary');
+            const countSpan = document.getElementById('selected-count');
+            const listDiv = document.getElementById('selected-products-list');
+
+            countSpan.textContent = count;
+
+            if (count > 0) {
+                summaryDiv.classList.remove('hidden');
+
+                const selectedProductsData = getSelectedProducts();
+                listDiv.innerHTML = selectedProductsData.map(product => `
+                    <div class="flex items-center justify-between text-sm bg-white rounded-lg p-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">${product.image}</span>
+                            <span class="text-gray-900">${product.name}</span>
+                        </div>
+                        <button onclick="removeSelectedProduct(${product.id})" class="text-red-500 hover:text-red-700">
+                            <span class="material-icons text-sm">close</span>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                summaryDiv.classList.add('hidden');
+            }
+        }
+
+        // Remove a selected product
+        window.removeSelectedProduct = function (productId) {
+            const index = selectedProducts.indexOf(productId);
+            if (index > -1) {
+                selectedProducts.splice(index, 1);
+                updateSelectedProductsSummary();
+            }
+        }
+
+        // Clear all selections
+        window.clearAllSelections = function () {
+            selectedProducts = [];
+            updateSelectedProductsSummary();
+        }
+
+        // Get selected products data
+        function getSelectedProducts() {
+            return allProducts.filter(product => selectedProducts.includes(product.id));
+        }
+
+        // Close product browser on outside click
+        document.getElementById('productBrowserModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeProductBrowser();
+            }
+        });
+
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Initialize foundMatch variable
+            let foundMatch = false;
+
+            // Get all sidebar links
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+
+            // Remove all active classes first
+            sidebarLinks.forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+
+            // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/dashboard"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+
+                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+
+                // Skip Dashboard link - already handled above
+                if (href === '/dashboard') return;
+
+                // COMPLETELY DISABLE Dashboard highlighting on non-dashboard pages
+                if (href === '/dashboard') {
+                    // Dashboard should NEVER be highlighted on non-dashboard pages
+                    console.log('Dashboard link found but NOT highlighting on non-dashboard page');
+                    return; // Skip this link completely
+                }
+
+                // Handle other links with normal matching
+                else {
+                    // Check if current path matches this specific link
+                    if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                        link.classList.add('active');
+                        foundMatch = true;
+                        console.log('Exact match found:', href);
+                    }
+                    // Check page name matching for other links
+                    else if (!foundMatch) {
+                        const linkPageName = href.split('/').pop().replace('.html', '');
+                        if (currentPageName === linkPageName ||
+                            (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                            (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                            link.classList.add('active');
+                            foundMatch = true;
+                            console.log('Page name match found:', href, 'for page:', currentPageName);
+                        }
+                    }
+                }
+            });
+
+            // Special cases for specific pages with dropdown management
+            if (currentPath.includes('collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Collections page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for collections');
+                    }
+                }
+            }
+
+            if (currentPath.includes('products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Products page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for products');
+                    }
+                }
+            }
+
+            if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Low Stock page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for low-stock');
+                    }
+                }
+            }
+
+            if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reviews page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for reviews');
+                    }
+                }
+            }
+
+            if (currentPath.includes('orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Orders page detected');
+                }
+            }
+
+            if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Customer page detected');
+                }
+            }
+
+            if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+                const adminLink = document.querySelector('a[href*="Admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Admin page detected');
+                }
+            }
+
+            if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Settings page detected');
+                }
+            }
+
+            if (currentPath.includes('finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Finance page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for finance page');
+                    }
+                }
+            }
+
+            if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Analytics page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for analytics');
+                    }
+                }
+            }
+
+            if (currentPath.includes('reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reports page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for reports');
+                    }
+                }
+            }
+
+            if (currentPath.includes('insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Insights page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for insights');
+                    }
+                }
+            }
+
+            if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Expenses page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for expenses');
+                    }
+                }
+            }
+
+            if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('POS page detected');
+                }
+            }
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+
+    </script>
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

@@ -1,0 +1,198 @@
+name: Deploy MADAS SaaS Platform
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy-marketing-website:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./marketing-website
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: marketing-website/package-lock.json
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run type check
+      run: npm run type-check
+      
+    - name: Run linter
+      run: npm run lint
+      
+    - name: Build marketing website
+      run: npm run build
+      env:
+        NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        NEXT_PUBLIC_MARKETING_URL: ${{ secrets.NEXT_PUBLIC_MARKETING_URL }}
+        NEXT_PUBLIC_ADMIN_URL: ${{ secrets.NEXT_PUBLIC_ADMIN_URL }}
+        
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.MARKETING_VERCEL_PROJECT_ID }}
+        working-directory: ./marketing-website
+        vercel-args: '--prod'
+
+  deploy-admin-dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./admin-dashboard
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: admin-dashboard/package-lock.json
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run type check
+      run: npm run type-check
+      
+    - name: Run linter
+      run: npm run lint
+      
+    - name: Build admin dashboard
+      run: npm run build
+      env:
+        NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        NEXT_PUBLIC_MARKETING_URL: ${{ secrets.NEXT_PUBLIC_MARKETING_URL }}
+        NEXT_PUBLIC_ADMIN_URL: ${{ secrets.NEXT_PUBLIC_ADMIN_URL }}
+        
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.ADMIN_VERCEL_PROJECT_ID }}
+        working-directory: ./admin-dashboard
+        vercel-args: '--prod'
+
+  deploy-client-app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./client-app
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: client-app/package-lock.json
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run type check
+      run: npm run type-check
+      
+    - name: Run linter
+      run: npm run lint
+      
+    - name: Build client app
+      run: npm run build
+      env:
+        NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+        NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+        NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        NEXT_PUBLIC_MARKETING_URL: ${{ secrets.NEXT_PUBLIC_MARKETING_URL }}
+        NEXT_PUBLIC_ADMIN_URL: ${{ secrets.NEXT_PUBLIC_ADMIN_URL }}
+        
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.CLIENT_VERCEL_PROJECT_ID }}
+        working-directory: ./client-app
+        vercel-args: '--prod'
+
+  build-shared-library:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./shared
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: shared/package-lock.json
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run type check
+      run: npm run type-check
+      
+    - name: Run linter
+      run: npm run lint
+      
+    - name: Build shared library
+      run: npm run build
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: shared-library-build
+        path: shared/dist/
+
+  notify-deployment:
+    needs: [deploy-marketing-website, deploy-admin-dashboard, deploy-client-app, build-shared-library]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notify deployment status
+      run: |
+        if [[ "${{ needs.deploy-marketing-website.result }}" == "success" && "${{ needs.deploy-admin-dashboard.result }}" == "success" && "${{ needs.deploy-client-app.result }}" == "success" ]]; then
+          echo "✅ All deployments successful!"
+          echo "🌐 Marketing Website: Deployed"
+          echo "🔧 Admin Dashboard: Deployed"
+          echo "📱 Client App: Deployed"
+          echo "📚 Shared Library: Built"
+        else
+          echo "❌ Some deployments failed"
+          echo "Marketing Website: ${{ needs.deploy-marketing-website.result }}"
+          echo "Admin Dashboard: ${{ needs.deploy-admin-dashboard.result }}"
+          echo "Client App: ${{ needs.deploy-client-app.result }}"
+          echo "Shared Library: ${{ needs.build-shared-library.result }}"
+        fi

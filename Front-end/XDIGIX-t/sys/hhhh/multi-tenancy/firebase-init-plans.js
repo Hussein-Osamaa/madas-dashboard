@@ -1,0 +1,210 @@
+// Initialize Firebase Plans and Features
+// Run this script once to set up your plans in Firestore
+
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin SDK
+try {
+    admin.initializeApp({
+        projectId: "madas-store",
+        credential: admin.credential.applicationDefault()
+    });
+    console.log('✅ Firebase Admin SDK initialized');
+} catch (error) {
+    console.error('❌ Firebase initialization error:', error.message);
+    console.log('Note: Using a simplified initialization for development');
+    // If applicationDefault fails, we'll still try to proceed
+}
+
+const db = admin.firestore();
+
+// Define Plans
+const plans = [
+    {
+        planId: 'basic',
+        name: 'Basic',
+        displayName: 'Basic Plan',
+        description: 'Perfect for small businesses just getting started',
+        pricing: {
+            monthly: 29,
+            yearly: 290,
+            currency: 'USD',
+            trialDays: 14
+        },
+        features: [
+            'pos',
+            'inventory',
+            'orders',
+            'customers',
+            'analytics',
+            'reports'
+        ],
+        limits: {
+            maxStaff: 5,
+            maxProducts: 500,
+            maxOrders: -1,
+            maxStorage: 1, // GB
+            maxApiCalls: 1000,
+            maxLocations: 1
+        },
+        isPopular: false,
+        order: 1,
+        isActive: true,
+        metadata: {
+            createdAt: new Date().toISOString()
+        }
+    },
+    {
+        planId: 'professional',
+        name: 'Professional',
+        displayName: 'Professional Plan',
+        description: 'Perfect for growing businesses',
+        pricing: {
+            monthly: 79,
+            yearly: 790,
+            currency: 'USD',
+            trialDays: 14
+        },
+        features: [
+            'pos',
+            'inventory',
+            'orders',
+            'customers',
+            'analytics',
+            'reports',
+            'advanced_reports',
+            'gamification',
+            'loyalty',
+            'madas_pass',
+            'reviews',
+            'collections',
+            'customer_wallet'
+        ],
+        limits: {
+            maxStaff: 10,
+            maxProducts: 1000,
+            maxOrders: -1,
+            maxStorage: 5, // GB
+            maxApiCalls: 10000,
+            maxLocations: 3
+        },
+        isPopular: true,
+        order: 2,
+        isActive: true,
+        metadata: {
+            createdAt: new Date().toISOString()
+        }
+    },
+    {
+        planId: 'enterprise',
+        name: 'Enterprise',
+        displayName: 'Enterprise Plan',
+        description: 'For large businesses with advanced needs',
+        pricing: {
+            monthly: 199,
+            yearly: 1990,
+            currency: 'USD',
+            trialDays: 30
+        },
+        features: [
+            'pos',
+            'inventory',
+            'orders',
+            'customers',
+            'analytics',
+            'reports',
+            'advanced_reports',
+            'insights',
+            'gamification',
+            'loyalty',
+            'madas_pass',
+            'reviews',
+            'collections',
+            'customer_wallet',
+            'website_builder',
+            'api_access',
+            'custom_domain',
+            'multi_location',
+            'shares_management'
+        ],
+        limits: {
+            maxStaff: -1, // unlimited
+            maxProducts: -1,
+            maxOrders: -1,
+            maxStorage: 50, // GB
+            maxApiCalls: 100000,
+            maxLocations: -1
+        },
+        isPopular: false,
+        order: 3,
+        isActive: true,
+        metadata: {
+            createdAt: new Date().toISOString()
+        }
+    }
+];
+
+// Define Features
+const features = [
+    // Core Features
+    { featureId: 'pos', name: 'Point of Sale', category: 'core', icon: '🛒' },
+    { featureId: 'inventory', name: 'Inventory Management', category: 'core', icon: '📦' },
+    { featureId: 'orders', name: 'Order Management', category: 'core', icon: '📋' },
+    { featureId: 'customers', name: 'Customer Management', category: 'core', icon: '👥' },
+    
+    // Analytics
+    { featureId: 'analytics', name: 'Basic Analytics', category: 'analytics', icon: '📊' },
+    { featureId: 'reports', name: 'Reports', category: 'analytics', icon: '📈' },
+    { featureId: 'advanced_reports', name: 'Advanced Reports', category: 'analytics', icon: '📊' },
+    { featureId: 'insights', name: 'Advanced Insights', category: 'analytics', icon: '🔮' },
+    
+    // Engagement
+    { featureId: 'gamification', name: 'Gamification Hub', category: 'engagement', icon: '🎮' },
+    { featureId: 'loyalty', name: 'Loyalty Program', category: 'engagement', icon: '💎' },
+    { featureId: 'madas_pass', name: 'MADAS Pass', category: 'engagement', icon: '🎫' },
+    { featureId: 'reviews', name: 'Product Reviews', category: 'engagement', icon: '⭐' },
+    { featureId: 'collections', name: 'Product Collections', category: 'engagement', icon: '📦' },
+    { featureId: 'customer_wallet', name: 'Customer Wallet', category: 'engagement', icon: '💰' },
+    
+    // Advanced
+    { featureId: 'website_builder', name: 'Website Builder', category: 'advanced', icon: '🌐' },
+    { featureId: 'api_access', name: 'API Access', category: 'advanced', icon: '🔌' },
+    { featureId: 'custom_domain', name: 'Custom Domain', category: 'advanced', icon: '🌍' },
+    { featureId: 'multi_location', name: 'Multi-Location', category: 'advanced', icon: '📍' },
+    { featureId: 'shares_management', name: 'Shares Management', category: 'advanced', icon: '💼' }
+];
+
+// Initialize function
+async function initializePlansAndFeatures() {
+    console.log('Initializing plans and features...');
+    
+    try {
+        // Add plans
+        for (const plan of plans) {
+            await db.collection('plans').doc(plan.planId).set(plan);
+            console.log(`✓ Created plan: ${plan.name}`);
+        }
+        
+        // Add features
+        for (const feature of features) {
+            await db.collection('features').doc(feature.featureId).set(feature);
+            console.log(`✓ Created feature: ${feature.name}`);
+        }
+        
+        console.log('\n✅ All plans and features initialized successfully!');
+        console.log('\nYou can now:');
+        console.log('1. Open admin-interface.html at http://192.168.1.58:3000/dashboard/multi-tenancy/admin-interface.html');
+        console.log('2. Create businesses and assign plans');
+        console.log('3. Customize features per business');
+        
+        // Exit process
+        process.exit(0);
+        
+    } catch (error) {
+        console.error('❌ Error initializing:', error);
+        process.exit(1);
+    }
+}
+
+// Run initialization
+initializePlansAndFeatures();

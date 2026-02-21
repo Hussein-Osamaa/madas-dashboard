@@ -1,0 +1,22 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "published_sites",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {"fieldPath": "slug", "order": "ASCENDING"},
+        {"fieldPath": "status", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "reviews",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {"fieldPath": "productId", "order": "ASCENDING"},
+        {"fieldPath": "status", "order": "ASCENDING"},
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

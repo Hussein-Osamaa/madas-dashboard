@@ -1,0 +1,27 @@
+{
+  "projects": {
+    "default": "madas-store"
+  },
+  "targets": {
+    "madas-store": {
+      "hosting": {
+        "dashboard": [
+          "madas-store"
+        ],
+        "sites": [
+          "madas-sites-c3c5e"
+        ],
+        "addict": [
+          "addict-123"
+        ],
+        "xdigix": [
+          "xdigix"
+        ],
+        "marketing": [
+          "madas-store"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

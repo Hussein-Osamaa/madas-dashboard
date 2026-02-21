@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finance Analytics - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" type="image/x-icon" href="/assets/img/madas-logo.png">
+
+    <!-- Firebase Permission Checker -->
+    <script type="module" src="../../js/firebase-permission-check.js"></script>
+
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        /* Override specific backgrounds */
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Sidebar and header */
+        #sidebar {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        /* Override Tailwind text color classes */
+        .sidebar-link.text-gray-700,
+        .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.text-gray-700,
+        body.dark-mode .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }.finance-dropdown-menu.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+            background: white !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+            margin: 8px 0 !important;
+            padding: 8px 0 !important;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--madas-primary), #1f3c19);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, var(--madas-primary), var(--madas-accent));
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        /* Prevent horizontal overflow */
+        html,
+        body {
+            overflow-x: hidden;
+        }
+
+        main {
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
+
+
+        /* Finance Dropdown Styles */
+        .finance-dropdown {
+            position: relative;
+        }
+
+        .finance-dropdown-menu {
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .finance-dropdown-menu.hidden {
+            display: none;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Input fields and form elements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        textarea,
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+            border-width: 1px !important;
+            border-style: solid !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="date"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+            outline: none !important;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder,
+        input[type="date"]::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Date input specific styling */
+        input[type="date"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: var(--text-main) !important;
+            opacity: 0.7;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        /* Search bar specific styling */
+        input[type="search"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="search"]:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="search"]::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Select dropdowns */
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* Modal styling */
+        .modal,
+        .modal .bg-white,
+        .glass-effect {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Form labels */
+        label {
+            color: var(--text-main) !important;
+        }
+
+        /* Readonly inputs */
+        input[readonly] {
+            background-color: var(--bg-main) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--madas-accent) !important;
+            border-color: var(--madas-accent) !important;
+        }
+
+        /* Unified Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Unified Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 10px 14px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+        }
+
+        /* Ensure dropdown hover maintains color in dark mode */
+        body.dark-mode .inventory-submenu .sidebar-link:hover,
+        body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+        body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+            color: var(--madas-primary) !important;
+        }
+
+
+        /* Ensure all dropdown text sizes are uniform */
+        .inventory-submenu .sidebar-link span,
+        .finance-dropdown-menu .sidebar-link span,
+        .ecommerce-dropdown-menu .sidebar-link span {
+            font-size: 0.8rem !important;
+        }
+
+        /* Make dropdown icons smaller */
+        .inventory-submenu .material-icons,
+        .finance-dropdown-menu .material-icons,
+        .ecommerce-dropdown-menu .material-icons {
+            font-size: 18px !important;
+        }
+
+        /* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Unified Dropdown Button Styling */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent !important;
+            border: none !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            width: 100% !important;
+            text-align: left !important;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: var(--madas-light) !important;
+        }
+
+        /* Unified Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease !important;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg) !important;
+        }
+
+        /* Unified Visible States for Dropdowns - No 3D Effects */
+        .inventory-submenu:not(.hidden) {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .ecommerce-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+</head>
+
+<body class="font-sans">
+    <!-- Header -->
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <div>
+                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                        <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                            Loading Plan...
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="pt-16">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed left-0 top-16 h-full w-64 bg-white shadow-lg z-30">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <a href="/dashboard"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/pages/Orders/orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                    <a href="/pages/pos.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">point_of_sale</span>
+                        <span>POS</span>
+                    </a>
+
+                    <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button
+                            class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all"
+                            id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200"
+                                id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="/pages/Inventory/products.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="/pages/Inventory/collections.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="/pages/Inventory/product-reviews.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="/pages/Inventory/low-stock.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/Customers/Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+
+                    <!-- E-commerce Dropdown -->
+                    <div class="ecommerce-dropdown">
+                        <button id="ecommerce-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">storefront</span>
+                                <span>E-commerce</span>
+                            </div>
+                            <span class="material-icons dropdown-arrow transition-transform duration-200"
+                                id="ecommerce-arrow">expand_more</span>
+                        </button>
+                        <div id="ecommerce-dropdown-menu" class="ecommerce-dropdown-menu hidden">
+                            <a href="/pages/Web-builder/theme-library.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">web</span>
+                                <span>Website Builder</span>
+                            </a>
+                            <a href="/pages/shoes-store.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">shopping_bag</span>
+                                <span>Shoes Store</span>
+                            </a>
+                            <a href="/pages/advanced/domains.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">language</span>
+                                <span>Custom Domains</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Finance Dropdown -->
+                    <div class="finance-dropdown">
+                        <button id="finance-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">account_balance_wallet</span>
+                                <span>Finance</span>
+                            </div>
+                            <span
+                                class="material-icons dropdown-arrow transition-transform duration-200">expand_more</span>
+                        </button>
+                        <div id="finance-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/Finance/finance.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">account_balance</span>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/pages/Finance/deposit-money-simple.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">add_circle</span>
+                                <span>Deposits</span>
+                            </a>
+                            <a href="/pages/Finance/expenses.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">receipt</span>
+                                <span>Expenses</span>
+                            </a>
+                            <a href="/pages/Finance/analytics.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">analytics</span>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="/pages/Finance/reports.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">assessment</span>
+                                <span>Reports</span>
+                            </a>
+                            <a href="/pages/Finance/insights.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">lightbulb</span>
+                                <span>Insights</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/settings/general-settings.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">settings</span>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>New Order</span>
+                            </button>
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add Product</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="bg-gray-50 h-[calc(100vh-4rem)] overflow-y-auto w-full lg:ml-64 lg:w-[calc(100%-16rem)]">
+            <div class="p-6 lg:p-8 min-h-full">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Financial Analytics</h2>
+                            <p class="text-gray-600">Comprehensive financial insights and performance metrics</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="exportReportBtn"
+                                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                                <span class="material-icons">download</span>
+                                <span>Export Report</span>
+                            </button>
+                            <button id="printReportBtn"
+                                class="bg-[var(--madas-accent)] text-[var(--madas-primary)] px-6 py-3 rounded-lg hover:bg-yellow-400 transition-colors flex items-center space-x-2">
+                                <span class="material-icons">print</span>
+                                <span>Print Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Filter Section -->
+                <div class="glass-effect rounded-xl p-6 mb-8 shadow-sm">
+                    <div class="flex flex-col lg:flex-row gap-4 items-center">
+                        <div class="flex items-center space-x-4">
+                            <label class="text-sm font-medium" style="color: var(--text-main);">
+                                Start Date:
+                                <input type="date" id="startDate" class="ml-2 px-3 py-2 rounded-lg" />
+                            </label>
+                            <label class="text-sm font-medium" style="color: var(--text-main);">
+                                End Date:
+                                <input type="date" id="endDate" class="ml-2 px-3 py-2 rounded-lg" />
+                            </label>
+                        </div>
+                        <button id="filterBtn"
+                            class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                            <span class="material-icons">filter_list</span>
+                            <span>Apply Filter</span>
+                        </button>
+                        <button id="resetFilterBtn"
+                            class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors flex items-center space-x-2">
+                            <span class="material-icons">refresh</span>
+                            <span>Reset</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Key Metrics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Assets Section -->
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-blue-600">inventory_2</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Total Stock</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="totalStock">0</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="text-green-600 flex items-center">
+                                <span class="material-icons text-sm mr-1">trending_up</span>
+                                +12.5%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-green-600">account_balance_wallet</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Total Capital</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="totalCapital">0 EGP
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="text-green-600 flex items-center">
+                                <span class="material-icons text-sm mr-1">trending_up</span>
+                                +8.3%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Section -->
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-purple-600">point_of_sale</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Total Sales</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="totalSales">0 EGP</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="text-green-600 flex items-center">
+                                <span class="material-icons text-sm mr-1">trending_up</span>
+                                +22.1%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-blue-600">add_circle</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Total Deposits</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="totalDeposits">0 EGP
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="text-blue-600 flex items-center">
+                                <span class="material-icons text-sm mr-1">trending_up</span>
+                                +8.2%
+                            </span>
+                            <span class="text-gray-500 ml-2">this month</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capital Return Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-orange-600">currency_exchange</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Capital Return</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="capitalReturn">0 EGP
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="text-green-600 flex items-center">
+                                <span class="material-icons text-sm mr-1">trending_up</span>
+                                +15.2%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-teal-600">account_balance</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Net Capital Return</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="netCapitalReturn">0 EGP
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <span class="text-teal-600 flex items-center">
+                                <span class="material-icons text-sm mr-1">trending_up</span>
+                                +18.5%
+                            </span>
+                            <span class="text-gray-500 ml-2">vs last month</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-red-600">trending_up</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Profit Margin</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="profitMargin">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-indigo-600">receipt_long</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Total Orders</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="totalOrders">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card card-hover glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-teal-600">analytics</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500">Avg Order Value</div>
+                                <div class="text-2xl font-bold text-[var(--madas-primary)]" id="avgOrderValue">0 EGP
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Sales Trend Chart -->
+                    <div class="glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-[var(--madas-primary)]">Sales Trend</h3>
+                            <div class="flex space-x-2">
+                                <button
+                                    class="px-3 py-1 text-xs bg-[var(--madas-primary)] text-white rounded-lg">7D</button>
+                                <button class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-lg">30D</button>
+                                <button class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-lg">90D</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Revenue vs Cost Chart -->
+                    <div class="glass-effect rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-[var(--madas-primary)]">Revenue vs Cost</h3>
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm text-gray-600">Revenue</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                    <span class="text-sm text-gray-600">Cost</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueCostChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Products Performance -->
+                <div class="glass-effect rounded-xl p-6 shadow-sm mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)]">Top Performing Products</h3>
+                        <button class="text-[var(--madas-primary)] hover:text-[#1f3c19] text-sm font-medium">
+                            View All
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Product</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">SKU</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Units Sold</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Revenue</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Profit</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topProductsTable">
+                                <!-- Top products will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Financial Summary -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Cash Flow Summary -->
+                    <div class="glass-effect rounded-xl p-6 shadow-sm">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-6">Cash Flow Summary</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-4 bg-green-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm text-gray-600">Cash In</p>
+                                    <p class="text-lg font-semibold text-green-600" id="cashIn">0 EGP</p>
+                                </div>
+                                <span class="material-icons text-green-600">arrow_upward</span>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-red-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm text-gray-600">Cash Out</p>
+                                    <p class="text-lg font-semibold text-red-600" id="cashOut">0 EGP</p>
+                                </div>
+                                <span class="material-icons text-red-600">arrow_downward</span>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm text-gray-600">Net Cash Flow</p>
+                                    <p class="text-lg font-semibold text-blue-600" id="netCashFlow">0 EGP</p>
+                                </div>
+                                <span class="material-icons text-blue-600">account_balance</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Value by Category -->
+                    <div class="glass-effect rounded-xl p-6 shadow-sm">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-6">Inventory Value by Category
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Profile button
+        const profileBtn = document.getElementById("profile-btn");
+        if (profileBtn) {
+            profileBtn.addEventListener("click", () => {
+                window.location.href = "./profile.html";
+            });
+        }
+
+        // Finance Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+            const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+            const dropdownArrow = document.querySelector(".dropdown-arrow");
+
+            if (financeDropdownBtn && financeDropdownMenu) {
+                financeDropdownBtn.addEventListener("click", () => {
+                    const isOpen = financeDropdownMenu.classList.contains("show");
+
+                    if (isOpen) {
+                        financeDropdownMenu.classList.remove("show");
+                        financeDropdownMenu.classList.add("hidden");
+                        if (dropdownArrow) dropdownArrow.classList.remove("rotate");
+                    } else {
+                        financeDropdownMenu.classList.remove("hidden");
+                        financeDropdownMenu.classList.add("show");
+                        if (dropdownArrow) dropdownArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                        financeDropdownMenu.classList.remove("show");
+                        financeDropdownMenu.classList.add("hidden");
+                        if (dropdownArrow) dropdownArrow.classList.remove("rotate");
+                    }
+                });
+            }
+        });
+
+        // Dark mode toggle functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z"/>';
+            }
+        }
+
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+
+        // E-commerce Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+            const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+            const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+            if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+                ecommerceDropdownBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                    if (isOpen) {
+                        ecommerceDropdownMenu.classList.remove("show");
+                        ecommerceDropdownMenu.classList.add("hidden");
+                        if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                    } else {
+                        ecommerceDropdownMenu.classList.remove("hidden");
+                        ecommerceDropdownMenu.classList.add("show");
+                        if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!ecommerceDropdownBtn.contains(e.target) && !ecommerceDropdownMenu.contains(e.target)) {
+                        ecommerceDropdownMenu.classList.remove("show");
+                        ecommerceDropdownMenu.classList.add("hidden");
+                        if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                    }
+                });
+            }
+        });
+
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, updateDoc, doc, deleteDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFinanceDataManager } from "../../js/finance-data.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:70470e2204065b4590583d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                // ============================================
+                // TENANT ISOLATION: Detect Business Context
+                // ============================================
+
+                // First check if user is staff member (more common case)
+                const allBusinesses = await getDocs(collection(db, "businesses"));
+                let foundBusiness = false;
+                let currentBusinessId = null;
+                let currentBusinessData = null;
+                let currentUserRole = null;
+                let currentUserPermissions = null;
+
+                // Check if user is staff member in any business
+                for (const businessDoc of allBusinesses.docs) {
+                    const businessId = businessDoc.id;
+                    const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                    const staffDoc = await getDoc(staffRef);
+
+                    if (staffDoc.exists()) {
+                        const staffData = staffDoc.data();
+                        currentBusinessId = businessId;
+                        currentBusinessData = businessDoc.data();
+                        currentUserRole = staffData.role;
+                        currentUserPermissions = staffData.permissions;
+
+                        console.log('✅ Staff Member:', currentBusinessData.businessName);
+                        console.log('🏢 Business ID:', currentBusinessId);
+                        console.log('👤 Role:', currentUserRole);
+                        console.log('🔐 Permissions:', currentUserPermissions);
+
+                        foundBusiness = true;
+                        break;
+                    }
+                }
+
+                // If not staff, check if user is business owner
+                if (!foundBusiness) {
+                    console.log('🔍 Checking if user is business owner...');
+                    const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                    const businessSnapshot = await getDocs(businessesQuery);
+
+                    if (!businessSnapshot.empty) {
+                        // User is a business owner
+                        const businessDoc = businessSnapshot.docs[0];
+                        currentBusinessId = businessDoc.id;
+                        currentBusinessData = businessDoc.data();
+                        currentUserRole = 'owner';
+
+                        console.log('✅ Business Owner:', currentBusinessData.businessName);
+                        console.log('🏢 Business ID:', currentBusinessId);
+                        console.log('📋 Plan:', currentBusinessData.plan?.type);
+
+                        foundBusiness = true;
+                    }
+                }
+
+                // If still no business found, check users collection for business context
+                if (!foundBusiness) {
+                    console.log('🔍 Checking users collection for business context...');
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        if (userData.businessId) {
+                            const businessDoc = await getDoc(doc(db, 'businesses', userData.businessId));
+                            if (businessDoc.exists()) {
+                                currentBusinessId = userData.businessId;
+                                currentBusinessData = businessDoc.data();
+                                currentUserRole = userData.role || 'staff';
+                                currentUserPermissions = userData.permissions;
+
+                                console.log('✅ User from users collection:', currentBusinessData.businessName);
+                                console.log('🏢 Business ID:', currentBusinessId);
+                                console.log('👤 Role:', currentUserRole);
+
+                                foundBusiness = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!foundBusiness) {
+                    console.warn("❌ User not associated with any business. Redirecting to login.");
+                    window.location.href = "/login";
+                    return;
+                }
+
+                // Set global variables
+                window.currentBusinessId = currentBusinessId;
+                window.currentBusinessData = currentBusinessData;
+                window.currentUserRole = currentUserRole;
+                window.currentUserPermissions = currentUserPermissions;
+
+                // Set user permissions based on role (from business context)
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || currentBusinessData?.owner?.name,
+                    role: currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = currentUserPermissions || {
+                        home: ["view"],
+                        finance: ["view"] // Default finance permissions for staff
+                    };
+                }
+
+                // Auto-approve super admin users
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    userData.role = "super-admin";
+                    userData.approved = true;
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"],
+                        admin: ["view", "manage_all_businesses"]
+                    };
+                }
+
+                console.log('✅ User data created for finance page:', {
+                    email: userData.email,
+                    role: userData.role,
+                    businessId: currentBusinessId,
+                    approved: userData.approved
+                });
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                const username = userData.displayName || currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+                document.getElementById("user-name").textContent = username;
+                document.getElementById("user-email").textContent = user.email;
+                document.getElementById("user-initial").textContent = username.charAt(0).toUpperCase();
+
+                // Update business name in header
+                const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                const planType = window.currentBusinessData?.plan?.type || "basic";
+
+                // Update business name display
+                document.getElementById("business-name").textContent = businessName;
+                // Update plan badge like Dashboard
+                const planBadge = document.getElementById("plan-badge");
+                const planStatus = window.currentBusinessData?.plan?.status || "active";
+                if (planBadge) {
+                    const label = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan` + (planStatus === 'trial' ? ' (Trial)' : '');
+                    planBadge.textContent = label;
+                    if (planType === 'enterprise') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    } else if (planType === 'professional') {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                    } else {
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                    }
+                }
+
+                // Apply permission-based UI controls
+                applyPermissionBasedUI(userData.permissions);
+
+                // Load finance data (now with business context)
+                await loadFinanceData();
+
+            } catch (error) {
+                console.error("Permission check failed:", error);
+                window.location.href = "/login";
+            }
+        });
+
+        // Function to apply permission-based UI controls
+        function applyPermissionBasedUI(permissions) {
+            const exportBtn = document.getElementById('exportReportBtn');
+            const printBtn = document.getElementById('printReportBtn');
+
+            // Show/hide export button based on export permission
+            if (exportBtn) {
+                if (!permissions?.finance?.includes("export")) {
+                    exportBtn.style.display = "none";
+                } else {
+                    exportBtn.style.display = "flex";
+                }
+            }
+
+            // Show/hide print button based on view permission
+            if (printBtn) {
+                if (!permissions?.finance?.includes("view")) {
+                    printBtn.style.display = "none";
+                } else {
+                    printBtn.style.display = "flex";
+                }
+            }
+        }
+
+        // Initialize finance data manager
+        let financeManager = null;
+
+        // Chart instances storage
+        let salesChartInstance = null;
+        let revenueCostChartInstance = null;
+        let categoryChartInstance = null;
+
+        async function loadFinanceData() {
+            try {
+                // TENANT ISOLATION: Load finance data for current business only
+                if (!window.currentBusinessId) {
+                    console.error('❌ No business context available');
+                    return;
+                }
+
+                console.log('💰 Loading finance data for business:', window.currentBusinessId);
+
+                // Initialize finance data manager
+                financeManager = getFinanceDataManager(db, window.currentBusinessId);
+                await financeManager.initialize();
+
+                // Subscribe to data changes
+                financeManager.subscribe((data) => {
+                    updateFinanceUI(data);
+                });
+
+                // Load orders for revenue calculation
+                const ordersRef = collection(db, "businesses", window.currentBusinessId, "orders");
+                const ordersSnapshot = await getDocs(ordersRef);
+
+                // Load products for inventory value calculation
+                const productsRef = collection(db, "businesses", window.currentBusinessId, "products");
+                const productsSnapshot = await getDocs(productsRef);
+
+                let totalSales = 0;
+                let totalOrders = 0;
+                let totalStock = 0;
+                let totalCapital = 0;
+
+                // Calculate sales from orders
+                ordersSnapshot.forEach((doc) => {
+                    const order = doc.data();
+                    totalSales += order.total || 0;
+                    totalOrders++;
+                });
+
+                // Calculate inventory value from products
+                productsSnapshot.forEach((doc) => {
+                    const product = doc.data();
+                    const stock = product.stock || 0;
+                    const price = product.price || 0;
+                    totalStock += stock;
+                    totalCapital += stock * price;
+                });
+
+                // Get finance summary from shared module
+                const summary = financeManager.getSummary();
+                const totalDeposits = summary?.totalDeposits || 0;
+                const totalExpenses = summary?.totalExpenses || 0;
+                const netBalance = summary?.netBalance || 0;
+
+                // Update UI with calculated values
+                document.getElementById('totalSales').textContent = `${totalSales.toFixed(2)} EGP`;
+                document.getElementById('totalOrders').textContent = totalOrders;
+                document.getElementById('totalStock').textContent = totalStock;
+                document.getElementById('totalCapital').textContent = `${totalCapital.toFixed(2)} EGP`;
+                document.getElementById('totalDeposits').textContent = `${totalDeposits.toFixed(2)} EGP`;
+
+                // Calculate derived metrics
+                const capitalReturn = totalSales - totalCapital;
+                const netCapitalReturn = totalSales - totalCapital - totalExpenses;
+                const profitMargin = totalSales > 0 ? ((capitalReturn / totalSales) * 100) : 0;
+                const avgOrderValue = totalOrders > 0 ? (totalSales / totalOrders) : 0;
+
+                document.getElementById('capitalReturn').textContent = `${capitalReturn.toFixed(2)} EGP`;
+                document.getElementById('netCapitalReturn').textContent = `${netCapitalReturn.toFixed(2)} EGP`;
+                document.getElementById('profitMargin').textContent = `${profitMargin.toFixed(1)}%`;
+                document.getElementById('avgOrderValue').textContent = `${avgOrderValue.toFixed(2)} EGP`;
+
+                // Update cash flow (deposits as cash in, expenses as cash out)
+                document.getElementById('cashIn').textContent = `${totalDeposits.toFixed(2)} EGP`;
+                document.getElementById('cashOut').textContent = `${totalExpenses.toFixed(2)} EGP`;
+                document.getElementById('netCashFlow').textContent = `${netBalance.toFixed(2)} EGP`;
+
+                // Load top products
+                await loadTopProducts();
+
+                // Initialize charts with finance data (only on initial load)
+                if (summary && (!salesChartInstance && !revenueCostChartInstance && !categoryChartInstance)) {
+                    initializeCharts(summary);
+                }
+
+            } catch (error) {
+                console.error("Error loading finance data:", error);
+            }
+        }
+
+        // Update UI when finance data changes
+        function updateFinanceUI(data) {
+            const summary = data.summary || {};
+            const totalDeposits = summary.totalDeposits || 0;
+            const totalExpenses = summary.totalExpenses || 0;
+            const netBalance = summary.netBalance || 0;
+
+            if (document.getElementById('totalDeposits')) {
+                document.getElementById('totalDeposits').textContent = `${totalDeposits.toFixed(2)} EGP`;
+            }
+            if (document.getElementById('cashIn')) {
+                document.getElementById('cashIn').textContent = `${totalDeposits.toFixed(2)} EGP`;
+            }
+            if (document.getElementById('cashOut')) {
+                document.getElementById('cashOut').textContent = `${totalExpenses.toFixed(2)} EGP`;
+            }
+            if (document.getElementById('netCashFlow')) {
+                document.getElementById('netCashFlow').textContent = `${netBalance.toFixed(2)} EGP`;
+            }
+
+            // Update charts if summary is available (but don't recreate on every update)
+            // Only update charts when data is actually loaded, not on every real-time update
+            // This prevents excessive chart recreation
+        }
+
+        async function loadTopProducts() {
+            try {
+                if (!window.currentBusinessId) {
+                    console.error('❌ No business context available');
+                    return;
+                }
+
+                const productsRef = collection(db, "businesses", window.currentBusinessId, "products");
+                const productsSnapshot = await getDocs(productsRef);
+
+                const products = [];
+                productsSnapshot.forEach((doc) => {
+                    products.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                // Sort by stock value (price * stock) and take top 5
+                products.sort((a, b) => {
+                    const valueA = (a.stock || 0) * (a.price || 0);
+                    const valueB = (b.stock || 0) * (b.price || 0);
+                    return valueB - valueA;
+                });
+
+                const topProductsTable = document.getElementById('topProductsTable');
+                if (topProductsTable) {
+                    topProductsTable.innerHTML = products.slice(0, 5).map(product => {
+                        const stockValue = (product.stock || 0) * (product.price || 0);
+                        return `
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4 text-sm text-gray-900">${product.name || 'N/A'}</td>
+                                <td class="py-3 px-4 text-sm text-gray-500">${product.sku || 'N/A'}</td>
+                                <td class="py-3 px-4 text-sm text-gray-900">${product.stock || 0}</td>
+                                <td class="py-3 px-4 text-sm text-gray-900">${stockValue.toFixed(2)} EGP</td>
+                                <td class="py-3 px-4 text-sm text-gray-900">${((product.price || 0) * 0.2).toFixed(2)} EGP</td>
+                                <td class="py-3 px-4 text-sm text-gray-900">${product.stock || 0}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+            } catch (error) {
+                console.error("Error loading top products:", error);
+            }
+        }
+
+        function initializeCharts(summary = null) {
+            if (!summary) {
+                console.warn('Cannot initialize charts: no summary data provided');
+                return;
+            }
+
+            // Sales Trend Chart - Show deposits over time
+            const salesCtx = document.getElementById('salesChart');
+            if (salesCtx) {
+                // Destroy existing chart if it exists
+                if (salesChartInstance) {
+                    try {
+                        salesChartInstance.destroy();
+                    } catch (e) {
+                        console.warn('Error destroying sales chart:', e);
+                    }
+                    salesChartInstance = null;
+                }
+
+                const depositsByDate = summary?.depositsByDate || {};
+                const expensesByDate = summary?.expensesByDate || {};
+
+                // Get last 6 months of data
+                const labels = [];
+                const depositsData = [];
+                const expensesData = [];
+
+                const today = new Date();
+                for (let i = 5; i >= 0; i--) {
+                    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                    const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
+                    labels.push(monthLabel);
+
+                    // Sum deposits and expenses for this month
+                    const monthKey = date.toISOString().split('T')[0].substring(0, 7); // YYYY-MM
+                    let monthDeposits = 0;
+                    let monthExpenses = 0;
+
+                    Object.keys(depositsByDate).forEach(date => {
+                        if (date.startsWith(monthKey)) {
+                            monthDeposits += depositsByDate[date];
+                        }
+                    });
+
+                    Object.keys(expensesByDate).forEach(date => {
+                        if (date.startsWith(monthKey)) {
+                            monthExpenses += expensesByDate[date];
+                        }
+                    });
+
+                    depositsData.push(monthDeposits);
+                    expensesData.push(monthExpenses);
+                }
+
+                salesChartInstance = new Chart(salesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Deposits',
+                            data: depositsData,
+                            borderColor: '#27491F',
+                            backgroundColor: 'rgba(39, 73, 31, 0.1)',
+                            tension: 0.4
+                        }, {
+                            label: 'Expenses',
+                            data: expensesData,
+                            borderColor: '#EF4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Revenue vs Cost Chart - Deposits vs Expenses
+            const revenueCtx = document.getElementById('revenueCostChart');
+            if (revenueCtx) {
+                // Destroy existing chart if it exists
+                if (revenueCostChartInstance) {
+                    try {
+                        revenueCostChartInstance.destroy();
+                    } catch (e) {
+                        console.warn('Error destroying revenue chart:', e);
+                    }
+                    revenueCostChartInstance = null;
+                }
+
+                const depositsByDate = summary?.depositsByDate || {};
+                const expensesByDate = summary?.expensesByDate || {};
+
+                // Get last 6 months
+                const labels = [];
+                const depositsData = [];
+                const expensesData = [];
+
+                const today = new Date();
+                for (let i = 5; i >= 0; i--) {
+                    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                    const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
+                    labels.push(monthLabel);
+
+                    const monthKey = date.toISOString().split('T')[0].substring(0, 7);
+                    let monthDeposits = 0;
+                    let monthExpenses = 0;
+
+                    Object.keys(depositsByDate).forEach(date => {
+                        if (date.startsWith(monthKey)) {
+                            monthDeposits += depositsByDate[date];
+                        }
+                    });
+
+                    Object.keys(expensesByDate).forEach(date => {
+                        if (date.startsWith(monthKey)) {
+                            monthExpenses += expensesByDate[date];
+                        }
+                    });
+
+                    depositsData.push(monthDeposits);
+                    expensesData.push(monthExpenses);
+                }
+
+                revenueCostChartInstance = new Chart(revenueCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Deposits',
+                            data: depositsData,
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)'
+                        }, {
+                            label: 'Expenses',
+                            data: expensesData,
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Category Chart - Expense categories
+            const categoryCtx = document.getElementById('categoryChart');
+            if (categoryCtx) {
+                // Destroy existing chart if it exists
+                if (categoryChartInstance) {
+                    try {
+                        categoryChartInstance.destroy();
+                    } catch (e) {
+                        console.warn('Error destroying category chart:', e);
+                    }
+                    categoryChartInstance = null;
+                }
+
+                const expensesByCategory = summary?.expensesByCategory || {};
+                const categories = Object.keys(expensesByCategory);
+                const amounts = Object.values(expensesByCategory);
+
+                // If no categories, show placeholder
+                if (categories.length === 0) {
+                    categories.push('No Expenses');
+                    amounts.push(1);
+                }
+
+                categoryChartInstance = new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categories,
+                        datasets: [{
+                            data: amounts,
+                            backgroundColor: [
+                                '#27491F',
+                                '#FFD300',
+                                '#F0CAE1',
+                                '#1f3c19',
+                                '#EF4444',
+                                '#3B82F6',
+                                '#8B5CF6'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Logout logic
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                auth.signOut().then(() => {
+                    window.location.href = "/login";
+                });
+            });
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 1024 &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+
+        // Export and Print functionality
+        document.getElementById('exportReportBtn')?.addEventListener('click', () => {
+            console.log('Export report clicked');
+            // Implement export functionality
+        });
+
+        document.getElementById('printReportBtn')?.addEventListener('click', () => {
+            window.print();
+        });
+
+        // Filter functionality
+        document.getElementById('filterBtn')?.addEventListener('click', async () => {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            console.log('Filter applied:', { startDate, endDate });
+
+            if (financeManager) {
+                const dateRange = { startDate, endDate };
+                const summary = financeManager.getSummary(dateRange);
+                updateFinanceUIWithSummary(summary);
+                initializeCharts(summary);
+            }
+        });
+
+        document.getElementById('resetFilterBtn')?.addEventListener('click', async () => {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            if (financeManager) {
+                const summary = financeManager.getSummary();
+                updateFinanceUIWithSummary(summary);
+                // Reinitialize charts with filtered data
+                if (summary) {
+                    initializeCharts(summary);
+                }
+            } else {
+                await loadFinanceData(); // Reload with no filters
+            }
+        });
+
+        // Update finance UI with summary data
+        function updateFinanceUIWithSummary(summary) {
+            if (!summary) return;
+
+            const totalDeposits = summary.totalDeposits || 0;
+            const totalExpenses = summary.totalExpenses || 0;
+            const netBalance = summary.netBalance || 0;
+
+            if (document.getElementById('totalDeposits')) {
+                document.getElementById('totalDeposits').textContent = `${totalDeposits.toFixed(2)} EGP`;
+            }
+            if (document.getElementById('cashIn')) {
+                document.getElementById('cashIn').textContent = `${totalDeposits.toFixed(2)} EGP`;
+            }
+            if (document.getElementById('cashOut')) {
+                document.getElementById('cashOut').textContent = `${totalExpenses.toFixed(2)} EGP`;
+            }
+            if (document.getElementById('netCashFlow')) {
+                document.getElementById('netCashFlow').textContent = `${netBalance.toFixed(2)} EGP`;
+            }
+        }
+
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Initialize foundMatch variable
+            let foundMatch = false;
+
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+
+            // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/dashboard"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+
+                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+                if (href === '/dashboard') return; // already handled
+
+                // Exact match
+                if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                    link.classList.add('active');
+                    foundMatch = true;
+                    console.log('Exact match found:', href);
+                    return;
+                }
+
+                // Page name matching
+                if (!foundMatch) {
+                    const linkPageName = href.split('/').pop().replace('.html', '');
+                    if (currentPageName === linkPageName ||
+                        (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                        (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                        link.classList.add('active');
+                        foundMatch = true;
+                        console.log('Page name match found:', href, 'for page:', currentPageName);
+                    }
+                }
+            });
+
+            // Special cases for specific pages with dropdown management
+            if (currentPath.includes('collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Collections page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for collections');
+                    }
+                }
+            }
+
+            if (currentPath.includes('products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Products page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for products');
+                    }
+                }
+            }
+
+            if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Low Stock page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for low-stock');
+                    }
+                }
+            }
+
+            if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reviews page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for reviews');
+                    }
+                }
+            }
+
+            if (currentPath.includes('orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Orders page detected');
+                }
+            }
+
+            if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Customer page detected');
+                }
+            }
+
+            if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+                const adminLink = document.querySelector('a[href*="Admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Admin page detected');
+                }
+            }
+
+            if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Settings page detected');
+                }
+            }
+
+            if (currentPath.includes('finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Finance page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for finance page');
+                    }
+                }
+            }
+
+            if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Analytics page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for analytics');
+                    }
+                }
+            }
+
+            if (currentPath.includes('reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reports page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for reports');
+                    }
+                }
+            }
+
+            if (currentPath.includes('insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Insights page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for insights');
+                    }
+                }
+            }
+
+            if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Expenses page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for expenses');
+                    }
+                }
+            }
+
+            if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('POS page detected');
+                }
+            }
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+
+    </script>
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

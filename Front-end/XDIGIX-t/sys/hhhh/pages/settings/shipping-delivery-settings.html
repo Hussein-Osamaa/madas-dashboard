@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shipping & Delivery Settings - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/assets/img/madas-logo.png">
+    <!-- Firebase Permission Checker -->
+    <script type="module" src="../../js/firebase-permission-check.js"></script>
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles are now handled by dark-mode.css */
+
+        /* Ensure dark mode applies to all elements */
+        body.dark-mode * {
+            border-color: var(--card-border);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        /* Override specific backgrounds */
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Sidebar and header */
+        #sidebar {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Input fields and form elements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        textarea,
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Search bar specific styling */
+        input[type="search"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="search"]:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="search"]::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Select dropdowns */
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* Modal styling */
+        .modal,
+        .modal .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Form labels */
+        label {
+            color: var(--text-main) !important;
+        }
+
+        /* Readonly inputs */
+        input[readonly] {
+            background-color: var(--bg-main) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--madas-accent) !important;
+            border-color: var(--madas-accent) !important;
+        }
+
+        /* Enhanced Sidebar Link Styles */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            color: var(--text-main) !important;
+        }
+
+        /* Override Tailwind text color classes */
+        .sidebar-link.text-gray-700,
+        .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        /* Dark mode text color for sidebar links */
+        body.dark-mode .sidebar-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.text-gray-700,
+        body.dark-mode .sidebar-link.text-gray-600 {
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--madas-light);
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link:active {
+            transform: translateX(3px) scale(0.98);
+            transition: all 0.1s ease;
+        }
+
+        /* Simple Active state for current page */
+        .sidebar-link.active {
+            background: var(--madas-light);
+            color: var(--madas-primary) !important;
+            font-weight: 600;
+        }
+
+        .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Simple Submenu active state */
+        .sidebar-link.submenu-link.active {
+            background: var(--madas-light);
+            color: var(--madas-primary) !important;
+            font-weight: 600;
+        }
+
+        .sidebar-link.submenu-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Icon animation on hover */
+        .sidebar-link:hover .material-icons {
+            transform: scale(1.1) rotate(2deg);
+            transition: all 0.3s ease;
+        }
+
+        /* Submenu link enhancements */
+        .sidebar-link.submenu-link {
+            position: relative;
+            margin-left: 1rem;
+            border-left: 2px solid transparent;
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link:hover {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            transform: translateX(8px);
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-link.submenu-link.active {
+            border-left-color: var(--madas-primary);
+            background: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        /* Dark mode submenu text color */
+        body.dark-mode .sidebar-link.submenu-link {
+            color: var(--text-main) !important;
+        }
+
+        body.dark-mode .sidebar-link.submenu-link:hover {
+            color: var(--text-main) !important;
+        }
+
+        /* Finance Dropdown Styles */
+        .finance-dropdown {
+            position: relative;
+        }
+
+        .finance-dropdown-menu {
+            overflow: hidden;
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+            background: white !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+            margin: 8px 0 !important;
+            padding: 8px 0 !important;
+        }
+
+        .finance-dropdown-menu.hidden {
+            display: none;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-dashboard-content {
+            padding: 2.5rem 1.5rem 2rem 1.5rem;
+            margin: 1rem;
+            min-height: calc(100vh - 8rem);
+            background: var(--bg-main);
+            border-radius: 18px;
+        }
+
+        .main-dashboard-content h2,
+        .main-dashboard-content h3 {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Back Button Styles */
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-button:hover {
+            background: var(--madas-light);
+            border-color: var(--madas-primary);
+            color: var(--madas-primary);
+        }
+
+        .back-button svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: currentColor;
+        }
+
+        .back-button:hover svg {
+            transform: translateX(-2px);
+        }
+
+        /* Dark mode back button */
+        body.dark-mode .back-button {
+            border-color: var(--card-border);
+            color: var(--text-main);
+        }
+
+        body.dark-mode .back-button:hover {
+            background: var(--madas-light);
+            border-color: var(--madas-primary);
+            color: var(--madas-primary);
+        }
+
+        /* Unified Dropdown Menu Styling - No 3D Effects */
+        .inventory-submenu,
+        .finance-dropdown-menu,
+        .ecommerce-dropdown-menu {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Unified Dropdown Items - Same as Main Navigation */
+        .inventory-submenu .sidebar-link,
+        .finance-dropdown-menu .sidebar-link,
+        .ecommerce-dropdown-menu .sidebar-link {
+            padding: 10px 14px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease !important;
+            font-size: 0.8rem !important;
+        }
+
+        /* Ensure all dropdown text sizes are uniform */
+        .inventory-submenu .sidebar-link span,
+        .finance-dropdown-menu .sidebar-link span,
+        .ecommerce-dropdown-menu .sidebar-link span {
+            font-size: 0.8rem !important;
+        }
+
+        /* Make dropdown icons smaller */
+        .inventory-submenu .material-icons,
+        .finance-dropdown-menu .material-icons,
+        .ecommerce-dropdown-menu .material-icons {
+            font-size: 18px !important;
+        }
+
+        .inventory-submenu .sidebar-link:hover,
+        .finance-dropdown-menu .sidebar-link:hover,
+        .ecommerce-dropdown-menu .sidebar-link:hover {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+        }
+
+        /* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+        .inventory-submenu .sidebar-link.active,
+        .finance-dropdown-menu .sidebar-link.active,
+        .ecommerce-dropdown-menu .sidebar-link.active {
+            background: var(--madas-light) !important;
+            color: var(--madas-primary) !important;
+            font-weight: 600 !important;
+        }
+
+        .inventory-submenu .sidebar-link.active .material-icons,
+        .finance-dropdown-menu .sidebar-link.active .material-icons,
+        .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+            color: var(--madas-primary) !important;
+        }
+
+        /* Unified Dropdown Button Styling */
+        .inventory-dropdown button,
+        .finance-dropdown button,
+        .ecommerce-dropdown button {
+            background: transparent !important;
+            border: none !important;
+            padding: 12px 16px !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease !important;
+            width: 100% !important;
+            text-align: left !important;
+        }
+
+        .inventory-dropdown button:hover,
+        .finance-dropdown button:hover,
+        .ecommerce-dropdown button:hover {
+            background: var(--madas-light) !important;
+        }
+
+        /* Unified Dropdown Arrow */
+        .dropdown-arrow {
+            transition: transform 0.2s ease !important;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg) !important;
+        }
+
+        /* Unified Visible States for Dropdowns - No 3D Effects */
+        .inventory-submenu:not(.hidden) {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .ecommerce-dropdown-menu.show {
+            display: block !important;
+            animation: slideDown 0.3s ease !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Settings Navigation Styles */
+        .settings-nav-item {
+            transition: all 0.3s ease;
+            color: var(--text-main) !important;
+            border-radius: 8px;
+        }
+
+        .settings-nav-item.active {
+            background-color: var(--madas-light);
+            color: var(--text-main) !important;
+            font-weight: 600;
+        }
+
+        .settings-nav-item:hover:not(.active) {
+            background-color: var(--madas-light);
+            color: var(--madas-primary) !important;
+            transform: translateX(4px);
+        }
+
+        .settings-nav-item .material-icons {
+            transition: all 0.3s ease;
+        }
+
+        .settings-nav-item:hover .material-icons {
+            transform: scale(1.1);
+        }
+
+        .settings-section {
+            display: none;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--madas-primary)] mx-auto mb-4">
+            </div>
+            <p class="text-[var(--madas-primary)] font-medium">Loading Shipping & Delivery Settings...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <button onclick="window.location.href='../../index.html'" class="back-button">
+                    <svg viewBox="0 0 24 24" class="w-5 h-5">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+                    </svg>
+                    <span>Back to Dashboard</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <div>
+                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                        <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                            Loading Plan...
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707-.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+
+        <!-- Settings Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+
+
+                <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+                    <a href="general-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">tune</span>
+                        <span>General</span>
+                    </a>
+                    <a href="shipping-delivery-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all active">
+                        <span class="material-icons text-sm">local_shipping</span>
+                        <span>Shipping & Delivery</span>
+                    </a>
+                    <a href="payments-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">payment</span>
+                        <span>Payments</span>
+                    </a>
+                    <a href="integrations-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">extension</span>
+                        <span>Integrations</span>
+                    </a>
+                    <a href="social-media-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">share</span>
+                        <span>Social Media</span>
+                    </a>
+                    <a href="plans-billing-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">workspace_premium</span>
+                        <span>Plans & Billing</span>
+                    </a>
+                    <a href="staff-settings.html"
+                        class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ">
+                        <span class="material-icons text-sm">people</span>
+                        <span>Staff Management</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2 transition-colors">
+                                <span class="material-icons text-sm">add</span>
+                                <span>New Order</span>
+                            </button>
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2 transition-colors">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add Product</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+            <div class="main-dashboard-content">
+                <!-- Settings Navigation -->
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Settings</h2>
+                    <p class="text-gray-600">Manage your store configuration and preferences.</p>
+                </div>
+
+
+
+                <!-- Shipping Delivery Settings Content -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <!-- Shipping & Delivery Settings -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100">
+                        <!-- Header with Tabs -->
+                        <div class="border-b border-gray-200 p-6">
+                            <h2 class="text-xl font-bold text-[var(--madas-primary)] mb-4">Shipping & Delivery
+                            </h2>
+                            <div class="flex space-x-1">
+                                <button class="tab-button px-4 py-2 rounded-lg text-sm font-medium"
+                                    data-tab="shipping-details">
+                                    SHIPPING DETAILS
+                                </button>
+                                <button class="tab-button active px-4 py-2 rounded-lg text-sm font-medium"
+                                    data-tab="shipping-regions">
+                                    SHIPPING REGIONS & EXCEPTIONS
+                                </button>
+                                <button class="tab-button px-4 py-2 rounded-lg text-sm font-medium" data-tab="cart">
+                                    CART
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div class="p-6">
+                            <!-- Shipping Regions & Exceptions Tab -->
+                            <div id="shipping-regions" class="tab-content">
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Shipping Regions &
+                                        Exceptions</h3>
+                                    <p class="text-sm text-gray-600">Define shipping rules based on governorates
+                                        and neighborhoods</p>
+                                </div>
+
+                                <!-- Table Header -->
+                                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                    <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
+                                        <div class="col-span-3">Governorate</div>
+                                        <div class="col-span-3">Neighborhood</div>
+                                        <div class="col-span-3">Shipping Fees</div>
+                                        <div class="col-span-2">Additional Kilo Fees</div>
+                                        <div class="col-span-1">Actions</div>
+                                    </div>
+                                </div>
+
+                                <!-- Shipping Rows -->
+                                <div id="shipping-rows" class="space-y-2">
+                                    <!-- Sample rows will be added here -->
+                                </div>
+
+                                <!-- Add New Row Button -->
+                                <button id="add-shipping-row"
+                                    class="mt-4 bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                                    <span class="material-icons text-sm">add</span>
+                                    <span>Add New Shipping Rule</span>
+                                </button>
+                            </div>
+
+                            <!-- Shipping Details Tab -->
+                            <div id="shipping-details" class="tab-content hidden">
+                                <div class="space-y-6">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">General Shipping
+                                            Settings</h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Default
+                                                    Shipping Rate</label>
+                                                <input type="number" value="50"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Free
+                                                    Shipping Threshold (EGP)</label>
+                                                <input type="number" value="500"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Express
+                                                    Shipping Rate</label>
+                                                <input type="number" value="100"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Additional
+                                                    Kilo Rate</label>
+                                                <input type="number" value="10"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cart Tab -->
+                            <div id="cart" class="tab-content hidden">
+                                <div class="space-y-6">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Cart Settings</h3>
+                                        <div class="space-y-4">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" checked
+                                                    class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                <span class="ml-2 text-sm text-gray-700">Show shipping
+                                                    calculator in cart</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="checkbox" checked
+                                                    class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                <span class="ml-2 text-sm text-gray-700">Allow multiple shipping
+                                                    addresses</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="checkbox"
+                                                    class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                <span class="ml-2 text-sm text-gray-700">Require shipping
+                                                    address before checkout</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="border-t border-gray-200 p-6">
+                            <div class="flex justify-end">
+                                <button
+                                    class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                                    Save Shipping Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+    </main>
+    </div>
+
+    <!-- Include shared authentication system -->
+    <script type="module" src="../js/shared-auth.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, getDocs, deleteDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserId = null;
+
+        // Function to update UI with user data from marketing website
+        function updateUIWithUserData(userData, businessData) {
+            console.log('🎯 Updating UI with marketing website user data:', userData, businessData);
+
+            // Update UI elements
+            const username = userData.name || userData.email.split("@")[0];
+            document.getElementById("user-name").textContent = username;
+            document.getElementById("user-email").textContent = userData.email;
+            document.getElementById("user-initial").textContent = username.charAt(0).toUpperCase();
+
+            // Hide loading screen
+            document.getElementById('loadingScreen').style.display = 'none';
+
+            // Set current user ID for other functions
+            currentUserId = userData.userId;
+
+            // Load dashboard data
+            loadTasks();
+            fetchStats();
+            fetchAnalysis();
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+
+                // ============================================
+                // TENANT ISOLATION: Initialize Business Context
+                // ============================================
+
+                // Step 1: Find user's business (check if owner)
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    window.currentBusinessId = businessDoc.id;
+                    window.currentBusinessData = businessDoc.data();
+                    window.currentUserRole = 'owner';
+
+                    console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                    console.log('🏢 Business ID:', window.currentBusinessId);
+                    console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    const allBusinesses = await getDocs(collection(db, "businesses"));
+                    let foundBusiness = false;
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                        const staffDoc = await getDoc(staffRef);
+
+                        if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                            window.currentBusinessId = businessId;
+                            window.currentBusinessData = businessDoc.data();
+                            window.currentUserRole = staffData.role;
+                            window.currentUserPermissions = staffData.permissions;
+
+                            console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                            console.log('🏢 Business ID:', window.currentBusinessId);
+                            console.log('👤 Role:', window.currentUserRole);
+
+                            foundBusiness = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundBusiness) {
+                        console.warn("❌ User not associated with any business. Redirecting to no-access.");
+                        window.location.href = "/no-access.html";
+                        return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || window.currentBusinessData.owner?.name,
+                    role: window.currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"]
+                    };
+                }
+
+                // Auto-approve super admin users (for system-wide access)
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    userData.role = "super-admin";
+                    userData.approved = true;
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"],
+                        admin: ["view", "manage_all_businesses"]
+                    };
+                }
+
+                console.log('✅ User data created:', {
+                    email: userData.email,
+                    role: userData.role,
+                    businessId: window.currentBusinessId,
+                    businessName: window.currentBusinessData?.businessName,
+                    approved: userData.approved
+                });
+
+                // Store user data
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                // Update UI
+                currentUserId = user.uid;
+                const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+                document.getElementById("user-name").textContent = username;
+                document.getElementById("user-email").textContent = user.email;
+                document.getElementById("user-initial").textContent = username.charAt(0).toUpperCase();
+
+                // Update business name and plan
+                const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                const planType = window.currentBusinessData?.plan?.type || "basic";
+                const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+                document.getElementById("business-name").textContent = businessName;
+
+                const planBadge = document.getElementById("plan-badge");
+                planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                // Set plan badge color based on plan type
+                if (planType === 'enterprise') {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                } else if (planType === 'professional') {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                } else {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                }
+
+                // Add trial badge if in trial
+                if (planStatus === 'trial') {
+                    planBadge.textContent += ' (Trial)';
+                }
+
+                // Hide loading screen
+                document.getElementById('loadingScreen').style.display = 'none';
+
+                await loadTasks();
+                await fetchStats();
+                await fetchAnalysis();
+            } catch (error) {
+                console.error("Permission check failed:", error);
+                window.location.href = "/login";
+            }
+        });
+
+        async function loadTasks() {
+            if (!currentUserId || !window.currentBusinessId) return;
+
+            // TENANT ISOLATION: Query todos for current business only
+            const todosRef = collection(db, "businesses", window.currentBusinessId, "todos");
+            const q = query(todosRef, where("uid", "==", currentUserId));
+            const querySnapshot = await getDocs(q);
+            const todoList = document.getElementById("todo-list");
+
+            if (!todoList) return; // Skip if todo-list element doesn't exist
+            todoList.innerHTML = "";
+
+            if (querySnapshot.empty) {
+                todoList.innerHTML = '<li class="text-gray-500 text-sm py-2">No tasks yet</li>';
+                return;
+            }
+
+            querySnapshot.forEach((docSnap) => {
+                const li = document.createElement("li");
+                li.className = "todo-item";
+                li.innerHTML = `
+                    <input type="checkbox" class="todo-checkbox" />
+                    <span class="todo-text">${docSnap.data().task}<span class="strike"></span></span>
+                    <button class="delete-btn" onclick="deleteTask('${docSnap.id}')">
+                        <span class="material-icons text-sm">delete</span>
+                    </button>
+                `;
+                // Animation: fade in
+                li.style.opacity = 0;
+                setTimeout(() => { li.style.opacity = 1; }, 50);
+                // Checkbox logic
+                const checkbox = li.querySelector('.todo-checkbox');
+                const text = li.querySelector('.todo-text');
+                checkbox.addEventListener('change', function () {
+                    if (checkbox.checked) {
+                        text.classList.add('checked');
+                    } else {
+                        text.classList.remove('checked');
+                    }
+                });
+                todoList.appendChild(li);
+            });
+        }
+
+        async function addTask() {
+            const input = document.getElementById("new-task");
+            if (!input) return; // Skip if new-task element doesn't exist
+            const task = input.value.trim();
+            if (!task || !currentUserId || !window.currentBusinessId) return;
+
+            // TENANT ISOLATION: Add todo to current business only
+            await addDoc(collection(db, "businesses", window.currentBusinessId, "todos"), {
+                uid: currentUserId,
+                task
+            });
+            input.value = "";
+            await loadTasks();
+        }
+
+        async function deleteTask(id) {
+            if (!window.currentBusinessId) return;
+            // TENANT ISOLATION: Delete todo from current business only
+            await deleteDoc(doc(db, "businesses", window.currentBusinessId, "todos", id));
+            await loadTasks();
+        }
+
+        window.addTask = addTask;
+        window.deleteTask = deleteTask;
+
+        async function fetchStats() {
+            if (!window.currentBusinessId) return;
+
+            // TENANT ISOLATION: Get stats for current business only
+            const statsRef = doc(db, "businesses", window.currentBusinessId, "stats", "dashboard");
+            const docSnap = await getDoc(statsRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const totalSalesEl = document.getElementById("total-sales");
+                const totalOrdersEl = document.getElementById("total-orders");
+                const totalCustomersEl = document.getElementById("total-customers");
+                const totalProductsEl = document.getElementById("total-products");
+
+                if (totalSalesEl) totalSalesEl.textContent = `${data.totalSales || 0}`;
+                if (totalOrdersEl) totalOrdersEl.textContent = data.orders || 0;
+                if (totalCustomersEl) totalCustomersEl.textContent = data.customers || 0;
+                if (totalProductsEl) totalProductsEl.textContent = data.products || 0;
+            } else {
+                // No stats yet - show zeros
+                const totalSalesEl = document.getElementById("total-sales");
+                const totalOrdersEl = document.getElementById("total-orders");
+                const totalCustomersEl = document.getElementById("total-customers");
+                const totalProductsEl = document.getElementById("total-products");
+
+                if (totalSalesEl) totalSalesEl.textContent = `$0`;
+                if (totalOrdersEl) totalOrdersEl.textContent = 0;
+                if (totalCustomersEl) totalCustomersEl.textContent = 0;
+                if (totalProductsEl) totalProductsEl.textContent = 0;
+            }
+        }
+
+        async function fetchAnalysis() {
+            if (!window.currentBusinessId) return;
+
+            // TENANT ISOLATION: Get analysis for current business only
+            const topProductsRef = doc(db, "businesses", window.currentBusinessId, "analysis", "topProducts");
+            const categorySalesRef = doc(db, "businesses", window.currentBusinessId, "analysis", "salesByCategory");
+
+            const [topProductsSnap, categorySalesSnap] = await Promise.all([
+                getDoc(topProductsRef),
+                getDoc(categorySalesRef),
+            ]);
+
+            const topList = document.getElementById("top-products");
+            const catList = document.getElementById("sales-by-category");
+
+            if (topList) {
+                if (topProductsSnap.exists()) {
+                    const top = topProductsSnap.data().list || [];
+                    topList.innerHTML = "";
+                    top.forEach((item, i) => {
+                        const li = document.createElement("div");
+                        li.className = "flex items-center justify-between p-3 bg-gray-50 rounded-lg";
+                        li.innerHTML = `
+                            <span class="text-sm font-medium">${i + 1}. ${item.name}</span>
+                            <span class="text-sm text-gray-600">${item.sales} sales</span>
+                        `;
+                        topList.appendChild(li);
+                    });
+                } else {
+                    topList.innerHTML = '<div class="text-gray-500 text-sm py-2">No data yet</div>';
+                }
+            }
+
+            if (catList) {
+                if (categorySalesSnap.exists()) {
+                    const cats = categorySalesSnap.data().list || [];
+                    catList.innerHTML = "";
+                    cats.forEach(cat => {
+                        const li = document.createElement("div");
+                        li.className = "flex items-center justify-between p-3 bg-gray-50 rounded-lg";
+                        li.innerHTML = `
+                            <span class="text-sm font-medium">${cat.category}</span>
+                            <span class="text-sm text-gray-600">${cat.sales} sales</span>
+                        `;
+                        catList.appendChild(li);
+                    });
+                } else {
+                    catList.innerHTML = '<div class="text-gray-500 text-sm py-2">No data yet</div>';
+                }
+            }
+        }
+
+        // Logout logic
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                auth.signOut().then(() => {
+                    window.location.href = "/login";
+                }).catch((error) => {
+                    console.error("Logout error:", error);
+                    window.location.href = "/login";
+                });
+            });
+        }
+
+        // Profile button
+        const profileBtn = document.getElementById("profile-btn");
+        if (profileBtn) {
+            profileBtn.addEventListener("click", () => {
+                window.location.href = "/pages/profile.html";
+            });
+        }
+        // Dark mode is now handled by the shared dark-mode.js script
+        /*
+        // Dark mode toggle logic
+        document.addEventListener('DOMContentLoaded', function () {
+            const darkToggle = document.getElementById('darkToggle');
+            const darkIcon = document.getElementById('darkToggleIcon');
+
+            if (!darkToggle || !darkIcon) {
+                console.error('Dark mode toggle elements not found');
+                return;
+            }
+            function setDarkMode(on) {
+                document.body.classList.toggle('dark-mode', on);
+                localStorage.setItem('dark-mode', on ? '1' : '0');
+                if (on) {
+                    darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+                } else {
+                    darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+                }
+            }
+
+            darkToggle.addEventListener('click', () => {
+                setDarkMode(!document.body.classList.contains('dark-mode'));
+            });
+
+            // Initialize dark mode from localStorage
+            if (localStorage.getItem('dark-mode') === '1') {
+                setDarkMode(true);
+            }
+        });
+        */
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+        });
+
+        // Finance Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+            const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+            const dropdownArrow = document.querySelector("#finance-dropdown-btn .dropdown-arrow");
+
+            if (financeDropdownBtn && financeDropdownMenu) {
+                financeDropdownBtn.addEventListener("click", () => {
+                    const isOpen = financeDropdownMenu.classList.contains("show");
+
+                    if (isOpen) {
+                        financeDropdownMenu.classList.remove("show");
+                        financeDropdownMenu.classList.add("hidden");
+                        if (dropdownArrow) dropdownArrow.classList.remove("rotate");
+                    } else {
+                        financeDropdownMenu.classList.remove("hidden");
+                        financeDropdownMenu.classList.add("show");
+                        if (dropdownArrow) dropdownArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                        financeDropdownMenu.classList.remove("show");
+                        financeDropdownMenu.classList.add("hidden");
+                        if (dropdownArrow) dropdownArrow.classList.remove("rotate");
+                    }
+                });
+            }
+        });
+
+        // E-commerce Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+            const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+            const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+            if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+                ecommerceDropdownBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                    if (isOpen) {
+                        ecommerceDropdownMenu.classList.remove("show");
+                        ecommerceDropdownMenu.classList.add("hidden");
+                        if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                    } else {
+                        ecommerceDropdownMenu.classList.remove("hidden");
+                        ecommerceDropdownMenu.classList.add("show");
+                        if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!ecommerceDropdownBtn.contains(e.target) && !ecommerceDropdownMenu.contains(e.target)) {
+                        ecommerceDropdownMenu.classList.remove("show");
+                        ecommerceDropdownMenu.classList.add("hidden");
+                        if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                    }
+                });
+            }
+        });
+
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+
+            // OTHER LINKS - Handle all other links
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            let foundMatch = false;
+
+            // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/index.html"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+
+                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    currentPath.endsWith('index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+
+                // Skip Dashboard link - already handled above
+                if (href === '/index.html') return;
+
+                // Handle other links with normal matching
+                // Check if current path matches this specific link
+                if (currentPath === href || currentPath.endsWith(href) || currentPath.includes(href)) {
+                    link.classList.add('active');
+                    foundMatch = true;
+                    console.log('Exact match found:', href);
+                }
+                // Check page name matching for other links
+                else if (!foundMatch) {
+                    const linkPageName = href.split('/').pop().replace('.html', '');
+                    const linkFolder = href.split('/').slice(-2, -1)[0]; // Get the folder name
+                    const currentFolder = currentPath.split('/').slice(-2, -1)[0]; // Get current folder name
+
+                    if (currentPageName === linkPageName ||
+                        (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                        (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase())) ||
+                        (linkFolder && currentFolder && linkFolder.toLowerCase() === currentFolder.toLowerCase())) {
+                        link.classList.add('active');
+                        foundMatch = true;
+                        console.log('Page name match found:', href, 'for page:', currentPageName);
+                    }
+                }
+            });
+
+            // Special cases for specific pages with dropdown management
+            if (currentPath.includes('Inventory/collections') || currentPageName === 'collections') {
+                const collectionsLink = document.querySelector('a[href*="collections"]');
+                if (collectionsLink) {
+                    collectionsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Collections page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for collections');
+                    }
+                }
+            }
+
+            if (currentPath.includes('Inventory/products') || currentPageName === 'products') {
+                const productsLink = document.querySelector('a[href*="products"]');
+                if (productsLink) {
+                    productsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Products page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for products');
+                    }
+                }
+            }
+
+            if (currentPath.includes('Inventory/low-stock') || currentPageName === 'low-stock') {
+                const lowStockLink = document.querySelector('a[href*="low-stock"]');
+                if (lowStockLink) {
+                    lowStockLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Low Stock page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for low-stock');
+                    }
+                }
+            }
+
+            if (currentPath.includes('Inventory/product-reviews') || currentPageName === 'reviews') {
+                const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+                if (reviewsLink) {
+                    reviewsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reviews page detected');
+
+                    // Keep inventory dropdown open
+                    const inventoryDropdown = document.getElementById('inventory-submenu');
+                    const inventoryArrow = document.getElementById('inventory-arrow');
+                    if (inventoryDropdown && inventoryArrow) {
+                        inventoryDropdown.classList.remove('hidden');
+                        inventoryArrow.style.transform = 'rotate(180deg)';
+                        console.log('Inventory dropdown kept open for reviews');
+                    }
+                }
+            }
+
+            if (currentPath.includes('Orders/orders') || currentPageName === 'orders') {
+                const ordersLink = document.querySelector('a[href*="orders"]');
+                if (ordersLink) {
+                    ordersLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Orders page detected');
+                }
+            }
+
+            if (currentPath.includes('Customers/Customer') || currentPageName === 'Customer') {
+                const customerLink = document.querySelector('a[href*="Customer"]');
+                if (customerLink) {
+                    customerLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Customer page detected');
+                }
+            }
+
+            if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+                const adminLink = document.querySelector('a[href*="Admin"]');
+                if (adminLink) {
+                    adminLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Admin page detected');
+                }
+            }
+
+            if (currentPath.includes('settings') || currentPageName === 'settings') {
+                const settingsLink = document.querySelector('a[href*="settings"]');
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Settings page detected');
+                }
+            }
+
+            if (currentPath.includes('Finance/finance') || currentPageName === 'finance') {
+                const financeLink = document.querySelector('a[href*="finance"]');
+                if (financeLink) {
+                    financeLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Finance page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for finance page');
+                    }
+                }
+            }
+
+            if (currentPath.includes('Finance/analytics') || currentPageName === 'analytics') {
+                const analyticsLink = document.querySelector('a[href*="analytics"]');
+                if (analyticsLink) {
+                    analyticsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Analytics page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for analytics');
+                    }
+                }
+            }
+
+            if (currentPath.includes('Finance/reports') || currentPageName === 'reports') {
+                const reportsLink = document.querySelector('a[href*="reports"]');
+                if (reportsLink) {
+                    reportsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Reports page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for reports');
+                    }
+                }
+            }
+
+            if (currentPath.includes('Finance/insights') || currentPageName === 'insights') {
+                const insightsLink = document.querySelector('a[href*="insights"]');
+                if (insightsLink) {
+                    insightsLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Insights page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for insights');
+                    }
+                }
+            }
+
+            if (currentPath.includes('Finance/expenses') || currentPageName === 'expenses') {
+                const expensesLink = document.querySelector('a[href*="expenses"]');
+                if (expensesLink) {
+                    expensesLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('Expenses page detected');
+
+                    // Keep finance dropdown open
+                    const financeDropdown = document.getElementById('finance-dropdown-menu');
+                    const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                    if (financeDropdown && financeArrow) {
+                        financeDropdown.classList.remove('hidden');
+                        financeDropdown.classList.add('show');
+                        financeArrow.classList.add('rotated');
+                        console.log('Finance dropdown kept open for expenses');
+                    }
+                }
+            }
+
+            if (currentPath.includes('pos') || currentPageName === 'pos') {
+                const posLink = document.querySelector('a[href*="pos"]');
+                if (posLink) {
+                    posLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('POS page detected');
+                }
+            }
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+
+    </script>
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

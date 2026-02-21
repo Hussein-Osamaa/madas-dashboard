@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last Piece Products - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+    if (window.innerWidth < 1024 && !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        sidebar.classList.add('-translate-x-full'); } }); </script>
+
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet">
+        <link rel="icon" type="image/x-icon" href="/assets/img/madas-logo.png">
+        <style>
+            :root {
+                --madas-primary: #27491F;
+                --madas-dark: #F0CAE1;
+                --madas-light: #F4F4F4;
+                --madas-accent: #FFD300;
+                --bg-main: #F4F4F4;
+                --text-main: #1F2937;
+                --text-secondary: #6B7280;
+                --card-bg: #FFFFFF;
+                --card-border: #E5E7EB;
+                --sidebar-bg: #FFFFFF;
+                --header-bg: #FFFFFF;
+            }
+
+            body {
+                font-family: 'Inter', sans-serif;
+                background: var(--bg-main) !important;
+                color: var(--text-main) !important;
+                transition: background 0.5s, color 0.5s;
+            }
+
+            /* Dark mode styles */
+            body.dark-mode {
+                --madas-primary: #FFD700;
+                --madas-dark: #232946;
+                --madas-light: #181825;
+                --madas-accent: #7209b7;
+                --bg-main: #181825;
+                --text-main: #F8F8F2;
+                --text-secondary: #A8A8A8;
+                --card-bg: #232946;
+                --card-border: #2D3748;
+                --sidebar-bg: #232946;
+                --header-bg: #232946;
+            }
+
+            .dark-toggle {
+                background: var(--madas-accent);
+                border: 2px solid var(--madas-primary);
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .dark-toggle svg {
+                width: 20px;
+                height: 20px;
+                fill: var(--madas-primary);
+                transition: fill 0.3s;
+            }
+
+            .dark-toggle:hover {
+                transform: scale(1.05);
+                box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+            }
+
+            .dark-toggle:active {
+                transform: scale(0.95);
+            }
+
+            /* Transition all elements */
+            * {
+                transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+            }
+
+            /* Override specific backgrounds */
+            .bg-white {
+                background-color: var(--card-bg) !important;
+            }
+
+            .bg-gray-50 {
+                background-color: var(--bg-main) !important;
+            }
+
+            .text-gray-900 {
+                color: var(--text-main) !important;
+            }
+
+            .text-gray-600 {
+                color: var(--text-secondary) !important;
+            }
+
+            .text-gray-500 {
+                color: var(--text-secondary) !important;
+            }
+
+            .border-gray-100 {
+                border-color: var(--card-border) !important;
+            }
+
+            .border-gray-200 {
+                border-color: var(--card-border) !important;
+            }
+
+            .bg-gray-100 {
+                background-color: var(--card-bg) !important;
+            }
+
+            .hover\:bg-gray-100:hover {
+                background-color: var(--card-bg) !important;
+            }
+
+            .hover\:bg-gray-200:hover {
+                background-color: var(--card-border) !important;
+            }
+
+            /* Sidebar and header */
+            #sidebar {
+                background-color: var(--sidebar-bg) !important;
+            }
+
+            .bg-white {
+                background-color: var(--card-bg) !important;
+            }
+
+            /* Enhanced Sidebar Link Styles */
+            .sidebar-link {
+                position: relative;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow: hidden;
+            }
+
+            /* Override Tailwind text color classes */
+            .sidebar-link.text-gray-700,
+            .sidebar-link.text-gray-600 {
+                color: var(--text-main) !important;
+            }
+
+            body.dark-mode .sidebar-link.text-gray-700,
+            body.dark-mode .sidebar-link.text-gray-600 {
+                color: var(--text-main) !important;
+            }
+
+            .sidebar-link:hover {
+                transform: translateX(6px) scale(1.02);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                background: var(--madas-light);
+            }
+
+            .sidebar-link:active {
+                transform: translateX(3px) scale(0.98);
+                transition: all 0.1s ease;
+            }.finance-dropdown-menu.show {
+                display: block;
+                animation: slideDown 0.3s ease;
+                background: white !important;
+                border: 1px solid #e5e7eb !important;
+                border-radius: 8px !important;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+                margin: 8px 0 !important;
+                padding: 8px 0 !important;
+            }
+
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+
+            .card-hover:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            }
+
+            .finance-dropdown {
+                position: relative;
+            }
+
+            .finance-dropdown-menu {
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .finance-dropdown-menu.show {
+                display: block;
+                animation: slideDown 0.3s ease;
+            }
+
+            .finance-dropdown-menu.hidden {
+                display: none;
+            }
+
+            .dropdown-arrow.rotate {
+                transform: rotate(180deg);
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .notification-dropdown {
+                position: relative;
+            }
+
+            .notification-dropdown-menu {
+                position: absolute;
+                top: 100%;
+                right: 0;
+                width: 320px;
+                max-height: 400px;
+                overflow-y: auto;
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                z-index: 50;
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px);
+                transition: all 0.3s ease;
+            }
+
+            .notification-dropdown-menu.show {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+
+            .notification-item {
+                padding: 12px 16px;
+                border-bottom: 1px solid #f3f4f6;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+            }
+
+            .notification-item:hover {
+                background-color: var(--card-bg);
+            }
+
+            .notification-item:last-child {
+                border-bottom: none;
+            }
+
+            .notification-item.unread {
+                background-color: rgba(59, 130, 246, 0.1);
+            }
+
+            .notification-item.unread:hover {
+                background-color: rgba(59, 130, 246, 0.2);
+            }
+
+            .notification-badge {
+                position: absolute;
+                top: -5px;
+                right: -5px;
+                background: #ef4444;
+                color: white;
+                border-radius: 50%;
+                width: 18px;
+                height: 18px;
+                font-size: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+            }
+
+            .notification-bell {
+                position: relative;
+                cursor: pointer;
+                padding: 8px;
+                border-radius: 8px;
+                transition: background-color 0.2s ease;
+            }
+
+            .notification-bell:hover {
+                background-color: var(--card-bg);
+            }
+
+            /* Input fields and form elements */
+            input[type="text"],
+            input[type="number"],
+            input[type="email"],
+            input[type="password"],
+            input[type="date"],
+            textarea,
+            select {
+                background-color: var(--card-bg) !important;
+                color: var(--text-main) !important;
+                border-color: var(--card-border) !important;
+                border-width: 1px !important;
+                border-style: solid !important;
+            }
+
+            input[type="text"]:focus,
+            input[type="number"]:focus,
+            input[type="email"]:focus,
+            input[type="password"]:focus,
+            input[type="date"]:focus,
+            textarea:focus,
+            select:focus {
+                border-color: var(--madas-accent) !important;
+                box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+                outline: none !important;
+            }
+
+            input[type="text"]::placeholder,
+            input[type="number"]::placeholder,
+            input[type="email"]::placeholder,
+            input[type="password"]::placeholder,
+            input[type="date"]::placeholder,
+            textarea::placeholder {
+                color: var(--text-secondary) !important;
+            }
+
+            /* Search bar specific styling */
+            input[type="search"] {
+                background-color: var(--card-bg) !important;
+                color: var(--text-main) !important;
+                border-color: var(--card-border) !important;
+            }
+
+            input[type="search"]:focus {
+                border-color: var(--madas-accent) !important;
+                box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+            }
+
+            input[type="search"]::placeholder {
+                color: var(--text-secondary) !important;
+            }
+
+            /* Select dropdowns */
+            select {
+                background-color: var(--card-bg) !important;
+                color: var(--text-main) !important;
+                border-color: var(--card-border) !important;
+            }
+
+            select:focus {
+                border-color: var(--madas-accent) !important;
+                box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+            }
+
+            /* Date input specific styling */
+            input[type="date"] {
+                background-color: var(--card-bg) !important;
+                color: var(--text-main) !important;
+                border-color: var(--card-border) !important;
+            }
+
+            input[type="date"]::-webkit-calendar-picker-indicator {
+                filter: var(--text-main) !important;
+                opacity: 0.7;
+            }
+
+            input[type="date"]::-webkit-calendar-picker-indicator:hover {
+                opacity: 1;
+            }
+
+            /* Modal styling */
+            .modal,
+            .modal .bg-white,
+            .glass-effect {
+                background-color: var(--card-bg) !important;
+            }
+
+            /* Form labels */
+            label {
+                color: var(--text-main) !important;
+            }
+
+            /* Readonly inputs */
+            input[readonly] {
+                background-color: var(--bg-main) !important;
+                color: var(--text-secondary) !important;
+            }
+
+            /* Checkbox styling */
+            input[type="checkbox"] {
+                background-color: var(--card-bg) !important;
+                border-color: var(--card-border) !important;
+            }
+
+            input[type="checkbox"]:checked {
+                background-color: var(--madas-accent) !important;
+                border-color: var(--madas-accent) !important;
+            }
+
+            /* Unified Dropdown Menu Styling - No 3D Effects */
+            .inventory-submenu,
+            .finance-dropdown-menu,
+            .ecommerce-dropdown-menu {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Unified Dropdown Items - Same as Main Navigation */
+            .inventory-submenu .sidebar-link,
+            .finance-dropdown-menu .sidebar-link,
+            .ecommerce-dropdown-menu .sidebar-link {
+                padding: 10px 14px !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .inventory-submenu .sidebar-link:hover,
+            .finance-dropdown-menu .sidebar-link:hover,
+            .ecommerce-dropdown-menu .sidebar-link:hover {
+                background: var(--madas-light) !important;
+                color: var(--madas-primary) !important;
+            }
+
+            /* Ensure dropdown hover maintains color in dark mode */
+            body.dark-mode .inventory-submenu .sidebar-link:hover,
+            body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+            body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+                color: var(--madas-primary) !important;
+            }
+
+            /* Ensure all dropdown text sizes are uniform */
+            .inventory-submenu .sidebar-link span,
+            .finance-dropdown-menu .sidebar-link span,
+            .ecommerce-dropdown-menu .sidebar-link span {
+                font-size: 0.8rem !important;
+            }
+
+            /* Make dropdown icons smaller */
+            .inventory-submenu .material-icons,
+            .finance-dropdown-menu .material-icons,
+            .ecommerce-dropdown-menu .material-icons {
+                font-size: 18px !important;
+            }
+
+            /* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+            .inventory-submenu .sidebar-link.active,
+            .finance-dropdown-menu .sidebar-link.active,
+            .ecommerce-dropdown-menu .sidebar-link.active {
+                background: var(--madas-light) !important;
+                color: var(--madas-primary) !important;
+                font-weight: 600 !important;
+            }
+
+            .inventory-submenu .sidebar-link.active .material-icons,
+            .finance-dropdown-menu .sidebar-link.active .material-icons,
+            .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+                color: var(--madas-primary) !important;
+            }
+
+            /* Unified Dropdown Button Styling */
+            .inventory-dropdown button,
+            .finance-dropdown button,
+            .ecommerce-dropdown button {
+                background: transparent !important;
+                border: none !important;
+                padding: 10px 14px !important;
+                border-radius: 8px !important;
+                transition: all 0.2s ease !important;
+                width: 100% !important;
+                text-align: left !important;
+            }
+
+            .inventory-dropdown button:hover,
+            .finance-dropdown button:hover,
+            .ecommerce-dropdown button:hover {
+                background: var(--madas-light) !important;
+            }
+
+            /* Unified Dropdown Arrow */
+            .dropdown-arrow {
+                transition: transform 0.2s ease !important;
+            }
+
+            .dropdown-arrow.rotate {
+                transform: rotate(180deg) !important;
+            }
+
+            /* Unified Visible States for Dropdowns - No 3D Effects */
+            .inventory-submenu:not(.hidden) {
+                opacity: 1 !important;
+                transform: translateY(0) !important;
+                pointer-events: auto !important;
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .finance-dropdown-menu.show {
+                display: block !important;
+                animation: slideDown 0.3s ease !important;
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .ecommerce-dropdown-menu.show {
+                display: block !important;
+                animation: slideDown 0.3s ease !important;
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        </style>
+
+        <script>
+            // JavaScript code will be added here
+        </script>
+</head>
+
+<body class="font-sans">
+    <!-- Header -->
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <div>
+                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                        <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                            Loading Plan...
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <a href="/dashboard"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/pages/Orders/orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                    <a href="/pages/pos.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">point_of_sale</span>
+                        <span>POS</span>
+                    </a>
+
+                    <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button
+                            class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all"
+                            id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200"
+                                id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="/pages/Inventory/products.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="/pages/Inventory/collections.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="/pages/Inventory/product-reviews.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="/pages/Inventory/low-stock.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/Customers/Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+
+                    <!-- E-commerce Dropdown -->
+                    <div class="ecommerce-dropdown">
+                        <button id="ecommerce-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">storefront</span>
+                                <span>E-commerce</span>
+                            </div>
+                            <span class="material-icons dropdown-arrow transition-transform duration-200"
+                                id="ecommerce-arrow">expand_more</span>
+                        </button>
+                        <div id="ecommerce-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/Web-builder/theme-library.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">web</span>
+                                <span>Website Builder</span>
+                            </a>
+                            <a href="/pages/shoes-store.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">shopping_bag</span>
+                                <span>Shoes Store</span>
+                            </a>
+                            <a href="/pages/advanced/domains.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">language</span>
+                                <span>Custom Domains</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Finance Dropdown -->
+                    <div class="finance-dropdown">
+                        <button id="finance-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">account_balance_wallet</span>
+                                <span>Finance</span>
+                            </div>
+                            <span
+                                class="material-icons dropdown-arrow transition-transform duration-200">expand_more</span>
+                        </button>
+                        <div id="finance-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/Finance/finance.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">account_balance</span>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/pages/advanced/deposit-money-simple.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">add_circle</span>
+                                <span>Add Money Transfer</span>
+                            </a>
+                            <a href="/pages/Finance/expenses.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">receipt</span>
+                                <span>Expenses</span>
+                            </a>
+                            <a href="/pages/Finance/analytics.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">analytics</span>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="/pages/Finance/reports.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">assessment</span>
+                                <span>Reports</span>
+                            </a>
+                            <a href="/pages/Finance/insights.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">lightbulb</span>
+                                <span>Insights</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/settings.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">settings</span>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>New Order</span>
+                            </button>
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add Product</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+            <div class="p-6 lg:p-8">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Last Piece Products</h2>
+                            <p class="text-gray-600">Products with exactly one piece left in stock</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <div class="flex flex-col lg:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="material-icons text-gray-400">search</span>
+                                </span>
+                                <input type="text" id="searchInput" placeholder="Search products by name or SKU..."
+                                    class="w-full pl-10 pr-4 py-2 rounded-lg">
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <select id="sizeFilter" class="px-4 py-2 rounded-lg">
+                                <option value="">All Sizes</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Count -->
+                <div class="mb-4">
+                    <p class="text-gray-600">Found <span id="results-count" class="font-semibold">0</span> last piece
+                        products
+                    </p>
+                </div>
+
+                <!-- Products Grid -->
+                <div id="products-container"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        console.log("Fixed last piece page script loaded!");
+
+        // Import Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3",
+            measurementId: "G-NQVR1F4N3Q"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Global variables
+        let allProducts = [];
+        let searchTerm = '';
+        let selectedSize = '';
+        let currentUserId = '';
+
+        // Check authentication and permissions
+        async function checkAuth() {
+            return new Promise((resolve) => {
+                onAuthStateChanged(auth, async (user) => {
+                    if (!user) {
+                        window.location.href = "/login";
+                        return;
+                    }
+
+                    try {
+                        console.log('🔐 User authenticated:', user.email);
+
+                        // ============================================
+                        // TENANT ISOLATION: Initialize Business Context
+                        // ============================================
+
+                        // Check for super admin users first (bypass business detection)
+                        const superAdminEmails = [
+                            "hesainosama@gmail.com",
+                            "test@example.com"
+                        ];
+
+                        if (superAdminEmails.includes(user.email)) {
+                            console.log("🔑 Super admin detected - granting full access");
+                            window.currentUserRole = "super-admin";
+                            window.currentBusinessId = "super-admin";
+                            window.currentBusinessData = {
+                                businessName: "Super Admin",
+                                plan: { type: "enterprise", status: "active" }
+                            };
+
+                            // Set super admin permissions
+                            const userData = {
+                                email: user.email,
+                                displayName: user.displayName || "Super Admin",
+                                role: "super-admin",
+                                approved: true,
+                                permissions: {
+                                    home: ["view"],
+                                    orders: ["view", "search", "create", "edit"],
+                                    inventory: ["view", "edit"],
+                                    customers: ["view", "edit"],
+                                    employees: ["view", "edit"],
+                                    finance: ["view", "reports"],
+                                    analytics: ["view", "export"],
+                                    settings: ["view", "edit"],
+                                    admin: ["view", "manage_all_businesses"]
+                                }
+                            };
+
+                            // Store user data
+                            localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                            // Update UI
+                            const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                            const userNameEl = document.getElementById("user-name");
+                            const userEmailEl = document.getElementById("user-email");
+                            const userInitialEl = document.getElementById("user-initial");
+
+                            if (userNameEl) userNameEl.textContent = username;
+                            if (userEmailEl) userEmailEl.textContent = user.email;
+                            if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                            // Update business name and plan
+                            const businessNameEl = document.getElementById("business-name");
+                            if (businessNameEl) businessNameEl.textContent = "Super Admin";
+
+                            const planBadge = document.getElementById("plan-badge");
+                            if (planBadge) {
+                                planBadge.textContent = "Enterprise Plan";
+                                planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                            }
+
+                            // Hide loading screen if it exists
+                            const loadingScreen = document.getElementById('loadingScreen');
+                            if (loadingScreen) loadingScreen.style.display = 'none';
+
+                            resolve();
+                            return;
+                        }
+
+                        // Step 1: Find user's business (check if owner)
+                        const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                        const businessSnapshot = await getDocs(businessesQuery);
+
+                        if (!businessSnapshot.empty) {
+                            // User is a business owner
+                            const businessDoc = businessSnapshot.docs[0];
+                            window.currentBusinessId = businessDoc.id;
+                            window.currentBusinessData = businessDoc.data();
+                            window.currentUserRole = 'owner';
+
+                            console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                            console.log('🏢 Business ID:', window.currentBusinessId);
+                            console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                        } else {
+                            // Step 2: Check if user is staff member
+                            const allBusinesses = await getDocs(collection(db, "businesses"));
+                            let foundBusiness = false;
+
+                            for (const businessDoc of allBusinesses.docs) {
+                                const businessId = businessDoc.id;
+                                const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                                const staffDoc = await getDoc(staffRef);
+
+                                if (staffDoc.exists()) {
+                                    const staffData = staffDoc.data();
+                                    window.currentBusinessId = businessId;
+                                    window.currentBusinessData = businessDoc.data();
+                                    window.currentUserRole = staffData.role;
+                                    window.currentUserPermissions = staffData.permissions;
+
+                                    console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                                    console.log('🏢 Business ID:', window.currentBusinessId);
+                                    console.log('👤 Role:', window.currentUserRole);
+
+                                    foundBusiness = true;
+                                    break;
+                                }
+                            }
+
+                            if (!foundBusiness) {
+                                console.warn("❌ User not associated with any business.");
+                                console.log("🔍 User email:", user.email);
+                                console.log("🔍 User UID:", user.uid);
+
+                                // For now, create a temporary business context for testing
+                                console.log("⚠️ Creating temporary business context for testing...");
+                                window.currentBusinessId = "temp-business";
+                                window.currentBusinessData = {
+                                    businessName: "Temporary Business",
+                                    plan: { type: "basic", status: "active" },
+                                    owner: { name: user.displayName || user.email.split("@")[0] }
+                                };
+                                window.currentUserRole = "owner";
+
+                                // Set basic permissions
+                                const userData = {
+                                    email: user.email,
+                                    displayName: user.displayName || user.email.split("@")[0],
+                                    role: "owner",
+                                    approved: true,
+                                    permissions: {
+                                        home: ["view"],
+                                        orders: ["view", "search", "create", "edit"],
+                                        inventory: ["view", "edit"],
+                                        customers: ["view", "edit"],
+                                        employees: ["view", "edit"],
+                                        finance: ["view", "reports"],
+                                        analytics: ["view", "export"],
+                                        settings: ["view", "edit"]
+                                    }
+                                };
+
+                                // Store user data
+                                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                                // Update UI
+                                const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                                const userNameEl = document.getElementById("user-name");
+                                const userEmailEl = document.getElementById("user-email");
+                                const userInitialEl = document.getElementById("user-initial");
+
+                                if (userNameEl) userNameEl.textContent = username;
+                                if (userEmailEl) userEmailEl.textContent = user.email;
+                                if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                                // Update business name and plan
+                                const businessNameEl = document.getElementById("business-name");
+                                if (businessNameEl) businessNameEl.textContent = "Temporary Business";
+
+                                const planBadge = document.getElementById("plan-badge");
+                                if (planBadge) {
+                                    planBadge.textContent = "Basic Plan";
+                                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                                }
+
+                                // Hide loading screen if it exists
+                                const loadingScreen = document.getElementById('loadingScreen');
+                                if (loadingScreen) loadingScreen.style.display = 'none';
+
+                                resolve();
+                                return;
+                            }
+                        }
+
+                        // Set user permissions based on role
+                        let userData = {
+                            email: user.email,
+                            displayName: user.displayName || window.currentBusinessData.owner?.name,
+                            role: window.currentUserRole,
+                            approved: true // All business users are approved by default
+                        };
+
+                        // Set permissions based on role
+                        if (window.currentUserRole === 'owner') {
+                            userData.permissions = {
+                                home: ["view"],
+                                orders: ["view", "search", "create", "edit"],
+                                inventory: ["view", "edit"],
+                                customers: ["view", "edit"],
+                                employees: ["view", "edit"],
+                                finance: ["view", "reports"],
+                                analytics: ["view", "export"],
+                                settings: ["view", "edit"]
+                            };
+                        } else if (window.currentUserRole === 'admin') {
+                            userData.permissions = {
+                                home: ["view"],
+                                orders: ["view", "search", "create", "edit"],
+                                inventory: ["view", "edit"],
+                                customers: ["view", "edit"],
+                                employees: ["view", "edit"],
+                                finance: ["view", "reports"],
+                                analytics: ["view", "export"],
+                                settings: ["view", "edit"]
+                            };
+                        } else {
+                            // For staff members, use permissions from their staff document
+                            userData.permissions = window.currentUserPermissions || {
+                                home: ["view"]
+                            };
+                        }
+
+                        console.log('✅ User data created:', {
+                            email: userData.email,
+                            role: userData.role,
+                            businessId: window.currentBusinessId,
+                            businessName: window.currentBusinessData?.businessName,
+                            approved: userData.approved
+                        });
+
+                        // Store user data
+                        localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                        // Update UI
+                        currentUserId = user.uid;
+                        const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+
+                        // Update user info if elements exist
+                        const userNameEl = document.getElementById("user-name");
+                        const userEmailEl = document.getElementById("user-email");
+                        const userInitialEl = document.getElementById("user-initial");
+
+                        if (userNameEl) userNameEl.textContent = username;
+                        if (userEmailEl) userEmailEl.textContent = user.email;
+                        if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                        // Update business name and plan
+                        const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+                        const planType = window.currentBusinessData?.plan?.type || "basic";
+                        const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+                        const businessNameEl = document.getElementById("business-name");
+                        if (businessNameEl) businessNameEl.textContent = businessName;
+
+                        const planBadge = document.getElementById("plan-badge");
+                        if (planBadge) {
+                            planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                            // Set plan badge color based on plan type
+                            if (planType === 'enterprise') {
+                                planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                            } else if (planType === 'professional') {
+                                planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                            } else {
+                                planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                            }
+
+                            // Add trial badge if in trial
+                            if (planStatus === 'trial') {
+                                planBadge.textContent += ' (Trial)';
+                            }
+                        }
+
+                        // Hide loading screen if it exists
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+
+                        // Resolve the promise after authentication completes
+                        resolve();
+                    } catch (error) {
+                        console.error("❌ Permission check failed:", error);
+                        console.error("Error stack:", error.stack);
+                        console.error("User data:", user);
+                        // Don't redirect on error, just log
+                        resolve(); // Resolve anyway to prevent hang
+                    }
+                });
+            });
+        }
+
+        // Load last piece products
+        async function loadLastPieceProducts() {
+            console.log("Loading last piece products...");
+
+            try {
+                // Get current business ID from authentication
+                const businessId = window.currentBusinessId;
+                console.log("🔍 DEBUG: Loading products for business ID:", businessId);
+                console.log("🔍 DEBUG: Window object:", window);
+                let productsSnapshot = null;
+                let usedCollection = null;
+
+                if (!businessId || businessId === "super-admin") {
+                    // Fall back to root collections for super admin or if no business ID
+                    console.log("⚠️ No business ID found, trying root collections...");
+                    const collectionNames = ["Products", "products", "Product", "inventory"];
+
+                    for (const collectionName of collectionNames) {
+                        try {
+                            console.log(`Trying collection: ${collectionName}`);
+                            const productsRef = collection(db, collectionName);
+                            productsSnapshot = await getDocs(productsRef);
+                            console.log(`Collection ${collectionName} has ${productsSnapshot.size} documents`);
+
+                            if (productsSnapshot.size > 0) {
+                                usedCollection = collectionName;
+                                break;
+                            }
+                        } catch (error) {
+                            console.log(`Collection ${collectionName} not accessible:`, error.message);
+                        }
+                    }
+
+                    if (!productsSnapshot || productsSnapshot.size === 0) {
+                        throw new Error("No products found in any collection");
+                    }
+                    console.log(`Using collection: ${usedCollection}`);
+                } else {
+                    // Use business-scoped collection
+                    console.log(`🏢 Loading products for business: ${businessId}`);
+                    console.log(`📍 Collection path: businesses/${businessId}/products`);
+                    const productsRef = collection(db, 'businesses', businessId, 'products');
+                    productsSnapshot = await getDocs(productsRef);
+                    console.log(`✅ Found ${productsSnapshot.size} products for this business`);
+
+                    // Debug: Log all product IDs
+                    if (productsSnapshot.size > 0) {
+                        productsSnapshot.forEach((doc) => {
+                            console.log(`📦 Product ID: ${doc.id}`);
+                        });
+                    }
+
+                    if (!productsSnapshot || productsSnapshot.size === 0) {
+                        throw new Error(`No products found for business: ${businessId}`);
+                    }
+                }
+
+                allProducts = [];
+
+                productsSnapshot.forEach((doc) => {
+                    const product = doc.data();
+                    console.log("Processing product:", product.name);
+                    console.log("Product data:", product);
+
+                    if (product.sizes && typeof product.sizes === 'object') {
+                        // Calculate total stock across all sizes
+                        let totalStock = 0;
+                        const sizesWithStock = [];
+
+                        Object.entries(product.sizes).forEach(([size, sizeObj]) => {
+                            const quantity = sizeObj.quantity || 0;
+                            totalStock += quantity;
+                            if (quantity > 0) {
+                                sizesWithStock.push({
+                                    size: size,
+                                    quantity: quantity,
+                                    barcode: sizeObj.barcode || 'N/A'
+                                });
+                            }
+                        });
+
+                        console.log(`Product ${product.name} - Total stock: ${totalStock}`);
+
+                        // Only add product if it has EXACTLY 1 piece in stock
+                        if (totalStock === 1) {
+                            console.log(`✅ Found product with exactly 1 piece: ${product.name} - Total stock: ${totalStock}`);
+                            allProducts.push({
+                                name: product.name || 'Unnamed Product',
+                                price: product.price || 0,
+                                sku: product.sku || 'N/A',
+                                totalStock: totalStock,
+                                sizesWithStock: sizesWithStock
+                            });
+                        } else {
+                            console.log(`⏭️ Skipping product ${product.name} - Stock: ${totalStock} (not exactly 1)`);
+                        }
+                    } else {
+                        console.log(`⚠️ Product ${product.name} has no sizes or sizes is not an object`);
+                    }
+                });
+
+                console.log(`Found ${allProducts.length} products with last pieces`);
+                renderProducts();
+                populateSizeFilter();
+
+            } catch (error) {
+                console.error("Error loading products:", error);
+                document.getElementById('products-container').innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <div class="text-6xl mb-4">❌</div>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Error loading products</h3>
+                        <p class="text-gray-500">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render products
+        function renderProducts() {
+            const container = document.getElementById('products-container');
+            let filtered = allProducts;
+
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(product =>
+                    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+
+            // Apply size filter
+            if (selectedSize) {
+                filtered = filtered.filter(product =>
+                    product.sizesWithStock.some(sizeObj => sizeObj.size === selectedSize)
+                );
+            }
+
+            // Update results count
+            document.getElementById('results-count').textContent = filtered.length;
+
+            // Clear container
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <div class="text-6xl mb-4">🎉</div>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">No last piece products found</h3>
+                        <p class="text-gray-500">No products have exactly 1 piece in stock.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Create product cards
+            filtered.forEach(product => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow";
+
+                card.innerHTML = `
+                    <div class="text-center">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">${product.name}</h3>
+                        <p class="text-lg font-bold text-[var(--madas-primary)] mb-2">$${product.price}</p>
+                        <p class="text-sm text-gray-500 mb-3">SKU: ${product.sku}</p>
+                        <div class="mb-3">
+                            <p class="text-sm text-gray-600 mb-2">Stock details:</p>
+                            <div class="flex flex-wrap justify-center gap-1">
+                                ${product.sizesWithStock.map(sizeObj =>
+                    `<span class="inline-block bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">Size ${sizeObj.size}: ${sizeObj.quantity}</span>`
+                ).join('')}
+                            </div>
+                        </div>
+                        <span class="inline-block bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Total: ${product.totalStock} piece left!</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Populate size filter
+        function populateSizeFilter() {
+            const sizeFilter = document.getElementById('sizeFilter');
+            const sizes = [...new Set(allProducts.flatMap(p => p.sizesWithStock.map(sizeObj => sizeObj.size)))].sort();
+
+            sizeFilter.innerHTML = '<option value="">All Sizes</option>';
+            sizes.forEach(size => {
+                const option = document.createElement('option');
+                option.value = size;
+                option.textContent = size;
+                sizeFilter.appendChild(option);
+            });
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchTerm = e.target.value;
+                renderProducts();
+            });
+
+            // Size filter
+            document.getElementById('sizeFilter').addEventListener('change', (e) => {
+                selectedSize = e.target.value;
+                renderProducts();
+            });
+
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                    window.location.href = '/login';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    alert('Logout failed. Please try again.');
+                }
+            });
+
+            // New Order button (sidebar)
+            document.querySelector('.sidebar-link:last-of-type').addEventListener('click', () => {
+                window.location.href = './orders.html';
+            });
+        }
+
+        // Initialize page
+        async function init() {
+            console.log("Initializing page...");
+            await checkAuth();
+            await loadLastPieceProducts();
+            setupEventListeners();
+            setupNavigation();
+            console.log("Page initialized successfully!");
+        }
+
+        // Setup navigation functionality
+        function setupNavigation() {
+            // Sidebar toggle for mobile
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+
+            if (menuToggle && sidebar) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('-translate-x-full');
+                });
+            }
+
+            // Finance Dropdown functionality
+            const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+            const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+            const dropdownArrow = document.querySelector(".dropdown-arrow");
+
+            if (financeDropdownBtn && financeDropdownMenu) {
+                financeDropdownBtn.addEventListener("click", () => {
+                    const isOpen = financeDropdownMenu.classList.contains("show");
+
+                    if (isOpen) {
+                        financeDropdownMenu.classList.remove("show");
+                        financeDropdownMenu.classList.add("hidden");
+                        if (dropdownArrow) if (dropdownArrow) dropdownArrow.classList.remove("rotate");
+                    } else {
+                        financeDropdownMenu.classList.remove("hidden");
+                        financeDropdownMenu.classList.add("show");
+                        if (dropdownArrow) if (dropdownArrow) dropdownArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                        financeDropdownMenu.classList.remove("show");
+                        financeDropdownMenu.classList.add("hidden");
+                        if (dropdownArrow) if (dropdownArrow) dropdownArrow.classList.remove("rotate");
+                    }
+                });
+            }
+
+            // Notification Dropdown functionality
+            const notificationBell = document.getElementById("notificationBell");
+            const notificationDropdown = document.getElementById("notificationDropdown");
+            const markAllReadBtn = document.getElementById("markAllReadBtn");
+
+            if (notificationBell && notificationDropdown) {
+                notificationBell.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const isOpen = notificationDropdown.classList.contains("show");
+
+                    if (isOpen) {
+                        notificationDropdown.classList.remove("show");
+                    } else {
+                        notificationDropdown.classList.add("show");
+                        loadNotifications();
+                    }
+                });
+
+                // Close notification dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                        notificationDropdown.classList.remove("show");
+                    }
+                });
+
+                // Mark all as read functionality
+                if (markAllReadBtn) {
+                    markAllReadBtn.addEventListener("click", () => {
+                        markAllNotificationsAsRead();
+                    });
+
+                    // E-commerce Dropdown functionality
+                    document.addEventListener("DOMContentLoaded", () => {
+                        const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+                        const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+                        const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+                        if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+                            ecommerceDropdownBtn.addEventListener("click", (e) => {
+                                e.preventDefault();
+                                const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                                if (isOpen) {
+                                    ecommerceDropdownMenu.classList.remove("show");
+                                    ecommerceDropdownMenu.classList.add("hidden");
+                                    if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                                } else {
+                                    ecommerceDropdownMenu.classList.remove("hidden");
+                                    ecommerceDropdownMenu.classList.add("show");
+                                    if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                                }
+                            });
+
+                            // Close dropdown when clicking outside
+                            document.addEventListener("click", (e) => {
+                                if (!ecommerceDropdownBtn.contains(e.target) && !ecommerceDropdownMenu.contains(e.target)) {
+                                    ecommerceDropdownMenu.classList.remove("show");
+                                    ecommerceDropdownMenu.classList.add("hidden");
+                                    if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Profile button
+            const profileBtn = document.getElementById("profile-btn");
+            if (profileBtn) {
+                profileBtn.addEventListener("click", () => {
+                    window.location.href = "./profile.html";
+                });
+            }
+
+            // Add Product button (sidebar)
+            const addProductBtnSidebar = document.getElementById('addProductBtnSidebar');
+            if (addProductBtnSidebar) {
+                addProductBtnSidebar.addEventListener('click', () => {
+                    window.location.href = './add-product.html';
+                });
+            }
+
+            // Print Products button (sidebar)
+            const printProductsBtnSidebar = document.getElementById('printProductsBtnSidebar');
+            if (printProductsBtnSidebar) {
+                printProductsBtnSidebar.addEventListener('click', () => {
+                    alert('Print functionality not yet implemented.');
+                });
+            }
+        }
+
+        // Notification system functions
+        async function loadNotifications() {
+            try {
+                // Sample notifications - in a real app, these would come from Firestore
+                const sampleNotifications = [
+                    {
+                        id: 1,
+                        title: "Low Stock Alert",
+                        message: "Product 'Nike Air Max' is running low on stock (5 items remaining)",
+                        type: "warning",
+                        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+                        read: false,
+                        icon: "warning"
+                    },
+                    {
+                        id: 2,
+                        title: "New Order Received",
+                        message: "Order #ORD-2024-001 has been placed by customer John Doe",
+                        type: "info",
+                        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+                        read: false,
+                        icon: "receipt_long"
+                    },
+                    {
+                        id: 3,
+                        title: "Product Added",
+                        message: "New product 'Adidas Ultraboost' has been added to inventory",
+                        type: "success",
+                        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+                        read: true,
+                        icon: "add_circle"
+                    }
+                ];
+
+                displayNotifications(sampleNotifications);
+                updateNotificationCount(sampleNotifications.filter(n => !n.read).length);
+            } catch (error) {
+                console.error("Error loading notifications:", error);
+                displayError("Failed to load notifications");
+            }
+        }
+
+        function displayNotifications(notifications) {
+            const notificationList = document.getElementById("notificationList");
+
+            if (!notifications || notifications.length === 0) {
+                notificationList.innerHTML = `
+                    <div class="p-4 text-center text-gray-500">
+                        <span class="material-icons text-4xl text-gray-300 mb-2">notifications_none</span>
+                        <p>No notifications</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const notificationsHtml = notifications.map(notification => `
+                <div class="notification-item ${notification.read ? '' : 'unread'}" data-id="${notification.id}">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <span class="material-icons text-lg ${getNotificationIconColor(notification.type)}">
+                                ${notification.icon}
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900">${notification.title}</p>
+                            <p class="text-sm text-gray-600 mt-1">${notification.message}</p>
+                            <p class="text-xs text-gray-400 mt-2">${formatTimestamp(notification.timestamp)}</p>
+                        </div>
+                        ${!notification.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            notificationList.innerHTML = notificationsHtml;
+
+            // Add click handlers for notification items
+            notificationList.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const notificationId = item.dataset.id;
+                    markNotificationAsRead(notificationId);
+                    item.classList.remove('unread');
+                    item.querySelector('.w-2.h-2')?.remove();
+                });
+            });
+        }
+
+        function getNotificationIconColor(type) {
+            switch (type) {
+                case 'warning': return 'text-orange-500';
+                case 'error': return 'text-red-500';
+                case 'success': return 'text-green-500';
+                case 'info':
+                default: return 'text-blue-500';
+            }
+        }
+
+        function formatTimestamp(timestamp) {
+            const now = new Date();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / (1000 * 60));
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            if (minutes < 60) {
+                return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            } else if (hours < 24) {
+                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            } else {
+                return `${days} day${days !== 1 ? 's' : ''} ago`;
+            }
+        }
+
+        function updateNotificationCount(count) {
+            const notificationCount = document.getElementById("notificationCount");
+            if (notificationCount) {
+                if (count > 0) {
+                    notificationCount.textContent = count > 99 ? '99+' : count;
+                    notificationCount.style.display = 'flex';
+                } else {
+                    notificationCount.style.display = 'none';
+                }
+            }
+        }
+
+        function markNotificationAsRead(notificationId) {
+            console.log(`Marking notification ${notificationId} as read`);
+            const currentCount = parseInt(document.getElementById("notificationCount").textContent) || 0;
+            updateNotificationCount(Math.max(0, currentCount - 1));
+        }
+
+        function markAllNotificationsAsRead() {
+            console.log("Marking all notifications as read");
+            updateNotificationCount(0);
+
+            const notificationList = document.getElementById("notificationList");
+            notificationList.querySelectorAll('.notification-item').forEach(item => {
+                item.classList.remove('unread');
+                item.querySelector('.w-2.h-2')?.remove();
+            });
+        }
+
+        function displayError(message) {
+            const notificationList = document.getElementById("notificationList");
+            notificationList.innerHTML = `
+                <div class="p-4 text-center text-red-500">
+                    <span class="material-icons text-4xl text-red-300 mb-2">error</span>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        // Dark mode toggle functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+            }
+        }
+
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+    </script>
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

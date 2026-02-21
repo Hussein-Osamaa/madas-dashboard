@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reports - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+    if (window.innerWidth < 1024 && !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        sidebar.classList.add('-translate-x-full'); } }); </script>
+
+        <script>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+        <link rel="icon" type="image/x-icon" href="/assets/img/madas-logo.png">
+        <script src="../js/permissions.js"></script>
+        <!-- Firebase Permission Checker -->
+        <script type="module" src="../../js/firebase-permission-check.js"></script>
+        <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:70470e2204065b4590583d3"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global variables
+        let currentUser = null;
+
+        // Update user info in header
+        function updateUserInfo(user) {
+            const userNameElement = document.getElementById('user-name');
+            const userEmailElement = document.getElementById('user-email');
+            const userInitialElement = document.getElementById('user-initial');
+
+            if (user) {
+                const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+                const email = user.email || 'No email';
+                const initial = displayName.charAt(0).toUpperCase();
+
+                if (userNameElement) userNameElement.textContent = displayName;
+                if (userEmailElement) userEmailElement.textContent = email;
+                if (userInitialElement) userInitialElement.textContent = initial;
+            } else {
+                if (userNameElement) userNameElement.textContent = 'Guest';
+                if (userEmailElement) userEmailElement.textContent = 'guest@example.com';
+                if (userInitialElement) userInitialElement.textContent = 'G';
+            }
+        }
+
+        // Auth state change listener
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            updateUserInfo(user);
+
+            if (!user) {
+                // Redirect to login if not authenticated
+                window.location.href = "/login";
+            }
+        });
+
+        // Logout functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            // Update user info immediately when DOM is loaded
+            if (currentUser) {
+                updateUserInfo(currentUser);
+            }
+
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    try {
+                        await signOut(auth);
+                        window.location.href = '/login';
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                        alert('Error signing out. Please try again.');
+                    }
+                });
+            }
+
+            // Profile button
+            const profileBtn = document.getElementById('profile-btn');
+            if (profileBtn) {
+                profileBtn.addEventListener('click', () => {
+                    window.location.href = './profile.html';
+                });
+            }
+        });
+        </script>
+        <style>
+            :root {
+                --madas-primary: #27491F;
+                --madas-dark: #F0CAE1;
+                --madas-light: #F4F4F4;
+                --madas-accent: #FFD300;
+                --bg-main: #F4F4F4;
+                --text-main: #1F2937;
+                --text-secondary: #6B7280;
+                --card-bg: #FFFFFF;
+                --card-border: #E5E7EB;
+                --sidebar-bg: #FFFFFF;
+                --header-bg: #FFFFFF;
+            }
+
+            body {
+                font-family: 'Inter', sans-serif;
+                background: var(--bg-main) !important;
+                color: var(--text-main) !important;
+                transition: background 0.5s, color 0.5s;
+            }
+
+            /* Dark mode styles */
+            body.dark-mode {
+                --madas-primary: #FFD700;
+                --madas-dark: #232946;
+                --madas-light: #181825;
+                --madas-accent: #7209b7;
+                --bg-main: #181825;
+                --text-main: #F8F8F2;
+                --text-secondary: #A8A8A8;
+                --card-bg: #232946;
+                --card-border: #2D3748;
+                --sidebar-bg: #232946;
+                --header-bg: #232946;
+            }
+
+            .dark-toggle {
+                background: var(--madas-accent);
+                border: 2px solid var(--madas-primary);
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .dark-toggle svg {
+                width: 20px;
+                height: 20px;
+                fill: var(--madas-primary);
+                transition: fill 0.3s;
+            }
+
+            .dark-toggle:hover {
+                transform: scale(1.05);
+                box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+            }
+
+            .dark-toggle:active {
+                transform: scale(0.95);
+            }
+
+            /* Transition all elements */
+            * {
+                transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+            }
+
+            /* Override specific backgrounds */
+            .bg-white {
+                background-color: var(--card-bg) !important;
+            }
+
+            .bg-gray-50 {
+                background-color: var(--bg-main) !important;
+            }
+
+            .text-gray-900 {
+                color: var(--text-main) !important;
+            }
+
+            .text-gray-600 {
+                color: var(--text-secondary) !important;
+            }
+
+            .text-gray-500 {
+                color: var(--text-secondary) !important;
+            }
+
+            .border-gray-100 {
+                border-color: var(--card-border) !important;
+            }
+
+            .bg-gray-50 {
+                background-color: var(--bg-main) !important;
+            }
+
+            .bg-gray-100 {
+                background-color: var(--card-bg) !important;
+            }
+
+            /* Sidebar and header */
+            #sidebar {
+                background-color: var(--sidebar-bg) !important;
+            }
+
+            .bg-white {
+                background-color: var(--card-bg) !important;
+            }
+
+            /* Enhanced Sidebar Link Styles */
+            .sidebar-link {
+                position: relative;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow: hidden;
+            }
+
+            /* Override Tailwind text color classes */
+            .sidebar-link.text-gray-700,
+            .sidebar-link.text-gray-600 {
+                color: var(--text-main) !important;
+            }
+
+            body.dark-mode .sidebar-link.text-gray-700,
+            body.dark-mode .sidebar-link.text-gray-600 {
+                color: var(--text-main) !important;
+            }
+
+
+
+            .sidebar-link:hover {
+                transform: translateX(6px) scale(1.02);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                background: var(--madas-light);
+            }
+
+            .sidebar-link:active {
+                transform: translateX(3px) scale(0.98);
+                transition: all 0.1s ease;
+            }.finance-dropdown-menu.show {
+                display: block;
+                animation: slideDown 0.3s ease;
+                background: white !important;
+                border: 1px solid #e5e7eb !important;
+                border-radius: 8px !important;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+                margin: 8px 0 !important;
+                padding: 8px 0 !important;
+            }
+
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+
+            .card-hover:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            }
+
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .stat-card {
+                position: relative;
+                overflow: hidden;
+            }
+
+            .stat-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(135deg, var(--madas-primary), var(--madas-accent));
+            }
+
+            .report-card {
+                border: 2px solid transparent;
+                transition: all 0.3s ease;
+            }
+
+            .report-card:hover {
+                border-color: var(--madas-primary);
+                transform: translateY(-2px);
+            }
+
+            .report-card.selected {
+                border-color: var(--madas-primary);
+                background: rgba(39, 73, 31, 0.05);
+            }
+
+            /* Finance Dropdown Styles */
+            .finance-dropdown {
+                position: relative;
+            }
+
+            .finance-dropdown-menu {
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .finance-dropdown-menu.show {
+                display: block;
+                animation: slideDown 0.3s ease;
+            }
+
+            .finance-dropdown-menu.hidden {
+                display: none;
+            }
+
+            .dropdown-arrow.rotate {
+                transform: rotate(180deg);
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Input fields and form elements */
+            input[type="text"],
+            input[type="number"],
+            input[type="email"],
+            input[type="password"],
+            input[type="date"],
+            textarea,
+            select {
+                background-color: var(--card-bg) !important;
+                color: var(--text-main) !important;
+                border-color: var(--card-border) !important;
+                border-width: 1px !important;
+                border-style: solid !important;
+            }
+
+            input[type="text"]:focus,
+            input[type="number"]:focus,
+            input[type="email"]:focus,
+            input[type="password"]:focus,
+            input[type="date"]:focus,
+            textarea:focus,
+            select:focus {
+                border-color: var(--madas-accent) !important;
+                box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+                outline: none !important;
+            }
+
+            input[type="text"]::placeholder,
+            input[type="number"]::placeholder,
+            input[type="email"]::placeholder,
+            input[type="password"]::placeholder,
+            textarea::placeholder {
+                color: var(--text-secondary) !important;
+            }
+
+            input[type="date"] {
+                background-color: var(--card-bg) !important;
+                color: var(--text-main) !important;
+                border-color: var(--card-border) !important;
+            }
+
+            input[type="date"]::-webkit-calendar-picker-indicator {
+                filter: var(--text-main) !important;
+                opacity: 0.7;
+            }
+
+            input[type="date"]::-webkit-calendar-picker-indicator:hover {
+                opacity: 1;
+            }
+
+            /* Form labels */
+            label {
+                color: var(--text-main) !important;
+            }
+
+            /* Checkbox styling */
+            input[type="checkbox"] {
+                background-color: var(--card-bg) !important;
+                border-color: var(--card-border) !important;
+            }
+
+            input[type="checkbox"]:checked {
+                background-color: var(--madas-accent) !important;
+                border-color: var(--madas-accent) !important;
+            }
+
+            /* Main content background */
+            main {
+                background-color: var(--bg-main) !important;
+            }
+
+            /* Modal styling */
+            .modal,
+            .modal .bg-white,
+            .glass-effect {
+                background-color: var(--card-bg) !important;
+            }
+
+            /* Modal overlay */
+            #generateReportModal {
+                background-color: rgba(0, 0, 0, 0.5) !important;
+            }
+
+            /* Sidebar scrolling styles */
+            .overflow-y-auto {
+                scrollbar-width: thin;
+                scrollbar-color: var(--madas-primary) transparent;
+            }
+
+            .overflow-y-auto::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .overflow-y-auto::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .overflow-y-auto::-webkit-scrollbar-thumb {
+                background-color: var(--madas-primary);
+                border-radius: 3px;
+                opacity: 0.3;
+            }
+
+            .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+                opacity: 0.6;
+            }
+
+            /* Unified Dropdown Menu Styling - No 3D Effects */
+            .inventory-submenu,
+            .finance-dropdown-menu,
+            .ecommerce-dropdown-menu {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Unified Dropdown Items - Same as Main Navigation */
+            .inventory-submenu .sidebar-link,
+            .finance-dropdown-menu .sidebar-link,
+            .ecommerce-dropdown-menu .sidebar-link {
+                padding: 10px 14px !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .inventory-submenu .sidebar-link:hover,
+            .finance-dropdown-menu .sidebar-link:hover,
+            .ecommerce-dropdown-menu .sidebar-link:hover {
+                background: var(--madas-light) !important;
+                color: var(--madas-primary) !important;
+            }
+
+            /* Ensure dropdown hover maintains color in dark mode */
+            body.dark-mode .inventory-submenu .sidebar-link:hover,
+            body.dark-mode .finance-dropdown-menu .sidebar-link:hover,
+            body.dark-mode .ecommerce-dropdown-menu .sidebar-link:hover {
+                color: var(--madas-primary) !important;
+            }
+
+
+            /* Ensure all dropdown text sizes are uniform */
+            .inventory-submenu .sidebar-link span,
+            .finance-dropdown-menu .sidebar-link span,
+            .ecommerce-dropdown-menu .sidebar-link span {
+                font-size: 0.8rem !important;
+            }
+
+            /* Make dropdown icons smaller */
+            .inventory-submenu .material-icons,
+            .finance-dropdown-menu .material-icons,
+            .ecommerce-dropdown-menu .material-icons {
+                font-size: 18px !important;
+            }
+
+            /* Unified Dropdown Items Active State - EXACT Same as Main Navigation */
+            .inventory-submenu .sidebar-link.active,
+            .finance-dropdown-menu .sidebar-link.active,
+            .ecommerce-dropdown-menu .sidebar-link.active {
+                background: var(--madas-light) !important;
+                color: var(--madas-primary) !important;
+                font-weight: 600 !important;
+            }
+
+            .inventory-submenu .sidebar-link.active .material-icons,
+            .finance-dropdown-menu .sidebar-link.active .material-icons,
+            .ecommerce-dropdown-menu .sidebar-link.active .material-icons {
+                color: var(--madas-primary) !important;
+            }
+
+            /* Unified Dropdown Button Styling */
+            .inventory-dropdown button,
+            .finance-dropdown button,
+            .ecommerce-dropdown button {
+                background: transparent !important;
+                border: none !important;
+                padding: 10px 14px !important;
+                border-radius: 8px !important;
+                transition: all 0.2s ease !important;
+                width: 100% !important;
+                text-align: left !important;
+            }
+
+            .inventory-dropdown button:hover,
+            .finance-dropdown button:hover,
+            .ecommerce-dropdown button:hover {
+                background: var(--madas-light) !important;
+            }
+
+            /* Unified Dropdown Arrow */
+            .dropdown-arrow {
+                transition: transform 0.2s ease !important;
+            }
+
+            .dropdown-arrow.rotate {
+                transform: rotate(180deg) !important;
+            }
+
+            /* Unified Visible States for Dropdowns - No 3D Effects */
+            .inventory-submenu:not(.hidden) {
+                opacity: 1 !important;
+                transform: translateY(0) !important;
+                pointer-events: auto !important;
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .finance-dropdown-menu.show {
+                display: block !important;
+                animation: slideDown 0.3s ease !important;
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .ecommerce-dropdown-menu.show {
+                display: block !important;
+                animation: slideDown 0.3s ease !important;
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        </style>
+</head>
+
+<body class="font-sans">
+    <!-- Header -->
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <div>
+                        <h1 id="business-name" class="text-xl font-bold text-[var(--madas-primary)]">Loading...</h1>
+                        <button id="plan-badge" onclick="window.location.href='/pages/settings.html#plans'"
+                            class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer">
+                            Loading Plan...
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <a href="/dashboard"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/pages/Orders/orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                    <a href="/pages/pos.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">point_of_sale</span>
+                        <span>POS</span>
+                    </a>
+
+                    <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button
+                            class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all"
+                            id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200"
+                                id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="/pages/Inventory/products.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="/pages/Inventory/collections.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="/pages/Inventory/product-reviews.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="/pages/Inventory/low-stock.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/Customers/Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+
+                    <!-- E-commerce Dropdown -->
+                    <div class="ecommerce-dropdown">
+                        <button id="ecommerce-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">storefront</span>
+                                <span>E-commerce</span>
+                            </div>
+                            <span class="material-icons dropdown-arrow transition-transform duration-200"
+                                id="ecommerce-arrow">expand_more</span>
+                        </button>
+                        <div id="ecommerce-dropdown-menu" class="ecommerce-dropdown-menu hidden">
+                            <a href="/pages/Web-builder/theme-library.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">web</span>
+                                <span>Website Builder</span>
+                            </a>
+                            <a href="/pages/shoes-store.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">shopping_bag</span>
+                                <span>Shoes Store</span>
+                            </a>
+                            <a href="/pages/advanced/domains.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">language</span>
+                                <span>Custom Domains</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Finance Dropdown -->
+                    <div class="finance-dropdown">
+                        <button id="finance-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">account_balance_wallet</span>
+                                <span>Finance</span>
+                            </div>
+                            <span
+                                class="material-icons dropdown-arrow transition-transform duration-200">expand_more</span>
+                        </button>
+                        <div id="finance-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="/pages/Finance/finance.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">account_balance</span>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/pages/Finance/deposit-money-simple.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">add_circle</span>
+                                <span>Deposits</span>
+                            </a>
+                            <a href="/pages/Finance/expenses.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">receipt</span>
+                                <span>Expenses</span>
+                            </a>
+                            <a href="/pages/Finance/analytics.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">analytics</span>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="/pages/Finance/reports.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">assessment</span>
+                                <span>Reports</span>
+                            </a>
+                            <a href="/pages/Finance/insights.html"
+                                class="sidebar-link submenu-link flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">lightbulb</span>
+                                <span>Insights</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="/pages/settings/general-settings.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">settings</span>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>New Order</span>
+                            </button>
+                            <button
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Add Product</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="p-6 lg:p-8">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Business Reports</h2>
+                            <p class="text-gray-600">Generate and manage comprehensive business reports</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="generateReportBtn"
+                                class="bg-[var(--madas-primary)] text-white px-6 py-3 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                                <span class="material-icons">add</span>
+                                <span>Generate Report</span>
+                            </button>
+                            <button id="scheduleReportBtn"
+                                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                                <span class="material-icons">schedule</span>
+                                <span>Schedule Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Filters -->
+                <div class="glass-effect rounded-xl p-6 mb-8 shadow-sm">
+                    <div class="flex flex-col lg:flex-row gap-4 items-center">
+                        <div class="flex items-center space-x-4">
+                            <label class="text-sm font-medium text-gray-700">
+                                Start Date:
+                                <input type="date" id="startDate"
+                                    class="ml-2 border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]" />
+                            </label>
+                            <label class="text-sm font-medium text-gray-700">
+                                End Date:
+                                <input type="date" id="endDate"
+                                    class="ml-2 border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]" />
+                            </label>
+                        </div>
+                        <select id="reportType"
+                            class="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]">
+                            <option value="">All Report Types</option>
+                            <option value="sales">Sales Reports</option>
+                            <option value="inventory">Inventory Reports</option>
+                            <option value="financial">Financial Reports</option>
+                            <option value="customer">Customer Reports</option>
+                        </select>
+                        <button id="filterReportsBtn"
+                            class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                            <span class="material-icons">filter_list</span>
+                            <span>Filter</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Report Templates -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Sales Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="sales">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-blue-600">point_of_sale</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Sales</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Sales Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Comprehensive sales analysis with revenue trends, top
+                            products, and performance metrics.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 2 hours ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="inventory">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-green-600">inventory_2</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span
+                                    class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Inventory</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Inventory Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Stock levels, low stock alerts, and inventory turnover
+                            analysis.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 1 day ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Financial Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="financial">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-purple-600">account_balance_wallet</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span
+                                    class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">Financial</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Financial Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Profit & loss, cash flow, and financial performance
+                            analysis.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 3 days ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customer Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="customer">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-orange-600">group</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span
+                                    class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">Customer</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Customer Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Customer behavior, preferences, and lifetime value
+                            analysis.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 1 week ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Performance Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="performance">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-red-600">trending_up</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">Performance</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Performance Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Business performance metrics and KPI analysis.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 2 weeks ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="custom">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-gray-600">settings</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">Custom</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Custom Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Create a custom report with your specific requirements.
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Create new</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">add</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Reports -->
+                <div class="glass-effect rounded-xl p-6 shadow-sm mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)]">Recent Reports</h3>
+                        <button class="text-[var(--madas-primary)] hover:text-[#1f3c19] text-sm font-medium">
+                            View All
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Report Name</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Type</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Generated</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Size</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentReportsTable">
+                                <!-- Recent reports will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Scheduled Reports -->
+                <div class="glass-effect rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)]">Scheduled Reports</h3>
+                        <button id="addScheduleBtn"
+                            class="bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                            <span class="material-icons text-sm">add</span>
+                            <span>Add Schedule</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="scheduledReportsGrid">
+                        <!-- Scheduled reports will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Generate Report Modal -->
+    <div id="generateReportModal" class="fixed inset-0 hidden flex items-center justify-center z-50"
+        style="background-color: rgba(0, 0, 0, 0.5);">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-[var(--madas-primary)]">Generate Report</h3>
+                <button type="button" id="closeGenerateModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+
+            <form id="generateReportForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Report Type *</label>
+                    <select id="modalReportType" required
+                        class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent">
+                        <option value="">Select Report Type</option>
+                        <option value="sales">Sales Report</option>
+                        <option value="inventory">Inventory Report</option>
+                        <option value="financial">Financial Report</option>
+                        <option value="customer">Customer Report</option>
+                        <option value="performance">Performance Report</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date Range *</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" id="modalStartDate" required
+                            class="border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                        <input type="date" id="modalEndDate" required
+                            class="border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Format</label>
+                    <select id="reportFormat"
+                        class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent">
+                        <option value="pdf">PDF</option>
+                        <option value="excel">Excel</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Include Charts</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="includeCharts" checked
+                            class="w-4 h-4 text-[var(--madas-primary)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--madas-accent)] focus:ring-2">
+                        <span class="text-sm text-gray-600">Include visual charts and graphs</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button type="button" id="cancelGenerateBtn"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="generateReportSubmitBtn"
+                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                        Generate Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Permission-based UI controls for reports page
+        document.addEventListener("DOMContentLoaded", async () => {
+            // Initialize permission manager
+            await window.permissionManager.init();
+
+            // Apply permission-based UI controls
+            const uiControls = {
+                'generateReportBtn': { section: 'reports', permission: 'generate' },
+                'addScheduleBtn': { section: 'reports', permission: 'schedule' },
+                'exportReportsBtn': { section: 'reports', permission: 'export' }
+            };
+
+            window.permissionManager.applyUI(uiControls);
+
+            // Apply view-only restrictions if user only has view permission
+            window.permissionManager.applyViewOnlyRestrictions('reports');
+
+            // Add permission checks to report generation
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            if (generateReportBtn) {
+                generateReportBtn.addEventListener('click', () => {
+                    if (window.permissionManager.canPerformAction('reports', 'generate')) {
+                        // Show generate report modal
+                        document.getElementById('generateReportModal').classList.remove('hidden');
+                    } else {
+                        alert('You don\'t have permission to generate reports');
+                    }
+                });
+            }
+
+            // Add permission checks to schedule reports
+            const addScheduleBtn = document.getElementById('addScheduleBtn');
+            if (addScheduleBtn) {
+                addScheduleBtn.addEventListener('click', () => {
+                    if (window.permissionManager.canPerformAction('reports', 'schedule')) {
+                        alert('Schedule report functionality will be implemented here');
+                    } else {
+                        alert('You don\'t have permission to schedule reports');
+                    }
+                });
+            }
+
+            // Add permission checks to download buttons
+            const downloadButtons = document.querySelectorAll('[data-report-type] button');
+            downloadButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (window.permissionManager.canPerformAction('reports', 'export')) {
+                        alert('Download functionality will be implemented here');
+                    } else {
+                        alert('You don\'t have permission to export reports');
+                    }
+                });
+            });
+        });
+
+        // Dark mode toggle functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z"/>';
+            }
+        }
+
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+
+            // Finance Dropdown functionality
+            const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+            const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+            const financeDropdownArrow = document.querySelector("#finance-dropdown-btn .dropdown-arrow");
+
+            if (financeDropdownBtn && financeDropdownMenu && financeDropdownArrow) {
+                financeDropdownBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !financeDropdownMenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        financeDropdownMenu.classList.add("hidden");
+                        financeDropdownArrow.classList.remove("rotate");
+                    } else {
+                        financeDropdownMenu.classList.remove("hidden");
+                        financeDropdownArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                        financeDropdownMenu.classList.add("hidden");
+                        financeDropdownArrow.classList.remove("rotate");
+                    }
+                });
+            }
+        });
+    </script>
+    <script type="module" src="../js/reports.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, getDocs, deleteDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFinanceDataManager } from "../../js/finance-data.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔐 User authenticated:', user.email);
+
+                // ============================================
+                // TENANT ISOLATION: Initialize Business Context
+                // ============================================
+
+                // Check for super admin users first (bypass business detection)
+                const superAdminEmails = [
+                    "hesainosama@gmail.com",
+                    "test@example.com"
+                ];
+
+                if (superAdminEmails.includes(user.email)) {
+                    console.log("🔑 Super admin detected - granting full access");
+                    window.currentUserRole = "super-admin";
+                    window.currentBusinessId = "super-admin";
+                    window.currentBusinessData = {
+                        businessName: "Super Admin",
+                        plan: { type: "enterprise", status: "active" }
+                    };
+
+                    // Set super admin permissions
+                    const userData = {
+                        email: user.email,
+                        displayName: user.displayName || "Super Admin",
+                        role: "super-admin",
+                        approved: true,
+                        permissions: {
+                            home: ["view"],
+                            orders: ["view", "search", "create", "edit"],
+                            inventory: ["view", "edit"],
+                            customers: ["view", "edit"],
+                            employees: ["view", "edit"],
+                            finance: ["view", "reports"],
+                            analytics: ["view", "export"],
+                            settings: ["view", "edit"],
+                            admin: ["view", "manage_all_businesses"]
+                        }
+                    };
+
+                    // Store user data
+                    localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                    // Update UI
+                    const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                    const userNameEl = document.getElementById("user-name");
+                    const userEmailEl = document.getElementById("user-email");
+                    const userInitialEl = document.getElementById("user-initial");
+
+                    if (userNameEl) userNameEl.textContent = username;
+                    if (userEmailEl) userEmailEl.textContent = user.email;
+                    if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                    // Update business name and plan
+                    const businessNameEl = document.getElementById("business-name");
+                    if (businessNameEl) businessNameEl.textContent = "Super Admin";
+
+                    const planBadge = document.getElementById("plan-badge");
+                    if (planBadge) {
+                        planBadge.textContent = "Enterprise Plan";
+                        planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                    }
+
+                    // Hide loading screen if it exists
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+
+                    return;
+                }
+
+                // Step 1: Find user's business (check if owner)
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    // User is a business owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    window.currentBusinessId = businessDoc.id;
+                    window.currentBusinessData = businessDoc.data();
+                    window.currentUserRole = 'owner';
+
+                    console.log('✅ Business Owner:', window.currentBusinessData.businessName);
+                    console.log('🏢 Business ID:', window.currentBusinessId);
+                    console.log('📋 Plan:', window.currentBusinessData.plan?.type);
+
+                } else {
+                    // Step 2: Check if user is staff member
+                    const allBusinesses = await getDocs(collection(db, "businesses"));
+                    let foundBusiness = false;
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        const businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                        const staffDoc = await getDoc(staffRef);
+
+                        if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                            window.currentBusinessId = businessId;
+                            window.currentBusinessData = businessDoc.data();
+                            window.currentUserRole = staffData.role;
+                            window.currentUserPermissions = staffData.permissions;
+
+                            console.log('✅ Staff Member:', window.currentBusinessData.businessName);
+                            console.log('🏢 Business ID:', window.currentBusinessId);
+                            console.log('👤 Role:', window.currentUserRole);
+
+                            foundBusiness = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundBusiness) {
+                        console.warn("❌ User not associated with any business.");
+                        console.log("🔍 User email:", user.email);
+                        console.log("🔍 User UID:", user.uid);
+
+                        // For now, create a temporary business context for testing
+                        console.log("⚠️ Creating temporary business context for testing...");
+                        window.currentBusinessId = "temp-business";
+                        window.currentBusinessData = {
+                            businessName: "Temporary Business",
+                            plan: { type: "basic", status: "active" },
+                            owner: { name: user.displayName || user.email.split("@")[0] }
+                        };
+                        window.currentUserRole = "owner";
+
+                        // Set basic permissions
+                        const userData = {
+                            email: user.email,
+                            displayName: user.displayName || user.email.split("@")[0],
+                            role: "owner",
+                            approved: true,
+                            permissions: {
+                                home: ["view"],
+                                orders: ["view", "search", "create", "edit"],
+                                inventory: ["view", "edit"],
+                                customers: ["view", "edit"],
+                                employees: ["view", "edit"],
+                                finance: ["view", "reports"],
+                                analytics: ["view", "export"],
+                                settings: ["view", "edit"]
+                            }
+                        };
+
+                        // Store user data
+                        localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                        // Update UI
+                        const username = userData.displayName || user.displayName || user.email.split("@")[0];
+                        const userNameEl = document.getElementById("user-name");
+                        const userEmailEl = document.getElementById("user-email");
+                        const userInitialEl = document.getElementById("user-initial");
+
+                        if (userNameEl) userNameEl.textContent = username;
+                        if (userEmailEl) userEmailEl.textContent = user.email;
+                        if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+                        // Update business name and plan
+                        const businessNameEl = document.getElementById("business-name");
+                        if (businessNameEl) businessNameEl.textContent = "Temporary Business";
+
+                        const planBadge = document.getElementById("plan-badge");
+                        if (planBadge) {
+                            planBadge.textContent = "Basic Plan";
+                            planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                        }
+
+                        // Hide loading screen if it exists
+                        const loadingScreen = document.getElementById('loadingScreen');
+                        if (loadingScreen) loadingScreen.style.display = 'none';
+
+                        return;
+                    }
+                }
+
+                // Set user permissions based on role
+                let userData = {
+                    email: user.email,
+                    displayName: user.displayName || window.currentBusinessData.owner?.name,
+                    role: window.currentUserRole,
+                    approved: true // All business users are approved by default
+                };
+
+                // Set permissions based on role
+                if (window.currentUserRole === 'owner') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else if (window.currentUserRole === 'admin') {
+                    userData.permissions = {
+                        home: ["view"],
+                        orders: ["view", "search", "create", "edit"],
+                        inventory: ["view", "edit"],
+                        customers: ["view", "edit"],
+                        employees: ["view", "edit"],
+                        finance: ["view", "reports"],
+                        analytics: ["view", "export"],
+                        settings: ["view", "edit"]
+                    };
+                } else {
+                    // For staff members, use permissions from their staff document
+                    userData.permissions = window.currentUserPermissions || {
+                        home: ["view"]
+                    };
+                }
+
+                ;
+            }
+
+                console.log('✅ User data created:', {
+                email: userData.email,
+                role: userData.role,
+                businessId: window.currentBusinessId,
+                businessName: window.currentBusinessData?.businessName,
+                approved: userData.approved
+            });
+
+            // Store user data
+            localStorage.setItem("madasUser", JSON.stringify(userData));
+
+            // Update UI
+            currentUserId = user.uid;
+            const username = userData.displayName || window.currentBusinessData?.owner?.name || user.displayName || user.email.split("@")[0];
+
+            // Update user info if elements exist
+            const userNameEl = document.getElementById("user-name");
+            const userEmailEl = document.getElementById("user-email");
+            const userInitialEl = document.getElementById("user-initial");
+
+            if (userNameEl) userNameEl.textContent = username;
+            if (userEmailEl) userEmailEl.textContent = user.email;
+            if (userInitialEl) userInitialEl.textContent = username.charAt(0).toUpperCase();
+
+            // Update business name and plan
+            const businessName = window.currentBusinessData?.businessName || "DIGIX Admin";
+            const planType = window.currentBusinessData?.plan?.type || "basic";
+            const planStatus = window.currentBusinessData?.plan?.status || "active";
+
+            const businessNameEl = document.getElementById("business-name");
+            if (businessNameEl) businessNameEl.textContent = businessName;
+
+            const planBadge = document.getElementById("plan-badge");
+            if (planBadge) {
+                planBadge.textContent = `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`;
+
+                // Set plan badge color based on plan type
+                if (planType === 'enterprise') {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer";
+                } else if (planType === 'professional') {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer";
+                } else {
+                    planBadge.className = "text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer";
+                }
+
+                // Add trial badge if in trial
+                if (planStatus === 'trial') {
+                    planBadge.textContent += ' (Trial)';
+                }
+            }
+
+            // Hide loading screen if it exists
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) loadingScreen.style.display = 'none';
+
+            // Initialize finance data manager and load reports data
+            await loadReportsData();
+
+        } catch (error) {
+            console.error("Permission check failed:", error);
+            window.location.href = "/login";
+        }
+        });
+
+        // Initialize finance data manager
+        let financeManager = null;
+
+        // Load reports data from finance module
+        async function loadReportsData() {
+            if (!window.currentBusinessId) return;
+
+            try {
+                // Initialize finance data manager
+                if (!financeManager) {
+                    financeManager = getFinanceDataManager(db, window.currentBusinessId);
+                    await financeManager.initialize();
+                    
+                    // Subscribe to data changes
+                    financeManager.subscribe((data) => {
+                        updateReportsUI(data);
+                    });
+                } else {
+                    await financeManager.refresh();
+                }
+
+                // Get finance summary for reports
+                const summary = financeManager.getSummary();
+                
+                // Update recent reports table with finance data
+                updateRecentReportsTable(summary);
+            } catch (error) {
+                console.error("Error loading reports data:", error);
+            }
+        }
+
+        // Update reports UI
+        function updateReportsUI(data) {
+            const summary = financeManager.getSummary();
+            updateRecentReportsTable(summary);
+        }
+
+        // Update recent reports table
+        function updateRecentReportsTable(summary) {
+            const recentReportsTable = document.getElementById('recentReportsTable');
+            if (!recentReportsTable) return;
+
+            // Create reports from finance data
+            const reports = [
+                {
+                    name: 'Financial Summary Report',
+                    type: 'Financial',
+                    generated: new Date().toLocaleDateString(),
+                    size: '2.5 MB',
+                    status: 'Completed'
+                },
+                {
+                    name: 'Expenses Report',
+                    type: 'Financial',
+                    generated: new Date().toLocaleDateString(),
+                    size: '1.8 MB',
+                    status: 'Completed'
+                },
+                {
+                    name: 'Deposits Report',
+                    type: 'Financial',
+                    generated: new Date().toLocaleDateString(),
+                    size: '1.2 MB',
+                    status: 'Completed'
+                }
+            ];
+
+            recentReportsTable.innerHTML = reports.map(report => `
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-4 text-sm text-gray-900">${report.name}</td>
+                    <td class="py-3 px-4 text-sm">
+                        <span class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">${report.type}</span>
+                    </td>
+                    <td class="py-3 px-4 text-sm text-gray-600">${report.generated}</td>
+                    <td class="py-3 px-4 text-sm text-gray-600">${report.size}</td>
+                    <td class="py-3 px-4 text-sm">
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">${report.status}</span>
+                    </td>
+                    <td class="py-3 px-4 text-sm">
+                        <button class="text-[var(--madas-primary)] hover:text-[#1f3c19] mr-3">
+                            <span class="material-icons text-sm">download</span>
+                        </button>
+                        <button class="text-red-600 hover:text-red-800">
+                            <span class="material-icons text-sm">delete</span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Logout logic
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                auth.signOut().then(() => {
+                    window.location.href = "/login";
+                }).catch((error) => {
+                    console.error("Logout error:", error);
+                    window.location.href = "/login";
+                });
+            });
+        }
+
+        // Profile button
+        const profileBtn = document.getElementById("profile-btn");
+        if (profileBtn) {
+            profileBtn.addEventListener("click", () => {
+                window.location.href = "/pages/profile.html";
+            });
+        }
+
+        // Finance Dropdown functionality
+        const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+        const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+        const financeArrow = document.querySelector("#finance-dropdown-btn .dropdown-arrow");
+
+        if (financeDropdownBtn && financeDropdownMenu) {
+            financeDropdownBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const isOpen = financeDropdownMenu.classList.contains("show");
+
+                if (isOpen) {
+                    financeDropdownMenu.classList.remove("show");
+                    financeDropdownMenu.classList.add("hidden");
+                    if (financeArrow) financeArrow.classList.remove("rotate");
+                } else {
+                    financeDropdownMenu.classList.remove("hidden");
+                    financeDropdownMenu.classList.add("show");
+                    if (financeArrow) financeArrow.classList.add("rotate");
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                    financeDropdownMenu.classList.remove("show");
+                    financeDropdownMenu.classList.add("hidden");
+                    if (financeArrow) financeArrow.classList.remove("rotate");
+                }
+            });
+        }
+
+        // E-commerce Dropdown functionality
+        const ecommerceDropdownBtn = document.getElementById("ecommerce-dropdown-btn");
+        const ecommerceDropdownMenu = document.getElementById("ecommerce-dropdown-menu");
+        const ecommerceArrow = document.getElementById("ecommerce-arrow");
+
+        if (ecommerceDropdownBtn && ecommerceDropdownMenu) {
+            ecommerceDropdownBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const isOpen = ecommerceDropdownMenu.classList.contains("show");
+
+                if (isOpen) {
+                    ecommerceDropdownMenu.classList.remove("show");
+                    ecommerceDropdownMenu.classList.add("hidden");
+                    if (ecommerceArrow) ecommerceArrow.classList.remove("rotate");
+                } else {
+                    ecommerceDropdownMenu.classList.remove("hidden");
+                    ecommerceDropdownMenu.classList.add("show");
+                    if (ecommerceArrow) ecommerceArrow.classList.add("rotate");
+                }
+            });
+        }
+
+        // Dark mode toggle logic
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+            }
+        }
+        if (darkToggle) {
+            darkToggle.addEventListener('click', () => {
+                setDarkMode(!document.body.classList.contains('dark-mode'));
+            });
+        }
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+        });
+
+        // Active Page Highlighting and Dropdown Management
+        function highlightActivePage() {
+            // Initialize foundMatch variable
+            let foundMatch = false;
+
+            // Remove all active classes first
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Get current page path
+            const currentPath = window.location.pathname;
+            const currentPageName = window.location.pathname.split('/').pop().replace('.html', '');
+
+            console.log('Current path:', currentPath);
+            console.log('Current page name:', currentPageName);
+
+            // DASHBOARD LINK - Handle separately and FIRST
+            const dashboardLink = document.querySelector('a[href="/dashboard"]');
+            if (dashboardLink) {
+                console.log('🔍 Checking Dashboard link for path:', currentPath);
+                console.log('🔍 Current path details:', {
+                    path: currentPath,
+                    endsWithIndex: currentPath.endsWith('index.html'),
+                    includesPages: currentPath.includes('pages'),
+                    isRoot: currentPath === '/',
+                    isDashboard: currentPath === '/dashboard'
+                });
+
+                // Dashboard should ONLY be active on dashboard page
+                const isDashboardPage = (
+                    currentPath === '/' ||
+                    currentPath === '/dashboard' ||
+                    currentPath === '/dashboard/' ||
+                    currentPath.endsWith('/dashboard/index.html') ||
+                    currentPath.endsWith('/index.html') ||
+                    (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                    currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                );
+
+                if (isDashboardPage) {
+                    dashboardLink.classList.add('active');
+                    foundMatch = true;
+                    console.log('✅ Dashboard page detected and highlighted for path:', currentPath);
+                } else {
+                    dashboardLink.classList.remove('active');
+                    console.log('❌ Dashboard link NOT highlighted for path:', currentPath);
+                }
+            }
+
+            // OTHER LINKS - Handle all other links
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+
+                // Skip Dashboard link - already handled above
+                if (href === '/dashboard') return;
+
+                // COMPLETELY DISABLE Dashboard highlighting on non-dashboard pages
+                // Handle Dashboard link with PRECISE matching
+                if (href === '/dashboard') {
+                    // Dashboard should ONLY be active on dashboard page
+                    const isDashboardPage = (
+                        currentPath === '/' ||
+                        currentPath === '/dashboard' ||
+                        currentPath === '/dashboard/' ||
+                        currentPath.endsWith('/dashboard/index.html') ||
+                        currentPath.endsWith('/index.html') ||
+                        (currentPath.includes('index.html') && !currentPath.includes('pages')) ||
+                        currentPath.startsWith('/dashboard') && !currentPath.includes('/pages')
+                    );
+                    foundMatch = true;
+                    console.log('Dashboard page detected and highlighted');
+                }
+            }
+                }
+
+                // Handle other links with normal matching
+                else {
+            // Check if current path matches this specific link
+            if (currentPath === href || currentPath.endsWith(href.replace('/dashboard', ''))) {
+                link.classList.add('active');
+                foundMatch = true;
+                console.log('Exact match found:', href);
+            }
+            // Check page name matching for other links
+            else if (!foundMatch) {
+                const linkPageName = href.split('/').pop().replace('.html', '');
+                if (currentPageName === linkPageName ||
+                    (currentPageName && currentPageName.toLowerCase().includes(linkPageName.toLowerCase())) ||
+                    (linkPageName && linkPageName.toLowerCase().includes(currentPageName.toLowerCase()))) {
+                    link.classList.add('active');
+                    foundMatch = true;
+                    console.log('Page name match found:', href, 'for page:', currentPageName);
+                }
+            }
+        }
+            });
+
+        // Special cases for specific pages with dropdown management
+        if (currentPath.includes('collections') || currentPageName === 'collections') {
+            const collectionsLink = document.querySelector('a[href*="collections"]');
+            if (collectionsLink) {
+                collectionsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Collections page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                    inventoryArrow.style.transform = 'rotate(180deg)';
+                    console.log('Inventory dropdown kept open for collections');
+                }
+            }
+        }
+
+        if (currentPath.includes('products') || currentPageName === 'products') {
+            const productsLink = document.querySelector('a[href*="products"]');
+            if (productsLink) {
+                productsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Products page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                    inventoryArrow.style.transform = 'rotate(180deg)';
+                    console.log('Inventory dropdown kept open for products');
+                }
+            }
+        }
+
+        if (currentPath.includes('low-stock') || currentPageName === 'low-stock') {
+            const lowStockLink = document.querySelector('a[href*="low-stock"]');
+            if (lowStockLink) {
+                lowStockLink.classList.add('active');
+                foundMatch = true;
+                console.log('Low Stock page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                    inventoryArrow.style.transform = 'rotate(180deg)';
+                    console.log('Inventory dropdown kept open for low-stock');
+                }
+            }
+        }
+
+        if (currentPath.includes('product-reviews') || currentPageName === 'reviews') {
+            const reviewsLink = document.querySelector('a[href*="product-reviews"]');
+            if (reviewsLink) {
+                reviewsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Reviews page detected');
+
+                // Keep inventory dropdown open
+                const inventoryDropdown = document.getElementById('inventory-submenu');
+                const inventoryArrow = document.getElementById('inventory-arrow');
+                if (inventoryDropdown && inventoryArrow) {
+                    inventoryDropdown.classList.remove('hidden');
+                    inventoryArrow.style.transform = 'rotate(180deg)';
+                    console.log('Inventory dropdown kept open for reviews');
+                }
+            }
+        }
+
+        if (currentPath.includes('orders') || currentPageName === 'orders') {
+            const ordersLink = document.querySelector('a[href*="orders"]');
+            if (ordersLink) {
+                ordersLink.classList.add('active');
+                foundMatch = true;
+                console.log('Orders page detected');
+            }
+        }
+
+        if (currentPath.includes('Customer') || currentPageName === 'Customer') {
+            const customerLink = document.querySelector('a[href*="Customer"]');
+            if (customerLink) {
+                customerLink.classList.add('active');
+                foundMatch = true;
+                console.log('Customer page detected');
+            }
+        }
+
+        if (currentPath.includes('Admin') || currentPageName === 'Admin') {
+            const adminLink = document.querySelector('a[href*="Admin"]');
+            if (adminLink) {
+                adminLink.classList.add('active');
+                foundMatch = true;
+                console.log('Admin page detected');
+            }
+        }
+
+        if (currentPath.includes('settings') || currentPageName === 'settings') {
+            const settingsLink = document.querySelector('a[href*="settings"]');
+            if (settingsLink) {
+                settingsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Settings page detected');
+            }
+        }
+
+        if (currentPath.includes('finance') || currentPageName === 'finance') {
+            const financeLink = document.querySelector('a[href*="finance"]');
+            if (financeLink) {
+                financeLink.classList.add('active');
+                foundMatch = true;
+                console.log('Finance page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for finance page');
+                }
+            }
+        }
+
+        if (currentPath.includes('analytics') || currentPageName === 'analytics') {
+            const analyticsLink = document.querySelector('a[href*="analytics"]');
+            if (analyticsLink) {
+                analyticsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Analytics page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for analytics');
+                }
+            }
+        }
+
+        if (currentPath.includes('reports') || currentPageName === 'reports') {
+            const reportsLink = document.querySelector('a[href*="reports"]');
+            if (reportsLink) {
+                reportsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Reports page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for reports');
+                }
+            }
+        }
+
+        if (currentPath.includes('insights') || currentPageName === 'insights') {
+            const insightsLink = document.querySelector('a[href*="insights"]');
+            if (insightsLink) {
+                insightsLink.classList.add('active');
+                foundMatch = true;
+                console.log('Insights page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for insights');
+                }
+            }
+        }
+
+        if (currentPath.includes('expenses') || currentPageName === 'expenses') {
+            const expensesLink = document.querySelector('a[href*="expenses"]');
+            if (expensesLink) {
+                expensesLink.classList.add('active');
+                foundMatch = true;
+                console.log('Expenses page detected');
+
+                // Keep finance dropdown open
+                const financeDropdown = document.getElementById('finance-dropdown-menu');
+                const financeArrow = document.querySelector('#finance-dropdown-btn .dropdown-arrow');
+                if (financeDropdown && financeArrow) {
+                    financeDropdown.classList.remove('hidden');
+                    financeDropdown.classList.add('show');
+                    financeArrow.classList.add('rotated');
+                    console.log('Finance dropdown kept open for expenses');
+                }
+            }
+        }
+
+        if (currentPath.includes('pos') || currentPageName === 'pos') {
+            const posLink = document.querySelector('a[href*="pos"]');
+            if (posLink) {
+                posLink.classList.add('active');
+                foundMatch = true;
+                console.log('POS page detected');
+            }
+        }
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', highlightActivePage);
+
+        // Also run when navigation changes (for SPA-like behavior)
+        window.addEventListener('popstate', highlightActivePage);
+
+    </script>
+</body>
+<script src="/js/sidebar.js"></script>
+
+</html>

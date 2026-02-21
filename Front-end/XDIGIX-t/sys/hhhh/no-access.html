@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Access Denied - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link rel="icon" type="image/x-icon" href="assets/img/madas-logo.png">
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+        }
+
+        body {
+            background-color: #181825;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Input fields and form elements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        textarea,
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Search bar specific styling */
+        input[type="search"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="search"]:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="search"]::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Select dropdowns */
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* Modal styling */
+        .modal,
+        .modal .bg-white,
+        .glass-effect {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Form labels */
+        label {
+            color: var(--text-main) !important;
+        }
+
+        /* Readonly inputs */
+        input[readonly] {
+            background-color: var(--bg-main) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--madas-accent) !important;
+            border-color: var(--madas-accent) !important;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="flex items-center justify-between h-16 px-4 lg:px-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                    <img src="assets/img/madas.png" alt="Madas Logo" class="w-full h-full object-cover">
+                </div>
+                <h1 class="text-xl font-bold text-[var(--madas-primary)]">DIGIX Admin</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="hidden md:block text-right">
+                    <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                    <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                </div>
+                <div class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center">
+                    <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                </div>
+                <button id="logout-btn"
+                    class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex items-center justify-center min-h-[calc(100vh-4rem)] p-8">
+        <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl w-full">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-icons text-red-600 text-2xl">block</span>
+                </div>
+                <h1 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Access Denied</h1>
+                <p class="text-gray-600 mb-4">You don't have permission to access the requested page.</p>
+                <p class="text-sm text-gray-500" id="accessReason">Loading access information...</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-[var(--madas-primary)] mb-2">Your Current Status</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Role:</span>
+                            <span id="user-role" class="font-medium">Loading...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Approved:</span>
+                            <span id="user-approved" class="font-medium">Loading...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Permissions:</span>
+                            <span id="user-permissions-count" class="font-medium">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-[var(--madas-primary)] mb-2">Available Pages</h3>
+                    <div id="available-pages" class="space-y-1 text-sm">
+                        <div class="text-gray-500">Loading available pages...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/index.html"
+                    class="bg-[var(--madas-primary)] hover:bg-[#1f3c19] text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                    <span class="material-icons mr-2">dashboard</span>
+                    Go to Dashboard
+                </a>
+                <button id="contact-admin-btn"
+                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                    <span class="material-icons mr-2">support_agent</span>
+                    Contact Admin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3"
+        };
+
+        let app;
+        try {
+            app = getApp();
+        } catch (error) {
+            app = initializeApp(firebaseConfig);
+        }
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Map page paths to permission strings (matching firebase-permission-check.js)
+        function getRequiredPermissionForPage(pagePath) {
+            const pageName = pagePath.split("/").pop().replace(".html", "");
+            const pagePermissionMap = {
+                "orders": "order_view",
+                "scan_log": "scan_log",
+                "pos": "pos_view",
+                "products": "product_view",
+                "collections": "collection_view",
+                "product-reviews": "reviews_view",
+                "low-stock": "low_stock_view",
+                "Customer": "customer_view",
+                "loyalty": "loyalty_manage",
+                "finance": "finance_view",
+                "deposit-money-simple": "finance_deposit",
+                "expenses": "finance_expenses",
+                "reports": "finance_reports",
+                "insights": "finance_insights",
+                "analytics": "analytics_view",
+                "shares": "finance_shares",
+                "general-settings": "settings_general",
+                "shipping-delivery-settings": "settings_shipping",
+                "payments-settings": "settings_payments",
+                "integrations-settings": "settings_integrations",
+                "social-media-settings": "settings_social",
+                "plans-billing-settings": "settings_plans",
+                "staff-settings": "staff_view",
+                "notifications": "notifications_view",
+                "profile": "profile_view"
+            };
+            return pagePermissionMap[pageName] || null;
+        }
+
+        // Get page display name
+        function getPageDisplayName(pagePath) {
+            const pageName = pagePath.split("/").pop().replace(".html", "");
+            const pageNames = {
+                "orders": "Orders",
+                "scan_log": "Scan Log",
+                "pos": "POS System",
+                "products": "Products",
+                "collections": "Collections",
+                "product-reviews": "Product Reviews",
+                "low-stock": "Low Stock",
+                "Customer": "Customers",
+                "loyalty": "Loyalty Program",
+                "finance": "Finance Overview",
+                "deposit-money-simple": "Deposit Money",
+                "expenses": "Expenses",
+                "reports": "Reports",
+                "insights": "Business Insights",
+                "analytics": "Analytics",
+                "shares": "Shares",
+                "general-settings": "General Settings",
+                "shipping-delivery-settings": "Shipping & Delivery",
+                "payments-settings": "Payments",
+                "integrations-settings": "Integrations",
+                "social-media-settings": "Social Media",
+                "plans-billing-settings": "Plans & Billing",
+                "staff-settings": "Staff Management",
+                "notifications": "Notifications",
+                "profile": "Profile"
+            };
+            return pageNames[pageName] || pageName;
+        }
+
+        function updateUserInfo(user, userData, businessData, attemptedPage) {
+            const userNameElement = document.getElementById("user-name");
+            const userEmailElement = document.getElementById("user-email");
+            const userInitialElement = document.getElementById("user-initial");
+            const userRoleElement = document.getElementById("user-role");
+            const userApprovedElement = document.getElementById("user-approved");
+            const userPermissionsCountElement = document.getElementById("user-permissions-count");
+            const accessReasonElement = document.getElementById("accessReason");
+
+            if (user) {
+                const username = userData?.name ||
+                    (userData?.firstName && userData?.lastName ? `${userData.firstName} ${userData.lastName}` : null) ||
+                    businessData?.owner?.name ||
+                    user.displayName ||
+                    user.email.split("@")[0];
+
+                userNameElement.textContent = username;
+                userEmailElement.textContent = user.email;
+                userInitialElement.textContent = username.charAt(0).toUpperCase();
+
+                if (userData) {
+                    userRoleElement.textContent = userData.role || 'staff';
+                    userApprovedElement.textContent = (userData.approved || userData.status === 'active') ? 'Yes' : 'No';
+
+                    // Get permissions array
+                    let permissions = userData.permissions || [];
+                    if (!Array.isArray(permissions)) {
+                        if (typeof permissions === "object" && permissions !== null) {
+                            permissions = [];
+                            Object.entries(permissions).forEach(([section, actions]) => {
+                                if (Array.isArray(actions)) {
+                                    actions.forEach(action => {
+                                        permissions.push(`${section}_${action}`);
+                                    });
+                                }
+                            });
+                        } else {
+                            permissions = [];
+                        }
+                    }
+
+                    const permissionsCount = permissions.length;
+                    userPermissionsCountElement.textContent = `${permissionsCount} permissions`;
+
+                    // Determine access reason
+                    if (attemptedPage) {
+                        const requiredPermission = getRequiredPermissionForPage(attemptedPage);
+                        const pageDisplayName = getPageDisplayName(attemptedPage);
+
+                        if (requiredPermission) {
+                            const hasPermission = permissions.includes(requiredPermission);
+                            if (!hasPermission) {
+                                accessReasonElement.textContent = `You need "${requiredPermission.replace('_', ' ')}" permission to access the ${pageDisplayName} page.`;
+                            } else {
+                                accessReasonElement.textContent = `Access denied for ${pageDisplayName} page.`;
+                            }
+                        } else {
+                            accessReasonElement.textContent = `Access denied for ${pageDisplayName} page.`;
+                        }
+                    } else {
+                        accessReasonElement.textContent = "Access denied for the requested page.";
+                    }
+
+                    // Show available pages based on permissions
+                    showAvailablePages(permissions);
+                } else {
+                    userRoleElement.textContent = 'Unknown';
+                    userApprovedElement.textContent = 'No';
+                    userPermissionsCountElement.textContent = '0 permissions';
+                    accessReasonElement.textContent = "Unable to load your permission data.";
+                }
+            }
+        }
+
+        function showAvailablePages(permissions) {
+            const availablePagesElement = document.getElementById("available-pages");
+            const availablePages = [];
+
+            // Map permissions to page names
+            const permissionToPage = {
+                "dashboard_view": "Dashboard",
+                "order_view": "Orders",
+                "scan_log": "Scan Log",
+                "pos_view": "POS System",
+                "product_view": "Products",
+                "collection_view": "Collections",
+                "reviews_view": "Product Reviews",
+                "low_stock_view": "Low Stock",
+                "customer_view": "Customers",
+                "loyalty_manage": "Loyalty Program",
+                "finance_view": "Finance",
+                "finance_deposit": "Deposit Money",
+                "finance_expenses": "Expenses",
+                "finance_reports": "Reports",
+                "finance_insights": "Business Insights",
+                "analytics_view": "Analytics",
+                "finance_shares": "Shares",
+                "settings_general": "General Settings",
+                "settings_shipping": "Shipping & Delivery",
+                "settings_payments": "Payments",
+                "settings_integrations": "Integrations",
+                "settings_social": "Social Media",
+                "settings_plans": "Plans & Billing",
+                "staff_view": "Staff Management",
+                "notifications_view": "Notifications",
+                "profile_view": "Profile"
+            };
+
+            // Get unique page names from permissions
+            const seenPages = new Set();
+            permissions.forEach(permission => {
+                const pageName = permissionToPage[permission];
+                if (pageName && !seenPages.has(pageName)) {
+                    availablePages.push(pageName);
+                    seenPages.add(pageName);
+                }
+            });
+
+            if (availablePages.length > 0) {
+                availablePages.sort();
+                availablePagesElement.innerHTML = availablePages.map(page =>
+                    `<div class="text-green-600 flex items-center">
+                        <span class="material-icons text-sm mr-1">check_circle</span>
+                        <span>${page}</span>
+                    </div>`
+                ).join('');
+            } else {
+                availablePagesElement.innerHTML = '<div class="text-red-600">No pages available with your current permissions</div>';
+            }
+        }
+
+        // Listen for auth changes
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                console.log('🔍 Fetching user data for no-access page:', user.email);
+
+                let userData = null;
+                let businessData = null;
+                let businessId = null;
+
+                // Check if user is business owner
+                const businessesQuery = query(collection(db, "businesses"), where("owner.userId", "==", user.uid));
+                const businessSnapshot = await getDocs(businessesQuery);
+
+                if (!businessSnapshot.empty) {
+                    // User is owner
+                    const businessDoc = businessSnapshot.docs[0];
+                    businessId = businessDoc.id;
+                    businessData = businessDoc.data();
+                    userData = {
+                        role: 'owner',
+                        name: businessData.owner?.name || user.displayName || user.email.split("@")[0],
+                        approved: true,
+                        status: 'active',
+                        permissions: [
+                            "dashboard_view", "order_view", "order_create", "order_update", "order_delete", "scan_log",
+                            "pos_view", "pos_access", "product_view", "product_create", "product_update", "product_delete",
+                            "collection_view", "reviews_view", "low_stock_view", "customer_view", "loyalty_manage",
+                            "finance_view", "finance_deposit", "finance_expenses", "finance_reports", "finance_insights",
+                            "analytics_view", "settings_general", "staff_view", "notifications_view", "profile_view"
+                        ]
+                    };
+                    console.log('✅ User is business owner:', businessData.businessName);
+                } else {
+                    // Check if user is staff member
+                    const allBusinesses = await getDocs(collection(db, "businesses"));
+                    let foundStaff = false;
+
+                    for (const businessDoc of allBusinesses.docs) {
+                        businessId = businessDoc.id;
+                        const staffRef = doc(db, 'businesses', businessId, 'staff', user.uid);
+                        const staffDoc = await getDoc(staffRef);
+
+                        if (staffDoc.exists()) {
+                            const staffData = staffDoc.data();
+                            businessData = businessDoc.data();
+
+                            // Convert permissions to array format if needed
+                            let permissions = staffData.permissions || [];
+                            if (!Array.isArray(permissions)) {
+                                if (typeof permissions === "object" && permissions !== null) {
+                                    permissions = [];
+                                    Object.entries(permissions).forEach(([section, actions]) => {
+                                        if (Array.isArray(actions)) {
+                                            actions.forEach(action => {
+                                                permissions.push(`${section}_${action}`);
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    permissions = [];
+                                }
+                            }
+
+                            userData = {
+                                role: staffData.role || 'staff',
+                                name: staffData.name || (staffData.firstName && staffData.lastName ? `${staffData.firstName} ${staffData.lastName}` : null) || user.email.split("@")[0],
+                                firstName: staffData.firstName,
+                                lastName: staffData.lastName,
+                                email: staffData.email || user.email,
+                                approved: staffData.approved || staffData.status === 'active',
+                                status: staffData.status || 'pending',
+                                permissions: permissions
+                            };
+                            foundStaff = true;
+                            console.log('✅ User is staff member:', businessData.businessName, 'Role:', userData.role);
+                            break;
+                        }
+                    }
+
+                    if (!foundStaff) {
+                        console.warn('⚠️ User not found as owner or staff');
+                        userData = {
+                            role: 'unknown',
+                            name: user.displayName || user.email.split("@")[0],
+                            approved: false,
+                            permissions: []
+                        };
+                    }
+                }
+
+                // Get the attempted page from referrer or localStorage
+                const referrer = document.referrer;
+                const attemptedPage = referrer ? new URL(referrer).pathname : null;
+
+                console.log('📄 Attempted page:', attemptedPage);
+                console.log('👤 User data:', userData);
+
+                updateUserInfo(user, userData, businessData, attemptedPage);
+            } catch (error) {
+                console.error('❌ Error fetching user data:', error);
+                updateUserInfo(user, {
+                    role: 'unknown',
+                    name: user.displayName || user.email.split("@")[0],
+                    approved: false,
+                    permissions: []
+                }, null, null);
+            }
+        });
+
+        // Logout button
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", async () => {
+                try {
+                    await signOut(auth);
+                    window.location.href = "/login";
+                } catch (error) {
+                    console.error("Logout error:", error);
+                }
+            });
+        }
+
+        // Contact admin button
+        const contactAdminBtn = document.getElementById("contact-admin-btn");
+        if (contactAdminBtn) {
+            contactAdminBtn.addEventListener("click", () => {
+                alert("Contact admin functionality will be implemented here. For now, please contact your system administrator to request access.");
+            });
+        }
+    </script>
+</body>
+
+</html>

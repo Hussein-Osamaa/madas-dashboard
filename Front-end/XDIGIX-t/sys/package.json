@@ -1,0 +1,56 @@
+{
+  "name": "madas-complete-system",
+  "version": "1.0.0",
+  "description": "MADAS - Complete Business Management Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "marketing": "cd marketing-website-standalone && node server-simple.js",
+    "build": "node scripts/build-all.js",
+    "build:all": "node scripts/build-all.js",
+    "build:marketing": "cd apps/marketing && npm run build",
+    "build:dashboard": "cd apps/marketing/apps/dashboard && npm run build",
+    "build:finance": "cd apps/marketing/apps/finance && npm run build",
+    "build:admin": "cd apps/marketing/apps/digix-admin && npm run build",
+    "build:fulfillment": "cd apps/marketing/apps/fulfillment && npm run build",
+    "deploy": "npm run build && firebase deploy",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting:marketing,hosting:sites",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:firestore": "firebase deploy --only firestore",
+    "deploy:all": "npm run build && firebase deploy",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "saas",
+    "business",
+    "management",
+    "multi-tenancy",
+    "dashboard"
+  ],
+  "author": "MADAS Team",
+  "license": "MIT",
+  "dependencies": {
+    "@tiptap/react": "^3.7.2",
+    "@tiptap/starter-kit": "^3.7.2",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "file-saver": "^2.0.5",
+    "firebase-admin": "^13.5.0",
+    "grapesjs": "^0.22.13",
+    "grapesjs-blocks-basic": "^1.0.2",
+    "grapesjs-component-countdown": "^1.0.2",
+    "grapesjs-plugin-export": "^1.0.12",
+    "grapesjs-plugin-forms": "^2.0.6",
+    "grapesjs-preset-webpage": "^1.0.3",
+    "html2canvas": "^1.4.1",
+    "nodemailer": "^7.0.9",
+    "react-color": "^2.19.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

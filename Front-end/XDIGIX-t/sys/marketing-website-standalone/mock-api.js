@@ -1,0 +1,473 @@
+/**
+ * Mock API for testing signup form without Firebase
+ */
+
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+
+// Initialize Express
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files (HTML pages)
+app.use(express.static(__dirname));
+
+// Mock API Routes
+app.post('/api/register', async (req, res) => {
+  try {
+    const {
+      businessName,
+      industry,
+      businessEmail,
+      phone,
+      companySize,
+      plan,
+      userName,
+      userEmail,
+      password
+    } = req.body;
+
+    console.log('📝 Registration Data Received:');
+    console.log('Business:', businessName, industry, companySize);
+    console.log('Contact:', businessEmail, phone);
+    console.log('Plan:', plan);
+    console.log('User:', userName, userEmail);
+
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Mock successful response
+    const response = {
+      success: true,
+      message: 'Account created successfully!',
+      user: {
+        userId: 'mock_user_' + Date.now(),
+        email: userEmail,
+        name: userName
+      },
+      business: {
+        businessId: 'mock_business_' + Date.now(),
+        businessName,
+        plan: plan,
+        trialEnds: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      token: 'mock_token_' + Date.now()
+    };
+
+    console.log('✅ Mock registration successful');
+    res.status(201).json(response);
+
+  } catch (error) {
+    console.error('❌ Mock registration error:', error);
+    res.status(500).json({ 
+      error: 'Registration failed',
+      message: 'An error occurred during registration. Please try again.' 
+    });
+  }
+});
+
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    console.log('📧 Contact Form Received:');
+    console.log('From:', name, email);
+    console.log('Subject:', subject);
+    console.log('Message:', message);
+
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    res.json({
+      success: true,
+      message: 'Message sent successfully. We\'ll get back to you soon!'
+    });
+
+  } catch (error) {
+    console.error('❌ Contact form error:', error);
+    res.status(500).json({ 
+      error: 'Failed to send message. Please try again.' 
+    });
+  }
+});
+
+app.post('/api/newsletter/subscribe', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+
+    console.log('📰 Newsletter Subscription:', email, name);
+
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    res.json({
+      success: true,
+      message: 'Successfully subscribed to our newsletter!'
+    });
+
+  } catch (error) {
+    console.error('❌ Newsletter error:', error);
+    res.status(500).json({ 
+      error: 'Failed to subscribe. Please try again.' 
+    });
+  }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    mode: 'mock',
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// Routes for HTML pages
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/pricing', (req, res) => {
+  res.sendFile(path.join(__dirname, 'pricing.html'));
+});
+
+app.get('/signup', (req, res) => {
+  res.sendFile(path.join(__dirname, 'signup.html'));
+});
+
+app.get('/about', (req, res) => {
+  res.sendFile(path.join(__dirname, 'about.html'));
+});
+
+app.get('/contact', (req, res) => {
+  res.sendFile(path.join(__dirname, 'contact.html'));
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>404 - Page Not Found</title>
+      <style>
+        body {
+          font-family: 'Inter', sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+          color: white;
+        }
+        .container {
+          text-align: center;
+        }
+        h1 { font-size: 4rem; margin: 0; }
+        p { font-size: 1.5rem; margin: 1rem 0; }
+        a {
+          display: inline-block;
+          margin-top: 2rem;
+          padding: 1rem 2rem;
+          background: white;
+          color: #6366F1;
+          text-decoration: none;
+          border-radius: 8px;
+          font-weight: 600;
+        }
+        a:hover { transform: translateY(-2px); }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>404</h1>
+        <p>Oops! Page not found.</p>
+        <a href="/">Go Home</a>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║   🌐 MADAS Marketing Website (Mock Mode)                    ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+✅ Server running on: http://localhost:${PORT}
+
+📄 Available Pages:
+   → Landing:  http://localhost:${PORT}/
+   → Pricing:  http://localhost:${PORT}/pricing
+   → Signup:   http://localhost:${PORT}/signup
+   → About:    http://localhost:${PORT}/about
+   → Contact:  http://localhost:${PORT}/contact
+
+🔧 Mock API Endpoints:
+   → POST /api/register (✅ Working)
+   → POST /api/contact (✅ Working)
+   → POST /api/newsletter/subscribe (✅ Working)
+
+💡 Health Check:
+   → GET /health
+
+🚀 Ready to test your signup form!
+
+Press Ctrl+C to stop the server
+  `);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  app.close(() => {
+    console.log('HTTP server closed');
+  });
+});
+ * Mock API for testing signup form without Firebase
+ */
+
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+
+// Initialize Express
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files (HTML pages)
+app.use(express.static(__dirname));
+
+// Mock API Routes
+app.post('/api/register', async (req, res) => {
+  try {
+    const {
+      businessName,
+      industry,
+      businessEmail,
+      phone,
+      companySize,
+      plan,
+      userName,
+      userEmail,
+      password
+    } = req.body;
+
+    console.log('📝 Registration Data Received:');
+    console.log('Business:', businessName, industry, companySize);
+    console.log('Contact:', businessEmail, phone);
+    console.log('Plan:', plan);
+    console.log('User:', userName, userEmail);
+
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Mock successful response
+    const response = {
+      success: true,
+      message: 'Account created successfully!',
+      user: {
+        userId: 'mock_user_' + Date.now(),
+        email: userEmail,
+        name: userName
+      },
+      business: {
+        businessId: 'mock_business_' + Date.now(),
+        businessName,
+        plan: plan,
+        trialEnds: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      token: 'mock_token_' + Date.now()
+    };
+
+    console.log('✅ Mock registration successful');
+    res.status(201).json(response);
+
+  } catch (error) {
+    console.error('❌ Mock registration error:', error);
+    res.status(500).json({ 
+      error: 'Registration failed',
+      message: 'An error occurred during registration. Please try again.' 
+    });
+  }
+});
+
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    console.log('📧 Contact Form Received:');
+    console.log('From:', name, email);
+    console.log('Subject:', subject);
+    console.log('Message:', message);
+
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    res.json({
+      success: true,
+      message: 'Message sent successfully. We\'ll get back to you soon!'
+    });
+
+  } catch (error) {
+    console.error('❌ Contact form error:', error);
+    res.status(500).json({ 
+      error: 'Failed to send message. Please try again.' 
+    });
+  }
+});
+
+app.post('/api/newsletter/subscribe', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+
+    console.log('📰 Newsletter Subscription:', email, name);
+
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    res.json({
+      success: true,
+      message: 'Successfully subscribed to our newsletter!'
+    });
+
+  } catch (error) {
+    console.error('❌ Newsletter error:', error);
+    res.status(500).json({ 
+      error: 'Failed to subscribe. Please try again.' 
+    });
+  }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    mode: 'mock',
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// Routes for HTML pages
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/pricing', (req, res) => {
+  res.sendFile(path.join(__dirname, 'pricing.html'));
+});
+
+app.get('/signup', (req, res) => {
+  res.sendFile(path.join(__dirname, 'signup.html'));
+});
+
+app.get('/about', (req, res) => {
+  res.sendFile(path.join(__dirname, 'about.html'));
+});
+
+app.get('/contact', (req, res) => {
+  res.sendFile(path.join(__dirname, 'contact.html'));
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>404 - Page Not Found</title>
+      <style>
+        body {
+          font-family: 'Inter', sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+          color: white;
+        }
+        .container {
+          text-align: center;
+        }
+        h1 { font-size: 4rem; margin: 0; }
+        p { font-size: 1.5rem; margin: 1rem 0; }
+        a {
+          display: inline-block;
+          margin-top: 2rem;
+          padding: 1rem 2rem;
+          background: white;
+          color: #6366F1;
+          text-decoration: none;
+          border-radius: 8px;
+          font-weight: 600;
+        }
+        a:hover { transform: translateY(-2px); }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>404</h1>
+        <p>Oops! Page not found.</p>
+        <a href="/">Go Home</a>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║   🌐 MADAS Marketing Website (Mock Mode)                    ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+✅ Server running on: http://localhost:${PORT}
+
+📄 Available Pages:
+   → Landing:  http://localhost:${PORT}/
+   → Pricing:  http://localhost:${PORT}/pricing
+   → Signup:   http://localhost:${PORT}/signup
+   → About:    http://localhost:${PORT}/about
+   → Contact:  http://localhost:${PORT}/contact
+
+🔧 Mock API Endpoints:
+   → POST /api/register (✅ Working)
+   → POST /api/contact (✅ Working)
+   → POST /api/newsletter/subscribe (✅ Working)
+
+💡 Health Check:
+   → GET /health
+
+🚀 Ready to test your signup form!
+
+Press Ctrl+C to stop the server
+  `);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  app.close(() => {
+    console.log('HTTP server closed');
+  });
+});

@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: #f4f4f4;
+  color: #231f20;
+  font-family: 'Inter', sans-serif;
+}
+
+.glass-card {
+  @apply bg-white/90 backdrop-blur border border-white/40 shadow-card rounded-2xl;
+}
+
+

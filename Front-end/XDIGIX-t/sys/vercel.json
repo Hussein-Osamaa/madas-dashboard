@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist-unified",
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/dashboard/index.html" },
+    { "source": "/dashboard/(.*)", "destination": "/dashboard/index.html" },
+    { "source": "/finance", "destination": "/finance/index.html" },
+    { "source": "/finance/(.*)", "destination": "/finance/index.html" },
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/admin/(.*)", "destination": "/admin/index.html" },
+    { "source": "/warehouse", "destination": "/warehouse/index.html" },
+    { "source": "/warehouse/(.*)", "destination": "/warehouse/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
