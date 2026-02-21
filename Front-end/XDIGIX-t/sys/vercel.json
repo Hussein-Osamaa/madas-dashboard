@@ -1,6 +1,8 @@
 {
+  "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist-unified",
+  "framework": null,
   "rewrites": [
     { "source": "/dashboard", "destination": "/dashboard/index.html" },
     { "source": "/dashboard/(.*)", "destination": "/dashboard/index.html" },

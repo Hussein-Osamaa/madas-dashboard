@@ -33,13 +33,26 @@ Then redeploy so the frontend talks to your API.
 
 ## "No entrypoint found in output directory"
 
-If you see this error, Vercel is treating the build as a Node.js app. Fix:
+Vercel is looking for a Node.js entrypoint (app.js, server.js) inside `dist-unified`, but this project is **static only** (HTML/JS/CSS from Vite). Do this:
 
-1. **Settings** → **General** → **Framework Preset**: set to **Other** (not "Node.js").
-2. **Build & Development Settings**:
+### 1. Set Framework Preset (required)
+
+1. **Vercel** → your project → **Settings** → **General**.
+2. Find **Framework Preset**.
+3. Click **Edit** and choose **Other** (or **None** if you see it). Do **not** leave it as "Node.js".
+4. Save.
+
+### 2. Override Build & Development Settings
+
+1. **Settings** → **Build & Development Settings**.
+2. Turn **Override** ON for:
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist-unified`
    - **Install Command:** `npm install`
-3. Redeploy.
+3. Save.
 
-The repo’s `package.json` no longer has `"main"`, so Vercel should serve `dist-unified` as static files (no Node entrypoint).
+### 3. Redeploy
+
+**Deployments** → **⋯** on latest → **Redeploy**.
+
+The repo uses `"serve"` (not `"start"`) and has no `"main"` so Vercel won’t treat it as a Node server. If the error persists, the Framework Preset must be **Other** in the dashboard.
