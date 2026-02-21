@@ -44,6 +44,7 @@ fs.mkdirSync(unifiedDist, { recursive: true });
 
 // Build Marketing (root)
 log('Building Marketing app...', 'green');
+exec('npm install', path.join(rootDir, 'apps', 'marketing'));
 exec('npm run build', path.join(rootDir, 'apps', 'marketing'));
 const marketingDist = path.join(rootDir, 'apps', 'marketing', 'dist');
 if (fs.existsSync(marketingDist)) {
@@ -52,6 +53,7 @@ if (fs.existsSync(marketingDist)) {
 
 // Build Dashboard (/dashboard)
 log('Building Dashboard app...', 'green');
+exec('npm install', path.join(rootDir, 'apps', 'marketing', 'apps', 'dashboard'));
 exec('npm run build', path.join(rootDir, 'apps', 'marketing', 'apps', 'dashboard'));
 const dashboardDist = path.join(rootDir, 'apps', 'marketing', 'apps', 'dashboard', 'dist');
 const dashboardTarget = path.join(unifiedDist, 'dashboard');
@@ -62,6 +64,7 @@ if (fs.existsSync(dashboardDist)) {
 
 // Build Finance (/finance)
 log('Building Finance app...', 'green');
+exec('npm install', path.join(rootDir, 'apps', 'marketing', 'apps', 'finance'));
 exec('npm run build', path.join(rootDir, 'apps', 'marketing', 'apps', 'finance'));
 const financeDist = path.join(rootDir, 'apps', 'marketing', 'apps', 'finance', 'dist');
 const financeTarget = path.join(unifiedDist, 'finance');
@@ -72,6 +75,7 @@ if (fs.existsSync(financeDist)) {
 
 // Build Digix Admin (/admin)
 log('Building Digix Admin app...', 'green');
+exec('npm install', path.join(rootDir, 'apps', 'marketing', 'apps', 'digix-admin'));
 exec('npm run build', path.join(rootDir, 'apps', 'marketing', 'apps', 'digix-admin'));
 const adminDist = path.join(rootDir, 'apps', 'marketing', 'apps', 'digix-admin', 'dist');
 const adminTarget = path.join(unifiedDist, 'admin');
@@ -82,6 +86,7 @@ if (fs.existsSync(adminDist)) {
 
 // Build Fulfillment / Warehouse (/warehouse)
 log('Building Fulfillment app...', 'green');
+exec('npm install', path.join(rootDir, 'apps', 'marketing', 'apps', 'fulfillment'));
 exec('npm run build', path.join(rootDir, 'apps', 'marketing', 'apps', 'fulfillment'));
 const fulfillmentDist = path.join(rootDir, 'apps', 'marketing', 'apps', 'fulfillment', 'dist');
 const fulfillmentTarget = path.join(unifiedDist, 'warehouse');
