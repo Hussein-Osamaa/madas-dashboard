@@ -6,7 +6,6 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "marketing": "cd marketing-website-standalone && node server-simple.js",
     "build": "node scripts/build-all.js",
     "build:all": "node scripts/build-all.js",
     "build:marketing": "cd apps/marketing && npm run build",

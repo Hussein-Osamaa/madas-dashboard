@@ -1,3 +1,0 @@
-This directory is used for Firebase Hosting placeholder files.
-All requests are routed to the serveWebsite Cloud Function.
-
