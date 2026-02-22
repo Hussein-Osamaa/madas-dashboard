@@ -11,6 +11,10 @@ import staffRoutes from './staff.routes';
 
 const router = Router();
 
+router.get('/health', (_req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
 router.use('/auth', authRoutes);
 router.use('/staff', staffRoutes);
 router.use('/', clientsRoutes);
