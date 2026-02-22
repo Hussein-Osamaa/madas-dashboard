@@ -1,15 +1,21 @@
 /**
  * Vercel serverless catch-all: forwards all requests to the Express app.
- * Deploy backend as a separate Vercel project with Root Directory = sys/backend (or backend).
- * Set env vars in Vercel: MONGODB_URI, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, CORS_ORIGIN, etc.
- *
- * Limitations on Vercel: no Socket.io (realtime), no long-running cron in-process.
- * Use Vercel Cron to hit a protected /api/cron endpoint if you need scheduled jobs.
+ * CORS is set first so preflight and any error response always include headers.
  */
 
 const path = require('path');
 
-// Resolve dist relative to this file (api/ is sibling of dist/)
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://xdigix-os.vercel.app';
+
+function setCorsHeaders(res, origin) {
+  try {
+    res.setHeader('Access-Control-Allow-Origin', origin || CORS_ORIGIN);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  } catch (e) {}
+}
+
 const distPath = path.resolve(__dirname, '..', 'dist');
 
 function loadApp() {
@@ -20,23 +26,6 @@ function loadApp() {
 function loadConnectDb() {
   const { connectDb } = require(path.join(distPath, 'db'));
   return connectDb;
-}
-
-/** CORS origin: env CORS_ORIGIN, or request Origin, or * (so preflight/errors always have a header) */
-function getCorsOrigin(req) {
-  const env = process.env.CORS_ORIGIN;
-  if (env) return env;
-  const origin = req && req.headers && req.headers.origin;
-  if (origin) return origin;
-  return '*';
-}
-
-function setCorsHeaders(req, res) {
-  const origin = getCorsOrigin(req);
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
 }
 
 let connectPromise = null;
@@ -51,11 +40,12 @@ function ensureDb() {
 }
 
 module.exports = async function handler(req, res) {
-  // Always set CORS so preflight and error responses pass the browser check
-  setCorsHeaders(req, res);
+  const method = (req && req.method) ? String(req.method).toUpperCase() : 'GET';
+  const origin = (req && req.headers && req.headers.origin) || CORS_ORIGIN;
 
-  // Handle preflight so it succeeds even if DB/app fail later
-  if (req.method === 'OPTIONS') {
+  setCorsHeaders(res, origin);
+
+  if (method === 'OPTIONS') {
     res.statusCode = 204;
     res.end();
     return;
@@ -72,6 +62,7 @@ module.exports = async function handler(req, res) {
     });
   } catch (err) {
     console.error('[Vercel handler]', err);
+    setCorsHeaders(res, origin);
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json');
     res.end(
