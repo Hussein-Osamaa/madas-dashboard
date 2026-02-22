@@ -1,16 +1,22 @@
-# Build stage
+# ================================
+# Stage 1: Build
+# ================================
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm install
+# Install deps (deterministic; requires in-sync package-lock.json)
+COPY package.json package-lock.json ./
+RUN npm ci
 
+# Build app
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# Production stage
+# ================================
+# Stage 2: Production
+# ================================
 FROM node:20-alpine AS runner
 
 WORKDIR /app
@@ -18,12 +24,15 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4000
 
-COPY package.json package-lock.json* ./
-RUN npm install --omit=dev && npm cache clean --force
+# Production deps only (deterministic)
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev \
+    && npm cache clean --force
 
+# Built output only
 COPY --from=builder /app/dist ./dist
 
-# Optional: create uploads dir for local file storage
+# Runtime dirs (e.g. file uploads)
 RUN mkdir -p uploads/reports
 
 EXPOSE 4000
