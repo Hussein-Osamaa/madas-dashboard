@@ -47,7 +47,7 @@ async function recordTransactionWithSession(params: {
   );
 
   const current = await WarehouseStockModel.findOne({ productId, clientId })
-    .session(session ?? undefined)
+    .session(session ?? null)
     .lean();
   const delta = computeDelta(type, quantity);
   const newAvailable = Math.max(0, (current?.availableQuantity ?? 0) + delta);

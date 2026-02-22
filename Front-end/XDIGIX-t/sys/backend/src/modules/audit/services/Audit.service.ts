@@ -37,7 +37,7 @@ export async function startAudit(clientId: string, createdBy: string): Promise<{
 export async function joinAudit(
   joinCode: string,
   workerId: string
-): Promise<{ sessionId: string; clientId: string; createdBy: string }> {
+): Promise<{ sessionId: string; clientId: string; createdBy: string; joinCode?: string }> {
   const session = await AuditSessionModel.findOne({
     joinCode: String(joinCode).trim(),
     status: { $in: ACTIVE_STATUSES },

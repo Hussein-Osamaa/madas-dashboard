@@ -68,18 +68,22 @@ export async function listFulfillmentOrders(opts: ListOrdersOptions = {}): Promi
 
   const out: FulfillmentOrderPayload[] = [];
   for (const d of docs) {
-    const data = (d as { data?: Record<string, unknown> }).data || {};
+    const data = (d as { data?: Record<string, unknown>; businessId?: string; docId: string }).data || {};
+    const bid = (d as { businessId?: string }).businessId ?? '';
     const fulfillmentStatus = (data.fulfillment as { status?: string })?.status ?? (data.status as string) ?? 'pending';
-    const orderNumber = (data.orderNumber as string) || (data.orderId as string) || d.docId;
+    const orderNumber = (data.orderNumber as string) || (data.orderId as string) || (d as { docId: string }).docId;
+    const cust = (data.customer as { name?: string; email?: string; phone?: string } | undefined) || {};
+    const full = (data.fulfillment as { status?: string; type?: string; trackingNumber?: string; shippedAt?: string; deliveredAt?: string } | undefined) || {};
+    const fin = (data.financials as { total?: number; subtotal?: number; shipping?: number } | undefined) || {};
     out.push({
-      id: d.docId,
-      orderId: d.docId,
+      id: (d as { docId: string }).docId,
+      orderId: (d as { docId: string }).docId,
       orderNumber: String(orderNumber),
-      businessId: d.businessId,
-      businessName: nameByBiz[d.businessId] || d.businessId,
-      customer: (data.customer as Record<string, unknown>) || { name: '', email: '' },
-      fulfillment: (data.fulfillment as Record<string, unknown>) || { status: fulfillmentStatus },
-      financials: (data.financials as Record<string, unknown>) || { total: 0 },
+      businessId: bid,
+      businessName: nameByBiz[bid] || bid,
+      customer: { name: cust.name ?? '', email: cust.email ?? '', phone: cust.phone },
+      fulfillment: { status: fulfillmentStatus, ...full },
+      financials: { total: fin.total ?? 0, subtotal: fin.subtotal, shipping: fin.shipping },
       metadata: (data.metadata as Record<string, unknown>) || {},
       items: (data.items as any[]) || [],
       shippingAddress: (data.shippingAddress as Record<string, unknown>) || undefined,
@@ -118,15 +122,18 @@ export async function getOrder(businessId: string, orderId: string): Promise<Ful
   const data = (doc as { data?: Record<string, unknown> }).data || {};
   const business = await Business.findOne({ businessId }).select('name').lean();
   const orderNumber = (data.orderNumber as string) || (data.orderId as string) || doc.docId;
+  const cust = (data.customer as { name?: string; email?: string; phone?: string } | undefined) || {};
+  const full = (data.fulfillment as { status?: string; type?: string; trackingNumber?: string; shippedAt?: string; deliveredAt?: string } | undefined) || {};
+  const fin = (data.financials as { total?: number; subtotal?: number; shipping?: number } | undefined) || {};
   return {
     id: doc.docId,
     orderId: doc.docId,
     orderNumber: String(orderNumber),
-    businessId: doc.businessId,
-    businessName: (business as { name?: string })?.name || doc.businessId,
-    customer: (data.customer as Record<string, unknown>) || { name: '', email: '' },
-    fulfillment: (data.fulfillment as Record<string, unknown>) || { status: 'pending' },
-    financials: (data.financials as Record<string, unknown>) || { total: 0 },
+    businessId: doc.businessId ?? '',
+    businessName: ((business as { name?: string })?.name || doc.businessId) ?? '',
+    customer: { name: cust.name ?? '', email: cust.email ?? '', phone: cust.phone },
+    fulfillment: { status: full.status ?? 'pending', ...full },
+    financials: { total: fin.total ?? 0, subtotal: fin.subtotal, shipping: fin.shipping },
     metadata: (data.metadata as Record<string, unknown>) || {},
     items: (data.items as any[]) || [],
     shippingAddress: (data.shippingAddress as Record<string, unknown>) || undefined,

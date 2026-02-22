@@ -2,7 +2,7 @@
  * Warehouse operations - Staff with WAREHOUSE app only.
  * All stock changes via recordTransaction. ClientId from request (merchant).
  */
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import { centralJwtMiddleware } from '../middleware/central-jwt.middleware';
 import { requireAccountType } from '../middleware/account-guard.middleware';
@@ -18,7 +18,7 @@ router.use(requireAccountType('STAFF'));
 router.use(requireApp('WAREHOUSE'));
 
 /** GET /warehouse/clients - List clients with fulfillment subscription (no clientId required) */
-router.get('/clients', async (_req, res) => {
+router.get('/clients', async (_req: Request, res: Response) => {
   try {
     const businesses = await Business.find({
       $or: [
@@ -39,7 +39,7 @@ router.get('/clients', async (_req, res) => {
 });
 
 /** GET /warehouse/orders - List fulfillment orders (all or by status). No clientId required. */
-router.get('/orders', async (req, res) => {
+router.get('/orders', async (req: Request, res: Response) => {
   try {
     const status = (req.query.status as string) || 'all';
     const { listFulfillmentOrders } = await import('../modules/warehouse-orders/warehouse-orders.service');
@@ -59,7 +59,7 @@ router.patch(
     body('trackingNumber').optional().isString(),
     body('notes').optional().isString(),
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     const errs = require('express-validator').validationResult(req);
     if (!errs.isEmpty()) {
       res.status(400).json({ error: errs.array()[0]?.msg, details: errs.array() });
@@ -69,7 +69,7 @@ router.patch(
       const orderId = req.params.orderId;
       const { businessId, status, trackingNumber, notes } = req.body;
       const { updateOrderFulfillment } = await import('../modules/warehouse-orders/warehouse-orders.service');
-      const payload: Record<string, string> = { status };
+      const payload: { status: string; trackingNumber?: string; notes?: string; shippedAt?: string; deliveredAt?: string } = { status };
       if (trackingNumber) payload.trackingNumber = trackingNumber;
       if (notes) payload.notes = notes;
       if (status === 'shipped') payload.shippedAt = new Date().toISOString();
@@ -83,7 +83,7 @@ router.patch(
 );
 
 /** GET /warehouse/orders/:orderId - Get single order (query businessId) */
-router.get('/orders/:orderId', async (req, res) => {
+router.get('/orders/:orderId', async (req: Request, res: Response) => {
   try {
     const orderId = req.params.orderId;
     const businessId = (req.query.businessId as string) || '';
@@ -104,7 +104,7 @@ router.get('/orders/:orderId', async (req, res) => {
 });
 
 /** GET /warehouse/products-for-scan - List products with barcode fields for scan matching (query clientId) */
-router.get('/products-for-scan', async (req, res) => {
+router.get('/products-for-scan', async (req: Request, res: Response) => {
   try {
     const clientId = (req.query.clientId as string) || '';
     if (!clientId) {
@@ -123,7 +123,7 @@ router.get('/products-for-scan', async (req, res) => {
 router.post(
   '/orders/:orderId/scan',
   [body('businessId').isString().notEmpty(), body('barcode').isString().notEmpty()],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     const errs = require('express-validator').validationResult(req);
     if (!errs.isEmpty()) {
       res.status(400).json({ error: errs.array()[0]?.msg, details: errs.array() });
@@ -182,7 +182,7 @@ router.post(
 );
 router.get('/transactions', InventoryController.listTransactions);
 
-router.get('/warehouses', async (req, res) => {
+router.get('/warehouses', async (req: Request, res: Response) => {
   try {
     const { listWarehouses } = await import('../modules/warehouses/controllers/Warehouses.controller');
     const warehouses = await listWarehouses(req.clientId!);
@@ -202,7 +202,7 @@ router.post(
     body('address').optional().isString(),
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { createWarehouse } = await import('../modules/warehouses/controllers/Warehouses.controller');
       const result = await createWarehouse(req.clientId!, {
@@ -218,7 +218,7 @@ router.post(
   }
 );
 
-router.get('/products', async (req, res) => {
+router.get('/products', async (req: Request, res: Response) => {
   try {
     const { listProductsWithStock } = await import('../modules/products/controllers/Products.controller');
     const products = await listProductsWithStock(req.clientId!, { fulfillmentOnly: true });
@@ -238,7 +238,7 @@ router.post(
     body('warehouse').optional().isString(),
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { createProduct } = await import('../modules/products/controllers/Products.controller');
       const result = await createProduct(req.clientId!, {
@@ -263,7 +263,7 @@ router.patch(
     body('warehouse').optional().isString(),
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const productId = req.params.id;
       if (!productId) return res.status(400).json({ error: 'Product ID required' });

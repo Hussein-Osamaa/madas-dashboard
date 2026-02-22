@@ -15,6 +15,7 @@ declare global {
         role?: string;
         department?: string;
         allowedApps?: string[];
+        permissions?: string[];
         businessId?: string;
         tenantId?: string;
       };
