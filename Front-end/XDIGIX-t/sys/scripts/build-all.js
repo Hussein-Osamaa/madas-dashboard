@@ -86,39 +86,42 @@ if (fs.existsSync(adminDist)) {
 
 // Build Fulfillment / Warehouse (/warehouse)
 log('Building Fulfillment app...', 'green');
-exec('npm install', path.join(rootDir, 'apps', 'marketing', 'apps', 'fulfillment'));
-exec('npm run build', path.join(rootDir, 'apps', 'marketing', 'apps', 'fulfillment'));
-const fulfillmentDist = path.join(rootDir, 'apps', 'marketing', 'apps', 'fulfillment', 'dist');
+const fulfillmentDir = path.join(rootDir, 'apps', 'marketing', 'apps', 'fulfillment');
+exec('npm install', fulfillmentDir);
+exec('npm run build', fulfillmentDir);
+const fulfillmentDist = path.join(fulfillmentDir, 'dist');
 const fulfillmentTarget = path.join(unifiedDist, 'warehouse');
 if (fs.existsSync(fulfillmentDist)) {
   fs.mkdirSync(fulfillmentTarget, { recursive: true });
   copyDir(fulfillmentDist, fulfillmentTarget);
+} else {
+  console.error('Fulfillment dist not found at', fulfillmentDist);
+  process.exit(1);
 }
 
 log('✅ All apps built successfully!', 'green');
 log(`Unified dist directory: ${unifiedDist}`, 'blue');
 
-// Vercel Build Output API v3: avoids "No entrypoint found" by serving static only
-if (process.env.VERCEL === '1') {
-  const outDir = path.join(rootDir, '.vercel', 'output');
-  const staticDir = path.join(outDir, 'static');
-  if (fs.existsSync(outDir)) fs.rmSync(outDir, { recursive: true, force: true });
-  fs.mkdirSync(staticDir, { recursive: true });
-  copyDir(unifiedDist, staticDir);
-  const config = {
-    version: 3,
-    routes: [
-      { handle: 'filesystem' },
-      { src: '/dashboard(.*)', dest: '/dashboard/index.html' },
-      { src: '/finance(.*)', dest: '/finance/index.html' },
-      { src: '/admin(.*)', dest: '/admin/index.html' },
-      { src: '/warehouse(.*)', dest: '/warehouse/index.html' },
-      { src: '/(.*)', dest: '/index.html' }
-    ]
-  };
-  fs.writeFileSync(path.join(outDir, 'config.json'), JSON.stringify(config, null, 2));
-  log('Vercel Build Output API v3 written to .vercel/output', 'blue');
-}
+// Build Output API v3: Vercel serves static files from .vercel/output (no Node entrypoint).
+// Always create it so Vercel uses this instead of treating dist-unified as output and looking for index.js.
+const outDir = path.join(rootDir, '.vercel', 'output');
+const staticDir = path.join(outDir, 'static');
+if (fs.existsSync(outDir)) fs.rmSync(outDir, { recursive: true, force: true });
+fs.mkdirSync(staticDir, { recursive: true });
+copyDir(unifiedDist, staticDir);
+const config = {
+  version: 3,
+  routes: [
+    { handle: 'filesystem' },
+    { src: '/dashboard(.*)', dest: '/dashboard/index.html' },
+    { src: '/finance(.*)', dest: '/finance/index.html' },
+    { src: '/admin(.*)', dest: '/admin/index.html' },
+    { src: '/warehouse(.*)', dest: '/warehouse/index.html' },
+    { src: '/(.*)', dest: '/index.html' }
+  ]
+};
+fs.writeFileSync(path.join(outDir, 'config.json'), JSON.stringify(config, null, 2));
+log('Build Output API v3 written to .vercel/output', 'blue');
 
 function copyDir(src, dest) {
   const entries = fs.readdirSync(src, { withFileTypes: true });

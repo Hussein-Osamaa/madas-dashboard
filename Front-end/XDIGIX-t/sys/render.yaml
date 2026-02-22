@@ -1,0 +1,14 @@
+# Render Blueprint at repo root. Backend runs from backend/ (rootDir).
+# Use Blueprint Path: render.yaml (default)
+
+services:
+  - type: web
+    name: xdigix-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production

@@ -1,58 +1,79 @@
-# Vercel setup (fix 404)
+# Deploy frontend only on Vercel
 
-If you see **404: NOT_FOUND** after deploying, set the **Root Directory** so Vercel builds this app, not the repo root.
+This project deploys **only the frontend** (static sites) on Vercel. No backend, no serverless functions.
 
-## Steps
+## What gets deployed
 
-1. Open your project on [Vercel](https://vercel.com) → **Settings** → **General**.
-2. Under **Root Directory**, click **Edit**.
-3. Set it to: **`Front-end/XDIGIX-t/sys`**
-4. Save.
-5. Go to **Deployments** → open the **⋯** on the latest deployment → **Redeploy**.
+- **Marketing** site at `/`
+- **Dashboard** at `/dashboard`
+- **Finance** at `/finance`
+- **Admin** at `/admin`
+- **Warehouse (fulfillment)** at `/warehouse`
 
-## Why
-
-This repo has the app inside `Front-end/XDIGIX-t/sys`. That folder contains:
-
-- `package.json` (and the `npm run build` script)
-- `vercel.json` (build output: `dist-unified`, rewrites)
-- `apps/` (marketing, dashboard, finance, admin, warehouse)
-
-If Root Directory is empty or wrong, Vercel builds from the repo root, doesn’t find a valid build output, and serves 404.
-
-## Optional: env var
-
-In **Settings** → **Environment Variables**, add:
-
-- **Name:** `VITE_API_BACKEND_URL`
-- **Value:** `https://YOUR_BACKEND_URL/api` (your production API URL)
-
-Then redeploy so the frontend talks to your API.
+All are built by `npm run build` into `.vercel/output` (Build Output API v3), then served as static files by Vercel.
 
 ---
 
-## "No entrypoint found in output directory"
+## 1. Connect the repo
 
-Vercel is looking for a Node.js entrypoint (app.js, server.js) inside `dist-unified`, but this project is **static only** (HTML/JS/CSS from Vite). Do this:
+1. Go to [vercel.com](https://vercel.com) → **Add New** → **Project**.
+2. Import your Git repository (e.g. GitHub).
+3. **Do not** deploy yet; set the options below first.
 
-### 1. Set Framework Preset (required)
+---
 
-1. **Vercel** → your project → **Settings** → **General**.
-2. Find **Framework Preset**.
-3. Click **Edit** and choose **Other** (or **None** if you see it). Do **not** leave it as "Node.js".
-4. Save.
+## 2. Project settings (important)
 
-### 2. Override Build & Development Settings
+### Root Directory
+
+Vercel must build from the folder that contains `package.json` and `scripts/build-all.js`.
+
+1. **Settings** → **General** → **Root Directory** → **Edit**.
+2. Set to: **`Front-end/XDIGIX-t/sys`**  
+   (If your repo root is already `XDIGIX-t`, use **`sys`**.)
+3. Save.
+
+### Build & Development Settings
 
 1. **Settings** → **Build & Development Settings**.
-2. Turn **Override** ON for:
+2. Turn **Override** ON and set:
+   - **Framework Preset:** `Other`
    - **Build Command:** `npm run build`
-   - **Output Directory:** `dist-unified`
+   - **Output Directory:** leave **empty** (the build writes `.vercel/output` itself)
    - **Install Command:** `npm install`
 3. Save.
 
-### 3. Redeploy
+If you see **Output Directory** pre-filled (e.g. `dist-unified`), clear it. The build script produces `.vercel/output`; Vercel will use that and won’t look for a Node entrypoint.
 
-**Deployments** → **⋯** on latest → **Redeploy**.
+---
 
-The repo uses `"serve"` (not `"start"`) and has no `"main"` so Vercel won’t treat it as a Node server. If the error persists, the Framework Preset must be **Other** in the dashboard.
+## 3. Deploy
+
+- Push to the connected branch, or  
+- **Deployments** → **Redeploy** on the latest deployment.
+
+Build runs `npm run build` → builds all five apps → writes `.vercel/output` (static files + routes). Vercel serves that with no server.
+
+---
+
+## 4. Optional: API URL (production backend)
+
+If the frontend calls your own API, set the production URL:
+
+1. **Settings** → **Environment Variables**.
+2. Add:
+   - **Name:** `VITE_API_BACKEND_URL`
+   - **Value:** `https://your-backend-domain.com/api` (or your real API base URL)
+3. Redeploy so the app uses this in production.
+
+The backend runs elsewhere (e.g. Railway, Render, VPS). Vercel hosts only the frontend.
+
+---
+
+## Troubleshooting
+
+| Issue | Fix |
+|--------|-----|
+| 404 on `/dashboard`, `/warehouse`, etc. | Root Directory must be `Front-end/XDIGIX-t/sys` (or `sys`). Redeploy. |
+| “No entrypoint found in output directory: dist-unified” | Clear **Output Directory** in Build & Development Settings. Build creates `.vercel/output`; don’t set output to `dist-unified`. |
+| Build fails at “Building Fulfillment app…” | Check the build log for the exact error (e.g. memory, Node version). Root must be `sys` so all apps are built. |

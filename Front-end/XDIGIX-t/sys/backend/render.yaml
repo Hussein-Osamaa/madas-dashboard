@@ -1,0 +1,17 @@
+# Render Blueprint: deploy this backend as a Web Service.
+# When connecting the repo, set Root Directory to this folder (e.g. sys/backend or Front-end/XDIGIX-t/sys/backend).
+
+services:
+  - type: web
+    name: xdigix-backend
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Add the rest in Render Dashboard → Environment (secrets):
+      # MONGODB_URI, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET,
+      # FIREBASE_SERVICE_ACCOUNT_JSON (or GOOGLE_APPLICATION_CREDENTIALS),
+      # CORS_ORIGIN, and optional S3_* if you use S3 storage.
