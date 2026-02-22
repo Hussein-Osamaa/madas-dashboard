@@ -3,17 +3,6 @@
   "installCommand": "cd Front-end/XDIGIX-t/sys/backend && npm ci",
   "buildCommand": "cd Front-end/XDIGIX-t/sys/backend && npm run build",
   "outputDirectory": ".",
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://xdigix-os.vercel.app" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" },
-        { "key": "Access-Control-Max-Age", "value": "86400" }
-      ]
-    }
-  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/api" }
   ],

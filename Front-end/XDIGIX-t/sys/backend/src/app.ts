@@ -15,11 +15,23 @@ import './services/orderInventoryIntegration'; // Registers order->inventory eve
 export function createApp(): Express {
   const app = express();
 
+  const allowedOrigins = (config.cors.origin || '*')
+    .split(',')
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+
   app.use(
     cors({
-      origin: config.cors.origin,
+      origin: (incoming, callback) => {
+        if (!incoming || allowedOrigins.includes('*') || allowedOrigins.includes(incoming)) {
+          callback(null, incoming || '*');
+        } else {
+          callback(null, allowedOrigins[0]);
+        }
+      },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
     })
   );
   app.use(express.json({ limit: '10mb' }));

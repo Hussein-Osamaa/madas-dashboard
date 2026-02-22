@@ -5,22 +5,31 @@
 const { connectDb } = require('../Front-end/XDIGIX-t/sys/backend/dist/db');
 const { createApp } = require('../Front-end/XDIGIX-t/sys/backend/dist/app');
 
-const DEFAULT_ORIGIN = 'https://xdigix-os.vercel.app';
+const ALLOWED_ORIGINS = [
+  'https://xdigix-os.vercel.app',
+  'https://xdigix-os-xdigix.vercel.app',
+];
 
 function getAllowOrigin(req) {
-  const env = process.env.CORS_ORIGIN;
-  if (typeof env === 'string' && env.trim()) return env.trim();
-  const o = req && req.headers && req.headers.origin;
-  if (typeof o === 'string' && o.trim()) return o.trim();
-  return DEFAULT_ORIGIN;
+  const reqOrigin = req && req.headers && req.headers.origin;
+
+  const envOrigins = process.env.CORS_ORIGIN;
+  if (typeof envOrigins === 'string' && envOrigins.trim()) {
+    const list = envOrigins.split(',').map(s => s.trim()).filter(Boolean);
+    if (typeof reqOrigin === 'string' && list.includes(reqOrigin)) return reqOrigin;
+    return list[0];
+  }
+
+  if (typeof reqOrigin === 'string' && ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
+  return ALLOWED_ORIGINS[0];
 }
 
 function corsHeaders(origin) {
-  const allow = (typeof origin === 'string' && origin.trim()) ? origin.trim() : DEFAULT_ORIGIN;
   return {
-    'Access-Control-Allow-Origin': allow,
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   };
 }
