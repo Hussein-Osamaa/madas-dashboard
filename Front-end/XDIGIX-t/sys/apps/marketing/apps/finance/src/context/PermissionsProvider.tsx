@@ -165,12 +165,17 @@ const PermissionsProvider = ({ children }: Props) => {
   return <PermissionsContext.Provider value={value}>{children}</PermissionsContext.Provider>;
 };
 
+const DEFAULT_PERMISSIONS: PermissionsContextValue = {
+  permissions: [],
+  loading: true,
+  hasPermission: () => false,
+  hasAnyPermission: () => false,
+  hasAllPermissions: () => false
+};
+
 export const usePermissions = () => {
   const ctx = useContext(PermissionsContext);
-  if (!ctx) {
-    throw new Error('usePermissions must be used within PermissionsProvider');
-  }
-  return ctx;
+  return ctx ?? DEFAULT_PERMISSIONS;
 };
 
 export default PermissionsProvider;

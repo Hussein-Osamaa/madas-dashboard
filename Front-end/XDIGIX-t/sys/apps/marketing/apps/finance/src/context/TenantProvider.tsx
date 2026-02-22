@@ -77,11 +77,14 @@ const TenantProvider = ({ children }: Props) => {
 
 export default TenantProvider;
 
+const DEFAULT_TENANT: TenantContextValue = {
+  workspaceId: '',
+  orgId: '',
+  loading: true
+};
+
 export const useTenant = () => {
   const ctx = useContext(TenantContext);
-  if (!ctx) {
-    throw new Error('useTenant must be used within TenantProvider');
-  }
-  return ctx;
+  return ctx ?? DEFAULT_TENANT;
 };
 

@@ -1,13 +1,15 @@
 /**
  * Backend API client for Warehouse Fulfillment Portal
  * Uses staff auth (POST /auth/staff/login)
- * When VITE_API_BACKEND_URL is not set, uses current host + port 4000 so it works from other devices (e.g. 192.168.1.33:5180).
+ * Set VITE_API_BACKEND_URL in production (e.g. on Vercel) to your backend HTTPS URL (e.g. https://your-api.onrender.com/api).
+ * When unset, uses same host + port 4000 with the page's protocol (HTTPS page → HTTPS API to avoid mixed content).
  */
 function getApiBase(): string {
   const env = import.meta.env.VITE_API_BACKEND_URL;
-  if (env) return env;
+  if (typeof env === 'string' && env.trim()) return env.replace(/\/$/, '') || env;
   if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:4000/api`;
+    const protocol = window.location.protocol || 'https:';
+    return `${protocol}//${window.location.hostname}:4000/api`;
   }
   return 'http://localhost:4000/api';
 }
@@ -17,21 +19,25 @@ const TOKEN_KEY = 'warehouse_access_token';
 const REFRESH_KEY = 'warehouse_refresh_token';
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  return typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
 }
 
 export function setTokens(access: string, refresh: string) {
-  localStorage.setItem(TOKEN_KEY, access);
-  localStorage.setItem(REFRESH_KEY, refresh);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(TOKEN_KEY, access);
+    localStorage.setItem(REFRESH_KEY, refresh);
+  }
 }
 
 export function clearTokens() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_KEY);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+  }
 }
 
 async function refreshAccessToken(): Promise<string | null> {
-  const rt = localStorage.getItem(REFRESH_KEY);
+  const rt = typeof localStorage !== 'undefined' ? localStorage.getItem(REFRESH_KEY) : null;
   if (!rt) return null;
   try {
     const res = await fetch(`${API_BASE}/auth/refresh`, {
@@ -41,7 +47,7 @@ async function refreshAccessToken(): Promise<string | null> {
     });
     const data = await res.json();
     if (data.accessToken) {
-      localStorage.setItem(TOKEN_KEY, data.accessToken);
+      setTokens(data.accessToken, rt);
       return data.accessToken;
     }
   } catch {

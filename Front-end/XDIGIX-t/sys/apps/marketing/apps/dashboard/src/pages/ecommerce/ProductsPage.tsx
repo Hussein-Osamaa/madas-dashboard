@@ -82,24 +82,33 @@ const ProductsPage = () => {
   const textColor = settings.theme.textColor;
 
   const addToCart = (product: any) => {
-    if (!siteId) return;
-    const cart = JSON.parse(localStorage.getItem(`cart_${siteId}`) || '[]');
+    if (!siteId || typeof localStorage === 'undefined') return;
+    let cart: any[];
+    try {
+      cart = JSON.parse(localStorage.getItem(`cart_${siteId}`) || '[]');
+      if (!Array.isArray(cart)) cart = [];
+    } catch {
+      cart = [];
+    }
     const existingItem = cart.find((item: any) => item.id === product.id);
-    
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
       cart.push({ ...product, quantity: 1 });
     }
-    
     localStorage.setItem(`cart_${siteId}`, JSON.stringify(cart));
-    // Show notification
     alert('Product added to cart!');
   };
 
   const addToFavorites = (product: any) => {
-    if (!siteId) return;
-    const favorites = JSON.parse(localStorage.getItem(`favorites_${siteId}`) || '[]');
+    if (!siteId || typeof localStorage === 'undefined') return;
+    let favorites: any[];
+    try {
+      favorites = JSON.parse(localStorage.getItem(`favorites_${siteId}`) || '[]');
+      if (!Array.isArray(favorites)) favorites = [];
+    } catch {
+      favorites = [];
+    }
     if (!favorites.find((item: any) => item.id === product.id)) {
       favorites.push(product);
       localStorage.setItem(`favorites_${siteId}`, JSON.stringify(favorites));

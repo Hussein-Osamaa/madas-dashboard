@@ -153,9 +153,10 @@ export default function ClientsPage() {
 
     try {
       // Use backend API when VITE_API_BACKEND_URL is set (MongoDB), else Firebase Cloud Function
-      const useBackend = !!import.meta.env.VITE_API_BACKEND_URL;
+      const apiBaseEnv = import.meta.env.VITE_API_BACKEND_URL;
+      const useBackend = typeof apiBaseEnv === 'string' && apiBaseEnv.trim().length > 0;
       const apiUrl = useBackend
-        ? `${(import.meta.env.VITE_API_BACKEND_URL as string).replace(/\/$/, '')}/create-client`
+        ? `${String(apiBaseEnv).replace(/\/$/, '')}/create-client`
         : 'https://us-central1-madas-store.cloudfunctions.net/api/api/create-client';
 
       const response = await fetch(apiUrl, {

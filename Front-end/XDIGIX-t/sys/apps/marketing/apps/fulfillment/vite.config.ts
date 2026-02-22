@@ -26,7 +26,7 @@ function warehouseHistoryFallback() {
 export default defineConfig({
   plugins: [react(), warehouseHistoryFallback()],
   base: '/warehouse/',
-  build: { chunkSizeWarningLimit: 1000 },
+  build: { sourcemap: true, chunkSizeWarningLimit: 1000 },
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },

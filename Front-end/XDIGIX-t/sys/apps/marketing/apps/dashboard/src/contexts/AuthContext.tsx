@@ -53,12 +53,15 @@ const AuthProvider = ({ children }: Props) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+const DEFAULT_AUTH: AuthContextValue = {
+  user: null,
+  loading: true,
+  logout: async () => {}
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+  return context ?? DEFAULT_AUTH;
 };
 
 export default AuthProvider;

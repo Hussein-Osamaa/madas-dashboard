@@ -284,12 +284,24 @@ export const RBACProvider = ({ children }: Props) => {
   return <RBACContext.Provider value={value}>{children}</RBACContext.Provider>;
 };
 
+const DEFAULT_RBAC: RBACContextValue = {
+  user: null,
+  loading: true,
+  permissions: [],
+  hasPermission: async () => false,
+  hasAnyPermission: async () => false,
+  hasAllPermissions: async () => false,
+  canAccessTenant: () => false,
+  canManageUser: () => false,
+  getRoles: async () => [],
+  getPermissions: async () => [],
+  getUserPermissions: async () => [],
+  refresh: async () => {}
+};
+
 export const useRBAC = () => {
   const context = useContext(RBACContext);
-  if (!context) {
-    throw new Error('useRBAC must be used within RBACProvider');
-  }
-  return context;
+  return context ?? DEFAULT_RBAC;
 };
 
 export default RBACProvider;

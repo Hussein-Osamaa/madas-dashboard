@@ -125,9 +125,10 @@ export interface ListDomainsResponse {
 // Configuration
 // ============================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BACKEND_URL
-  ? `${import.meta.env.VITE_API_BACKEND_URL.replace(/\/$/, '')}`
-  : `https://us-central1-madas-store.cloudfunctions.net`;
+const _apiBaseEnv = import.meta.env.VITE_API_BACKEND_URL;
+const API_BASE_URL = (typeof _apiBaseEnv === 'string' && _apiBaseEnv)
+  ? _apiBaseEnv.replace(/\/$/, '')
+  : 'https://us-central1-madas-store.cloudfunctions.net';
 
 // ============================================
 // Helper Functions

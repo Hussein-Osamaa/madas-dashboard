@@ -6,6 +6,7 @@ export default defineConfig({
   base: '/dashboard/',
   plugins: [react()],
   build: {
+    sourcemap: true,
     chunkSizeWarningLimit: 1000
   },
   resolve: {

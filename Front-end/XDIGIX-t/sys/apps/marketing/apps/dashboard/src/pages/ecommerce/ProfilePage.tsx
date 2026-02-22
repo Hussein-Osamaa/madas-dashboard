@@ -57,10 +57,11 @@ const ProfilePage = () => {
     return <FullScreenLoader message="Loading profile..." />;
   }
 
-  const primaryColor = settings.theme.primaryColor;
-  const secondaryColor = settings.theme.secondaryColor;
-  const backgroundColor = settings.theme.backgroundColor;
-  const textColor = settings.theme.textColor;
+  const theme = settings?.theme;
+  const primaryColor = theme?.primaryColor ?? '#27491F';
+  const secondaryColor = theme?.secondaryColor ?? '#4a7c59';
+  const backgroundColor = theme?.backgroundColor ?? '#ffffff';
+  const textColor = theme?.textColor ?? '#1a1a1a';
 
   const handleLogout = () => {
     localStorage.removeItem(`user_${siteId}`);

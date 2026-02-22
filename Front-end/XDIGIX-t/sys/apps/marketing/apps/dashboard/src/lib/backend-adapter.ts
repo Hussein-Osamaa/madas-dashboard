@@ -4,10 +4,13 @@
  * Enable with VITE_API_BACKEND_URL=http://localhost:4000/api
  */
 
-const API_BASE = import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:4000/api';
+const _envUrl = import.meta.env.VITE_API_BACKEND_URL;
+const API_BASE = (typeof _envUrl === 'string' && _envUrl.trim())
+  ? _envUrl.replace(/\/$/, '')
+  : 'http://localhost:4000/api';
 
-let accessToken: string | null = localStorage.getItem('backend_access_token');
-let refreshToken: string | null = localStorage.getItem('backend_refresh_token');
+let accessToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_access_token') : null;
+let refreshToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_refresh_token') : null;
 const authListeners: Array<(user: BackendUser | null) => void> = [];
 
 export interface BackendUser {
@@ -21,15 +24,19 @@ export interface BackendUser {
 function persistTokens(acc: string, ref: string) {
   accessToken = acc;
   refreshToken = ref;
-  localStorage.setItem('backend_access_token', acc);
-  localStorage.setItem('backend_refresh_token', ref);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('backend_access_token', acc);
+    localStorage.setItem('backend_refresh_token', ref);
+  }
 }
 
 function clearTokens() {
   accessToken = null;
   refreshToken = null;
-  localStorage.removeItem('backend_access_token');
-  localStorage.removeItem('backend_refresh_token');
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('backend_access_token');
+    localStorage.removeItem('backend_refresh_token');
+  }
 }
 
 /** True if JWT payload exp is in the past (60s buffer to avoid server 401 on /auth/me). */
@@ -55,8 +62,7 @@ async function getToken(): Promise<string | null> {
     });
     const data = await res.json();
     if (data.accessToken) {
-      accessToken = data.accessToken;
-      localStorage.setItem('backend_access_token', data.accessToken);
+      persistTokens(data.accessToken, refreshToken ?? '');
       return data.accessToken;
     }
   } catch {

@@ -40,8 +40,14 @@ export function StaffAuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+const DEFAULT_STAFF_AUTH: StaffAuthContextValue = {
+  user: null,
+  loading: true,
+  logout: async () => {},
+  setUserFromLogin: () => {}
+};
+
 export function useStaffAuth() {
   const ctx = useContext(StaffAuthContext);
-  if (!ctx) throw new Error('useStaffAuth must be used within StaffAuthProvider');
-  return ctx;
+  return ctx ?? DEFAULT_STAFF_AUTH;
 }

@@ -2,7 +2,8 @@
  * Firebase Compatibility Adapter
  * Enable with VITE_API_BACKEND_URL=http://localhost:4000/api
  */
-const API_BASE = import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:4000/api';
+const _envApi = import.meta.env.VITE_API_BACKEND_URL;
+const API_BASE = (typeof _envApi === 'string' && _envApi.trim()) ? _envApi.replace(/\/$/, '') : 'http://localhost:4000/api';
 
 let accessToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_access_token') : null;
 let refreshToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_refresh_token') : null;
@@ -21,18 +22,22 @@ function persistTokens(acc: string, ref: string, type: 'CLIENT' | 'ADMIN' | 'STA
   accessToken = acc;
   refreshToken = ref;
   accountType = type;
-  localStorage.setItem('backend_access_token', acc);
-  localStorage.setItem('backend_refresh_token', ref);
-  localStorage.setItem('backend_account_type', type);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('backend_access_token', acc);
+    localStorage.setItem('backend_refresh_token', ref);
+    localStorage.setItem('backend_account_type', type);
+  }
 }
 
 function clearTokens() {
   accessToken = null;
   refreshToken = null;
   accountType = 'CLIENT';
-  localStorage.removeItem('backend_access_token');
-  localStorage.removeItem('backend_refresh_token');
-  localStorage.removeItem('backend_account_type');
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('backend_access_token');
+    localStorage.removeItem('backend_refresh_token');
+    localStorage.removeItem('backend_account_type');
+  }
 }
 
 async function getToken(): Promise<string | null> {
@@ -49,8 +54,7 @@ async function getToken(): Promise<string | null> {
     });
     const data = await res.json();
     if (data.accessToken) {
-      accessToken = data.accessToken;
-      localStorage.setItem('backend_access_token', data.accessToken);
+      persistTokens(data.accessToken, refreshToken ?? '', accountType);
       return data.accessToken;
     }
   } catch {

@@ -183,7 +183,7 @@ const BusinessProvider = ({ children }: Props) => {
     // On initial load, try to use cached data first for faster rendering
     if (!isRetry && retryCount === 0) {
       const cached = getCachedUserData();
-      if (cached && cached.businessId && cached.email === user.email) {
+      if (cached && cached.businessId && cached.email === user?.email) {
         console.log('[BusinessProvider] Using cached business data');
         setState({
           loading: false, // Show UI immediately with cached data
@@ -283,7 +283,7 @@ const BusinessProvider = ({ children }: Props) => {
         
         // Check if we have cached data - if so, don't immediately redirect to no-access
         const cached = getCachedUserData();
-        if (cached && cached.businessId && cached.email === user.email) {
+        if (cached && cached.businessId && cached.email === user?.email) {
           console.log('[BusinessProvider] No business found in DB, but using cached data');
           // Keep using cached data - the user may have been removed but let them see the UI
           // They'll get proper access errors when they try to do things
@@ -417,7 +417,7 @@ const BusinessProvider = ({ children }: Props) => {
       
       // After all retries failed, try to use cached data as fallback
       const cached = getCachedUserData();
-      if (cached && cached.businessId && user && cached.email === user.email) {
+      if (cached && cached.businessId && user && cached.email === user?.email) {
         console.log('[BusinessProvider] Using cached data after network error');
         setState({
           loading: false,
@@ -875,12 +875,34 @@ const BusinessProvider = ({ children }: Props) => {
   return <BusinessContext.Provider value={value}>{children}</BusinessContext.Provider>;
 };
 
+const DEFAULT_BUSINESS: BusinessContextValue = {
+  loading: true,
+  noAccess: false,
+  linkedBusinesses: [],
+  currentViewingBusinessId: undefined,
+  currentViewingBusinessName: undefined,
+  incomingLinkRequests: [],
+  outgoingLinkRequests: [],
+  refresh: async () => {},
+  hasPermission: () => false,
+  hasAnyPermission: () => false,
+  hasAllPermissions: () => false,
+  getAllPermissions: () => [],
+  addLinkedBusiness: async () => false,
+  removeLinkedBusiness: async () => false,
+  setCurrentViewingBusiness: () => {},
+  isViewingOtherBusiness: () => false,
+  getEffectiveBusinessId: () => undefined,
+  sendLinkRequest: async () => ({ success: false, message: '' }),
+  approveLinkRequest: async () => false,
+  rejectLinkRequest: async () => false,
+  cancelLinkRequest: async () => false,
+  refreshLinkRequests: async () => {}
+};
+
 export const useBusiness = () => {
   const context = useContext(BusinessContext);
-  if (!context) {
-    throw new Error('useBusiness must be used within BusinessProvider');
-  }
-  return context;
+  return context ?? DEFAULT_BUSINESS;
 };
 
 export default BusinessProvider;

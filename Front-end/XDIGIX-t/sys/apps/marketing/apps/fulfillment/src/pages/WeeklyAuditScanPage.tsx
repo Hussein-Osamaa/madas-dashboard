@@ -241,15 +241,21 @@ export default function WeeklyAuditScanPage() {
   }, [sessionId]);
 
   const flushPending = useCallback(async () => {
-    const raw = localStorage.getItem(PENDING_SCANS_KEY);
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PENDING_SCANS_KEY) : null;
     if (!raw) return;
-    const queue = JSON.parse(raw) as Array<{ sessionId: string; barcode: string }>;
+    let queue: Array<{ sessionId: string; barcode: string }>;
+    try {
+      queue = JSON.parse(raw) as Array<{ sessionId: string; barcode: string }>;
+      if (!Array.isArray(queue)) queue = [];
+    } catch {
+      return;
+    }
     const current = sessionIdRef.current;
     if (!current) return;
     const toSend = queue.filter((s) => s.sessionId === current);
     if (toSend.length === 0) return;
     const remaining = queue.filter((s) => s.sessionId !== current);
-    localStorage.setItem(PENDING_SCANS_KEY, JSON.stringify(remaining));
+    if (typeof localStorage !== 'undefined') localStorage.setItem(PENDING_SCANS_KEY, JSON.stringify(remaining));
     for (const { barcode } of toSend) {
       try {
         await auditScan(current, barcode);
@@ -258,7 +264,7 @@ export default function WeeklyAuditScanPage() {
         setRecentScans((prev) => [{ name: '—', sku: barcode, time: new Date().toLocaleTimeString() }, ...prev.slice(0, RECENT_MAX - 1)]);
       } catch {
         remaining.push({ sessionId: current, barcode });
-        localStorage.setItem(PENDING_SCANS_KEY, JSON.stringify(remaining));
+        if (typeof localStorage !== 'undefined') localStorage.setItem(PENDING_SCANS_KEY, JSON.stringify(remaining));
         break;
       }
     }
@@ -299,9 +305,16 @@ export default function WeeklyAuditScanPage() {
           playError();
           setErrors((n) => n + 1);
         } else {
-          const pending = JSON.parse(localStorage.getItem(PENDING_SCANS_KEY) || '[]') as Array<{ sessionId: string; barcode: string }>;
+          let pending: Array<{ sessionId: string; barcode: string }>;
+          try {
+            const rawPending = typeof localStorage !== 'undefined' ? localStorage.getItem(PENDING_SCANS_KEY) : null;
+            pending = rawPending ? (JSON.parse(rawPending) as Array<{ sessionId: string; barcode: string }>) : [];
+            if (!Array.isArray(pending)) pending = [];
+          } catch {
+            pending = [];
+          }
           pending.push({ sessionId: sid, barcode: barcode.trim() });
-          localStorage.setItem(PENDING_SCANS_KEY, JSON.stringify(pending));
+          if (typeof localStorage !== 'undefined') localStorage.setItem(PENDING_SCANS_KEY, JSON.stringify(pending));
           setPendingCount((n) => n + 1);
         }
       } finally {
