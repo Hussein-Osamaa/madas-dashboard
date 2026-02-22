@@ -673,7 +673,7 @@ export default function InventoryPage() {
                         placeholder="Stock"
                         min={0}
                         value={v.stock || ''}
-                        onChange={(e) => handleVariantChange(v.id, 'stock', e.target.value)}
+                        onChange={(e) => handleVariantChange(v.id, 'stock', Number(e.target.value) || 0)}
                         className="w-20 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm"
                       />
                       <input
@@ -793,7 +793,7 @@ export default function InventoryPage() {
                         placeholder="Stock"
                         min={0}
                         value={v.stock || ''}
-                        onChange={(e) => handleVariantChange(v.id, 'stock', e.target.value)}
+                        onChange={(e) => handleVariantChange(v.id, 'stock', Number(e.target.value) || 0)}
                         className="w-20 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm"
                       />
                       <input

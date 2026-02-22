@@ -261,6 +261,8 @@ router.patch(
     body('sku').optional().isString(),
     body('barcode').optional().isString(),
     body('warehouse').optional().isString(),
+    body('stock').optional().isObject(),
+    body('sizeBarcodes').optional().isObject(),
   ],
   validate,
   async (req: Request, res: Response) => {
@@ -273,6 +275,8 @@ router.patch(
         sku: req.body.sku,
         barcode: req.body.barcode,
         warehouse: req.body.warehouse,
+        stock: req.body.stock,
+        sizeBarcodes: req.body.sizeBarcodes,
       });
       res.json({ success: true });
     } catch (err) {
