@@ -1,18 +1,25 @@
 /**
  * Vercel serverless catch-all: forwards all requests to the Express app.
- * CORS is set first so preflight and any error response always include headers.
+ * CORS: use writeHead for OPTIONS so headers are sent atomically; set CORS on every response.
  */
 
 const path = require('path');
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://xdigix-os.vercel.app';
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': CORS_ORIGIN,
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400',
+};
+
 function setCorsHeaders(res, origin) {
   try {
     res.setHeader('Access-Control-Allow-Origin', origin || CORS_ORIGIN);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Max-Age', '86400');
+    res.setHeader('Access-Control-Allow-Methods', CORS_HEADERS['Access-Control-Allow-Methods']);
+    res.setHeader('Access-Control-Allow-Headers', CORS_HEADERS['Access-Control-Allow-Headers']);
+    res.setHeader('Access-Control-Max-Age', CORS_HEADERS['Access-Control-Max-Age']);
   } catch (e) {}
 }
 
@@ -43,13 +50,16 @@ module.exports = async function handler(req, res) {
   const method = (req && req.method) ? String(req.method).toUpperCase() : 'GET';
   const origin = (req && req.headers && req.headers.origin) || CORS_ORIGIN;
 
-  setCorsHeaders(res, origin);
-
   if (method === 'OPTIONS') {
-    res.statusCode = 204;
+    res.writeHead(204, {
+      ...CORS_HEADERS,
+      'Access-Control-Allow-Origin': origin || CORS_ORIGIN,
+    });
     res.end();
     return;
   }
+
+  setCorsHeaders(res, origin);
 
   try {
     await ensureDb();

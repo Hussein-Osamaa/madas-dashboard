@@ -63,13 +63,20 @@ To run the report cron via Vercel Cron:
 
 3. In Vercel, set `CRON_SECRET` and check it in the handler.
 
-## 5. Troubleshooting 500 / FUNCTION_INVOCATION_FAILED
+## 5. Troubleshooting CORS (preflight / No 'Access-Control-Allow-Origin')
+
+- **Test a simple route:** From your frontend origin, open DevTools → Network and request `GET https://<backend>.vercel.app/api/health`. If this returns CORS headers but `/api/auth/me` does not, the catch-all handler is likely failing before sending headers (e.g. DB or load error). If `/api/health` also has no CORS, then:
+  - In Vercel → **Settings** → **Deployment Protection**: if "Vercel Authentication" or "Password Protection" is on, **OPTIONS** may be blocked; add your frontend origin to the allowlist or temporarily disable to test.
+  - Ensure **Root Directory** is exactly the backend folder (e.g. `sys/backend` or `Front-end/XDIGIX-t/sys/backend` from repo root) so `api/` and `vercel.json` are in the deployment.
+- Set **CORS_ORIGIN** in the backend project to your frontend URL (e.g. `https://xdigix-os.vercel.app`).
+
+## 6. Troubleshooting 500 / FUNCTION_INVOCATION_FAILED
 
 - **Check Vercel logs**: Project → **Deployments** → select deployment → **Functions** → click the function → **Logs**. The handler now catches errors and logs `[Vercel handler] <error>`; the stack trace will show the real cause.
 - **MONGODB_URI**: Must be set in the backend project’s **Environment Variables**. If missing, the app tries localhost and the function can crash. Use your Atlas (or other) connection string.
 - **Build**: Ensure **Root Directory** is `sys/backend` (or `backend`) so `npm run build` runs there and produces `dist/`. The serverless function loads from `dist/`.
 
-## 6. Local / Railway / Render (full server)
+## 7. Local / Railway / Render (full server)
 
 - **Local**: `npm run dev` or `npm run build && npm start` (full server with Socket.io and cron).
 - **Railway / Render**: Use the same code; run `node dist/index.js` so you get the full server (Socket.io + cron). Only use the Vercel layout when deploying to Vercel.
