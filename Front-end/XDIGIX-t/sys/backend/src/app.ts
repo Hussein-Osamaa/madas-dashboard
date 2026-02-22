@@ -15,18 +15,27 @@ import './services/orderInventoryIntegration'; // Registers order->inventory eve
 export function createApp(): Express {
   const app = express();
 
-  const allowedOrigins = (config.cors.origin || '*')
+  const KNOWN_ORIGINS = [
+    'https://xdigix-os.vercel.app',
+    'https://xdigix-os-xdigix.vercel.app',
+  ];
+  const envOrigins = (config.cors.origin || '')
     .split(',')
     .map((s: string) => s.trim())
     .filter(Boolean);
+  const allowedOrigins = [...new Set([...KNOWN_ORIGINS, ...envOrigins])];
 
   app.use(
     cors({
       origin: (incoming, callback) => {
-        if (!incoming || allowedOrigins.includes('*') || allowedOrigins.includes(incoming)) {
+        if (
+          !incoming ||
+          allowedOrigins.includes('*') ||
+          allowedOrigins.includes(incoming)
+        ) {
           callback(null, incoming || '*');
         } else {
-          callback(null, allowedOrigins[0]);
+          callback(null, false);
         }
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
