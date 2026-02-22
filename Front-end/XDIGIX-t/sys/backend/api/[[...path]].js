@@ -1,25 +1,37 @@
 /**
  * Vercel serverless catch-all: forwards all requests to the Express app.
- * CORS: use writeHead for OPTIONS so headers are sent atomically; set CORS on every response.
+ * CORS: always set valid headers (browser requires valid Access-Control-Allow-Origin).
  */
 
 const path = require('path');
 
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://xdigix-os.vercel.app';
+const DEFAULT_ORIGIN = 'https://xdigix-os.vercel.app';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': CORS_ORIGIN,
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Max-Age': '86400',
-};
+function getAllowOrigin(req) {
+  const env = process.env.CORS_ORIGIN;
+  if (typeof env === 'string' && env.trim()) return env.trim();
+  const o = req && req.headers && req.headers.origin;
+  if (typeof o === 'string' && o.trim()) return o.trim();
+  return DEFAULT_ORIGIN;
+}
+
+function corsHeaders(origin) {
+  const allowOrigin = (typeof origin === 'string' && origin.trim()) ? origin.trim() : DEFAULT_ORIGIN;
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+}
 
 function setCorsHeaders(res, origin) {
+  const h = corsHeaders(origin);
   try {
-    res.setHeader('Access-Control-Allow-Origin', origin || CORS_ORIGIN);
-    res.setHeader('Access-Control-Allow-Methods', CORS_HEADERS['Access-Control-Allow-Methods']);
-    res.setHeader('Access-Control-Allow-Headers', CORS_HEADERS['Access-Control-Allow-Headers']);
-    res.setHeader('Access-Control-Max-Age', CORS_HEADERS['Access-Control-Max-Age']);
+    res.setHeader('Access-Control-Allow-Origin', h['Access-Control-Allow-Origin']);
+    res.setHeader('Access-Control-Allow-Methods', h['Access-Control-Allow-Methods']);
+    res.setHeader('Access-Control-Allow-Headers', h['Access-Control-Allow-Headers']);
+    res.setHeader('Access-Control-Max-Age', h['Access-Control-Max-Age']);
   } catch (e) {}
 }
 
@@ -48,13 +60,11 @@ function ensureDb() {
 
 module.exports = async function handler(req, res) {
   const method = (req && req.method) ? String(req.method).toUpperCase() : 'GET';
-  const origin = (req && req.headers && req.headers.origin) || CORS_ORIGIN;
+  const origin = getAllowOrigin(req);
+  const headers = corsHeaders(origin);
 
   if (method === 'OPTIONS') {
-    res.writeHead(204, {
-      ...CORS_HEADERS,
-      'Access-Control-Allow-Origin': origin || CORS_ORIGIN,
-    });
+    res.writeHead(204, headers);
     res.end();
     return;
   }
@@ -72,14 +82,13 @@ module.exports = async function handler(req, res) {
     });
   } catch (err) {
     console.error('[Vercel handler]', err);
-    setCorsHeaders(res, origin);
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(
-      JSON.stringify({
-        error: 'FUNCTION_INVOCATION_FAILED',
-        message: process.env.NODE_ENV === 'production' ? 'Server error' : err.message,
-      })
-    );
+    const body = JSON.stringify({
+      error: 'FUNCTION_INVOCATION_FAILED',
+      message: process.env.NODE_ENV === 'production' ? 'Server error' : err.message,
+    });
+    if (!res.headersSent) {
+      res.writeHead(500, { ...corsHeaders(origin), 'Content-Type': 'application/json' });
+    }
+    res.end(body);
   }
 };
