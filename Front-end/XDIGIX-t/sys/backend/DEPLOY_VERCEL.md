@@ -7,7 +7,10 @@ The backend runs as **serverless functions** on Vercel: one catch-all handles al
 Use a **second** Vercel project (do not mix with the frontend project):
 
 1. In Vercel: **Add New** → **Project**; import the same repo.
-2. **Root Directory**: set to **`sys/backend`** (or **`backend`** if your repo root is already `sys`).
+2. **Root Directory** (critical): set to the **backend folder** so only `api/` and `dist/` are used. Examples:
+   - Repo root = Madas: use **`Front-end/XDIGIX-t/sys/backend`**
+   - Repo root = sys: use **`backend`**
+   If Root Directory is wrong (e.g. repo root), you will see **"No exports found in module ... src/index.js"** and 500s; fix by setting Root Directory to the backend path above.
 3. **Framework Preset**: Other (no framework).
 4. **Build Command**: `npm run build` (already set in `vercel.json`).
 5. **Output Directory**: leave empty (we use serverless, not static).

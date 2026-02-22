@@ -1,0 +1,7 @@
+# Only api/* and dist/* are needed at runtime. Exclude src so Vercel does not try to run src/index.js.
+src/
+*.ts
+*.tsx
+migration/
+scripts/
+node_modules/.cache

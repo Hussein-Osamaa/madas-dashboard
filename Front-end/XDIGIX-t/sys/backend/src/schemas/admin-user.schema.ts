@@ -25,7 +25,7 @@ const AdminUserSchema = new Schema<IAdminUser>(
   { timestamps: true }
 );
 
-AdminUserSchema.index({ email: 1 });
+// email has unique: true → index created automatically
 
 export const AdminUser: Model<IAdminUser> =
   mongoose.models.AdminUser ?? mongoose.model<IAdminUser>('AdminUser', AdminUserSchema);

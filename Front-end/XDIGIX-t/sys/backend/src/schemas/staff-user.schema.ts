@@ -51,7 +51,7 @@ const StaffUserSchema = new Schema<IStaffUser>(
   { timestamps: true }
 );
 
-StaffUserSchema.index({ email: 1 });
+// email has unique: true → index created automatically
 StaffUserSchema.index({ active: 1 });
 StaffUserSchema.index({ department: 1 });
 
