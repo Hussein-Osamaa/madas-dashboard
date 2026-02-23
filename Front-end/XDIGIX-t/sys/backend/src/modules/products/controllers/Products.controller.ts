@@ -105,10 +105,24 @@ export async function listProductsWithStock(
 
   return Promise.all(
     filtered.map(async (doc) => {
-      const data = doc.data || {};
+      const raw = doc.data || {};
+      const data = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {};
       const productId = (doc as { docId: string }).docId;
       const availableStock = await getAvailableStock(productId, clientId);
-      return { id: productId, ...data, availableStock } as Record<string, unknown> & {
+      // Plain objects so JSON serialization in production (Vercel/serverless) never drops or alters them
+      const stockRaw = data.stock != null && typeof data.stock === 'object' ? (data.stock as Record<string, unknown>) : {};
+      const stock: Record<string, number> = {};
+      for (const [k, v] of Object.entries(stockRaw)) {
+        if (k == null) continue;
+        const num = typeof v === 'number' && !Number.isNaN(v) ? v : Number(v);
+        if (!Number.isNaN(num)) stock[k] = num;
+      }
+      const sizeBarcodesRaw = data.sizeBarcodes != null && typeof data.sizeBarcodes === 'object' ? data.sizeBarcodes as Record<string, string> : {};
+      const sizeBarcodes: Record<string, string> = {};
+      for (const [k, v] of Object.entries(sizeBarcodesRaw)) {
+        if (k != null && v != null && typeof v === 'string') sizeBarcodes[k] = v;
+      }
+      return { id: productId, ...data, stock, sizeBarcodes, availableStock } as Record<string, unknown> & {
         id: string;
         availableStock?: number;
       };
@@ -278,28 +292,33 @@ export async function updateProduct(clientId: string, productId: string, input: 
     businessId: clientId,
     coll: 'products',
     docId: productId,
-  });
+  }).lean();
   if (!doc) throw new Error('Product not found');
 
-  const data = doc.data || {};
+  const existing = (doc.data || {}) as Record<string, unknown>;
+  const data: Record<string, unknown> = { ...existing };
   if (input.name !== undefined) data.name = input.name;
   if (input.sku !== undefined) data.sku = input.sku;
   if (input.barcode !== undefined) data.barcode = input.barcode;
   if (input.warehouse !== undefined) data.warehouse = input.warehouse;
 
-  let stock = input.stock ?? (data as Record<string, unknown>).stock as Record<string, number> | undefined;
-  let sizeBarcodes =
-    (input.sizeBarcodes ?? (data as Record<string, unknown>).sizeBarcodes) as Record<string, string> | undefined;
-  sizeBarcodes = { ...(sizeBarcodes ?? {}) };
+  let stock: Record<string, number> =
+    input.stock !== undefined && input.stock !== null
+      ? (typeof input.stock === 'object' ? { ...input.stock } : {})
+      : (existing.stock != null && typeof existing.stock === 'object' ? { ...(existing.stock as Record<string, number>) } : {});
+  let sizeBarcodes: Record<string, string> =
+    input.sizeBarcodes != null && typeof input.sizeBarcodes === 'object'
+      ? { ...input.sizeBarcodes }
+      : (existing.sizeBarcodes != null && typeof existing.sizeBarcodes === 'object' ? { ...(existing.sizeBarcodes as Record<string, string>) } : {});
 
   // Auto-generate unique barcodes for sizes that don't have one
-  const mainBarcode = String((input.barcode ?? data.barcode) ?? '').trim() || String(data.barcode ?? '').trim();
-  if (stock && Object.keys(stock).length > 0) {
+  const mainBarcode = String((input.barcode ?? existing.barcode) ?? '').trim() || String(existing.barcode ?? '').trim();
+  if (Object.keys(stock).length > 0) {
     const generatedBarcodes = new Set<string>([mainBarcode].filter(Boolean));
     Object.values(sizeBarcodes).forEach((v) => v && generatedBarcodes.add(v));
     for (const size of Object.keys(stock).filter((k) => !k.includes('|'))) {
-      const existing = (sizeBarcodes[size] ?? '').trim();
-      if (!existing) {
+      const existingBc = (sizeBarcodes[size] ?? '').trim();
+      if (!existingBc) {
         const bc = await generateUniqueSizeBarcode(clientId, size, mainBarcode, generatedBarcodes);
         sizeBarcodes[size] = bc;
         generatedBarcodes.add(bc);
@@ -307,11 +326,9 @@ export async function updateProduct(clientId: string, productId: string, input: 
     }
   }
 
-  if (input.stock !== undefined) (data as Record<string, unknown>).stock = input.stock;
-  if (sizeBarcodes && Object.keys(sizeBarcodes).length > 0) {
-    (data as Record<string, unknown>).sizeBarcodes = sizeBarcodes;
-  }
-  (data as Record<string, unknown>).updatedAt = new Date().toISOString();
+  data.stock = stock;
+  data.sizeBarcodes = sizeBarcodes;
+  data.updatedAt = new Date().toISOString();
 
   await FirestoreDoc.updateOne(
     { businessId: clientId, coll: 'products', docId: productId },

@@ -563,24 +563,29 @@ export default function InventoryPage() {
                         </td>
                         <td className="py-4 px-5 text-gray-500 dark:text-gray-400 font-mono text-xs">{p.id}</td>
                         <td className="py-4 px-5 text-right">
-                          {(data.stock as Record<string, number> | undefined) &&
-                          Object.keys((data.stock as Record<string, number>) || {}).filter((k) => !k.includes('|')).length >
-                            0 ? (
-                            <span className="inline-flex flex-col items-end gap-0.5">
-                              {Object.entries((data.stock as Record<string, number>) || {})
-                                .filter(([k]) => !k.includes('|'))
-                                .map(([size, qty]) => (
+                          {(() => {
+                            const rawStock = (data.stock ?? (p as Record<string, unknown>).stock) as Record<string, number> | undefined;
+                            const stockObj =
+                              rawStock != null && typeof rawStock === 'object' && !Array.isArray(rawStock)
+                                ? rawStock
+                                : {};
+                            const sizeEntries = Object.entries(stockObj).filter(([k]) => k != null && !String(k).includes('|'));
+                            if (sizeEntries.length === 0) {
+                              return <span className="text-gray-500 dark:text-gray-400">—</span>;
+                            }
+                            return (
+                              <span className="inline-flex flex-col items-end gap-0.5">
+                                {sizeEntries.map(([size, qty]) => (
                                   <span
-                                    key={size}
+                                    key={String(size)}
                                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                                   >
-                                    {size}: {qty}
+                                    {String(size)}: {Number(qty) ?? 0}
                                   </span>
                                 ))}
-                            </span>
-                          ) : (
-                            <span className="text-gray-500 dark:text-gray-400">—</span>
-                          )}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="py-4 px-5 text-right">
                           <button
