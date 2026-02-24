@@ -265,22 +265,28 @@ router.patch(
     body('sku').optional().isString(),
     body('barcode').optional().isString(),
     body('warehouse').optional().isString(),
-    body('stock').optional().isObject(),
-    body('sizeBarcodes').optional().isObject(),
+    body('clientId').optional().isString(),
+    // stock/sizeBarcodes: accept any (object with string keys) - no .isObject() to avoid stripping
+    body('stock').optional(),
+    body('sizeBarcodes').optional(),
   ],
   validate,
   async (req: Request, res: Response) => {
     try {
       const productId = req.params.id;
       if (!productId) return res.status(400).json({ error: 'Product ID required' });
+      const clientId = (req.body?.clientId && String(req.body.clientId).trim()) || req.clientId;
+      if (!clientId) return res.status(400).json({ error: 'Client ID required' });
       const { updateProduct } = await import('../modules/products/controllers/Products.controller');
-      await updateProduct(req.clientId!, productId, {
+      const stock = req.body.stock != null && typeof req.body.stock === 'object' && !Array.isArray(req.body.stock) ? req.body.stock : undefined;
+      const sizeBarcodes = req.body.sizeBarcodes != null && typeof req.body.sizeBarcodes === 'object' && !Array.isArray(req.body.sizeBarcodes) ? req.body.sizeBarcodes : undefined;
+      await updateProduct(clientId, productId, {
         name: req.body.name,
         sku: req.body.sku,
         barcode: req.body.barcode,
         warehouse: req.body.warehouse,
-        stock: req.body.stock,
-        sizeBarcodes: req.body.sizeBarcodes,
+        stock,
+        sizeBarcodes,
       });
       res.json({ success: true });
     } catch (err) {

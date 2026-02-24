@@ -60,6 +60,7 @@ export default function InventoryPage() {
   const [showAssignWarehouseModal, setShowAssignWarehouseModal] = useState(false);
   const [assignWarehouseId, setAssignWarehouseId] = useState('');
   const [submittingBulkAssign, setSubmittingBulkAssign] = useState(false);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState('');
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm.trim()) return products;
@@ -276,7 +277,9 @@ export default function InventoryPage() {
         sizeBarcodes,
       });
       handleCloseModals();
+      setSaveSuccessMessage('Saved. Refreshing list…');
       await loadProducts();
+      setTimeout(() => setSaveSuccessMessage(''), 3000);
     } catch (e) {
       setFormError((e as Error).message);
     } finally {
@@ -428,6 +431,11 @@ export default function InventoryPage() {
       {/* Inventory table */}
       {selectedClientId && (
         <div>
+          {saveSuccessMessage && (
+            <div className="mb-4 p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-sm">
+              {saveSuccessMessage}
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {selectedClient?.name || selectedClientId} – Products in warehouse

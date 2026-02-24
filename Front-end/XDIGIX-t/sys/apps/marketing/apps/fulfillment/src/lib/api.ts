@@ -218,7 +218,7 @@ export interface UpdateProductInput {
 export async function updateProduct(clientId: string, productId: string, input: UpdateProductInput): Promise<void> {
   await fetchApi(`/warehouse/products/${productId}?clientId=${encodeURIComponent(clientId)}`, {
     method: 'PATCH',
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, clientId }),
   });
 }
 
