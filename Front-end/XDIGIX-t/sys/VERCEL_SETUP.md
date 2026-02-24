@@ -56,17 +56,18 @@ Build runs `npm run build` → builds all five apps → writes `.vercel/output` 
 
 ---
 
-## 4. Optional: API URL (production backend)
+## 4. API URL (required for Warehouse / login)
 
-If the frontend calls your own API, set the production URL:
+The **Warehouse** app (`/warehouse`) and any app that calls your backend **must** use an **HTTPS** API URL. If you don’t set it, the site will try `http://...:4000` and the browser will block it (Mixed Content) on HTTPS.
 
 1. **Settings** → **Environment Variables**.
 2. Add:
    - **Name:** `VITE_API_BACKEND_URL`
-   - **Value:** `https://your-backend-domain.com/api` (or your real API base URL)
-3. Redeploy so the app uses this in production.
+   - **Value:** `https://your-backend-url.com/api`  
+     Use your real backend URL (e.g. `https://your-app.onrender.com/api`, `https://your-app.up.railway.app/api`). **Must be HTTPS**, no `http://` and no `:4000` unless your backend is actually on that port with HTTPS.
+3. **Redeploy** so the build picks up the variable.
 
-The backend runs elsewhere (e.g. Railway, Render, VPS). Vercel hosts only the frontend.
+The backend runs elsewhere (e.g. Railway, Render). Vercel hosts only the frontend.
 
 ---
 
@@ -77,3 +78,4 @@ The backend runs elsewhere (e.g. Railway, Render, VPS). Vercel hosts only the fr
 | 404 on `/dashboard`, `/warehouse`, etc. | Root Directory must be `Front-end/XDIGIX-t/sys` (or `sys`). Redeploy. |
 | “No entrypoint found in output directory: dist-unified” | Clear **Output Directory** in Build & Development Settings. Build creates `.vercel/output`; don’t set output to `dist-unified`. |
 | Build fails at “Building Fulfillment app…” | Check the build log for the exact error (e.g. memory, Node version). Root must be `sys` so all apps are built. |
+| Mixed Content (HTTPS page requesting http://...:4000) | Set **VITE_API_BACKEND_URL** to your backend **HTTPS** URL (e.g. `https://your-app.onrender.com/api`). Redeploy. |

@@ -17,7 +17,7 @@ import {
   type AuditSessionSummary,
 } from '../lib/api';
 import { useStaffAuth } from '../contexts/StaffAuthContext';
-import { connectAuditSocket } from '../lib/auditSocket';
+import { connectAuditSocket, isAuditSocketDisabled } from '../lib/auditSocket';
 
 const PENDING_SCANS_KEY = 'audit_pending_scans';
 const AUDIT_SESSION_ID_KEY = 'audit_session_id';
@@ -552,7 +552,7 @@ export default function WeeklyAuditScanPage() {
             )}
             {sessionId && (
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {socketConnected ? '● Live' : '○ Connecting…'}
+                {socketConnected ? '● Live' : isAuditSocketDisabled() ? '○ Live sync unavailable' : '○ Connecting…'}
               </div>
             )}
           </div>

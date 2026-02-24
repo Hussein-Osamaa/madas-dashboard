@@ -1,5 +1,18 @@
 # Deploy backend on Railway
 
+## Option A: Dockerfile (recommended)
+
+The repo includes **`backend/Dockerfile`** and **`backend/railway.json`**. Use them so the build context is the backend folder:
+
+1. **Settings** → **Root Directory**: set to **`backend`** (or **`sys/backend`** if your repo root is `sys`).
+2. Railway will use **`railway.json`** in that folder: builder = DOCKERFILE, dockerfilePath = **Dockerfile**. Do **not** set `dockerfilePath` to a path like `Front-end/XDIGIX-t/sys/backend/Dockerfile` unless your deploy context is the repo root and you want the Docker context to be that path (Railway may still use the Dockerfile’s directory as build context; if not, the Docker build will fail because `COPY package.json` expects files in the backend dir).
+3. No need to set **Build command** or **Start command** when using the Dockerfile; it defines the build and `CMD`.
+4. Add **Environment variables** (see below) and deploy.
+
+---
+
+## Option B: Railpack (no Dockerfile)
+
 ## Fix: "Error creating build plan with Railpack"
 
 Railway builds from the **repo root** by default. Your backend lives in **`backend/`**, so Railpack doesn't see a single Node app and fails. Do this:
