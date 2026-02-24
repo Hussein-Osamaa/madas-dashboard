@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useLiveRefresh } from '../hooks/useLiveRefresh';
 import { Package, ChevronDown, Plus, Pencil, Warehouse as WarehouseIcon, Search, Printer } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
+import { normalizeProductFromApi } from '../components/SizeVariantsEditor';
 import {
-  SizeVariantsEditor,
-  buildStockPayloadFromVariants,
-  buildVariantsFromProduct,
-  normalizeProductFromApi,
-  emptyVariant,
-  type SizeVariant,
-} from '../components/SizeVariantsEditor';
+  SizeVariantsEditorFull,
+  buildStockPayloadFromVariantsFull,
+  buildVariantsFromProductFull,
+  emptyVariantFull,
+  type SizeVariantFull,
+} from '../components/SizeVariantsEditorFull';
 import {
   listFulfillmentClients,
   listProducts,
@@ -33,7 +34,7 @@ export default function InventoryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editProduct, setEditProduct] = useState<ProductWithStock | null>(null);
   const [formData, setFormData] = useState(emptyForm);
-  const [variants, setVariants] = useState<SizeVariant[]>([emptyVariant()]);
+  const [variants, setVariants] = useState<SizeVariantFull[]>([emptyVariantFull()]);
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -168,24 +169,26 @@ export default function InventoryPage() {
     }
   };
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async (silent = false) => {
     if (!selectedClientId) return;
-    setLoadingProducts(true);
-    setError('');
+    if (!silent) setLoadingProducts(true);
+    if (!silent) setError('');
     try {
       const res = await listProducts(selectedClientId);
       const list = res.products || [];
       setProducts(list.map((p) => normalizeProductFromApi(p as Record<string, unknown> & { id?: string }) as ProductWithStock));
     } catch (e) {
-      setError((e as Error).message);
+      if (!silent) setError((e as Error).message);
     } finally {
-      setLoadingProducts(false);
+      if (!silent) setLoadingProducts(false);
     }
-  };
+  }, [selectedClientId]);
+
+  useLiveRefresh(() => loadProducts(true), 30_000, [selectedClientId]);
 
   const handleOpenAdd = () => {
     setFormData(emptyForm);
-    setVariants([emptyVariant()]);
+    setVariants([emptyVariantFull()]);
     setFormError('');
     setShowAddModal(true);
   };
@@ -193,13 +196,14 @@ export default function InventoryPage() {
   const handleOpenEdit = (p: ProductWithStock) => {
     setEditProduct(p);
     const normalized = normalizeProductFromApi(p as Record<string, unknown> & { id?: string });
+    const barcode = String(normalized.barcode ?? '');
     setFormData({
       name: String(normalized.name ?? p.id),
       sku: String(normalized.sku ?? ''),
-      barcode: String(normalized.barcode ?? ''),
+      barcode,
       warehouse: String(normalized.warehouse ?? ''),
     });
-    setVariants(buildVariantsFromProduct(normalized));
+    setVariants(buildVariantsFromProductFull(normalized, barcode));
     setFormError('');
   };
 
@@ -227,10 +231,11 @@ export default function InventoryPage() {
     }
     setSubmitting(true);
     try {
-      const { stock, sizeBarcodes } = buildStockPayloadFromVariants(variants);
+      const { stock, sizeBarcodes } = buildStockPayloadFromVariantsFull(variants, formData.barcode);
       await createProduct(selectedClientId, {
         name: nameTrim,
         warehouse: formData.warehouse,
+        barcode: formData.barcode.trim() || undefined,
         stock: { ...stock },
         sizeBarcodes: { ...sizeBarcodes },
       });
@@ -249,7 +254,7 @@ export default function InventoryPage() {
     setFormError('');
     setSubmitting(true);
     try {
-      const { stock, sizeBarcodes } = buildStockPayloadFromVariants(variants);
+      const { stock, sizeBarcodes } = buildStockPayloadFromVariantsFull(variants, formData.barcode);
       await updateProduct(selectedClientId, editProduct.id, {
         name: formData.name,
         sku: formData.sku,
@@ -545,7 +550,7 @@ export default function InventoryPage() {
                               rawStock != null && typeof rawStock === 'object' && !Array.isArray(rawStock)
                                 ? rawStock
                                 : {};
-                            const sizeEntries = Object.entries(stockObj).filter(([k]) => k != null && !String(k).includes('|'));
+                            const sizeEntries = Object.entries(stockObj).filter(([k]) => k != null);
                             if (sizeEntries.length === 0) {
                               return <span className="text-gray-500 dark:text-gray-400">—</span>;
                             }
@@ -556,7 +561,7 @@ export default function InventoryPage() {
                                     key={String(size)}
                                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                                   >
-                                    {String(size)}: {Number(qty) ?? 0}
+                                    {String(size).includes('|') ? String(size).replace('|', ' → ') : String(size)}: {Number(qty) ?? 0}
                                   </span>
                                 ))}
                               </span>
@@ -610,8 +615,18 @@ export default function InventoryPage() {
                 />
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                SKU and barcode are auto-generated per client for unique data collection.
+                SKU and barcode are auto-generated per client. Optionally set a base barcode for variant barcodes below.
               </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Base barcode (optional)</label>
+                <input
+                  type="text"
+                  value={formData.barcode}
+                  onChange={(e) => setFormData((d) => ({ ...d, barcode: e.target.value }))}
+                  placeholder="e.g. 123456789012 – used as prefix for variant barcodes"
+                  className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white font-mono text-sm"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Warehouse</label>
                 <select
@@ -628,9 +643,11 @@ export default function InventoryPage() {
                   ))}
                 </select>
               </div>
-              <SizeVariantsEditor
+              <SizeVariantsEditorFull
                 variants={variants}
                 onVariantsChange={setVariants}
+                mainBarcode={formData.barcode}
+                onMainBarcodeChange={(v) => setFormData((d) => ({ ...d, barcode: v }))}
                 disabled={submitting}
               />
               <div className="flex gap-3 pt-2">
@@ -705,9 +722,11 @@ export default function InventoryPage() {
                   ))}
                 </select>
               </div>
-              <SizeVariantsEditor
+              <SizeVariantsEditorFull
                 variants={variants}
                 onVariantsChange={setVariants}
+                mainBarcode={formData.barcode}
+                onMainBarcodeChange={(v) => setFormData((d) => ({ ...d, barcode: v }))}
                 disabled={submitting}
               />
               <div className="flex gap-3 pt-2">

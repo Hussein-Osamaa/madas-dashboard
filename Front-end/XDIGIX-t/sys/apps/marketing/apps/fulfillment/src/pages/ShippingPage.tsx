@@ -1,10 +1,11 @@
 /**
  * Shipping – orders in transit. Mark as delivered, returned, or damaged.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Truck, Search, RefreshCw, Eye, FileText, Building2, CheckCircle, RotateCcw, XCircle } from 'lucide-react';
 import { listFulfillmentOrders, updateOrderFulfillment, type FulfillmentOrder } from '../lib/api';
 import OrderDetailModal from '../components/OrderDetailModal';
+import { useLiveRefresh } from '../hooks/useLiveRefresh';
 
 function formatDate(v: string | undefined): string {
   if (!v) return '—';
@@ -27,21 +28,23 @@ export default function ShippingPage() {
   const [actionType, setActionType] = useState<ActionType | null>(null);
   const [updating, setUpdating] = useState(false);
 
-  const loadOrders = async () => {
-    setLoading(true);
+  const loadOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const { orders: list } = await listFulfillmentOrders('shipped');
       setOrders(list);
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadOrders();
-  }, []);
+  }, [loadOrders]);
+
+  useLiveRefresh(() => loadOrders(true), 30_000, []);
 
   const filteredOrders = orders.filter((o) => {
     const term = searchTerm.toLowerCase();

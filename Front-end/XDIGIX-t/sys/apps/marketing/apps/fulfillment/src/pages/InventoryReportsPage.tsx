@@ -1,9 +1,10 @@
 /**
  * Inventory Reports – View and download weekly, monthly, and yearly inventory reports per client.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, Building2, Search, ChevronDown } from 'lucide-react';
 import { listFulfillmentClients, listReports, downloadReport, type FulfillmentClient, type InventoryReportItem } from '../lib/api';
+import { useLiveRefresh } from '../hooks/useLiveRefresh';
 
 export default function InventoryReportsPage() {
   const [clients, setClients] = useState<FulfillmentClient[]>([]);
@@ -15,27 +16,44 @@ export default function InventoryReportsPage() {
   const [downloadId, setDownloadId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadClients = useCallback(async () => {
     listFulfillmentClients()
       .then((r) => setClients(r.clients || []))
       .catch(() => setClients([]));
   }, []);
 
-  useEffect(() => {
+  const loadReports = useCallback(async (silent = false) => {
     if (!selectedClientId) {
       setReports([]);
       return;
     }
-    setLoadingReports(true);
-    setError(null);
+    if (!silent) setLoadingReports(true);
+    if (!silent) setError(null);
     listReports(selectedClientId)
       .then((r) => setReports(r.reports || []))
       .catch((e) => {
         setError(e instanceof Error ? e.message : 'Failed to load reports');
         setReports([]);
       })
-      .finally(() => setLoadingReports(false));
+      .finally(() => {
+        if (!silent) setLoadingReports(false);
+      });
   }, [selectedClientId]);
+
+  useEffect(() => {
+    loadClients();
+  }, [loadClients]);
+
+  useEffect(() => {
+    if (!selectedClientId) {
+      setReports([]);
+      return;
+    }
+    loadReports();
+  }, [selectedClientId, loadReports]);
+
+  useLiveRefresh(() => loadClients(), 60_000, []);
+  useLiveRefresh(() => loadReports(true), 30_000, [selectedClientId]);
 
   const handleDownload = async (reportId: string) => {
     if (!selectedClientId) return;

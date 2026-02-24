@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
@@ -8,11 +8,15 @@ import { staffLogin } from '../lib/api';
 export default function LoginPage() {
   const navigate = useNavigate();
   const { isDark, toggle } = useTheme();
-  const { setUserFromLogin } = useStaffAuth();
+  const { user, loading: authLoading, setUserFromLogin } = useStaffAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) navigate('/', { replace: true });
+  }, [authLoading, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +37,16 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-gray-50 dark:bg-[#0a0b1a]">
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      </div>
+    );
+  }
+
+  if (user) return null;
 
   return (
     <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-gray-50 dark:bg-[#0a0b1a] relative">

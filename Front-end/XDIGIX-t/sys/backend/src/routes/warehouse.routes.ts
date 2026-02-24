@@ -228,6 +228,30 @@ router.get('/products', async (req: Request, res: Response) => {
   }
 });
 
+/** Clone to plain object so nested stock/sizeBarcodes are never lost (proxies, getters, etc.) */
+function plainStockAndBarcodes(body: Record<string, unknown>): {
+  stock: Record<string, number> | undefined;
+  sizeBarcodes: Record<string, string> | undefined;
+} {
+  let stock: Record<string, number> | undefined;
+  let sizeBarcodes: Record<string, string> | undefined;
+  try {
+    if (body.stock != null && typeof body.stock === 'object' && !Array.isArray(body.stock)) {
+      stock = JSON.parse(JSON.stringify(body.stock)) as Record<string, number>;
+    }
+  } catch {
+    stock = undefined;
+  }
+  try {
+    if (body.sizeBarcodes != null && typeof body.sizeBarcodes === 'object' && !Array.isArray(body.sizeBarcodes)) {
+      sizeBarcodes = JSON.parse(JSON.stringify(body.sizeBarcodes)) as Record<string, string>;
+    }
+  } catch {
+    sizeBarcodes = undefined;
+  }
+  return { stock, sizeBarcodes };
+}
+
 router.post(
   '/products',
   [
@@ -243,15 +267,14 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { createProduct } = await import('../modules/products/controllers/Products.controller');
-      const stock = req.body.stock != null && typeof req.body.stock === 'object' && !Array.isArray(req.body.stock) ? req.body.stock : undefined;
-      const sizeBarcodes = req.body.sizeBarcodes != null && typeof req.body.sizeBarcodes === 'object' && !Array.isArray(req.body.sizeBarcodes) ? req.body.sizeBarcodes : undefined;
+      const { stock, sizeBarcodes } = plainStockAndBarcodes(req.body as Record<string, unknown>);
       const result = await createProduct(req.clientId!, {
         name: req.body.name,
         sku: req.body.sku,
         barcode: req.body.barcode,
         warehouse: req.body.warehouse,
-        stock,
-        sizeBarcodes,
+        stock: stock ?? {},
+        sizeBarcodes: sizeBarcodes ?? {},
       });
       res.status(201).json(result);
     } catch (err) {
@@ -268,9 +291,6 @@ router.patch(
     body('barcode').optional().isString(),
     body('warehouse').optional().isString(),
     body('clientId').optional().isString(),
-    // stock/sizeBarcodes: accept any (object with string keys) - no .isObject() to avoid stripping
-    body('stock').optional(),
-    body('sizeBarcodes').optional(),
   ],
   validate,
   async (req: Request, res: Response) => {
@@ -280,8 +300,21 @@ router.patch(
       const clientId = (req.body?.clientId && String(req.body.clientId).trim()) || req.clientId;
       if (!clientId) return res.status(400).json({ error: 'Client ID required' });
       const { updateProduct } = await import('../modules/products/controllers/Products.controller');
-      const stock = req.body.stock != null && typeof req.body.stock === 'object' && !Array.isArray(req.body.stock) ? req.body.stock : undefined;
-      const sizeBarcodes = req.body.sizeBarcodes != null && typeof req.body.sizeBarcodes === 'object' && !Array.isArray(req.body.sizeBarcodes) ? req.body.sizeBarcodes : undefined;
+      let { stock, sizeBarcodes } = plainStockAndBarcodes(req.body as Record<string, unknown>);
+      if (stock === undefined && req.body?.stock != null && typeof req.body.stock === 'object' && !Array.isArray(req.body.stock)) {
+        try {
+          stock = JSON.parse(JSON.stringify(req.body.stock)) as Record<string, number>;
+        } catch {
+          stock = undefined;
+        }
+      }
+      if (sizeBarcodes === undefined && req.body?.sizeBarcodes != null && typeof req.body.sizeBarcodes === 'object' && !Array.isArray(req.body.sizeBarcodes)) {
+        try {
+          sizeBarcodes = JSON.parse(JSON.stringify(req.body.sizeBarcodes)) as Record<string, string>;
+        } catch {
+          sizeBarcodes = undefined;
+        }
+      }
       await updateProduct(clientId, productId, {
         name: req.body.name,
         sku: req.body.sku,

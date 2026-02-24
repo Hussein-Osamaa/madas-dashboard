@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { StaffUser } from '../lib/api';
-import { getMe, staffLogout } from '../lib/api';
+import { getMe, staffLogout, getCachedUser, setCachedUser, clearTokens } from '../lib/api';
 
 interface StaffAuthContextValue {
   user: StaffUser | null;
@@ -13,23 +13,38 @@ interface StaffAuthContextValue {
 const StaffAuthContext = createContext<StaffAuthContextValue | null>(null);
 
 export function StaffAuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<StaffUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<StaffUser | null>(() => getCachedUser());
+  const [loading, setLoading] = useState(() => !getCachedUser());
 
   useEffect(() => {
-    getMe().then((data) => {
-      setUser(data?.user ?? null);
-      setLoading(false);
-    });
+    getMe()
+      .then((data) => {
+        if (data?.user) {
+          setUser(data.user);
+          setCachedUser(data.user);
+        } else {
+          clearTokens();
+          setCachedUser(null);
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        clearTokens();
+        setCachedUser(null);
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const logout = async () => {
+    setCachedUser(null);
     await staffLogout();
     setUser(null);
   };
 
   const setUserFromLogin = (u: StaffUser) => {
     setUser(u);
+    setCachedUser(u);
     setLoading(false);
   };
 

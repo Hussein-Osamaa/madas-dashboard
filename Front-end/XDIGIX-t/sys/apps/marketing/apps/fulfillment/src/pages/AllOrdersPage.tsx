@@ -1,10 +1,11 @@
 /**
  * All Orders – list all fulfillment orders with status filter and detail/update modals.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Package, Search, RefreshCw, Eye, FileText, Building2, X } from 'lucide-react';
 import { listFulfillmentOrders, updateOrderFulfillment, type FulfillmentOrder } from '../lib/api';
 import OrderDetailModal from '../components/OrderDetailModal';
+import { useLiveRefresh } from '../hooks/useLiveRefresh';
 
 function formatDate(v: string | undefined): string {
   if (!v) return '—';
@@ -26,8 +27,8 @@ export default function AllOrdersPage() {
   const [updating, setUpdating] = useState(false);
   const [updateData, setUpdateData] = useState({ status: 'pending', trackingNumber: '', notes: '' });
 
-  const loadOrders = async () => {
-    setLoading(true);
+  const loadOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const status = filterStatus === 'all' ? undefined : (filterStatus as 'pending' | 'ready_for_pickup' | 'shipped');
       const { orders: list } = await listFulfillmentOrders(status);
@@ -35,13 +36,15 @@ export default function AllOrdersPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [filterStatus]);
 
   useEffect(() => {
     loadOrders();
-  }, [filterStatus]);
+  }, [loadOrders]);
+
+  useLiveRefresh(() => loadOrders(true), 30_000, [filterStatus]);
 
   const filteredOrders = orders.filter((o) => {
     const term = searchTerm.toLowerCase();

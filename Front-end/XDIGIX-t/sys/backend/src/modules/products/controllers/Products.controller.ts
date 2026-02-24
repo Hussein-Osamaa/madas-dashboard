@@ -105,8 +105,13 @@ export async function listProductsWithStock(
 
   return Promise.all(
     filtered.map(async (doc) => {
-      const raw = doc.data || {};
-      const data = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {};
+      // Deep-clone so we get a plain object (avoids Mongoose/BSON getters or key quirks)
+      const raw = doc.data
+        ? (typeof doc.data === 'object' && doc.data !== null
+            ? (JSON.parse(JSON.stringify(doc.data)) as Record<string, unknown>)
+            : {})
+        : {};
+      const data = typeof raw === 'object' && raw !== null ? raw : {};
       const productId = (doc as { docId: string }).docId;
       const availableStock = await getAvailableStock(productId, clientId);
       // Build stock: prefer data.stock, fallback to legacy sizeVariants so size variants always return
@@ -147,11 +152,15 @@ export async function listProductsWithStock(
       for (const [k, v] of Object.entries(sizeBarcodesRaw)) {
         if (k != null && v != null && typeof v === 'string') sizeBarcodes[k] = v;
       }
-      // Always return plain objects so JSON never drops them
-      return { id: productId, ...data, stock, sizeBarcodes, availableStock } as Record<string, unknown> & {
-        id: string;
-        availableStock?: number;
+      // Always return plain objects; explicitly set stock/sizeBarcodes so they are never missing
+      const out: Record<string, unknown> = {
+        id: productId,
+        ...data,
+        stock: Object.keys(stock).length ? stock : {},
+        sizeBarcodes: Object.keys(sizeBarcodes).length ? sizeBarcodes : {},
+        availableStock,
       };
+      return out as Record<string, unknown> & { id: string; availableStock?: number };
     })
   );
 }
@@ -278,11 +287,11 @@ export async function createProduct(clientId: string, input: CreateProductInput)
     sku,
     barcode,
     warehouse: input.warehouse || '',
-    inventorySource: XDF_SOURCE, // XDIGIX-FULFILLMENT – only these show in fulfillment app & as linked inventory
+    inventorySource: XDF_SOURCE,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    stock: { ...stock },
-    sizeBarcodes: { ...sizeBarcodes },
+    stock: JSON.parse(JSON.stringify(stock)),
+    sizeBarcodes: JSON.parse(JSON.stringify(sizeBarcodes)),
   };
 
   await FirestoreDoc.create({
@@ -290,7 +299,7 @@ export async function createProduct(clientId: string, input: CreateProductInput)
     businessId: clientId,
     coll: 'products',
     docId: productId,
-    data,
+    data: JSON.parse(JSON.stringify(data)),
   });
 
   return { id: productId };
@@ -348,13 +357,13 @@ export async function updateProduct(clientId: string, productId: string, input: 
     }
   }
 
-  data.stock = { ...stock };
-  data.sizeBarcodes = { ...sizeBarcodes };
+  data.stock = JSON.parse(JSON.stringify(stock));
+  data.sizeBarcodes = JSON.parse(JSON.stringify(sizeBarcodes));
   data.updatedAt = new Date().toISOString();
 
-  // Replace entire data object so sizes/stock always persist (no dot-notation issues)
+  const dataToSet = JSON.parse(JSON.stringify(data));
   await FirestoreDoc.updateOne(
     { businessId: clientId, coll: 'products', docId: productId },
-    { $set: { data } }
+    { $set: { data: dataToSet } }
   );
 }

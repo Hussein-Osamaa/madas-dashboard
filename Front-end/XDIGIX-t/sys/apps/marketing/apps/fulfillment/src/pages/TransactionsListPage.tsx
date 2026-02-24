@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { listTransactions } from '../lib/api';
+import { useLiveRefresh } from '../hooks/useLiveRefresh';
 
 export default function TransactionsListPage() {
   const [clientId, setClientId] = useState('');
@@ -10,13 +11,13 @@ export default function TransactionsListPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async (silent = false) => {
     if (!clientId.trim()) {
       setData(null);
       return;
     }
-    setLoading(true);
-    setError('');
+    if (!silent) setLoading(true);
+    if (!silent) setError('');
     try {
       const res = await listTransactions(clientId, productId.trim() || undefined, page, 20);
       setData(res);
@@ -24,13 +25,15 @@ export default function TransactionsListPage() {
       setError((err as Error).message);
       setData(null);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [clientId, productId, page]);
 
   useEffect(() => {
     load();
-  }, [clientId, productId, page]);
+  }, [load]);
+
+  useLiveRefresh(() => load(true), 30_000, [clientId, productId, page]);
 
   return (
     <div>

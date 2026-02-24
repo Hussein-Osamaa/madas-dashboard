@@ -17,6 +17,7 @@ const API_BASE = getApiBase();
 
 const TOKEN_KEY = 'warehouse_access_token';
 const REFRESH_KEY = 'warehouse_refresh_token';
+const USER_CACHE_KEY = 'warehouse_user';
 
 export function getAccessToken(): string | null {
   return typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
@@ -33,7 +34,27 @@ export function clearTokens() {
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
+    localStorage.removeItem(USER_CACHE_KEY);
   }
+}
+
+export function getCachedUser(): StaffUser | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(USER_CACHE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as StaffUser;
+    if (data && typeof data.uid === 'string' && typeof data.email === 'string') return data;
+  } catch {
+    localStorage.removeItem(USER_CACHE_KEY);
+  }
+  return null;
+}
+
+export function setCachedUser(user: StaffUser | null) {
+  if (typeof localStorage === 'undefined') return;
+  if (user) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+  else localStorage.removeItem(USER_CACHE_KEY);
 }
 
 async function refreshAccessToken(): Promise<string | null> {

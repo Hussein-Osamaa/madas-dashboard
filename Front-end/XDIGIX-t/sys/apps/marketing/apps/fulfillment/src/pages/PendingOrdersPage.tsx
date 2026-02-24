@@ -1,7 +1,7 @@
 /**
  * Pending Orders – orders awaiting picking/scanning. Scan items like digix-admin.
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Clock, Search, RefreshCw, Eye, FileText, Building2, Scan, Camera, X, CheckCircle } from 'lucide-react';
 import {
@@ -11,6 +11,7 @@ import {
   type FulfillmentOrder,
 } from '../lib/api';
 import OrderDetailModal from '../components/OrderDetailModal';
+import { useLiveRefresh } from '../hooks/useLiveRefresh';
 
 const SCANNER_ID = 'pending-scanner';
 
@@ -37,21 +38,23 @@ export default function PendingOrdersPage() {
   const [showCameraContainer, setShowCameraContainer] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
-  const loadOrders = async () => {
-    setLoading(true);
+  const loadOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const { orders: list } = await listFulfillmentOrders('pending');
       setOrders(list);
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadOrders();
-  }, []);
+  }, [loadOrders]);
+
+  useLiveRefresh(() => loadOrders(true), 30_000, []);
 
   const filteredOrders = orders.filter((o) => {
     const term = searchTerm.toLowerCase();
