@@ -9,7 +9,9 @@ function getApiBase(): string {
   const env = import.meta.env.VITE_API_BACKEND_URL;
   if (typeof env === 'string' && env.trim()) {
     const raw = env.trim().replace(/\/$/, '');
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw.endsWith('/api') ? raw : `${raw.replace(/\/api.*$/, '')}/api`;
+    }
     const host = raw.replace(/^\/+|\/api.*$/g, '').replace(/\/+$/, '');
     if (!host) return raw;
     const base = `https://${host}`;
