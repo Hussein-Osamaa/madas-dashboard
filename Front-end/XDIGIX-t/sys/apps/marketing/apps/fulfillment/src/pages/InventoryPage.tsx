@@ -1,6 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer } from 'lucide-react';
+import { Package, ChevronDown, Plus, Pencil, Warehouse as WarehouseIcon, Search, Printer } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
+import {
+  SizeVariantsEditor,
+  buildStockPayloadFromVariants,
+  buildVariantsFromProduct,
+  emptyVariant,
+  type SizeVariant,
+} from '../components/SizeVariantsEditor';
 import {
   listFulfillmentClients,
   listProducts,
@@ -13,26 +20,7 @@ import {
   type Warehouse,
 } from '../lib/api';
 
-type SizeVariant = { id: string; size: string; stock: number; barcode: string };
-
-const makeId = () => crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
 const emptyForm = { name: '', sku: '', barcode: '', warehouse: '' };
-
-function buildVariantsFromProduct(p: ProductWithStock | Record<string, unknown>): SizeVariant[] {
-  const stock = (p as Record<string, unknown>).stock as Record<string, number> | undefined;
-  const sizeBarcodes = (p as Record<string, unknown>).sizeBarcodes as Record<string, string> | undefined;
-  if (!stock || Object.keys(stock).length === 0) {
-    return [{ id: makeId(), size: '', stock: 0, barcode: '' }];
-  }
-  return Object.entries(stock)
-    .filter(([k]) => !k.includes('|'))
-    .map(([size, qty]) => ({
-      id: makeId(),
-      size,
-      stock: Number(qty) ?? 0,
-      barcode: (sizeBarcodes?.[size] ?? '').toString(),
-    }));
-}
 
 export default function InventoryPage() {
   const [clients, setClients] = useState<FulfillmentClient[]>([]);
@@ -44,7 +32,7 @@ export default function InventoryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editProduct, setEditProduct] = useState<ProductWithStock | null>(null);
   const [formData, setFormData] = useState(emptyForm);
-  const [variants, setVariants] = useState<SizeVariant[]>([{ id: makeId(), size: '', stock: 0, barcode: '' }]);
+  const [variants, setVariants] = useState<SizeVariant[]>([emptyVariant()]);
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -194,7 +182,7 @@ export default function InventoryPage() {
 
   const handleOpenAdd = () => {
     setFormData(emptyForm);
-    setVariants([{ id: makeId(), size: '', stock: 0, barcode: '' }]);
+    setVariants([emptyVariant()]);
     setFormError('');
     setShowAddModal(true);
   };
@@ -207,24 +195,13 @@ export default function InventoryPage() {
       barcode: String((p as Record<string, unknown>).barcode ?? ''),
       warehouse: String((p as Record<string, unknown>).warehouse ?? ''),
     });
-    setVariants(buildVariantsFromProduct(p));
+    setVariants(buildVariantsFromProduct(p as Record<string, unknown> & { id?: string }));
     setFormError('');
   };
 
   const handleCloseModals = () => {
     setShowAddModal(false);
     setEditProduct(null);
-  };
-
-  const buildStockPayload = () => {
-    const stock: Record<string, number> = {};
-    const sizeBarcodes: Record<string, string> = {};
-    variants.forEach((v) => {
-      if (!v.size.trim()) return;
-      stock[v.size.trim()] = Math.max(0, Number(v.stock) || 0);
-      if (v.barcode.trim()) sizeBarcodes[v.size.trim()] = v.barcode.trim();
-    });
-    return { stock, sizeBarcodes };
   };
 
   const handleSubmitAdd = async (e: React.FormEvent) => {
@@ -246,12 +223,12 @@ export default function InventoryPage() {
     }
     setSubmitting(true);
     try {
-      const { stock, sizeBarcodes } = buildStockPayload();
+      const { stock, sizeBarcodes } = buildStockPayloadFromVariants(variants);
       await createProduct(selectedClientId, {
         name: nameTrim,
         warehouse: formData.warehouse,
         stock: Object.keys(stock).length > 0 ? stock : {},
-        sizeBarcodes: sizeBarcodes || {},
+        sizeBarcodes: Object.keys(sizeBarcodes).length > 0 ? sizeBarcodes : {},
       });
       handleCloseModals();
       await loadProducts();
@@ -268,7 +245,7 @@ export default function InventoryPage() {
     setFormError('');
     setSubmitting(true);
     try {
-      const { stock, sizeBarcodes } = buildStockPayload();
+      const { stock, sizeBarcodes } = buildStockPayloadFromVariants(variants);
       await updateProduct(selectedClientId, editProduct.id, {
         name: formData.name,
         sku: formData.sku,
@@ -286,23 +263,6 @@ export default function InventoryPage() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleVariantChange = (id: string, field: keyof SizeVariant, value: string | number) => {
-    setVariants((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, [field]: value } : v))
-    );
-  };
-
-  const handleAddVariant = () => {
-    setVariants((prev) => [...prev, { id: makeId(), size: '', stock: 0, barcode: '' }]);
-  };
-
-  const handleRemoveVariant = (id: string) => {
-    setVariants((prev) => {
-      const next = prev.filter((v) => v.id !== id);
-      return next.length ? next : [{ id: makeId(), size: '', stock: 0, barcode: '' }];
-    });
   };
 
   const handleOpenWarehouseModal = () => {
@@ -664,54 +624,11 @@ export default function InventoryPage() {
                   ))}
                 </select>
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Size Variants</label>
-                  <button
-                    type="button"
-                    onClick={handleAddVariant}
-                    className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline"
-                  >
-                    <Plus className="w-4 h-4" /> Add size
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 p-2">
-                  {variants.map((v) => (
-                    <div key={v.id} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        placeholder="Size"
-                        value={v.size}
-                        onChange={(e) => handleVariantChange(v.id, 'size', e.target.value)}
-                        className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Stock"
-                        min={0}
-                        value={v.stock || ''}
-                        onChange={(e) => handleVariantChange(v.id, 'stock', Number(e.target.value) || 0)}
-                        className="w-20 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Optional (auto-generated if empty)"
-                        value={v.barcode}
-                        onChange={(e) => handleVariantChange(v.id, 'barcode', e.target.value)}
-                        className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm font-mono"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveVariant(v.id)}
-                        className="p-1.5 rounded text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
-                        title="Remove"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <SizeVariantsEditor
+                variants={variants}
+                onVariantsChange={setVariants}
+                disabled={submitting}
+              />
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
@@ -784,54 +701,11 @@ export default function InventoryPage() {
                   ))}
                 </select>
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Size Variants</label>
-                  <button
-                    type="button"
-                    onClick={handleAddVariant}
-                    className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline"
-                  >
-                    <Plus className="w-4 h-4" /> Add size
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 p-2">
-                  {variants.map((v) => (
-                    <div key={v.id} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        placeholder="Size"
-                        value={v.size}
-                        onChange={(e) => handleVariantChange(v.id, 'size', e.target.value)}
-                        className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Stock"
-                        min={0}
-                        value={v.stock || ''}
-                        onChange={(e) => handleVariantChange(v.id, 'stock', Number(e.target.value) || 0)}
-                        className="w-20 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Optional (auto-generated if empty)"
-                        value={v.barcode}
-                        onChange={(e) => handleVariantChange(v.id, 'barcode', e.target.value)}
-                        className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm font-mono"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveVariant(v.id)}
-                        className="p-1.5 rounded text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
-                        title="Remove"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <SizeVariantsEditor
+                variants={variants}
+                onVariantsChange={setVariants}
+                disabled={submitting}
+              />
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
