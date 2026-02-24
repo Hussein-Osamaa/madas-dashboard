@@ -268,7 +268,10 @@ export default function InventoryPage() {
     try {
       const { stock, sizeBarcodes } = buildStockPayload();
       await updateProduct(selectedClientId, editProduct.id, {
-        ...formData,
+        name: formData.name,
+        sku: formData.sku,
+        barcode: formData.barcode,
+        warehouse: formData.warehouse,
         stock,
         sizeBarcodes,
       });

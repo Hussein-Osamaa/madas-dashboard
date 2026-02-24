@@ -330,8 +330,19 @@ export async function updateProduct(clientId: string, productId: string, input: 
   data.sizeBarcodes = sizeBarcodes;
   data.updatedAt = new Date().toISOString();
 
+  // Use dot notation so MongoDB definitely persists nested fields (helps in serverless/Atlas)
+  const updatePayload: Record<string, unknown> = {
+    'data.stock': stock,
+    'data.sizeBarcodes': sizeBarcodes,
+    'data.updatedAt': data.updatedAt,
+  };
+  if (input.name !== undefined) updatePayload['data.name'] = data.name;
+  if (input.sku !== undefined) updatePayload['data.sku'] = data.sku;
+  if (input.barcode !== undefined) updatePayload['data.barcode'] = data.barcode;
+  if (input.warehouse !== undefined) updatePayload['data.warehouse'] = data.warehouse;
+
   await FirestoreDoc.updateOne(
     { businessId: clientId, coll: 'products', docId: productId },
-    { $set: { data } }
+    { $set: updatePayload }
   );
 }
