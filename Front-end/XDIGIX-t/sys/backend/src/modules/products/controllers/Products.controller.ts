@@ -109,19 +109,45 @@ export async function listProductsWithStock(
       const data = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {};
       const productId = (doc as { docId: string }).docId;
       const availableStock = await getAvailableStock(productId, clientId);
-      // Plain objects so JSON serialization in production (Vercel/serverless) never drops or alters them
-      const stockRaw = data.stock != null && typeof data.stock === 'object' ? (data.stock as Record<string, unknown>) : {};
+      // Build stock: prefer data.stock, fallback to legacy sizeVariants so size variants always return
+      let stockRaw: Record<string, unknown> =
+        data.stock != null && typeof data.stock === 'object' && !Array.isArray(data.stock)
+          ? (data.stock as Record<string, unknown>)
+          : {};
+      if (Object.keys(stockRaw).length === 0 && data.sizeVariants != null && typeof data.sizeVariants === 'object' && !Array.isArray(data.sizeVariants)) {
+        const sv = data.sizeVariants as Record<string, { stock?: number; qty?: number }>;
+        stockRaw = {};
+        for (const [k, v] of Object.entries(sv)) {
+          if (k == null || String(k).includes('|')) continue;
+          const qty = typeof v === 'object' && v != null ? (v.stock ?? v.qty) : undefined;
+          const num = typeof qty === 'number' && !Number.isNaN(qty) ? qty : Number(qty);
+          if (!Number.isNaN(num)) stockRaw[k] = num;
+        }
+      }
       const stock: Record<string, number> = {};
       for (const [k, v] of Object.entries(stockRaw)) {
         if (k == null) continue;
         const num = typeof v === 'number' && !Number.isNaN(v) ? v : Number(v);
         if (!Number.isNaN(num)) stock[k] = num;
       }
-      const sizeBarcodesRaw = data.sizeBarcodes != null && typeof data.sizeBarcodes === 'object' ? data.sizeBarcodes as Record<string, string> : {};
+      // Build sizeBarcodes: prefer data.sizeBarcodes, fallback to legacy sizeVariants
+      let sizeBarcodesRaw: Record<string, string> =
+        data.sizeBarcodes != null && typeof data.sizeBarcodes === 'object' && !Array.isArray(data.sizeBarcodes)
+          ? (data.sizeBarcodes as Record<string, string>)
+          : {};
+      if (Object.keys(sizeBarcodesRaw).length === 0 && data.sizeVariants != null && typeof data.sizeVariants === 'object') {
+        const sv = data.sizeVariants as Record<string, { barcode?: string }>;
+        sizeBarcodesRaw = {};
+        for (const [k, v] of Object.entries(sv)) {
+          if (k != null && v != null && typeof v === 'object' && typeof (v as { barcode?: string }).barcode === 'string')
+            sizeBarcodesRaw[k] = (v as { barcode: string }).barcode;
+        }
+      }
       const sizeBarcodes: Record<string, string> = {};
       for (const [k, v] of Object.entries(sizeBarcodesRaw)) {
         if (k != null && v != null && typeof v === 'string') sizeBarcodes[k] = v;
       }
+      // Always return plain objects so JSON never drops them
       return { id: productId, ...data, stock, sizeBarcodes, availableStock } as Record<string, unknown> & {
         id: string;
         availableStock?: number;
@@ -255,13 +281,9 @@ export async function createProduct(clientId: string, input: CreateProductInput)
     inventorySource: XDF_SOURCE, // XDIGIX-FULFILLMENT – only these show in fulfillment app & as linked inventory
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    stock: { ...stock },
+    sizeBarcodes: { ...sizeBarcodes },
   };
-  if (Object.keys(stock).length > 0) {
-    data.stock = stock;
-  }
-  if (Object.keys(sizeBarcodes).length > 0) {
-    data.sizeBarcodes = sizeBarcodes;
-  }
 
   await FirestoreDoc.create({
     tenantId: (business as { tenantId: string }).tenantId,
@@ -326,8 +348,8 @@ export async function updateProduct(clientId: string, productId: string, input: 
     }
   }
 
-  data.stock = stock;
-  data.sizeBarcodes = sizeBarcodes;
+  data.stock = { ...stock };
+  data.sizeBarcodes = { ...sizeBarcodes };
   data.updatedAt = new Date().toISOString();
 
   // Replace entire data object so sizes/stock always persist (no dot-notation issues)

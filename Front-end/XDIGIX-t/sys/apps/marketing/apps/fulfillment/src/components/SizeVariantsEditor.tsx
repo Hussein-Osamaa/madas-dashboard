@@ -146,14 +146,47 @@ export function buildStockPayloadFromVariants(variants: SizeVariant[]): {
   return { stock, sizeBarcodes };
 }
 
-/** Build variant list from product (for edit modal) */
+/** Normalize product from API so it always has stock and sizeBarcodes (plain objects). */
+export function normalizeProductFromApi(
+  p: Record<string, unknown> & { id?: string }
+): Record<string, unknown> & { id?: string; stock: Record<string, number>; sizeBarcodes: Record<string, string> } {
+  let stock: Record<string, number> =
+    p.stock != null && typeof p.stock === 'object' && !Array.isArray(p.stock)
+      ? (p.stock as Record<string, number>)
+      : {};
+  let sizeBarcodes: Record<string, string> =
+    p.sizeBarcodes != null && typeof p.sizeBarcodes === 'object' && !Array.isArray(p.sizeBarcodes)
+      ? (p.sizeBarcodes as Record<string, string>)
+      : {};
+  // Legacy: derive from sizeVariants if stock/sizeBarcodes empty
+  if (Object.keys(stock).length === 0 && p.sizeVariants != null && typeof p.sizeVariants === 'object' && !Array.isArray(p.sizeVariants)) {
+    const sv = p.sizeVariants as Record<string, { stock?: number; qty?: number; barcode?: string }>;
+    stock = {};
+    sizeBarcodes = {};
+    for (const [k, v] of Object.entries(sv)) {
+      if (k == null || String(k).includes('|')) continue;
+      const qty = typeof v === 'object' && v != null ? (v.stock ?? v.qty) : undefined;
+      const num = Math.max(0, Number(qty) || 0);
+      stock[k] = num;
+      if (typeof v === 'object' && v != null && typeof v.barcode === 'string') sizeBarcodes[k] = v.barcode;
+    }
+  }
+  return { ...p, stock, sizeBarcodes } as Record<string, unknown> & {
+    id?: string;
+    stock: Record<string, number>;
+    sizeBarcodes: Record<string, string>;
+  };
+}
+
+/** Build variant list from product (for edit modal). Use normalizeProductFromApi first if product is from API. */
 export function buildVariantsFromProduct(
   p: Record<string, unknown> & { id?: string }
 ): SizeVariant[] {
-  const stock = p.stock as Record<string, number> | undefined;
-  const sizeBarcodes = p.sizeBarcodes as Record<string, string> | undefined;
+  const normalized = normalizeProductFromApi(p);
+  const stock = normalized.stock;
+  const sizeBarcodes = normalized.sizeBarcodes;
   const makeId = () => crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
-  if (!stock || typeof stock !== 'object' || Array.isArray(stock) || Object.keys(stock).length === 0) {
+  if (Object.keys(stock).length === 0) {
     return [{ id: makeId(), size: '', stock: 0, barcode: '' }];
   }
   return Object.entries(stock)
@@ -162,7 +195,7 @@ export function buildVariantsFromProduct(
       id: makeId(),
       size,
       stock: Math.max(0, Number(qty) || 0),
-      barcode: (sizeBarcodes && typeof sizeBarcodes[size] === 'string' ? sizeBarcodes[size] : '') || '',
+      barcode: (typeof sizeBarcodes[size] === 'string' ? sizeBarcodes[size] : '') || '',
     }));
 }
 

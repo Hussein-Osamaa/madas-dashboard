@@ -5,6 +5,7 @@ import {
   SizeVariantsEditor,
   buildStockPayloadFromVariants,
   buildVariantsFromProduct,
+  normalizeProductFromApi,
   emptyVariant,
   type SizeVariant,
 } from '../components/SizeVariantsEditor';
@@ -119,7 +120,8 @@ export default function InventoryPage() {
       try {
         const res = await listProducts(selectedClientId);
         if (cancelled) return;
-        setProducts(res.products || []);
+        const list = res.products || [];
+        setProducts(list.map((p) => normalizeProductFromApi(p as Record<string, unknown> & { id?: string }) as ProductWithStock));
       } catch (e) {
         if (!cancelled) setError((e as Error).message);
       } finally {
@@ -172,7 +174,8 @@ export default function InventoryPage() {
     setError('');
     try {
       const res = await listProducts(selectedClientId);
-      setProducts(res.products || []);
+      const list = res.products || [];
+      setProducts(list.map((p) => normalizeProductFromApi(p as Record<string, unknown> & { id?: string }) as ProductWithStock));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -189,13 +192,14 @@ export default function InventoryPage() {
 
   const handleOpenEdit = (p: ProductWithStock) => {
     setEditProduct(p);
+    const normalized = normalizeProductFromApi(p as Record<string, unknown> & { id?: string });
     setFormData({
-      name: String((p as Record<string, unknown>).name ?? p.id),
-      sku: String((p as Record<string, unknown>).sku ?? ''),
-      barcode: String((p as Record<string, unknown>).barcode ?? ''),
-      warehouse: String((p as Record<string, unknown>).warehouse ?? ''),
+      name: String(normalized.name ?? p.id),
+      sku: String(normalized.sku ?? ''),
+      barcode: String(normalized.barcode ?? ''),
+      warehouse: String(normalized.warehouse ?? ''),
     });
-    setVariants(buildVariantsFromProduct(p as Record<string, unknown> & { id?: string }));
+    setVariants(buildVariantsFromProduct(normalized));
     setFormError('');
   };
 
@@ -227,8 +231,8 @@ export default function InventoryPage() {
       await createProduct(selectedClientId, {
         name: nameTrim,
         warehouse: formData.warehouse,
-        stock: Object.keys(stock).length > 0 ? stock : {},
-        sizeBarcodes: Object.keys(sizeBarcodes).length > 0 ? sizeBarcodes : {},
+        stock: { ...stock },
+        sizeBarcodes: { ...sizeBarcodes },
       });
       handleCloseModals();
       await loadProducts();
@@ -251,8 +255,8 @@ export default function InventoryPage() {
         sku: formData.sku,
         barcode: formData.barcode,
         warehouse: formData.warehouse,
-        stock,
-        sizeBarcodes,
+        stock: { ...stock },
+        sizeBarcodes: { ...sizeBarcodes },
       });
       handleCloseModals();
       setSaveSuccessMessage('Saved. Refreshing list…');
