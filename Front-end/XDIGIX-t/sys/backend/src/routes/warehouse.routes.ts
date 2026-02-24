@@ -236,20 +236,22 @@ router.post(
     body('sku').optional().isString(),
     body('barcode').optional().isString(),
     body('warehouse').optional().isString(),
-    body('stock').optional().isObject(),
-    body('sizeBarcodes').optional().isObject(),
+    body('stock').optional(),
+    body('sizeBarcodes').optional(),
   ],
   validate,
   async (req: Request, res: Response) => {
     try {
       const { createProduct } = await import('../modules/products/controllers/Products.controller');
+      const stock = req.body.stock != null && typeof req.body.stock === 'object' && !Array.isArray(req.body.stock) ? req.body.stock : undefined;
+      const sizeBarcodes = req.body.sizeBarcodes != null && typeof req.body.sizeBarcodes === 'object' && !Array.isArray(req.body.sizeBarcodes) ? req.body.sizeBarcodes : undefined;
       const result = await createProduct(req.clientId!, {
         name: req.body.name,
         sku: req.body.sku,
         barcode: req.body.barcode,
         warehouse: req.body.warehouse,
-        stock: req.body.stock,
-        sizeBarcodes: req.body.sizeBarcodes,
+        stock,
+        sizeBarcodes,
       });
       res.status(201).json(result);
     } catch (err) {

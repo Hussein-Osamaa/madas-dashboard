@@ -250,7 +250,8 @@ export default function InventoryPage() {
       await createProduct(selectedClientId, {
         name: nameTrim,
         warehouse: formData.warehouse,
-        ...(Object.keys(stock).length > 0 && { stock, sizeBarcodes }),
+        stock: Object.keys(stock).length > 0 ? stock : {},
+        sizeBarcodes: sizeBarcodes || {},
       });
       handleCloseModals();
       await loadProducts();
