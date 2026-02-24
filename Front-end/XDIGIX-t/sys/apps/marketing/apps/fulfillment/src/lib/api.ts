@@ -1,12 +1,20 @@
 /**
  * Backend API client for Warehouse Fulfillment Portal
  * Uses staff auth (POST /auth/staff/login)
- * Set VITE_API_BACKEND_URL in production (e.g. on Vercel) to your backend HTTPS URL (e.g. https://your-api.onrender.com/api).
- * When unset, uses same host + port 4000 with the page's protocol (HTTPS page → HTTPS API to avoid mixed content).
+ * Set VITE_API_BACKEND_URL in production to the full backend URL including protocol, e.g.:
+ *   https://xdigix-os-production.up.railway.app/api
+ * When unset, uses same host + port 4000. If you set only a hostname (no protocol), we normalize to https://hostname/api.
  */
 function getApiBase(): string {
   const env = import.meta.env.VITE_API_BACKEND_URL;
-  if (typeof env === 'string' && env.trim()) return env.replace(/\/$/, '') || env;
+  if (typeof env === 'string' && env.trim()) {
+    const raw = env.trim().replace(/\/$/, '');
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    const host = raw.replace(/^\/+|\/api.*$/g, '').replace(/\/+$/, '');
+    if (!host) return raw;
+    const base = `https://${host}`;
+    return base.endsWith('/api') ? base : `${base}/api`;
+  }
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol || 'https:';
     return `${protocol}//${window.location.hostname}:4000/api`;

@@ -5,7 +5,8 @@ import { setupRealtime } from './realtime';
 import { createApp } from './app';
 import { startReportCrons } from './cron/reportCron';
 
-const DEFAULT_ORIGIN = 'https://xdigix-os.vercel.app';
+// Fallback CORS origin when CORS_ORIGIN is not set (e.g. local dev). Production (Railway) should set CORS_ORIGIN.
+const DEFAULT_ORIGIN = process.env.CORS_ORIGIN?.trim() || '*';
 
 function corsHeaders(req?: IncomingMessage) {
   const env = process.env.CORS_ORIGIN;
@@ -58,8 +59,8 @@ module.exports = vercelHandler;
 // Also default export so `import` works
 export default vercelHandler;
 
-// ── Traditional long-lived server (local / Railway / Render) ────────────────
-// Only start listening when NOT running inside Vercel/Lambda (no AWS_LAMBDA_FUNCTION_NAME)
+// ── Long-lived server (Railway, Render, local) ─────────────────────────────
+// Skip when running in Vercel serverless (Socket.IO and crons need a persistent process).
 if (!process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL) {
   (async () => {
     try {

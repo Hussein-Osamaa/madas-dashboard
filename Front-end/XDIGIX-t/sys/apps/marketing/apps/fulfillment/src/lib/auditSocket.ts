@@ -8,7 +8,12 @@ import { getAccessToken } from './api';
 
 function getSocketBase(): string {
   const env = import.meta.env.VITE_API_BACKEND_URL;
-  if (typeof env === 'string' && env.trim()) return env.replace(/\/api\/?$/, '').replace(/\/$/, '') || 'http://localhost:4000';
+  if (typeof env === 'string' && env.trim()) {
+    let base = env.trim().replace(/\/api\/?$/, '').replace(/\/$/, '') || '';
+    if (!base) return 'http://localhost:4000';
+    if (!base.startsWith('http://') && !base.startsWith('https://')) base = `https://${base}`;
+    return base;
+  }
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol || 'https:';
     return `${protocol}//${window.location.hostname}:4000`;

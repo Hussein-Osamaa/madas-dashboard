@@ -13,6 +13,11 @@ npm run dev
 
 Server runs on port 4000 by default.
 
+## Deploy (production)
+
+- **Railway (recommended)** — Full API + WebSockets (Socket.IO). See [DEPLOY_RAILWAY.md](./DEPLOY_RAILWAY.md). Set frontend `VITE_API_BACKEND_URL` to `https://<your-app>.up.railway.app/api`.
+- **Vercel (alternative)** — Serverless only; no Socket.IO. See [DEPLOY_VERCEL.md](./DEPLOY_VERCEL.md).
+
 ## API
 
 | Endpoint | Method | Description |

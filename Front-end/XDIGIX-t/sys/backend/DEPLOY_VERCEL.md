@@ -1,4 +1,6 @@
-# Deploy backend on Vercel (serverless)
+# Deploy backend on Vercel (serverless, alternative)
+
+**Preferred production deployment is Railway** (see [DEPLOY_RAILWAY.md](./DEPLOY_RAILWAY.md)) for full API + WebSockets (Socket.IO). Use Vercel only if you need serverless and can do without live audit/WebSockets.
 
 The backend runs as **serverless functions** on Vercel: one catch-all handles all HTTP requests and forwards them to the Express app. This is suitable for REST API only.
 

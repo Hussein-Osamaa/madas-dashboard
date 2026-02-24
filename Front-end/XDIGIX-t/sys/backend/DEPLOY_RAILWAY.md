@@ -1,4 +1,6 @@
-# Deploy backend on Railway
+# Deploy backend on Railway (recommended)
+
+**Railway** is the recommended production host: long-lived process, Socket.IO for audit live updates, and cron-friendly. Use this instead of Vercel when you need WebSockets.
 
 ## Option A: Dockerfile (recommended)
 
