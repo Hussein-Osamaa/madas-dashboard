@@ -21,6 +21,7 @@ const SOCKET_BASE = getSocketBase();
 export function isAuditSocketDisabled(): boolean {
   const explicit = import.meta.env.VITE_AUDIT_SOCKET_ENABLED;
   if (typeof explicit === 'string' && (explicit === 'false' || explicit === '0')) return true;
+  if (typeof SOCKET_BASE === 'string' && SOCKET_BASE.includes('vercel.app')) return true;
   try {
     const url = new URL(SOCKET_BASE);
     if (url.hostname.endsWith('.vercel.app') || url.hostname === 'vercel.app') return true;
