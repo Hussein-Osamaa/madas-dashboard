@@ -38,7 +38,7 @@ export async function login(email: string, password: string): Promise<LoginResul
 
   const uid = user.uid;
   const payload = { sub: uid, email: user.email, type: user.type, businessId: user.businessId, tenantId: user.tenantId };
-  const options: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry };
+  const options: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as jwt.SignOptions['expiresIn'] };
   const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, options);
 
   const refreshTokenValue = uuidv4();
@@ -99,7 +99,7 @@ export async function refreshAccessToken(refreshTokenValue: string): Promise<{ a
   if (!user) return null;
 
   const payload = { sub: user.uid, email: user.email, type: user.type, businessId: user.businessId, tenantId: user.tenantId };
-  const options: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry };
+  const options: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as jwt.SignOptions['expiresIn'] };
   const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, options);
 
   const decoded = jwt.decode(accessToken) as { exp?: number };
