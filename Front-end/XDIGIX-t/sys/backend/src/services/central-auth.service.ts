@@ -53,11 +53,11 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 function signTokens(payload: JWTPayload): { accessToken: string; refreshToken: string; expiresIn: number } {
-  const opts: jwt.SignOptions = { expiresIn: 900 };
+  const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry };
   const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, opts);
   const refreshTokenValue = uuidv4();
   const decoded = jwt.decode(accessToken) as { exp?: number };
-  const expiresIn = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 900;
+  const expiresIn = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 86400;
   return { accessToken, refreshToken: refreshTokenValue, expiresIn };
 }
 
@@ -231,10 +231,10 @@ export async function refreshToken(
     };
   }
 
-  const opts: jwt.SignOptions = { expiresIn: 900 };
+  const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry };
   const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, opts);
   const decoded = jwt.decode(accessToken) as { exp?: number };
-  const expiresIn = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 900;
+  const expiresIn = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 86400;
   return { accessToken, expiresIn };
 }
 
@@ -255,10 +255,10 @@ export async function exchangeFirebaseForAdminToken(
       email: user.email,
       role: 'super_admin',
     };
-    const opts: jwt.SignOptions = { expiresIn: 900 };
+    const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry };
     const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, opts);
     const decodedJwt = jwt.decode(accessToken) as { exp?: number };
-    const expiresIn = decodedJwt?.exp ? decodedJwt.exp - Math.floor(Date.now() / 1000) : 900;
+    const expiresIn = decodedJwt?.exp ? decodedJwt.exp - Math.floor(Date.now() / 1000) : 86400;
     return { accessToken, expiresIn };
   }
 
@@ -270,10 +270,10 @@ export async function exchangeFirebaseForAdminToken(
       email: decoded.email,
       role: 'super_admin',
     };
-    const opts: jwt.SignOptions = { expiresIn: 900 };
+    const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry };
     const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, opts);
     const decodedJwt = jwt.decode(accessToken) as { exp?: number };
-    const expiresIn = decodedJwt?.exp ? decodedJwt.exp - Math.floor(Date.now() / 1000) : 900;
+    const expiresIn = decodedJwt?.exp ? decodedJwt.exp - Math.floor(Date.now() / 1000) : 86400;
     return { accessToken, expiresIn };
   }
 
