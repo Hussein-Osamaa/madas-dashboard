@@ -187,6 +187,7 @@ export default function InventoryPage() {
 
   useLiveRefresh(() => loadProducts(true), 30_000, [selectedClientId]);
   useWarehouseLive(() => loadProducts(true), { type: 'products', clientId: selectedClientId || undefined });
+  useWarehouseLive(() => loadProducts(true), { type: 'transactions', clientId: selectedClientId || undefined });
   useWarehouseLive(() => loadWarehouses(), { type: 'warehouses', clientId: selectedClientId || undefined });
 
   const handleOpenAdd = () => {

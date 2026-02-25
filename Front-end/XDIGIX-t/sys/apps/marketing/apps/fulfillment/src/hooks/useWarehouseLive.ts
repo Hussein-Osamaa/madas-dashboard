@@ -14,13 +14,25 @@ export function useWarehouseLive(
   const { type, clientId } = options;
   const refetchRef = useRef(refetch);
   refetchRef.current = refetch;
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const onUpdate = (payload: WarehouseUpdatePayload) => {
       if (payload.type !== type) return;
       if (payload.clientId != null && payload.clientId !== clientId) return;
-      refetchRef.current();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = null;
+        refetchRef.current();
+      }, 0);
     };
-    return connectWarehouseSocket(clientId ?? null, onUpdate);
+    const unsub = connectWarehouseSocket(clientId ?? null, onUpdate);
+    return () => {
+      unsub();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
   }, [type, clientId ?? '']);
 }
