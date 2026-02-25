@@ -10,7 +10,8 @@ function getApiBase(): string {
   if (typeof env === 'string' && env.trim()) {
     const raw = env.trim().replace(/\/$/, '');
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      return raw.endsWith('/api') ? raw : `${raw.replace(/\/api.*$/, '')}/api`;
+      const origin = raw.replace(/\/api.*$/, '');
+      return origin ? `${origin}/api` : raw;
     }
     const host = raw.replace(/^\/+|\/api.*$/g, '').replace(/\/+$/, '');
     if (!host) return raw;
@@ -67,6 +68,17 @@ export function setCachedUser(user: StaffUser | null) {
   else localStorage.removeItem(USER_CACHE_KEY);
 }
 
+/** True if JWT is expired or will expire in the next 60s (avoid 401 on next request). */
+function isAccessTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp == null) return false;
+    return payload.exp * 1000 < Date.now() + 60_000;
+  } catch {
+    return true;
+  }
+}
+
 async function refreshAccessToken(): Promise<string | null> {
   const rt = typeof localStorage !== 'undefined' ? localStorage.getItem(REFRESH_KEY) : null;
   if (!rt) return null;
@@ -89,8 +101,10 @@ async function refreshAccessToken(): Promise<string | null> {
 
 async function getToken(): Promise<string | null> {
   const t = getAccessToken();
-  if (t) return t;
-  return refreshAccessToken();
+  if (t && !isAccessTokenExpired(t)) return t;
+  const refreshed = await refreshAccessToken();
+  if (refreshed) return refreshed;
+  return t;
 }
 
 export async function fetchApi<T>(path: string, opts: RequestInit = {}): Promise<T> {
@@ -99,6 +113,17 @@ export async function fetchApi<T>(path: string, opts: RequestInit = {}): Promise
   if (token) headers['Authorization'] = `Bearer ${token}`;
   let res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   const json = await res.json().catch(() => ({}));
+  if (res.status === 401 && token) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      const retryHeaders = { ...headers, Authorization: `Bearer ${newToken}` };
+      const retry = await fetch(`${API_BASE}${path}`, { ...opts, headers: retryHeaders });
+      const retryJson = await retry.json().catch(() => ({}));
+      if (!retry.ok) throw new Error((retryJson as { error?: string }).error || `HTTP ${retry.status}`);
+      return retryJson as T;
+    }
+    clearTokens();
+  }
   if (!res.ok) throw new Error((json as { error?: string }).error || `HTTP ${res.status}`);
   return json as T;
 }

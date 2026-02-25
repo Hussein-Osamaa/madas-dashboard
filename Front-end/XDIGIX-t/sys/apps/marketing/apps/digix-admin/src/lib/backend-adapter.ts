@@ -1,9 +1,20 @@
 /**
  * Firebase Compatibility Adapter
- * Enable with VITE_API_BACKEND_URL=http://localhost:4000/api
+ * Set VITE_API_BACKEND_URL to the API root only (e.g. https://your-backend.up.railway.app/api).
+ * We normalize so the base never includes paths like /auth/me.
  */
-const _envApi = import.meta.env.VITE_API_BACKEND_URL;
-const API_BASE = (typeof _envApi === 'string' && _envApi.trim()) ? _envApi.replace(/\/$/, '') : 'http://localhost:4000/api';
+function getApiBase(): string {
+  const env = import.meta.env.VITE_API_BACKEND_URL;
+  if (typeof env !== 'string' || !env.trim()) return 'http://localhost:4000/api';
+  const raw = env.trim().replace(/\/$/, '');
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    const origin = raw.replace(/\/api.*$/, '');
+    return origin ? `${origin}/api` : raw;
+  }
+  const host = raw.replace(/^\/+|\/api.*$/g, '').replace(/\/+$/, '');
+  return host ? `https://${host}/api` : raw;
+}
+const API_BASE = getApiBase();
 
 let accessToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_access_token') : null;
 let refreshToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_refresh_token') : null;
@@ -40,11 +51,23 @@ function clearTokens() {
   }
 }
 
+/** True if JWT is expired or will expire in the next 60s. */
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp == null) return false;
+    return payload.exp * 1000 < Date.now() + 60_000;
+  } catch {
+    return true;
+  }
+}
+
 async function getToken(): Promise<string | null> {
   if (typeof localStorage !== 'undefined' && localStorage.getItem('backend_account_type')) {
     accountType = localStorage.getItem('backend_account_type') as 'CLIENT' | 'ADMIN' | 'STAFF' || 'CLIENT';
   }
-  if (accessToken) return accessToken;
+  if (accessToken && !isTokenExpired(accessToken)) return accessToken;
+  if (accessToken && isTokenExpired(accessToken)) accessToken = null;
   if (!refreshToken) return null;
   try {
     const res = await fetch(`${API_BASE}/auth/refresh`, {
@@ -69,13 +92,24 @@ async function fetchApi<T>(path: string, opts: RequestInit = {}): Promise<T> {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   let res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   let json = await res.json().catch(() => ({}));
+  if (res.status === 401 && token) {
+    accessToken = null;
+    const newToken = await getToken();
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`;
+      res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+      json = await res.json().catch(() => ({}));
+    } else {
+      clearTokens();
+    }
+  }
   if (res.status === 429) {
     const retryAfter = Math.min(parseInt(res.headers.get('Retry-After') || '2', 10), 10);
     await new Promise((r) => setTimeout(r, retryAfter * 1000));
     res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
     json = await res.json().catch(() => ({}));
   }
-  if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+  if (!res.ok) throw new Error((json as { error?: string }).error || `HTTP ${res.status}`);
   return json as T;
 }
 

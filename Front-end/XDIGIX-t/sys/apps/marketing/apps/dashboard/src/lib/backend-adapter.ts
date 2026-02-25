@@ -1,13 +1,22 @@
 /**
  * Firebase Compatibility Adapter
  * Mirrors Firebase API but calls our Node.js + MongoDB backend.
- * Enable with VITE_API_BACKEND_URL=http://localhost:4000/api
+ * Set VITE_API_BACKEND_URL to the API root only, e.g. https://your-backend.up.railway.app/api
+ * (We normalize so the base never includes paths like /auth/me, which would cause doubled URLs.)
  */
 
-const _envUrl = import.meta.env.VITE_API_BACKEND_URL;
-const API_BASE = (typeof _envUrl === 'string' && _envUrl.trim())
-  ? _envUrl.replace(/\/$/, '')
-  : 'http://localhost:4000/api';
+function getApiBase(): string {
+  const env = import.meta.env.VITE_API_BACKEND_URL;
+  if (typeof env !== 'string' || !env.trim()) return 'http://localhost:4000/api';
+  const raw = env.trim().replace(/\/$/, '');
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    const origin = raw.replace(/\/api.*$/, '');
+    return origin ? `${origin}/api` : raw;
+  }
+  const host = raw.replace(/^\/+|\/api.*$/g, '').replace(/\/+$/, '');
+  return host ? `https://${host}/api` : raw;
+}
+const API_BASE = getApiBase();
 
 let accessToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_access_token') : null;
 let refreshToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_refresh_token') : null;
@@ -39,12 +48,12 @@ function clearTokens() {
   }
 }
 
-/** True if JWT payload exp is in the past (60s buffer to avoid server 401 on /auth/me). */
+/** True if JWT is expired or will expire in the next 60s (refresh before 401). */
 function isTokenExpired(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     if (payload.exp == null) return false;
-    return payload.exp * 1000 < Date.now() - 60_000;
+    return payload.exp * 1000 < Date.now() + 60_000;
   } catch {
     return true;
   }
