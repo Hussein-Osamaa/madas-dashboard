@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Package, LogIn, Sun, Moon, Boxes, Clock, CheckCircle, Truck, ClipboardCheck, FileText, Menu, X } from 'lucide-react';
 import { useStaffAuth } from '../contexts/StaffAuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { connectWarehouseSocket, isWarehouseSocketDisabled, subscribeWarehouseConnectionState } from '../lib/warehouseSocket';
 
 const nav = [
   { path: '/', label: 'Operations', icon: Package },
@@ -55,10 +56,24 @@ export default function Shell() {
   const { isDark, toggle } = useTheme();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [liveConnected, setLiveConnected] = useState(false);
+  const liveDisabled = isWarehouseSocketDisabled();
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
+
+  // Start socket when logged in so Live indicator and all pages get events
+  useEffect(() => {
+    if (liveDisabled || !user) return;
+    const unsub = connectWarehouseSocket(null, () => {});
+    return unsub;
+  }, [liveDisabled, !!user]);
+
+  useEffect(() => {
+    if (liveDisabled) return;
+    return subscribeWarehouseConnectionState(setLiveConnected);
+  }, [liveDisabled]);
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-[#0a0b1a] flex">
@@ -129,7 +144,11 @@ export default function Shell() {
           <NavContent onNavigate={() => setMobileMenuOpen(false)} />
         </nav>
         <div className="p-3 border-t border-gray-200 dark:border-white/5 shrink-0">
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1">{user?.email}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1 mb-1">{user?.email}</p>
+          <p className="text-xs px-1 flex items-center gap-1.5" title={liveDisabled ? 'Live updates require a non-Vercel backend (e.g. Railway)' : liveConnected ? 'Live updates active' : 'Connecting…'}>
+            <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${liveDisabled ? 'bg-gray-400' : liveConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+            {liveDisabled ? 'Live unavailable' : liveConnected ? 'Live' : 'Connecting…'}
+          </p>
           <button
             onClick={() => logout()}
             className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white min-h-[44px] px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 w-full justify-start"

@@ -1,10 +1,11 @@
 /**
  * Socket.io client for live warehouse updates (products, orders, transactions, warehouses).
- * Staff see changes from other staff instantly. Disabled when backend is on Vercel or VITE_AUDIT_SOCKET_ENABLED=false.
+ * Staff see changes from other staff instantly.
+ * Set VITE_WAREHOUSE_SOCKET_ENABLED=true to force-enable (e.g. when backend is on Railway).
+ * Disabled when backend host is vercel.app or VITE_WAREHOUSE_SOCKET_ENABLED=false.
  */
 import { io, Socket } from 'socket.io-client';
 import { getAccessToken } from './api';
-import { isAuditSocketDisabled } from './auditSocket';
 
 function getSocketBase(): string {
   const env = import.meta.env.VITE_API_BACKEND_URL;
@@ -21,16 +22,60 @@ function getSocketBase(): string {
   return 'http://localhost:4000';
 }
 
+function isBackendVercel(): boolean {
+  try {
+    const base = getSocketBase();
+    const url = new URL(base);
+    return url.hostname.endsWith('.vercel.app') || url.hostname === 'vercel.app';
+  } catch {
+    return false;
+  }
+}
+
+/** Warehouse live updates. Force-enable with VITE_WAREHOUSE_SOCKET_ENABLED=true when backend is on Railway. */
+export function isWarehouseSocketDisabled(): boolean {
+  const explicit = import.meta.env.VITE_WAREHOUSE_SOCKET_ENABLED;
+  if (typeof explicit === 'string' && (explicit === 'true' || explicit === '1')) return false;
+  if (typeof explicit === 'string' && (explicit === 'false' || explicit === '0')) return true;
+  return isBackendVercel();
+}
+
 export type WarehouseUpdatePayload = { type: 'products' | 'orders' | 'transactions' | 'warehouses' | 'reports'; clientId?: string };
 
 let socket: Socket | null = null;
 let clientRoom: string | null = null;
 const listeners = new Set<(payload: WarehouseUpdatePayload) => void>();
+const connectionListeners = new Set<(connected: boolean) => void>();
+
+function notifyConnectionState(connected: boolean) {
+  connectionListeners.forEach((cb) => {
+    try {
+      cb(connected);
+    } catch (e) {
+      console.warn('warehouseSocket connection listener error', e);
+    }
+  });
+}
+
+/** Subscribe to connection state (true = connected). Returns unsubscribe. */
+export function subscribeWarehouseConnectionState(cb: (connected: boolean) => void): () => void {
+  connectionListeners.add(cb);
+  cb(!!socket?.connected);
+  return () => connectionListeners.delete(cb);
+}
+
+const isDev = typeof import.meta.env.DEV !== 'undefined' && import.meta.env.DEV;
 
 function ensureSocket(): Socket | null {
-  if (isAuditSocketDisabled()) return null;
+  if (isWarehouseSocketDisabled()) {
+    if (isDev) console.log('[warehouseSocket] Disabled (Vercel or VITE_WAREHOUSE_SOCKET_ENABLED=false). Set VITE_WAREHOUSE_SOCKET_ENABLED=true if backend is on Railway.');
+    return null;
+  }
   const token = getAccessToken();
-  if (!token) return null;
+  if (!token) {
+    if (isDev) console.log('[warehouseSocket] No token, skip connect');
+    return null;
+  }
   if (socket?.connected) return socket;
   if (socket) {
     socket.removeAllListeners();
@@ -38,19 +83,24 @@ function ensureSocket(): Socket | null {
     socket = null;
   }
   const base = getSocketBase();
+  if (isDev) console.log('[warehouseSocket] Connecting to', base);
   socket = io(base, {
     path: '/socket.io',
     auth: { token },
     reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 2000,
-    reconnectionDelayMax: 8000,
+    reconnectionAttempts: 8,
+    reconnectionDelay: 1500,
+    reconnectionDelayMax: 10000,
+    transports: ['websocket', 'polling'],
   });
   socket.on('connect', () => {
     socket?.emit('subscribe', 'warehouse:staff');
     if (clientRoom) socket?.emit('subscribe', clientRoom);
+    notifyConnectionState(true);
+    if (isDev) console.log('[warehouseSocket] Connected, subscribed to warehouse:staff', clientRoom ? `+ ${clientRoom}` : '');
   });
   socket.on('warehouse:updated', (payload: WarehouseUpdatePayload) => {
+    if (isDev) console.log('[warehouseSocket] Event', payload);
     listeners.forEach((cb) => {
       try {
         cb(payload);
@@ -59,14 +109,13 @@ function ensureSocket(): Socket | null {
       }
     });
   });
-  socket.on('disconnect', () => {});
-  socket.on('connect_error', () => {
-    if (socket) {
-      socket.removeAllListeners();
-      socket.disconnect();
-      socket = null;
-    }
-    clientRoom = null;
+  socket.on('disconnect', (reason) => {
+    notifyConnectionState(false);
+    if (isDev) console.log('[warehouseSocket] Disconnected', reason);
+  });
+  socket.on('connect_error', (err) => {
+    if (isDev) console.warn('[warehouseSocket] Connect error', err.message);
+    // Let Socket.IO retry; don't clear socket so reconnection can succeed
   });
   return socket;
 }
@@ -116,6 +165,3 @@ export function setWarehouseClient(clientId: string | null): void {
   }
 }
 
-export function isWarehouseSocketDisabled(): boolean {
-  return isAuditSocketDisabled();
-}
