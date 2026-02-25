@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
+import { getIo, emitWarehouseUpdate } from '../../../realtime';
 import { StockTransactionModel } from '../../inventory/models/StockTransaction.model';
 import { InventoryReportModel } from '../models/InventoryReport.model';
 import { getAvailableStock } from '../../inventory/services/Inventory.service';
@@ -93,7 +94,7 @@ export async function generateWeeklyReport(
     report.pdfUrl = `${BASE_URL}/storage/files/reports/${path.basename(pdfPath)}`;
     await report.save();
   }
-
+  emitWarehouseUpdate(getIo(), { type: 'reports', clientId });
   return report._id.toString();
 }
 
@@ -149,7 +150,7 @@ export async function generateMonthlyReport(clientId: string): Promise<string> {
     report.pdfUrl = `${BASE_URL}/storage/files/reports/${path.basename(pdfPath)}`;
     await report.save();
   }
-
+  emitWarehouseUpdate(getIo(), { type: 'reports', clientId });
   return report._id.toString();
 }
 
@@ -203,7 +204,7 @@ export async function generateYearlyReport(clientId: string): Promise<string> {
     report.pdfUrl = `${BASE_URL}/storage/files/reports/${path.basename(pdfPath)}`;
     await report.save();
   }
-
+  emitWarehouseUpdate(getIo(), { type: 'reports', clientId });
   return report._id.toString();
 }
 

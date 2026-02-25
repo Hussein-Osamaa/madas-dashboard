@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useWarehouseLive } from '../hooks/useWarehouseLive';
 import { Package, ChevronDown, Plus, Pencil, Warehouse as WarehouseIcon, Search, Printer } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
 import { normalizeProductFromApi } from '../components/SizeVariantsEditor';
@@ -185,6 +186,8 @@ export default function InventoryPage() {
   }, [selectedClientId]);
 
   useLiveRefresh(() => loadProducts(true), 30_000, [selectedClientId]);
+  useWarehouseLive(() => loadProducts(true), { type: 'products', clientId: selectedClientId || undefined });
+  useWarehouseLive(() => loadWarehouses(), { type: 'warehouses', clientId: selectedClientId || undefined });
 
   const handleOpenAdd = () => {
     setFormData(emptyForm);

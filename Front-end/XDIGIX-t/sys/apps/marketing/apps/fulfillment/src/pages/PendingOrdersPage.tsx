@@ -12,6 +12,7 @@ import {
 } from '../lib/api';
 import OrderDetailModal from '../components/OrderDetailModal';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useWarehouseLive } from '../hooks/useWarehouseLive';
 
 const SCANNER_ID = 'pending-scanner';
 
@@ -55,6 +56,7 @@ export default function PendingOrdersPage() {
   }, [loadOrders]);
 
   useLiveRefresh(() => loadOrders(true), 30_000, []);
+  useWarehouseLive(() => loadOrders(true), { type: 'orders' });
 
   const filteredOrders = orders.filter((o) => {
     const term = searchTerm.toLowerCase();

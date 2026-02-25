@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { listTransactions } from '../lib/api';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useWarehouseLive } from '../hooks/useWarehouseLive';
 
 export default function TransactionsListPage() {
   const [clientId, setClientId] = useState('');
@@ -34,6 +35,7 @@ export default function TransactionsListPage() {
   }, [load]);
 
   useLiveRefresh(() => load(true), 30_000, [clientId, productId, page]);
+  useWarehouseLive(() => load(true), { type: 'transactions', clientId: clientId || undefined });
 
   return (
     <div>

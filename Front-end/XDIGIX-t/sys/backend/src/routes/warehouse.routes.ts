@@ -9,6 +9,7 @@ import { requireAccountType } from '../middleware/account-guard.middleware';
 import { requireApp } from '../middleware/account-guard.middleware';
 import { requireClientId } from '../middlewares/warehouse.middlewares';
 import { Business } from '../schemas/business.schema';
+import { getIo, emitWarehouseUpdate } from '../realtime';
 import * as InventoryController from '../modules/inventory/controllers/Inventory.controller';
 import * as ReportsController from '../modules/reports/controllers/Reports.controller';
 
@@ -75,6 +76,7 @@ router.patch(
       if (status === 'shipped') payload.shippedAt = new Date().toISOString();
       if (status === 'delivered') payload.deliveredAt = new Date().toISOString();
       await updateOrderFulfillment(businessId, orderId, payload);
+      emitWarehouseUpdate(getIo(), { type: 'orders' });
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
@@ -135,6 +137,7 @@ router.post(
       const staffId = req.accountPayload?.userId;
       const { scanOrderBarcode } = await import('../modules/warehouse-orders/warehouse-orders.service');
       const result = await scanOrderBarcode(businessId, orderId, barcode, staffId);
+      emitWarehouseUpdate(getIo(), { type: 'orders' });
       res.json(result);
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
@@ -211,6 +214,7 @@ router.post(
         description: req.body.description,
         address: req.body.address,
       });
+      emitWarehouseUpdate(getIo(), { type: 'warehouses', clientId: req.clientId! });
       res.status(201).json(result);
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
@@ -276,6 +280,7 @@ router.post(
         stock: stock ?? {},
         sizeBarcodes: sizeBarcodes ?? {},
       });
+      emitWarehouseUpdate(getIo(), { type: 'products', clientId: req.clientId! });
       res.status(201).json(result);
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
@@ -323,6 +328,7 @@ router.patch(
         stock,
         sizeBarcodes,
       });
+      emitWarehouseUpdate(getIo(), { type: 'products', clientId });
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });

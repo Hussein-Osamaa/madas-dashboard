@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { getIo, emitWarehouseUpdate } from '../../../realtime';
 import { recordTransaction } from '../services/Inventory.service';
 import { StockTransactionRepository } from '../repositories/StockTransaction.repository';
 import { StockTransactionModel } from '../models/StockTransaction.model';
@@ -20,6 +21,8 @@ export async function inbound(req: Request, res: Response): Promise<void> {
     referenceId,
     performedByStaffId: staffId,
   });
+  emitWarehouseUpdate(getIo(), { type: 'transactions', clientId });
+  emitWarehouseUpdate(getIo(), { type: 'products', clientId });
   res.json({ success: true });
 }
 
@@ -38,6 +41,8 @@ export async function damage(req: Request, res: Response): Promise<void> {
     referenceId,
     performedByStaffId: staffId,
   });
+  emitWarehouseUpdate(getIo(), { type: 'transactions', clientId });
+  emitWarehouseUpdate(getIo(), { type: 'products', clientId });
   res.json({ success: true });
 }
 
@@ -56,6 +61,8 @@ export async function missing(req: Request, res: Response): Promise<void> {
     referenceId,
     performedByStaffId: staffId,
   });
+  emitWarehouseUpdate(getIo(), { type: 'transactions', clientId });
+  emitWarehouseUpdate(getIo(), { type: 'products', clientId });
   res.json({ success: true });
 }
 
