@@ -115,13 +115,13 @@ export async function listMovements(params: {
 
   return {
     items: items.map((d: Record<string, unknown>) => ({
-      id: d.id,
-      sku: d.sku,
-      type: d.type,
-      quantity: d.quantity,
-      reference_id: d.reference_id,
-      worker_id: d.worker_id,
-      note: d.note,
+      id: String(d.id ?? ''),
+      sku: String(d.sku ?? ''),
+      type: d.type as InventoryMovementType,
+      quantity: Number(d.quantity ?? 0),
+      reference_id: d.reference_id != null ? String(d.reference_id) : undefined,
+      worker_id: d.worker_id != null ? String(d.worker_id) : undefined,
+      note: d.note != null ? String(d.note) : undefined,
       created_at: (d.created_at as Date)?.toISOString?.() ?? new Date().toISOString(),
     })),
     total,

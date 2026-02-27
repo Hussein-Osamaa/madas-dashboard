@@ -200,12 +200,12 @@ export async function getDashboardData(clientId: string): Promise<{
   }));
 
   const workerActivityLog = workerLog.map((r: Record<string, unknown>) => ({
-    id: r.id,
-    sku: r.sku,
-    type: r.type,
-    quantity: r.quantity,
-    worker_id: r.worker_id,
-    reference_id: r.reference_id,
+    id: String(r.id ?? ''),
+    sku: String(r.sku ?? ''),
+    type: String(r.type ?? ''),
+    quantity: Number(r.quantity ?? 0),
+    worker_id: String(r.worker_id ?? ''),
+    reference_id: r.reference_id != null ? String(r.reference_id) : undefined,
     created_at: (r.created_at as Date)?.toISOString?.() ?? '',
   }));
 

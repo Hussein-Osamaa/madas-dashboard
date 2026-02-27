@@ -45,12 +45,12 @@ export async function listProductActivityLog(params: {
   return {
     entries: entries.map((e: Record<string, unknown>) => ({
       id: String(e._id),
-      clientId: e.clientId,
-      productId: e.productId,
-      productName: e.productName,
-      action: e.action,
-      performedByUserId: e.performedByUserId,
-      performedByEmail: e.performedByEmail,
+      clientId: String(e.clientId ?? ''),
+      productId: String(e.productId ?? ''),
+      productName: e.productName != null ? String(e.productName) : undefined,
+      action: e.action as ProductActivityAction,
+      performedByUserId: String(e.performedByUserId ?? ''),
+      performedByEmail: String(e.performedByEmail ?? ''),
       createdAt: (e.createdAt as Date)?.toISOString?.() ?? new Date().toISOString(),
     })),
     total,
