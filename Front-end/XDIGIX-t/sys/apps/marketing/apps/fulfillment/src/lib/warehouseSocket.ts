@@ -46,6 +46,7 @@ let socket: Socket | null = null;
 let clientRoom: string | null = null;
 const listeners = new Set<(payload: WarehouseUpdatePayload) => void>();
 const connectionListeners = new Set<(connected: boolean) => void>();
+const onConnectListeners = new Set<() => void>();
 
 function notifyConnectionState(connected: boolean) {
   connectionListeners.forEach((cb) => {
@@ -62,6 +63,15 @@ export function subscribeWarehouseConnectionState(cb: (connected: boolean) => vo
   connectionListeners.add(cb);
   cb(!!socket?.connected);
   return () => connectionListeners.delete(cb);
+}
+
+/** Subscribe to socket connect (and reconnect). Call refetch so data is in sync. Returns unsubscribe. */
+export function subscribeWarehouseOnConnect(cb: () => void): () => void {
+  onConnectListeners.add(cb);
+  if (socket?.connected) {
+    try { cb(); } catch (e) { console.warn('warehouseSocket onConnect error', e); }
+  }
+  return () => onConnectListeners.delete(cb);
 }
 
 const isDev = typeof import.meta.env.DEV !== 'undefined' && import.meta.env.DEV;
@@ -97,6 +107,9 @@ function ensureSocket(): Socket | null {
     socket?.emit('subscribe', 'warehouse:staff');
     if (clientRoom) socket?.emit('subscribe', clientRoom);
     notifyConnectionState(true);
+    onConnectListeners.forEach((cb) => {
+      try { cb(); } catch (e) { console.warn('warehouseSocket onConnect error', e); }
+    });
     if (isDev) console.log('[warehouseSocket] Connected, subscribed to warehouse:staff', clientRoom ? `+ ${clientRoom}` : '');
   });
   socket.on('warehouse:updated', (payload: WarehouseUpdatePayload) => {

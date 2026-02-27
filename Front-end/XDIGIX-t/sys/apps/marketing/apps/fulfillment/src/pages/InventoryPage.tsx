@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 import { Package, ChevronDown, Plus, Pencil, Warehouse as WarehouseIcon, Search, Printer } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
@@ -185,7 +186,13 @@ export default function InventoryPage() {
     }
   }, [selectedClientId]);
 
-  useLiveRefresh(() => loadProducts(true), 30_000, [selectedClientId]);
+  useLiveRefresh(() => loadProducts(true), 15_000, [selectedClientId]);
+  useRefetchOnVisible(() => {
+    if (selectedClientId) {
+      loadProducts(true);
+      loadWarehouses();
+    }
+  });
   useWarehouseLive(() => loadProducts(true), { type: 'products', clientId: selectedClientId || undefined });
   useWarehouseLive(() => loadProducts(true), { type: 'transactions', clientId: selectedClientId || undefined });
   useWarehouseLive(() => loadWarehouses(), { type: 'warehouses', clientId: selectedClientId || undefined });

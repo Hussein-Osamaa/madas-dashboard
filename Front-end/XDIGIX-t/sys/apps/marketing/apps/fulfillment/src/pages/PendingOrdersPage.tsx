@@ -12,6 +12,7 @@ import {
 } from '../lib/api';
 import OrderDetailModal from '../components/OrderDetailModal';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 
 const SCANNER_ID = 'pending-scanner';
@@ -55,7 +56,8 @@ export default function PendingOrdersPage() {
     loadOrders();
   }, [loadOrders]);
 
-  useLiveRefresh(() => loadOrders(true), 30_000, []);
+  useLiveRefresh(() => loadOrders(true), 15_000, []);
+  useRefetchOnVisible(() => loadOrders(true));
   useWarehouseLive(() => loadOrders(true), { type: 'orders' });
 
   const filteredOrders = orders.filter((o) => {

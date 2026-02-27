@@ -6,6 +6,7 @@ import { CheckCircle, Search, RefreshCw, Eye, FileText, Building2, Truck } from 
 import { listFulfillmentOrders, updateOrderFulfillment, type FulfillmentOrder } from '../lib/api';
 import OrderDetailModal from '../components/OrderDetailModal';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 
 function formatDate(v: string | undefined): string {
@@ -41,7 +42,8 @@ export default function ReadyForPickupPage() {
     loadOrders();
   }, [loadOrders]);
 
-  useLiveRefresh(() => loadOrders(true), 30_000, []);
+  useLiveRefresh(() => loadOrders(true), 15_000, []);
+  useRefetchOnVisible(() => loadOrders(true));
   useWarehouseLive(() => loadOrders(true), { type: 'orders' });
 
   const filteredOrders = orders.filter((o) => {

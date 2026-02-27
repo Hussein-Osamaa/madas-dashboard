@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, Building2, Search, ChevronDown } from 'lucide-react';
 import { listFulfillmentClients, listReports, downloadReport, type FulfillmentClient, type InventoryReportItem } from '../lib/api';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 
 export default function InventoryReportsPage() {
@@ -54,7 +55,8 @@ export default function InventoryReportsPage() {
   }, [selectedClientId, loadReports]);
 
   useLiveRefresh(() => loadClients(), 60_000, []);
-  useLiveRefresh(() => loadReports(true), 30_000, [selectedClientId]);
+  useLiveRefresh(() => loadReports(true), 15_000, [selectedClientId]);
+  useRefetchOnVisible(() => loadReports(true));
   useWarehouseLive(() => loadReports(true), { type: 'reports', clientId: selectedClientId || undefined });
 
   const handleDownload = async (reportId: string) => {

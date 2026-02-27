@@ -6,6 +6,7 @@ import { Package, Search, RefreshCw, Eye, FileText, Building2, X } from 'lucide-
 import { listFulfillmentOrders, updateOrderFulfillment, type FulfillmentOrder } from '../lib/api';
 import OrderDetailModal from '../components/OrderDetailModal';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 
 function formatDate(v: string | undefined): string {
@@ -45,7 +46,8 @@ export default function AllOrdersPage() {
     loadOrders();
   }, [loadOrders]);
 
-  useLiveRefresh(() => loadOrders(true), 30_000, [filterStatus]);
+  useLiveRefresh(() => loadOrders(true), 15_000, [filterStatus]);
+  useRefetchOnVisible(() => loadOrders(true));
   useWarehouseLive(() => loadOrders(true), { type: 'orders' });
 
   const filteredOrders = orders.filter((o) => {

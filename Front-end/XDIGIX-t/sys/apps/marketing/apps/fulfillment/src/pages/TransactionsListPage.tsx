@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { listTransactions } from '../lib/api';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 
 export default function TransactionsListPage() {
@@ -34,7 +35,8 @@ export default function TransactionsListPage() {
     load();
   }, [load]);
 
-  useLiveRefresh(() => load(true), 30_000, [clientId, productId, page]);
+  useLiveRefresh(() => load(true), 15_000, [clientId, productId, page]);
+  useRefetchOnVisible(() => load(true));
   useWarehouseLive(() => load(true), { type: 'transactions', clientId: clientId || undefined });
 
   return (
