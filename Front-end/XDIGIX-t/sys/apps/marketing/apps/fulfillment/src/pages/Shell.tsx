@@ -77,7 +77,57 @@ export default function Shell() {
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-[#0a0b1a] flex">
-      {/* Mobile header */}
+      {/* Sidebar: drawer on mobile, fixed full-height on desktop */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] md:w-56 flex flex-col
+          h-[100dvh] h-screen
+          border-r border-gray-200 dark:border-white/5 bg-white dark:bg-[#0a0b1a]/50
+          transform transition-transform duration-200 ease-out
+          pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
+        <div className="p-4 border-b border-gray-200 dark:border-white/5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <Package className="w-8 h-8 text-amber-500 dark:text-amber-400 shrink-0" />
+            <span className="font-semibold text-gray-900 dark:text-white truncate">Warehouse</span>
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="md:hidden p-2.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <button
+            onClick={toggle}
+            className="hidden md:flex p-2 rounded-lg text-gray-500 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-white/5 transition"
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+        </div>
+        <nav className="flex-1 min-h-0 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
+          <NavContent onNavigate={() => setMobileMenuOpen(false)} />
+        </nav>
+        <div className="p-3 border-t border-gray-200 dark:border-white/5 shrink-0">
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1 mb-1">{user?.email}</p>
+          <p className="text-xs px-1 flex items-center gap-1.5" title={liveDisabled ? 'Live updates require a non-Vercel backend (e.g. Railway)' : liveConnected ? 'Live updates active' : 'Connecting…'}>
+            <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${liveDisabled ? 'bg-gray-400' : liveConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+            {liveDisabled ? 'Live unavailable' : liveConnected ? 'Live' : 'Connecting…'}
+          </p>
+          <button
+            onClick={() => logout()}
+            className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white min-h-[44px] px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 w-full justify-start"
+          >
+            <LogIn className="w-5 h-5 rotate-180 shrink-0" />
+            Log out
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile header - above sidebar on mobile */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 bg-white dark:bg-[#0a0b1a] border-b border-gray-200 dark:border-white/5 safe-area-inset-top">
         <button
           onClick={() => setMobileMenuOpen(true)}
@@ -110,56 +160,7 @@ export default function Shell() {
         />
       )}
 
-      {/* Sidebar: drawer on mobile, fixed on desktop */}
-      <aside
-        className={`
-          fixed md:static inset-y-0 left-0 z-50 w-72 max-w-[85vw] md:w-56
-          border-r border-gray-200 dark:border-white/5 flex flex-col bg-white dark:bg-[#0a0b1a]/50
-          transform transition-transform duration-200 ease-out
-          pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        `}
-      >
-        <div className="p-4 border-b border-gray-200 dark:border-white/5 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <Package className="w-8 h-8 text-amber-500 dark:text-amber-400 shrink-0" />
-            <span className="font-semibold text-gray-900 dark:text-white truncate">Warehouse</span>
-          </div>
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden p-2.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Close menu"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <button
-            onClick={toggle}
-            className="hidden md:flex p-2 rounded-lg text-gray-500 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-white/5 transition"
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </div>
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
-          <NavContent onNavigate={() => setMobileMenuOpen(false)} />
-        </nav>
-        <div className="p-3 border-t border-gray-200 dark:border-white/5 shrink-0">
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1 mb-1">{user?.email}</p>
-          <p className="text-xs px-1 flex items-center gap-1.5" title={liveDisabled ? 'Live updates require a non-Vercel backend (e.g. Railway)' : liveConnected ? 'Live updates active' : 'Connecting…'}>
-            <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${liveDisabled ? 'bg-gray-400' : liveConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-            {liveDisabled ? 'Live unavailable' : liveConnected ? 'Live' : 'Connecting…'}
-          </p>
-          <button
-            onClick={() => logout()}
-            className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white min-h-[44px] px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 w-full justify-start"
-          >
-            <LogIn className="w-4 h-4 rotate-180 shrink-0" />
-            Log out
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 overflow-auto flex flex-col min-w-0 pt-14 md:pt-0 p-4 sm:p-6 bg-gray-50 dark:bg-transparent safe-area-inset-bottom">
+      <main className="flex-1 overflow-auto flex flex-col min-w-0 pt-14 md:pt-0 md:ml-56 p-4 sm:p-6 bg-gray-50 dark:bg-transparent safe-area-inset-bottom">
         <Outlet />
       </main>
     </div>
