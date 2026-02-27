@@ -5,7 +5,7 @@
  */
 function getApiBase(): string {
   const env = import.meta.env.VITE_API_BACKEND_URL;
-  if (typeof env !== 'string' || !env.trim()) return 'http://localhost:4000/api';
+  if (typeof env !== 'string' || !env.trim()) return 'https://xdigix-os-production.up.railway.app/api';
   const raw = env.trim().replace(/\/$/, '');
   if (raw.startsWith('http://') || raw.startsWith('https://')) {
     const origin = raw.replace(/\/api.*$/, '');

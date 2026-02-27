@@ -28,15 +28,27 @@ export function createApp(): Express {
   app.use(
     cors({
       origin: (incoming, callback) => {
-        if (
-          !incoming ||
-          allowedOrigins.includes('*') ||
-          allowedOrigins.includes(incoming)
-        ) {
-          callback(null, incoming || '*');
-        } else {
-          callback(null, false);
+        if (!incoming) {
+          callback(null, '*');
+          return;
         }
+        if (allowedOrigins.includes('*')) {
+          callback(null, incoming);
+          return;
+        }
+        if (allowedOrigins.includes(incoming)) {
+          callback(null, incoming);
+          return;
+        }
+        // Allow localhost / 127.0.0.1 on any port for local frontend dev (e.g. Vite on 5180)
+        if (
+          incoming.startsWith('http://localhost:') ||
+          incoming.startsWith('http://127.0.0.1:')
+        ) {
+          callback(null, incoming);
+          return;
+        }
+        callback(null, false);
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],

@@ -5,6 +5,7 @@
   "scripts": {
     "serve": "node server.js",
     "dev": "nodemon server.js",
+    "start:backend": "cd backend && npm run dev",
     "build": "node scripts/build-all.js",
     "build:all": "node scripts/build-all.js",
     "build:marketing": "cd apps/marketing && npm run build",

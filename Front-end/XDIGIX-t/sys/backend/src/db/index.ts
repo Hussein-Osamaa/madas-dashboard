@@ -2,11 +2,16 @@ import mongoose from 'mongoose';
 import { config } from '../config';
 
 export async function connectDb(): Promise<void> {
-  const uri = config.mongo.uri;
-  const fromEnv = !!process.env.MONGODB_URI;
-  console.log('[DB] MONGODB_URI from env:', fromEnv ? 'yes' : 'no (using default localhost)');
+  const uri = (config.mongo.uri || '').trim();
+  if (!uri) {
+    throw new Error(
+      'MONGODB_URI is required. Set it in .env (e.g. mongodb+srv://user:pass@cluster.mongodb.net/dbname?retryWrites=true&w=majority) or in your deployment environment.'
+    );
+  }
   if (uri.startsWith('mongodb://localhost') || uri.startsWith('mongodb://127.0.0.1')) {
-    console.error('[DB] MONGODB_URI is not set or still defaulting to localhost. In Railway: Variables → add key MONGODB_URI (exact name) with your Atlas connection string.');
+    throw new Error(
+      'Local MongoDB is disabled. Set MONGODB_URI to a remote instance (e.g. MongoDB Atlas).'
+    );
   }
   try {
     await mongoose.connect(uri);

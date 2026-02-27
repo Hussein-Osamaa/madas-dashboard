@@ -7,7 +7,8 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
 
   mongo: {
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/madas',
+    /** No local default; set MONGODB_URI (e.g. Atlas) in .env or deployment. */
+    uri: process.env.MONGODB_URI ?? '',
   },
 
   jwt: {

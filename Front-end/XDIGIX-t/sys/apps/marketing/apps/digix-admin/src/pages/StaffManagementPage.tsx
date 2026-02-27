@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, RefreshCw, Pencil, Key, Power, PowerOff, Shield } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:4000/api';
+const API_BASE = import.meta.env.VITE_API_BACKEND_URL || 'https://xdigix-os-production.up.railway.app/api';
 const STAFF_ADMIN_KEY = 'staff_admin_token';
 const STAFF_REFRESH_KEY = 'staff_admin_refresh';
 

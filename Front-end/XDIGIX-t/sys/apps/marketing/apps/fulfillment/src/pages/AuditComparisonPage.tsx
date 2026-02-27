@@ -182,19 +182,21 @@ export default function AuditComparisonPage() {
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <Building2 className="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0" />
-        <select
-          value={selectedClientId}
-          onChange={(e) => setSelectedClientId(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-        >
-          <option value="">Select client</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name || c.id}
-            </option>
-          ))}
-          <ChevronDown className="w-4 h-4" />
-        </select>
+        <div className="relative">
+          <select
+            value={selectedClientId}
+            onChange={(e) => setSelectedClientId(e.target.value)}
+            className="px-4 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none pr-8"
+          >
+            <option value="">Select client</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name || c.id}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="w-4 h-4 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" aria-hidden />
+        </div>
         {threshold != null && (
           <span className="text-sm text-gray-500 dark:text-gray-400">
             Variance alert threshold: <strong className="text-gray-700 dark:text-gray-300">{threshold}</strong> units

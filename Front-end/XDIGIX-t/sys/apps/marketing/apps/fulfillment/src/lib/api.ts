@@ -1,9 +1,9 @@
+const DEFAULT_API_BASE = 'https://xdigix-os-production.up.railway.app/api';
+
 /**
  * Backend API client for Warehouse Fulfillment Portal
  * Uses staff auth (POST /auth/staff/login)
- * Set VITE_API_BACKEND_URL in production to the full backend URL including protocol, e.g.:
- *   https://xdigix-os-production.up.railway.app/api
- * When unset, uses same host + port 4000. If you set only a hostname (no protocol), we normalize to https://hostname/api.
+ * Default: Railway production. Override with VITE_API_BACKEND_URL for local backend (e.g. http://localhost:4000/api).
  */
 function getApiBase(): string {
   const env = import.meta.env.VITE_API_BACKEND_URL;
@@ -18,11 +18,7 @@ function getApiBase(): string {
     const base = `https://${host}`;
     return base.endsWith('/api') ? base : `${base}/api`;
   }
-  if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol || 'https:';
-    return `${protocol}//${window.location.hostname}:4000/api`;
-  }
-  return 'http://localhost:4000/api';
+  return DEFAULT_API_BASE;
 }
 const API_BASE = getApiBase();
 

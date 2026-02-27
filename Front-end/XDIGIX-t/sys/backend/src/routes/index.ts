@@ -19,6 +19,8 @@ router.use('/auth', authRoutes);
 router.use('/staff', staffRoutes);
 router.use('/', clientsRoutes);
 router.use('/firestore', firestoreRoutes);
+// Debug: if GET /api/warehouse/ping returns 200, this backend is running (no auth).
+router.get('/warehouse/ping', (_req, res) => res.json({ ok: true, msg: 'warehouse routes loaded' }));
 router.use('/warehouse', warehouseRoutes);
 router.use('/audit', auditRoutes);
 router.use('/client/warehouse', clientWarehouseRoutes);

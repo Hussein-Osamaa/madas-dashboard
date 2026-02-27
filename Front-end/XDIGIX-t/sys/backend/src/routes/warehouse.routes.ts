@@ -44,6 +44,27 @@ router.post('/movements', InventoryMovementController.recordMovement);
 router.get('/movements', InventoryMovementController.list);
 router.get('/stock', InventoryMovementController.getStock);
 
+/** GET /warehouse/dashboard?clientId=xxx - Dashboard metrics (registered early so route always matches). */
+router.get('/dashboard', async (req: Request, res: Response) => {
+  try {
+    const clientId = (req.query.clientId as string)?.trim() || (req as { clientId?: string }).clientId;
+    if (!clientId) {
+      res.status(400).json({ error: 'clientId query required' });
+      return;
+    }
+    const { getDashboardData } = await import('../modules/inventory/services/Dashboard.service');
+    const data = await getDashboardData(clientId);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+/** Audit GET routes (before requireClientId so they always match). */
+router.get('/audit/threshold', AuditComparisonController.getThreshold);
+router.get('/audit/comparisons', AuditComparisonController.listComparisons);
+router.get('/audit/alerts', AuditComparisonController.listAlerts);
+
 /** GET /warehouse/clients - List clients with fulfillment subscription (no clientId required) */
 router.get('/clients', async (_req: Request, res: Response) => {
   try {
@@ -179,18 +200,6 @@ router.use((req, _res, next) => {
 });
 router.use(requireClientId);
 
-/** GET /warehouse/dashboard?clientId=xxx - Dashboard metrics, daily chart, top SKUs, worker log (from movements only). */
-router.get('/dashboard', async (req: Request, res: Response) => {
-  try {
-    const clientId = req.clientId!;
-    const { getDashboardData } = await import('../modules/inventory/services/Dashboard.service');
-    const data = await getDashboardData(clientId);
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
-
 /** GET /warehouse/export?clientId=xxx&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD - Excel export (4 sheets: Weekly Summary, Detailed Movement Log, SKU-Level Breakdown, Profit Estimation). */
 router.get('/export', async (req: Request, res: Response) => {
   try {
@@ -222,13 +231,10 @@ router.get('/export', async (req: Request, res: Response) => {
   }
 });
 
-/** Audit comparison: physical count vs system stock; threshold alerts. */
+/** Audit comparison: POST/PATCH (clientId in body for POST). */
 router.post('/audit/record-count', AuditComparisonController.recordCount);
 router.post('/audit/record-count-bulk', AuditComparisonController.recordCountBulk);
-router.get('/audit/comparisons', AuditComparisonController.listComparisons);
-router.get('/audit/alerts', AuditComparisonController.listAlerts);
 router.patch('/audit/alerts/:alertId/acknowledge', AuditComparisonController.acknowledgeAlert);
-router.get('/audit/threshold', AuditComparisonController.getThreshold);
 
 /** GET /warehouse/reports?clientId=xxx - List inventory reports for a client (STAFF with WAREHOUSE). */
 router.get('/reports', ReportsController.list);

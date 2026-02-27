@@ -26,18 +26,26 @@ export default function ProductActivityLogPage() {
   }, []);
 
   const loadLog = useCallback(async () => {
+    if (!selectedClientId) {
+      setEntries([]);
+      setTotal(0);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const result = await listProductActivityLog({
-        clientId: selectedClientId || undefined,
+        clientId: selectedClientId,
         page,
         limit: PAGE_SIZE,
       });
       setEntries(result.entries);
       setTotal(result.total);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load activity log');
+      const msg = e instanceof Error ? e.message : 'Failed to load activity log';
+      const is404 = typeof msg === 'string' && (msg.includes('404') || msg.includes('Not Found'));
+      setError(is404 ? 'Activity log API not available. Ensure the backend is deployed with the latest warehouse routes.' : msg);
       setEntries([]);
       setTotal(0);
     } finally {
@@ -50,6 +58,10 @@ export default function ProductActivityLogPage() {
   }, [loadClients]);
 
   useEffect(() => {
+    if (clients.length && !selectedClientId) setSelectedClientId(clients[0].id);
+  }, [clients.length, selectedClientId]);
+
+  useEffect(() => {
     setPage(1);
   }, [selectedClientId]);
 
@@ -58,7 +70,7 @@ export default function ProductActivityLogPage() {
   }, [loadLog]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const clientName = clients.find((c) => c.id === selectedClientId)?.name || selectedClientId || 'All clients';
+  const clientName = clients.find((c) => c.id === selectedClientId)?.name || selectedClientId || '—';
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
@@ -74,7 +86,7 @@ export default function ProductActivityLogPage() {
             onChange={(e) => setSelectedClientId(e.target.value)}
             className="px-4 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-amber-500/50"
           >
-            <option value="">All clients</option>
+            <option value="">Select client</option>
             {clients.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name || c.id}
@@ -92,10 +104,13 @@ export default function ProductActivityLogPage() {
 
       {loading ? (
         <div className="py-12 text-center text-gray-500 dark:text-gray-400">Loading activity log...</div>
+      ) : !selectedClientId ? (
+        <div className="py-12 px-6 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-center text-gray-500 dark:text-gray-400">
+          Select a client to view activity log.
+        </div>
       ) : entries.length === 0 ? (
         <div className="py-12 px-6 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-center text-gray-500 dark:text-gray-400">
-          No product activity recorded yet.
-          {selectedClientId ? ` Try "All clients" or another client.` : ''}
+          No product activity recorded yet for this client.
         </div>
       ) : (
         <>

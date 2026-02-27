@@ -75,7 +75,9 @@ export default function SKUTimelinePage() {
       setItems(r.items || []);
       setTotal(r.total ?? 0);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load movements');
+      const msg = e instanceof Error ? e.message : 'Failed to load movements';
+      const is404 = typeof msg === 'string' && (msg.includes('404') || msg.includes('Not Found'));
+      setError(is404 ? 'Movements API not available. Ensure the backend is deployed with the latest warehouse routes.' : msg);
       setItems([]);
       setTotal(0);
     } finally {
@@ -130,7 +132,7 @@ export default function SKUTimelinePage() {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <Package className="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0" />
           <select
             value={selectedSku}
@@ -139,7 +141,7 @@ export default function SKUTimelinePage() {
               setPage(1);
             }}
             disabled={loadingProducts || !selectedClientId}
-            className="px-4 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm min-w-[200px] min-h-[44px] focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+            className="px-4 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-sm min-w-[200px] min-h-[44px] focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none pr-8"
           >
             <option value="">Select SKU / product</option>
             {skuOptions.map((opt) => (
@@ -148,7 +150,7 @@ export default function SKUTimelinePage() {
               </option>
             ))}
           </select>
-          <ChevronDown className="w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="w-4 h-4 text-gray-400 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" aria-hidden />
         </div>
       </div>
 

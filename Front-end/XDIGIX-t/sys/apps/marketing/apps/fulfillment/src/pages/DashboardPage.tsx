@@ -63,7 +63,9 @@ export default function DashboardPage() {
       const d = await getDashboard(selectedClientId);
       setData(d);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load dashboard');
+      const msg = e instanceof Error ? e.message : 'Failed to load dashboard';
+      const is404 = typeof msg === 'string' && (msg.includes('404') || msg.includes('Not Found'));
+      setError(is404 ? 'Dashboard API not available. Start the backend from Front-end/XDIGIX-t/sys/backend (npm run dev) and ensure port 4000 is free.' : msg);
       setData(null);
     } finally {
       setLoading(false);

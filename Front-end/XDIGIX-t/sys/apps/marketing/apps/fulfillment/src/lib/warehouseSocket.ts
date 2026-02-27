@@ -7,19 +7,17 @@
 import { io, Socket } from 'socket.io-client';
 import { getAccessToken } from './api';
 
+const DEFAULT_SOCKET_BASE = 'https://xdigix-os-production.up.railway.app';
+
 function getSocketBase(): string {
   const env = import.meta.env.VITE_API_BACKEND_URL;
   if (typeof env === 'string' && env.trim()) {
     let base = env.trim().replace(/\/api\/?$/, '').replace(/\/$/, '') || '';
-    if (!base) return 'http://localhost:4000';
+    if (!base) return DEFAULT_SOCKET_BASE;
     if (!base.startsWith('http://') && !base.startsWith('https://')) base = `https://${base}`;
     return base;
   }
-  if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol || 'https:';
-    return `${protocol}//${window.location.hostname}:4000`;
-  }
-  return 'http://localhost:4000';
+  return DEFAULT_SOCKET_BASE;
 }
 
 function isBackendVercel(): boolean {

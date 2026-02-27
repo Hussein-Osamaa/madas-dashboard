@@ -13,6 +13,13 @@ npm run dev
 
 Server runs on port 4000 by default.
 
+**If you get 404 on `/api/warehouse/dashboard` or other warehouse routes:**
+
+1. Run the backend from **this directory**: `Front-end/XDIGIX-t/sys/backend` (or `sys/backend` from repo root).
+2. Use `npm run dev` for live reload. If you use `npm run start`, run `npm run build` first so `dist/` is up to date.
+3. Ensure nothing else is using port 4000. Check: `curl http://localhost:4000/api/health` should return `{"ok":true,"timestamp":"..."}`. If that fails, this backend isn’t the one listening on 4000.
+4. Warehouse routes require a valid STAFF JWT with WAREHOUSE app; missing/invalid token returns 401, not 404.
+
 ## Deploy (production)
 
 - **Railway (recommended)** — Full API + WebSockets (Socket.IO). See [DEPLOY_RAILWAY.md](./DEPLOY_RAILWAY.md). Set frontend `VITE_API_BACKEND_URL` to `https://<your-app>.up.railway.app/api`.
@@ -52,7 +59,7 @@ For base URL replacement, these paths are also available:
 
 ```env
 PORT=4000
-MONGODB_URI=mongodb://localhost:27017/madas
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/madas?retryWrites=true&w=majority
 JWT_ACCESS_SECRET=your-secret
 JWT_REFRESH_SECRET=your-refresh-secret
 S3_BUCKET=your-bucket
