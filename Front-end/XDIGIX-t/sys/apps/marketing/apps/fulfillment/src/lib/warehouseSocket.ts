@@ -40,7 +40,7 @@ export function isWarehouseSocketDisabled(): boolean {
   return isBackendVercel();
 }
 
-export type WarehouseUpdatePayload = { type: 'products' | 'orders' | 'transactions' | 'warehouses' | 'reports'; clientId?: string };
+export type WarehouseUpdatePayload = { type: 'products' | 'orders' | 'transactions' | 'warehouses' | 'reports'; clientId?: string; businessId?: string };
 
 let socket: Socket | null = null;
 let clientRoom: string | null = null;

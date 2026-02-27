@@ -81,15 +81,23 @@ export function setupRealtime(httpServer: HttpServer): Server {
   return io;
 }
 
-/** Payload for warehouse live updates. type = scope of change; clientId = which client (for client-scoped data). */
-export type WarehouseUpdatePayload = { type: 'products' | 'orders' | 'transactions' | 'warehouses' | 'reports'; clientId?: string };
+/** Payload for warehouse live updates. type = scope of change; clientId = which client; businessId = which business (for merchant dashboard). */
+export type WarehouseUpdatePayload = {
+  type: 'products' | 'orders' | 'transactions' | 'warehouses' | 'reports';
+  clientId?: string;
+  businessId?: string;
+};
 
-/** Emit warehouse update so other staff see changes instantly. Use room warehouse:staff for orders; warehouse:client:${clientId} for client-scoped. */
+/** Emit so staff (fulfillment) and merchants (dashboard) see changes in realtime. */
 export function emitWarehouseUpdate(io: Server | null, payload: WarehouseUpdatePayload): void {
   if (!io) return;
   io.to('warehouse:staff').emit('warehouse:updated', payload);
   if (payload.clientId) {
     io.to(`warehouse:client:${payload.clientId}`).emit('warehouse:updated', payload);
+    io.to(`business:${payload.clientId}`).emit('warehouse:updated', payload);
+  }
+  if (payload.businessId && payload.businessId !== payload.clientId) {
+    io.to(`business:${payload.businessId}`).emit('warehouse:updated', payload);
   }
 }
 

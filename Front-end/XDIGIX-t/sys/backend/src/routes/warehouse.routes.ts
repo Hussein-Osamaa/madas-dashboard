@@ -76,7 +76,7 @@ router.patch(
       if (status === 'shipped') payload.shippedAt = new Date().toISOString();
       if (status === 'delivered') payload.deliveredAt = new Date().toISOString();
       await updateOrderFulfillment(businessId, orderId, payload);
-      emitWarehouseUpdate(getIo(), { type: 'orders' });
+      emitWarehouseUpdate(getIo(), { type: 'orders', businessId });
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
@@ -137,7 +137,7 @@ router.post(
       const staffId = req.accountPayload?.userId;
       const { scanOrderBarcode } = await import('../modules/warehouse-orders/warehouse-orders.service');
       const result = await scanOrderBarcode(businessId, orderId, barcode, staffId);
-      emitWarehouseUpdate(getIo(), { type: 'orders' });
+      emitWarehouseUpdate(getIo(), { type: 'orders', businessId });
       res.json(result);
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });

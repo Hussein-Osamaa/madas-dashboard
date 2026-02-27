@@ -67,17 +67,14 @@ S3_PUBLIC_URL=http://localhost:4000/storage
 2. **`contexts/AuthContext.tsx`** – Use compatibility auth (onAuthStateChanged → adapter).
 3. **`services/domainService.ts`** – Set `API_BASE_URL` to `http://localhost:4000/api`.
 
-## Realtime (Socket.IO)
+## Realtime (live updates between users)
 
-Connect with JWT:
+Only when running as a **long-lived server** (e.g. Railway); not on Vercel serverless.
 
-```js
-import { io } from 'socket.io-client';
-const socket = io('http://localhost:4000', {
-  auth: { token: accessToken }
-});
-socket.on('order_created', (data) => { ... });
-```
+- **Staff (fulfillment app)** – Connect with staff JWT; auto-join `warehouse:staff`. Subscribe to `warehouse:client:${clientId}` for client-scoped lists. Listen for `warehouse:updated` with `{ type, clientId?, businessId? }` and refetch the matching list (products, orders, transactions, warehouses, reports).
+- **Merchants (dashboard)** – Sockets that join `business:${businessId}` receive the same `warehouse:updated` events for their business (orders, products, etc.) so merchant UIs can stay in sync.
+
+Events are emitted on: order update/scan, product create/update, inbound/damage/missing, warehouse create, report generation.
 
 ## Migration
 
