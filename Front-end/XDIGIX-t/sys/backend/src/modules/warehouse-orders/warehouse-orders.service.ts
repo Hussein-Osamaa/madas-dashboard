@@ -1,10 +1,11 @@
 /**
  * Warehouse fulfillment orders - list and update across all fulfillment clients.
  * Used by the fulfillment app (staff with WAREHOUSE).
+ * Barcode scan creates PICKED movements; shipment confirmation creates SHIPPED movements.
  */
 import { Business } from '../../schemas/business.schema';
 import { FirestoreDoc } from '../../schemas/document.schema';
-import { recordTransaction } from '../inventory/services/Inventory.service';
+import { createMovement, getStockBySku } from '../inventory/services/InventoryMovement.service';
 
 export type FulfillmentOrderStatus = 'pending' | 'ready_for_pickup' | 'shipped' | 'delivered' | 'returned' | 'damaged' | 'cancelled';
 
@@ -97,13 +98,44 @@ export async function listFulfillmentOrders(opts: ListOrdersOptions = {}): Promi
 export async function updateOrderFulfillment(
   businessId: string,
   orderId: string,
-  payload: { status: string; trackingNumber?: string; notes?: string; shippedAt?: string; deliveredAt?: string }
+  payload: {
+    status: string;
+    trackingNumber?: string;
+    notes?: string;
+    shippedAt?: string;
+    deliveredAt?: string;
+    shipmentId?: string;
+  }
 ): Promise<void> {
   const doc = await FirestoreDoc.findOne({ businessId, coll: 'orders', docId: orderId }).lean();
   if (!doc) throw new Error('Order not found');
   const existingData = (doc as { data?: Record<string, unknown> }).data || {};
   const existingFulfillment = (existingData.fulfillment as Record<string, unknown>) || {};
   const mergedFulfillment = { ...existingFulfillment, ...payload };
+
+  const previousStatus = (existingFulfillment.status as string) ?? '';
+  if (payload.status === 'shipped' && previousStatus !== 'shipped') {
+    const shipment_id = (payload.shipmentId ?? orderId).trim();
+    const items =
+      (existingData.items as Array<{ productId?: string; quantity?: number }>) || [];
+    const products = await listProductsForScan(businessId);
+    for (const item of items) {
+      const productId = (item.productId ?? '').toString().split('-')[0].split('_')[0];
+      const product = products.find(
+        (p) => p.id === productId || p.id.split('-')[0].split('_')[0] === productId
+      );
+      const sku = (product?.sku ?? productId).trim() || productId;
+      const quantity = Math.max(1, Number(item.quantity) || 1);
+      await createMovement({
+        sku,
+        type: 'SHIPPED',
+        quantity,
+        reference_id: shipment_id,
+        note: `Order ${orderId} shipped`,
+      });
+    }
+  }
+
   await FirestoreDoc.updateOne(
     { businessId, coll: 'orders', docId: orderId },
     {
@@ -261,13 +293,26 @@ export async function scanOrderBarcode(
   }
 
   const quantityToDeduct = matchedItem.quantity ?? 1;
-  await recordTransaction({
-    productId: baseProductId,
-    clientId: businessId,
-    type: 'MISSING',
+  const product = products.find((p) => p.id === match.productId);
+  const sku = (product?.sku ?? match.productId).trim() || match.productId;
+
+  const available = await getStockBySku(sku);
+  if (available < quantityToDeduct) {
+    return {
+      matched: false,
+      scannedCount: scannedItems.length,
+      allScanned: false,
+      message: `Insufficient stock for ${sku}: available ${available}, needed ${quantityToDeduct}`,
+    };
+  }
+
+  await createMovement({
+    sku,
+    type: 'PICKED',
     quantity: quantityToDeduct,
-    referenceId: `order:${orderId}:scan`,
-    performedByStaffId: staffId,
+    reference_id: orderId,
+    worker_id: staffId ?? undefined,
+    note: `Order ${orderId} scan`,
   });
 
   scannedItems.push(matchedIndex);
@@ -296,4 +341,42 @@ export async function scanOrderBarcode(
     scannedCount: scannedItems.length,
     allScanned,
   };
+}
+
+export type ReturnCondition = 'resellable' | 'damaged';
+
+/**
+ * Scan a returned product: create RETURNED (resellable) or DAMAGED movement.
+ * Attaches return_reference_id and worker_id; timestamp via movement created_at.
+ */
+export async function scanReturnedProduct(
+  businessId: string,
+  params: {
+    barcode: string;
+    return_reference_id: string;
+    condition: ReturnCondition;
+    quantity?: number;
+    worker_id?: string;
+  }
+): Promise<{ success: true; movementId: string; type: 'RETURNED' | 'DAMAGED'; sku: string; quantity: number } | { success: false; message: string }> {
+  const { barcode, return_reference_id, condition, quantity = 1, worker_id } = params;
+  const products = await listProductsForScan(businessId);
+  const match = matchBarcodeToProduct(barcode.trim(), products);
+  if (!match) {
+    return { success: false, message: 'Barcode not found for this business' };
+  }
+  const product = products.find((p) => p.id === match.productId);
+  const sku = (product?.sku ?? match.productId).trim() || match.productId;
+  const qty = Math.max(1, Number(quantity) || 1);
+
+  const type = condition === 'damaged' ? 'DAMAGED' : 'RETURNED';
+  const { id } = await createMovement({
+    sku,
+    type,
+    quantity: qty,
+    reference_id: return_reference_id.trim(),
+    worker_id: worker_id?.trim() || undefined,
+    note: `Return scan: ${condition}`,
+  });
+  return { success: true, movementId: id, type, sku, quantity: qty };
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
-import { Package, ChevronDown, Plus, Pencil, Warehouse as WarehouseIcon, Search, Printer } from 'lucide-react';
+import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
 import { normalizeProductFromApi } from '../components/SizeVariantsEditor';
 import {
@@ -19,6 +19,7 @@ import {
   createProduct,
   createWarehouse,
   updateProduct,
+  deleteProduct,
   type FulfillmentClient,
   type ProductWithStock,
   type Warehouse,
@@ -53,6 +54,8 @@ export default function InventoryPage() {
   const [assignWarehouseId, setAssignWarehouseId] = useState('');
   const [submittingBulkAssign, setSubmittingBulkAssign] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('');
+  const [productToDelete, setProductToDelete] = useState<ProductWithStock | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm.trim()) return products;
@@ -221,6 +224,24 @@ export default function InventoryPage() {
   const handleCloseModals = () => {
     setShowAddModal(false);
     setEditProduct(null);
+  };
+
+  const handleDeleteProduct = async (p: ProductWithStock) => {
+    if (!selectedClientId) return;
+    const name = String((p as Record<string, unknown>).name ?? p.id);
+    if (!window.confirm(`Delete product "${name}"? This cannot be undone.`)) return;
+    setProductToDelete(p);
+    setDeleting(true);
+    try {
+      await deleteProduct(selectedClientId, p.id);
+      await loadProducts();
+      setProductToDelete(null);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setDeleting(false);
+      setProductToDelete(null);
+    }
   };
 
   const handleSubmitAdd = async (e: React.FormEvent) => {
@@ -580,13 +601,23 @@ export default function InventoryPage() {
                           })()}
                         </td>
                         <td className="py-4 px-5 text-right">
-                          <button
-                            onClick={() => handleOpenEdit(p)}
-                            className="p-2 rounded-lg text-gray-500 hover:text-amber-500 dark:text-gray-400 dark:hover:text-amber-400 hover:bg-amber-500/10 transition"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleOpenEdit(p)}
+                              className="p-2 rounded-lg text-gray-500 hover:text-amber-500 dark:text-gray-400 dark:hover:text-amber-400 hover:bg-amber-500/10 transition"
+                              title="Edit"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(p)}
+                              disabled={deleting && productToDelete?.id === p.id}
+                              className="p-2 rounded-lg text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-50"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

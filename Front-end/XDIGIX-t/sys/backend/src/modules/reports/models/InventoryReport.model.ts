@@ -22,6 +22,14 @@ export interface IInventoryReport extends Document {
   productBreakdown?: Array<{ productId: string; availableStock: number }>;
   // Monthly: opening from previous month
   openingBalance?: number;
+  // Movement-based weekly: totals from inventory_movements
+  stockIn?: number;
+  picked?: number;
+  shipped?: number;
+  returned?: number;
+  manualAdjustment?: number;
+  topSkus?: Array<{ sku: string; totalMovement: number; in: number; out: number }>;
+  reportSource?: 'audit' | 'movements';
   createdAt: Date;
 }
 
@@ -44,6 +52,13 @@ const InventoryReportSchema = new Schema<IInventoryReport>(
     previousWeekClosingBalance: Number,
     productBreakdown: Schema.Types.Mixed,
     openingBalance: Number,
+    stockIn: Number,
+    picked: Number,
+    shipped: Number,
+    returned: Number,
+    manualAdjustment: Number,
+    topSkus: Schema.Types.Mixed,
+    reportSource: String,
   },
   { timestamps: true }
 );

@@ -7,3 +7,5 @@ export * from './refresh-token.schema';
 export * from './plan.schema';
 export * from './link-request.schema';
 export * from './super-admin-invite.schema';
+export * from './product-activity-log.schema';
+export * from './inventory-movement.schema';

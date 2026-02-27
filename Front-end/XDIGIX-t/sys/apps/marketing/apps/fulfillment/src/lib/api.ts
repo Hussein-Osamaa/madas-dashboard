@@ -278,6 +278,279 @@ export async function updateProduct(clientId: string, productId: string, input: 
   });
 }
 
+export async function deleteProduct(clientId: string, productId: string): Promise<void> {
+  const url = `/warehouse/products/${productId}?clientId=${encodeURIComponent(clientId)}`;
+  await fetchApi(url, { method: 'DELETE' });
+}
+
+export type ProductActivityAction = 'created' | 'updated' | 'deleted';
+
+export interface ProductActivityLogEntry {
+  id: string;
+  clientId: string;
+  productId: string;
+  productName?: string;
+  action: ProductActivityAction;
+  performedByUserId: string;
+  performedByEmail: string;
+  createdAt: string;
+}
+
+export async function listProductActivityLog(params: {
+  clientId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ entries: ProductActivityLogEntry[]; total: number }> {
+  const sp = new URLSearchParams();
+  if (params.clientId) sp.set('clientId', params.clientId);
+  if (params.page != null) sp.set('page', String(params.page));
+  if (params.limit != null) sp.set('limit', String(params.limit));
+  const q = sp.toString();
+  return fetchApi<{ entries: ProductActivityLogEntry[]; total: number }>(
+    `/warehouse/product-activity-log${q ? `?${q}` : ''}`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Warehouse dashboard (movement-based metrics, chart, top SKUs, worker log)
+// ---------------------------------------------------------------------------
+
+export interface DashboardDailyRow {
+  date: string;
+  STOCK_IN: number;
+  PICKED: number;
+  SHIPPED: number;
+  RETURNED: number;
+  DAMAGED: number;
+  MANUAL_ADJUSTMENT: number;
+}
+
+export interface DashboardTopSku {
+  sku: string;
+  totalMovement: number;
+  in: number;
+  out: number;
+}
+
+export interface DashboardWorkerEntry {
+  id: string;
+  sku: string;
+  type: string;
+  quantity: number;
+  worker_id: string;
+  reference_id?: string;
+  created_at: string;
+}
+
+export interface AuditAlertSummary {
+  id: string;
+  sku: string;
+  physicalCount: number;
+  systemStock: number;
+  difference: number;
+  threshold: number;
+  shiftName?: string;
+  createdAt: string;
+}
+
+export interface DashboardData {
+  totalStockValue: number | null;
+  availableUnits: number;
+  unitsPickedToday: number;
+  unitsShippedToday: number;
+  returnsThisWeek: number;
+  damagedThisWeek: number;
+  shrinkagePercentage: number;
+  dailyMovementChart: DashboardDailyRow[];
+  topMovingSkus: DashboardTopSku[];
+  workerActivityLog: DashboardWorkerEntry[];
+  auditAlerts?: AuditAlertSummary[];
+}
+
+export async function getDashboard(clientId: string): Promise<DashboardData> {
+  return fetchApi<DashboardData>(`/warehouse/dashboard?clientId=${encodeURIComponent(clientId)}`);
+}
+
+export interface MovementLogEntry {
+  id: string;
+  sku: string;
+  type: string;
+  quantity: number;
+  reference_id?: string;
+  worker_id?: string;
+  note?: string;
+  created_at: string;
+}
+
+export async function listMovements(params: {
+  clientId: string;
+  sku?: string;
+  type?: string;
+  reference_id?: string;
+  page?: number;
+  limit?: number;
+  sortOrder?: 'asc' | 'desc';
+}): Promise<{
+  items: MovementLogEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}> {
+  const sp = new URLSearchParams();
+  sp.set('clientId', params.clientId);
+  if (params.sku) sp.set('sku', params.sku);
+  if (params.type) sp.set('type', params.type);
+  if (params.reference_id) sp.set('reference_id', params.reference_id);
+  if (params.page != null) sp.set('page', String(params.page));
+  if (params.limit != null) sp.set('limit', String(params.limit));
+  if (params.sortOrder) sp.set('sortOrder', params.sortOrder);
+  return fetchApi(`/warehouse/movements?${sp.toString()}`);
+}
+
+/** Audit comparison: physical count vs system stock; threshold alerts. */
+export async function recordAuditCount(params: {
+  clientId: string;
+  sku: string;
+  physicalCount: number;
+  shiftId?: string;
+  shiftName?: string;
+  note?: string;
+}): Promise<{
+  comparisonId: string;
+  sku: string;
+  physicalCount: number;
+  systemStock: number;
+  difference: number;
+  threshold: number;
+  alertTriggered: boolean;
+  alertId?: string;
+}> {
+  return fetchApi('/warehouse/audit/record-count', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
+export async function recordAuditCountBulk(params: {
+  clientId: string;
+  counts: Array<{ sku: string; physicalCount: number }>;
+  shiftId?: string;
+  shiftName?: string;
+  note?: string;
+}): Promise<{ comparisons: Array<{ comparisonId: string; sku: string; physicalCount: number; systemStock: number; difference: number; threshold: number; alertTriggered: boolean; alertId?: string }> }> {
+  return fetchApi('/warehouse/audit/record-count-bulk', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
+export async function listAuditComparisons(params: {
+  clientId: string;
+  sku?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  items: Array<{
+    id: string;
+    sku: string;
+    physicalCount: number;
+    systemStock: number;
+    difference: number;
+    shiftId?: string;
+    shiftName?: string;
+    performedBy?: string;
+    thresholdUsed: number;
+    alertTriggered: boolean;
+    createdAt: string;
+  }>;
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}> {
+  const sp = new URLSearchParams();
+  sp.set('clientId', params.clientId);
+  if (params.sku) sp.set('sku', params.sku);
+  if (params.page != null) sp.set('page', String(params.page));
+  if (params.limit != null) sp.set('limit', String(params.limit));
+  return fetchApi(`/warehouse/audit/comparisons?${sp.toString()}`);
+}
+
+export async function listAuditAlerts(params: {
+  clientId: string;
+  acknowledged?: boolean;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  items: Array<{
+    id: string;
+    comparisonId: string;
+    sku: string;
+    physicalCount: number;
+    systemStock: number;
+    difference: number;
+    threshold: number;
+    shiftId?: string;
+    shiftName?: string;
+    performedBy?: string;
+    acknowledged: boolean;
+    acknowledgedAt?: string;
+    acknowledgedBy?: string;
+    createdAt: string;
+  }>;
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}> {
+  const sp = new URLSearchParams();
+  sp.set('clientId', params.clientId);
+  if (params.acknowledged !== undefined) sp.set('acknowledged', String(params.acknowledged));
+  if (params.page != null) sp.set('page', String(params.page));
+  if (params.limit != null) sp.set('limit', String(params.limit));
+  return fetchApi(`/warehouse/audit/alerts?${sp.toString()}`);
+}
+
+export async function acknowledgeAuditAlert(alertId: string): Promise<{ success: boolean }> {
+  return fetchApi(`/warehouse/audit/alerts/${encodeURIComponent(alertId)}/acknowledge`, { method: 'PATCH' });
+}
+
+export async function getAuditThreshold(clientId: string): Promise<{ threshold: number }> {
+  return fetchApi(`/warehouse/audit/threshold?clientId=${encodeURIComponent(clientId)}`);
+}
+
+/** Download Excel export for date range (4 sheets). Triggers browser download. */
+export async function downloadInventoryExport(
+  clientId: string,
+  startDate: string,
+  endDate: string
+): Promise<void> {
+  const token = await getToken();
+  const params = new URLSearchParams({
+    clientId,
+    startDate,
+    endDate,
+  });
+  const url = `${API_BASE}/warehouse/export?${params}`;
+  const res = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || `Export failed: ${res.status}`);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get('Content-Disposition');
+  const match = disposition?.match(/filename="?([^";]+)"?/);
+  const filename = match?.[1] ?? `inventory-export-${startDate}-${endDate}.xlsx`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 // ---------------------------------------------------------------------------
 // Fulfillment orders (no clientId – lists/updates across all fulfillment clients)
 // ---------------------------------------------------------------------------

@@ -317,8 +317,9 @@ export interface UpdateProductInput {
 /**
  * Update product for a client
  * Auto-generates unique barcodes for new size variants that don't have one.
+ * Returns product name for activity logging.
  */
-export async function updateProduct(clientId: string, productId: string, input: UpdateProductInput): Promise<void> {
+export async function updateProduct(clientId: string, productId: string, input: UpdateProductInput): Promise<{ productName?: string }> {
   const doc = await FirestoreDoc.findOne({
     businessId: clientId,
     coll: 'products',
@@ -366,4 +367,21 @@ export async function updateProduct(clientId: string, productId: string, input: 
     { businessId: clientId, coll: 'products', docId: productId },
     { $set: { data: dataToSet } }
   );
+  const productName = (existing.name as string) || (input.name as string) || undefined;
+  return { productName };
+}
+
+/**
+ * Delete product for a client. Returns the product name for logging.
+ */
+export async function deleteProduct(clientId: string, productId: string): Promise<{ productName?: string }> {
+  const doc = await FirestoreDoc.findOne({
+    businessId: clientId,
+    coll: 'products',
+    docId: productId,
+  }).lean();
+  if (!doc) throw new Error('Product not found');
+  const name = (doc as { data?: { name?: string } }).data?.name;
+  await FirestoreDoc.deleteOne({ businessId: clientId, coll: 'products', docId: productId });
+  return { productName: name };
 }

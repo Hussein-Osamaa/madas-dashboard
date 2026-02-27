@@ -83,7 +83,7 @@ export function setupRealtime(httpServer: HttpServer): Server {
 
 /** Payload for warehouse live updates. type = scope of change; clientId = which client; businessId = which business (for merchant dashboard). */
 export type WarehouseUpdatePayload = {
-  type: 'products' | 'orders' | 'transactions' | 'warehouses' | 'reports';
+  type: 'products' | 'orders' | 'transactions' | 'warehouses' | 'reports' | 'audit_alert';
   clientId?: string;
   businessId?: string;
 };

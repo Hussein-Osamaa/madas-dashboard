@@ -1,27 +1,32 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Package, LogIn, Sun, Moon, Boxes, Clock, CheckCircle, Truck, ClipboardCheck, FileText, Menu, X } from 'lucide-react';
+import { Package, LogIn, Sun, Moon, Boxes, Clock, CheckCircle, Truck, ClipboardCheck, FileText, History, LayoutDashboard, ListOrdered, Menu, X, Scale } from 'lucide-react';
 import { useStaffAuth } from '../contexts/StaffAuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { connectWarehouseSocket, isWarehouseSocketDisabled, subscribeWarehouseConnectionState } from '../lib/warehouseSocket';
 
 const nav = [
   { path: '/', label: 'Operations', icon: Package },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/inventory', label: 'Inventory', icon: Boxes },
   { path: '/fulfillment', label: 'All Orders', icon: Package, section: 'Fulfillment' },
   { path: '/pending-orders', label: 'Pending', icon: Clock, section: 'Fulfillment' },
   { path: '/ready-for-pickup', label: 'Ready for Pickup', icon: CheckCircle, section: 'Fulfillment' },
   { path: '/shipping', label: 'Shipping', icon: Truck, section: 'Fulfillment' },
   { path: '/audit', label: 'Weekly Audit Scan', icon: ClipboardCheck, section: 'Warehouse' },
+  { path: '/stock-audit', label: 'Stock Audit', icon: Scale, section: 'Warehouse' },
   { path: '/reports', label: 'Reports', icon: FileText, section: 'Warehouse' },
+  { path: '/sku-timeline', label: 'SKU Timeline', icon: ListOrdered, section: 'Warehouse' },
+  { path: '/activity-log', label: 'Activity Log', icon: History, section: 'Warehouse', adminOnly: true },
 ];
 
-function NavContent({ onNavigate }: { onNavigate?: () => void }) {
+function NavContent({ onNavigate, isAdmin }: { onNavigate?: () => void; isAdmin?: boolean }) {
   const location = useLocation();
   let lastSection: string | undefined;
+  const filteredNav = isAdmin ? nav : nav.filter((item) => !(item as { adminOnly?: boolean }).adminOnly);
   return (
     <>
-      {nav.map(({ path, label, icon: Icon, section }) => {
+      {filteredNav.map(({ path, label, icon: Icon, section }) => {
         const active = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
         const showSection = section && section !== lastSection;
         if (section) lastSection = section;
@@ -53,10 +58,12 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export default function Shell() {
   const { user, logout } = useStaffAuth();
+  const isAdmin = (user?.allowedApps || []).includes('ADMIN');
   const { isDark, toggle } = useTheme();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
+  const [liveConnectTimeout, setLiveConnectTimeout] = useState(false);
   const liveDisabled = isWarehouseSocketDisabled();
 
   useEffect(() => {
@@ -72,8 +79,25 @@ export default function Shell() {
 
   useEffect(() => {
     if (liveDisabled) return;
-    return subscribeWarehouseConnectionState(setLiveConnected);
+    setLiveConnectTimeout(false);
+    const unsub = subscribeWarehouseConnectionState((connected) => {
+      setLiveConnected(connected);
+      if (connected) setLiveConnectTimeout(false);
+    });
+    const t = setTimeout(() => setLiveConnectTimeout(true), 8000);
+    return () => {
+      unsub();
+      clearTimeout(t);
+    };
   }, [liveDisabled]);
+
+  const liveStatus = liveDisabled
+    ? 'unavailable'
+    : liveConnected
+      ? 'live'
+      : liveConnectTimeout
+        ? 'unavailable'
+        : 'connecting';
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-[#0a0b1a] flex">
@@ -109,13 +133,13 @@ export default function Shell() {
           </button>
         </div>
         <nav className="flex-1 min-h-0 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
-          <NavContent onNavigate={() => setMobileMenuOpen(false)} />
+          <NavContent onNavigate={() => setMobileMenuOpen(false)} isAdmin={isAdmin} />
         </nav>
         <div className="p-3 border-t border-gray-200 dark:border-white/5 shrink-0">
           <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1 mb-1">{user?.email}</p>
-          <p className="text-xs px-1 flex items-center gap-1.5" title={liveDisabled ? 'Live updates require a non-Vercel backend (e.g. Railway)' : liveConnected ? 'Live updates active' : 'Connecting…'}>
-            <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${liveDisabled ? 'bg-gray-400' : liveConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-            {liveDisabled ? 'Live unavailable' : liveConnected ? 'Live' : 'Connecting…'}
+          <p className="text-xs px-1 flex items-center gap-1.5" title={liveStatus === 'live' ? 'Live updates active' : liveStatus === 'connecting' ? 'Connecting…' : 'Live updates require backend on Railway (not Vercel)'}>
+            <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${liveStatus === 'live' ? 'bg-emerald-500' : liveStatus === 'connecting' ? 'bg-amber-500 animate-pulse' : 'bg-gray-400'}`} />
+            {liveStatus === 'live' ? 'Live' : liveStatus === 'connecting' ? 'Connecting…' : 'Live unavailable'}
           </p>
           <button
             onClick={() => logout()}

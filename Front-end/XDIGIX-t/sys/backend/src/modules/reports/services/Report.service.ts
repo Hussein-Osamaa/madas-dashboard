@@ -5,6 +5,9 @@ import { getIo, emitWarehouseUpdate } from '../../../realtime';
 import { StockTransactionModel } from '../../inventory/models/StockTransaction.model';
 import { InventoryReportModel } from '../models/InventoryReport.model';
 import { getAvailableStock } from '../../inventory/services/Inventory.service';
+import { getClientSkus } from '../../inventory/services/Dashboard.service';
+import { getStockBySkuMapAtDate } from '../../inventory/services/InventoryMovement.service';
+import { InventoryMovement } from '../../../schemas/inventory-movement.schema';
 import { toWeekLabel } from '../../../utils/month';
 import { FirestoreDoc } from '../../../schemas/document.schema';
 
@@ -13,6 +16,22 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:4000';
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+/** Last week Monday 00:00 UTC and Sunday 23:59:59.999 UTC */
+function getLastWeekBounds(): { weekStart: Date; weekEnd: Date } {
+  const now = new Date();
+  const day = now.getUTCDay();
+  const diff = day === 0 ? 6 : day - 1;
+  const thisMonday = new Date(now);
+  thisMonday.setUTCDate(now.getUTCDate() - diff);
+  thisMonday.setUTCHours(0, 0, 0, 0);
+  const weekStart = new Date(thisMonday);
+  weekStart.setUTCDate(thisMonday.getUTCDate() - 7);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
+  weekEnd.setUTCHours(23, 59, 59, 999);
+  return { weekStart, weekEnd };
 }
 
 /** Weekly report: operational. Triggered after audit. periodLabel YYYY-WXX. */
@@ -90,6 +109,113 @@ export async function generateWeeklyReport(
   });
 
   const pdfPath = await generatePdf(report);
+  if (pdfPath) {
+    report.pdfUrl = `${BASE_URL}/storage/files/reports/${path.basename(pdfPath)}`;
+    await report.save();
+  }
+  emitWarehouseUpdate(getIo(), { type: 'reports', clientId });
+  return report._id.toString();
+}
+
+/**
+ * Weekly inventory report from inventory_movements only.
+ * Contains: Opening Balance, STOCK_IN, PICKED, SHIPPED, RETURNED, DAMAGED, Manual Adjustments, Closing Balance,
+ * Top 10 SKUs, movement summary. reportSource: 'movements'.
+ */
+export async function generateWeeklyMovementReport(clientId: string): Promise<string> {
+  const { weekStart, weekEnd } = getLastWeekBounds();
+  const clientSkus = await getClientSkus(clientId);
+  const periodLabel = toWeekLabel(weekEnd);
+
+  let openingBalance = 0;
+  let closingBalance = 0;
+  let stockIn = 0;
+  let picked = 0;
+  let shipped = 0;
+  let returned = 0;
+  let damaged = 0;
+  let manualAdjustment = 0;
+  let topSkus: Array<{ sku: string; totalMovement: number; in: number; out: number }> = [];
+
+  if (clientSkus.length > 0) {
+    const openingMap = await getStockBySkuMapAtDate(clientSkus, new Date(weekStart.getTime() - 1));
+    const closingMap = await getStockBySkuMapAtDate(clientSkus, weekEnd);
+    openingBalance = Object.values(openingMap).reduce((a, b) => a + b, 0);
+    closingBalance = Object.values(closingMap).reduce((a, b) => a + b, 0);
+
+    const typeTotals = await InventoryMovement.aggregate<{ _id: string; total: number }>([
+      { $match: { sku: { $in: clientSkus }, created_at: { $gte: weekStart, $lte: weekEnd } } },
+      { $group: { _id: '$type', total: { $sum: '$quantity' } } },
+    ]);
+    for (const t of typeTotals) {
+      const v = t.total ?? 0;
+      if (t._id === 'STOCK_IN') stockIn = v;
+      else if (t._id === 'PICKED') picked = v;
+      else if (t._id === 'SHIPPED') shipped = v;
+      else if (t._id === 'RETURNED') returned = v;
+      else if (t._id === 'DAMAGED') damaged = v;
+      else if (t._id === 'MANUAL_ADJUSTMENT') manualAdjustment = v;
+    }
+
+    const skuAgg = await InventoryMovement.aggregate<{ _id: string; total: number; in: number; out: number }>([
+      { $match: { sku: { $in: clientSkus }, created_at: { $gte: weekStart, $lte: weekEnd } } },
+      {
+        $group: {
+          _id: '$sku',
+          total: { $sum: { $abs: '$quantity' } },
+          in: {
+            $sum: {
+              $cond: [
+                { $in: ['$type', ['STOCK_IN', 'RETURNED']] },
+                '$quantity',
+                { $cond: [{ $and: [{ $eq: ['$type', 'MANUAL_ADJUSTMENT'] }, { $gte: ['$quantity', 0] }] }, '$quantity', 0] },
+              ],
+            },
+          },
+          out: {
+            $sum: {
+              $cond: [
+                { $in: ['$type', ['PICKED', 'SHIPPED', 'DAMAGED']] },
+                '$quantity',
+                { $cond: [{ $and: [{ $eq: ['$type', 'MANUAL_ADJUSTMENT'] }, { $lt: ['$quantity', 0] }] }, { $abs: '$quantity' }, 0] },
+              ],
+            },
+          },
+        },
+      },
+      { $sort: { total: -1 } },
+      { $limit: 10 },
+    ]);
+    topSkus = skuAgg.map((r) => ({
+      sku: r._id,
+      totalMovement: r.total ?? 0,
+      in: r.in ?? 0,
+      out: r.out ?? 0,
+    }));
+  }
+
+  const report = await InventoryReportModel.create({
+    clientId,
+    period: 'WEEKLY',
+    periodLabel,
+    periodStart: weekStart,
+    periodEnd: weekEnd,
+    inbound: stockIn,
+    sold: picked + shipped,
+    damaged,
+    missing: 0,
+    openingBalance,
+    closingBalance,
+    stockIn,
+    picked,
+    shipped,
+    returned,
+    manualAdjustment,
+    topSkus,
+    reportSource: 'movements',
+  });
+
+  const pdfPath = await generatePdfForMovementReport(report);
   if (pdfPath) {
     report.pdfUrl = `${BASE_URL}/storage/files/reports/${path.basename(pdfPath)}`;
     await report.save();
@@ -244,6 +370,66 @@ async function generatePdf(report: {
     if (report.totalAdjustmentsThisAudit != null) doc.text(`Adjustments this audit: ${report.totalAdjustmentsThisAudit}`);
     if (report.totalDamagedLast7Days != null) doc.text(`Damaged (last 7 days): ${report.totalDamagedLast7Days}`);
     if (report.previousWeekClosingBalance != null) doc.text(`Previous week closing: ${report.previousWeekClosingBalance}`);
+    doc.end();
+    stream.on('finish', () => resolve(filepath));
+    stream.on('error', () => resolve(null));
+  });
+}
+
+async function generatePdfForMovementReport(report: {
+  period: string;
+  periodLabel?: string;
+  periodStart: Date;
+  periodEnd: Date;
+  openingBalance?: number;
+  closingBalance?: number;
+  stockIn?: number;
+  picked?: number;
+  shipped?: number;
+  returned?: number;
+  damaged?: number;
+  manualAdjustment?: number;
+  topSkus?: Array<{ sku: string; totalMovement: number; in: number; out: number }>;
+}): Promise<string | null> {
+  ensureDir(REPORTS_DIR);
+  const filename = `report-${report.period}-movement-${report.periodLabel ?? Date.now()}-${Date.now()}.pdf`;
+  const filepath = path.join(REPORTS_DIR, filename);
+  return new Promise((resolve) => {
+    const doc = new PDFDocument({ margin: 50 });
+    const stream = fs.createWriteStream(filepath);
+    doc.pipe(stream);
+    doc.fontSize(20).text('Weekly Inventory Report (Movement-Based)', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.fontSize(12).text(`Period: ${report.periodStart.toISOString().slice(0, 10)} – ${report.periodEnd.toISOString().slice(0, 10)}${report.periodLabel ? ` (${report.periodLabel})` : ''}`, { align: 'center' });
+    doc.moveDown(1.5);
+    doc.fontSize(14).text('Summary', { continued: false });
+    doc.fontSize(11);
+    doc.text(`Opening Balance:     ${report.openingBalance ?? 0}`);
+    doc.text(`Total STOCK_IN:     ${report.stockIn ?? 0}`);
+    doc.text(`Total PICKED:       ${report.picked ?? 0}`);
+    doc.text(`Total SHIPPED:      ${report.shipped ?? 0}`);
+    doc.text(`Total RETURNED:     ${report.returned ?? 0}`);
+    doc.text(`Total DAMAGED:      ${report.damaged ?? 0}`);
+    doc.text(`Manual Adjustments: ${report.manualAdjustment ?? 0}`);
+    doc.text(`Closing Balance:    ${report.closingBalance ?? 0}`);
+    doc.moveDown(1);
+    doc.fontSize(14).text('Movement Summary', { continued: false });
+    doc.fontSize(11);
+    const net = (report.stockIn ?? 0) + (report.returned ?? 0) + (report.manualAdjustment ?? 0) - (report.picked ?? 0) - (report.shipped ?? 0) - (report.damaged ?? 0);
+    doc.text(`Net change (units): ${net}`);
+    doc.moveDown(1);
+    doc.fontSize(14).text('Top 10 SKUs by Movement', { continued: false });
+    doc.fontSize(10);
+    const topSkus = report.topSkus ?? [];
+    if (topSkus.length === 0) {
+      doc.text('No movement in this period.');
+    } else {
+      doc.text('SKU'.padEnd(24) + 'Total'.padStart(10) + 'In'.padStart(10) + 'Out'.padStart(10));
+      doc.text('-'.repeat(54));
+      for (const row of topSkus) {
+        doc.text((row.sku || '').slice(0, 22).padEnd(24) + String(row.totalMovement).padStart(10) + String(row.in).padStart(10) + String(row.out).padStart(10));
+      }
+    }
     doc.end();
     stream.on('finish', () => resolve(filepath));
     stream.on('error', () => resolve(null));

@@ -11,12 +11,38 @@ import { requireClientId } from '../middlewares/warehouse.middlewares';
 import { Business } from '../schemas/business.schema';
 import { getIo, emitWarehouseUpdate } from '../realtime';
 import * as InventoryController from '../modules/inventory/controllers/Inventory.controller';
+import * as InventoryMovementController from '../modules/inventory/controllers/InventoryMovement.controller';
 import * as ReportsController from '../modules/reports/controllers/Reports.controller';
+import * as AuditComparisonController from '../modules/audit/controllers/AuditComparison.controller';
 
 const router = Router();
 router.use(centralJwtMiddleware);
 router.use(requireAccountType('STAFF'));
 router.use(requireApp('WAREHOUSE'));
+
+/** GET /warehouse/product-activity-log - List product create/update/delete log (ADMIN only). Query: clientId?, page?, limit? */
+router.get('/product-activity-log', async (req: Request, res: Response) => {
+  const allowedApps = (req.accountPayload as { allowedApps?: string[] } | undefined)?.allowedApps ?? [];
+  if (!allowedApps.includes('ADMIN')) {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+  try {
+    const clientId = (req.query.clientId as string) || undefined;
+    const page = req.query.page != null ? Number(req.query.page) : undefined;
+    const limit = req.query.limit != null ? Number(req.query.limit) : undefined;
+    const { listProductActivityLog } = await import('../modules/products/services/ProductActivityLog.service');
+    const result = await listProductActivityLog({ clientId, page, limit });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+/** Movement-based inventory: no static quantity. Stock derived only from inventory_movements. */
+router.post('/movements', InventoryMovementController.recordMovement);
+router.get('/movements', InventoryMovementController.list);
+router.get('/stock', InventoryMovementController.getStock);
 
 /** GET /warehouse/clients - List clients with fulfillment subscription (no clientId required) */
 router.get('/clients', async (_req: Request, res: Response) => {
@@ -51,7 +77,7 @@ router.get('/orders', async (req: Request, res: Response) => {
   }
 });
 
-/** PATCH /warehouse/orders/:orderId - Update order fulfillment status. Body: { businessId, status, trackingNumber?, notes? } */
+/** PATCH /warehouse/orders/:orderId - Update order fulfillment status. Body: { businessId, status, trackingNumber?, notes?, shipmentId? } */
 router.patch(
   '/orders/:orderId',
   [
@@ -59,6 +85,7 @@ router.patch(
     body('status').isString().notEmpty(),
     body('trackingNumber').optional().isString(),
     body('notes').optional().isString(),
+    body('shipmentId').optional().isString(),
   ],
   async (req: Request, res: Response) => {
     const errs = require('express-validator').validationResult(req);
@@ -68,11 +95,12 @@ router.patch(
     }
     try {
       const orderId = req.params.orderId;
-      const { businessId, status, trackingNumber, notes } = req.body;
+      const { businessId, status, trackingNumber, notes, shipmentId } = req.body;
       const { updateOrderFulfillment } = await import('../modules/warehouse-orders/warehouse-orders.service');
-      const payload: { status: string; trackingNumber?: string; notes?: string; shippedAt?: string; deliveredAt?: string } = { status };
+      const payload: { status: string; trackingNumber?: string; notes?: string; shippedAt?: string; deliveredAt?: string; shipmentId?: string } = { status };
       if (trackingNumber) payload.trackingNumber = trackingNumber;
       if (notes) payload.notes = notes;
+      if (shipmentId) payload.shipmentId = shipmentId;
       if (status === 'shipped') payload.shippedAt = new Date().toISOString();
       if (status === 'delivered') payload.deliveredAt = new Date().toISOString();
       await updateOrderFulfillment(businessId, orderId, payload);
@@ -151,6 +179,57 @@ router.use((req, _res, next) => {
 });
 router.use(requireClientId);
 
+/** GET /warehouse/dashboard?clientId=xxx - Dashboard metrics, daily chart, top SKUs, worker log (from movements only). */
+router.get('/dashboard', async (req: Request, res: Response) => {
+  try {
+    const clientId = req.clientId!;
+    const { getDashboardData } = await import('../modules/inventory/services/Dashboard.service');
+    const data = await getDashboardData(clientId);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+/** GET /warehouse/export?clientId=xxx&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD - Excel export (4 sheets: Weekly Summary, Detailed Movement Log, SKU-Level Breakdown, Profit Estimation). */
+router.get('/export', async (req: Request, res: Response) => {
+  try {
+    const clientId = req.clientId!;
+    const startDateRaw = (req.query.startDate as string)?.trim();
+    const endDateRaw = (req.query.endDate as string)?.trim();
+    if (!startDateRaw || !endDateRaw) {
+      res.status(400).json({ error: 'startDate and endDate query params required (YYYY-MM-DD)' });
+      return;
+    }
+    const startDate = new Date(startDateRaw + 'T00:00:00.000Z');
+    const endDate = new Date(endDateRaw + 'T23:59:59.999Z');
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      res.status(400).json({ error: 'Invalid startDate or endDate' });
+      return;
+    }
+    if (startDate > endDate) {
+      res.status(400).json({ error: 'startDate must be before or equal to endDate' });
+      return;
+    }
+    const { buildInventoryExport } = await import('../modules/inventory/services/Export.service');
+    const buffer = await buildInventoryExport(clientId, startDate, endDate);
+    const filename = `inventory-export-${startDateRaw}-${endDateRaw}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+/** Audit comparison: physical count vs system stock; threshold alerts. */
+router.post('/audit/record-count', AuditComparisonController.recordCount);
+router.post('/audit/record-count-bulk', AuditComparisonController.recordCountBulk);
+router.get('/audit/comparisons', AuditComparisonController.listComparisons);
+router.get('/audit/alerts', AuditComparisonController.listAlerts);
+router.patch('/audit/alerts/:alertId/acknowledge', AuditComparisonController.acknowledgeAlert);
+router.get('/audit/threshold', AuditComparisonController.getThreshold);
+
 /** GET /warehouse/reports?clientId=xxx - List inventory reports for a client (STAFF with WAREHOUSE). */
 router.get('/reports', ReportsController.list);
 /** GET /warehouse/reports/:id/download?clientId=xxx - Download report PDF. */
@@ -184,6 +263,41 @@ router.post(
   InventoryController.missing
 );
 router.get('/transactions', InventoryController.listTransactions);
+
+/** POST /warehouse/returns/scan - Scan returned product. Creates RETURNED (resellable) or DAMAGED movement. Body: barcode, return_reference_id, condition (resellable|damaged), quantity? */
+router.post(
+  '/returns/scan',
+  [
+    body('barcode').isString().notEmpty(),
+    body('return_reference_id').isString().notEmpty(),
+    body('condition').isIn(['resellable', 'damaged']),
+    body('quantity').optional().isInt({ min: 1 }),
+  ],
+  validate,
+  async (req: Request, res: Response) => {
+    try {
+      const clientId = req.clientId!;
+      const { barcode, return_reference_id, condition, quantity } = req.body;
+      const worker_id = (req.accountPayload as { userId?: string })?.userId ?? req.body.worker_id;
+      const { scanReturnedProduct } = await import('../modules/warehouse-orders/warehouse-orders.service');
+      const result = await scanReturnedProduct(clientId, {
+        barcode,
+        return_reference_id,
+        condition,
+        quantity,
+        worker_id,
+      });
+      if (!result.success) {
+        res.status(400).json({ error: result.message });
+        return;
+      }
+      emitWarehouseUpdate(getIo(), { type: 'products', clientId });
+      res.status(201).json(result);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  }
+);
 
 router.get('/warehouses', async (req: Request, res: Response) => {
   try {
@@ -280,6 +394,17 @@ router.post(
         stock: stock ?? {},
         sizeBarcodes: sizeBarcodes ?? {},
       });
+      const { logProductActivity } = await import('../modules/products/services/ProductActivityLog.service');
+      const userId = (req.accountPayload as { userId?: string })?.userId ?? '';
+      const email = (req.accountPayload as { email?: string })?.email ?? '';
+      await logProductActivity({
+        clientId: req.clientId!,
+        productId: result.id,
+        productName: req.body.name,
+        action: 'created',
+        performedByUserId: userId,
+        performedByEmail: email,
+      });
       emitWarehouseUpdate(getIo(), { type: 'products', clientId: req.clientId! });
       res.status(201).json(result);
     } catch (err) {
@@ -320,13 +445,24 @@ router.patch(
           sizeBarcodes = undefined;
         }
       }
-      await updateProduct(clientId, productId, {
+      const { productName } = await updateProduct(clientId, productId, {
         name: req.body.name,
         sku: req.body.sku,
         barcode: req.body.barcode,
         warehouse: req.body.warehouse,
         stock,
         sizeBarcodes,
+      });
+      const userId = (req.accountPayload as { userId?: string })?.userId ?? '';
+      const email = (req.accountPayload as { email?: string })?.email ?? '';
+      const { logProductActivity } = await import('../modules/products/services/ProductActivityLog.service');
+      await logProductActivity({
+        clientId,
+        productId,
+        productName,
+        action: 'updated',
+        performedByUserId: userId,
+        performedByEmail: email,
       });
       emitWarehouseUpdate(getIo(), { type: 'products', clientId });
       res.json({ success: true });
@@ -335,5 +471,35 @@ router.patch(
     }
   }
 );
+
+/** DELETE /warehouse/products/:id - Delete product. Query: clientId (preferred; body also accepted). */
+router.delete('/products/:id', async (req: Request, res: Response) => {
+  try {
+    const productId = req.params.id;
+    if (!productId) return res.status(400).json({ error: 'Product ID required' });
+    const clientId =
+      (req.query?.clientId && String(req.query.clientId).trim()) ||
+      (req.body?.clientId && String(req.body.clientId).trim()) ||
+      req.clientId;
+    if (!clientId) return res.status(400).json({ error: 'Client ID required' });
+    const { deleteProduct } = await import('../modules/products/controllers/Products.controller');
+    const { productName } = await deleteProduct(clientId, productId);
+    const userId = (req.accountPayload as { userId?: string })?.userId ?? '';
+    const email = (req.accountPayload as { email?: string })?.email ?? '';
+    const { logProductActivity } = await import('../modules/products/services/ProductActivityLog.service');
+    await logProductActivity({
+      clientId,
+      productId,
+      productName,
+      action: 'deleted',
+      performedByUserId: userId,
+      performedByEmail: email,
+    });
+    emitWarehouseUpdate(getIo(), { type: 'products', clientId });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
 
 export default router;
