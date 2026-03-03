@@ -110,8 +110,21 @@ export const EGYPT_CITIES: Record<string, string> = {
   'aswan': 'qR5xMnKp3FhYtD7Wc'
 };
 
-// Firebase Cloud Function proxy URL (includes /api prefix for Express routes)
-const PROXY_BASE_URL = 'https://api-erl4dkfzua-uc.a.run.app/api';
+// When running against the Node backend, proxy through it to avoid CORS.
+// Falls back to the Firebase Cloud Function proxy.
+function getProxyBaseUrl(): string {
+  const backendUrl = import.meta.env.VITE_API_BACKEND_URL;
+  if (typeof backendUrl === 'string' && backendUrl.trim()) {
+    const raw = backendUrl.trim().replace(/\/$/, '');
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      const origin = raw.replace(/\/api.*$/, '');
+      return origin ? `${origin}/api` : raw;
+    }
+    return `https://${raw.replace(/^\/+|\/api.*$/g, '')}/api`;
+  }
+  return 'https://api-erl4dkfzua-uc.a.run.app/api';
+}
+const PROXY_BASE_URL = getProxyBaseUrl();
 
 // Direct Bosta API URL (for testing only)
 const BOSTA_BASE_URL = 'https://app.bosta.co/api/v2';

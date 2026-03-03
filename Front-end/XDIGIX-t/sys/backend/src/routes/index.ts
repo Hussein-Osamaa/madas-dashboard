@@ -9,6 +9,7 @@ import auditRoutes from './audit.routes';
 import clientWarehouseRoutes from './client-warehouse.routes';
 import staffRoutes from './staff.routes';
 import externalRoutes from './external.routes';
+import bostaRoutes from './bosta.routes';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use('/audit', auditRoutes);
 router.use('/client/warehouse', clientWarehouseRoutes);
 router.use('/storage', storageRoutes);
 router.use('/domains', domainsRoutes);
+router.use('/bosta', bostaRoutes);
 
 // Cloud Functions compatibility: /addDomain, /verifyDomain, etc. (base URL replacement only)
 const qs = (req: { url?: string }) => (req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
