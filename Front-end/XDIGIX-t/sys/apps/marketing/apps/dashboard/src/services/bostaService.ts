@@ -125,6 +125,14 @@ function getProxyBaseUrl(): string {
   return 'https://api-erl4dkfzua-uc.a.run.app/api';
 }
 const PROXY_BASE_URL = getProxyBaseUrl();
+const USE_BACKEND = !!import.meta.env.VITE_API_BACKEND_URL;
+
+/** Build auth headers so the backend JWT middleware accepts the request. */
+function getAuthHeaders(): Record<string, string> {
+  if (!USE_BACKEND) return {};
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_access_token') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 // Direct Bosta API URL (for testing only)
 const BOSTA_BASE_URL = 'https://app.bosta.co/api/v2';
@@ -139,7 +147,7 @@ export const testBostaApiKey = async (apiKey: string): Promise<{ valid: boolean;
     // Use proxy to test API key - fetch cities list
     const response = await fetch(
       `${PROXY_BASE_URL}/bosta/cities?apiKey=${encodeURIComponent(cleanKey)}&countryId=60e4482c7cb7d4bc4849c4d5`,
-      { method: 'GET' }
+      { method: 'GET', headers: { ...getAuthHeaders() } }
     );
 
     const data = await response.json();
@@ -259,7 +267,8 @@ export const createBostaDelivery = async (
     const response = await fetch(`${PROXY_BASE_URL}/bosta/deliveries`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
       },
       body: JSON.stringify({
         apiKey: cleanKey,
@@ -318,7 +327,7 @@ export const getBostaTracking = async (
     
     const response = await fetch(
       `${PROXY_BASE_URL}/bosta/deliveries/${trackingNumber}?apiKey=${encodeURIComponent(cleanKey)}`,
-      { method: 'GET' }
+      { method: 'GET', headers: { ...getAuthHeaders() } }
     );
 
     const data = await response.json();
@@ -349,7 +358,7 @@ export const getBostaCities = async (
     
     const response = await fetch(
       `${PROXY_BASE_URL}/bosta/cities?apiKey=${encodeURIComponent(cleanKey)}&countryId=${countryId}`,
-      { method: 'GET' }
+      { method: 'GET', headers: { ...getAuthHeaders() } }
     );
 
     const data = await response.json();
