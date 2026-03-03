@@ -1,0 +1,44 @@
+{
+  "tenants": [
+    {
+      "tenantId": "{{TENANT_ID_A}}",
+      "name": "Test Tenant A",
+      "users": [
+        {
+          "email": "user1@tenant-a.test",
+          "password": "password1",
+          "role": "tenant_admin"
+        },
+        {
+          "email": "user2@tenant-a.test",
+          "password": "password2",
+          "role": "staff"
+        }
+      ]
+    },
+    {
+      "tenantId": "{{TENANT_ID_B}}",
+      "name": "Test Tenant B",
+      "users": [
+        {
+          "email": "user1@tenant-b.test",
+          "password": "password3",
+          "role": "tenant_admin"
+        },
+        {
+          "email": "user2@tenant-b.test",
+          "password": "password4",
+          "role": "staff"
+        }
+      ]
+    }
+  ],
+  "instructions": [
+    "Replace {{TENANT_ID_A}} and {{TENANT_ID_B}} with actual test tenant IDs",
+    "Update user emails and passwords with real test account credentials",
+    "Save as test-tenants.json (without .example extension) for use in tests",
+    "DO NOT commit test-tenants.json to version control (add to .gitignore)"
+  ]
+}
+
+

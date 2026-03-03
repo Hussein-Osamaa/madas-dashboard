@@ -100,6 +100,30 @@ export async function getDocument(path: string, tenantId?: string): Promise<{ id
     return { id: subDocId, data: (doc as { data: Record<string, unknown> }).data || {} };
   }
 
+  // Generic top-level doc: roles/rid1, permissions/pid1, role_permissions/rpid1
+  const genericTopLevelColls = ['roles', 'permissions', 'role_permissions'];
+  if (genericTopLevelColls.includes(col) && docId && subPath.length === 0) {
+    const doc = await FirestoreDoc.findOne({ coll: col, docId, businessId: null }).lean();
+    if (!doc) return null;
+    return { id: docId, data: (doc as { data: Record<string, unknown> }).data || {} };
+  }
+
+  // Tenant settings: tenants/tid1/settings/shipping, tenants/tid1/settings/externalWebsite, etc.
+  if (col === 'tenants' && docId && subPath.length === 2 && subPath[0] === 'settings') {
+    if (tenantId && tenantId !== docId) {
+      return null; // cannot read another tenant's settings
+    }
+    const settingsDocId = subPath[1];
+    const doc = await FirestoreDoc.findOne({
+      tenantId: docId,
+      businessId: null,
+      coll: 'settings',
+      docId: settingsDocId,
+    }).lean();
+    if (!doc) return null;
+    return { id: settingsDocId, data: (doc as { data: Record<string, unknown> }).data || {} };
+  }
+
   // customDomains - special: query by tenantId
   if (col === 'customDomains' && !docId && tenantId) {
     // List only - single doc get would need domainId
@@ -216,6 +240,28 @@ export async function queryCollection(
     });
   }
 
+  // Generic top-level collections stored in FirestoreDoc (roles, permissions, role_permissions, etc.)
+  const genericTopLevelColls = ['roles', 'permissions', 'role_permissions'];
+  if (genericTopLevelColls.includes(col) && !docId) {
+    const filter: Record<string, unknown> = { coll: col, businessId: null };
+    const whereClauses = constraints.filter((c) => c.type === 'where');
+    for (const w of whereClauses) {
+      if (w.field && w.op === '==' && w.value !== undefined) {
+        filter[`data.${w.field}`] = w.value;
+      }
+    }
+    const orderByC = constraints.find((c) => c.type === 'orderBy');
+    const limitC = constraints.find((c) => c.type === 'limit');
+    let q = FirestoreDoc.find(filter).lean();
+    if (orderByC?.field) q = q.sort({ [`data.${orderByC.field}`]: orderByC.direction === 'desc' ? -1 : 1 });
+    if (limitC?.limit) q = q.limit(limitC.limit);
+    const docs = await q;
+    return docs.map((d: { docId: string; data?: Record<string, unknown> }) => ({
+      id: d.docId,
+      data: d.data || {},
+    }));
+  }
+
   // Subcolls: businesses/bid1/products, orders, etc.
   if (col === 'businesses' && docId && subPath.length === 1) {
     const subCol = subPath[0];
@@ -315,6 +361,37 @@ export async function setDocument(
     return { id: subDocId };
   }
 
+  // Tenant settings: tenants/tid1/settings/shipping, tenants/tid1/settings/externalWebsite, etc.
+  if (col === 'tenants' && docId && subPath.length === 2 && subPath[0] === 'settings') {
+    if (tenantId && tenantId !== docId) {
+      throw new Error(`Forbidden: cannot write to another tenant's settings`);
+    }
+    const settingsDocId = subPath[1];
+    const fullData = { ...data, updatedAt: new Date() };
+    await FirestoreDoc.findOneAndUpdate(
+      { tenantId: docId, businessId: null, coll: 'settings', docId: settingsDocId },
+      merge
+        ? { $set: { data: fullData } }
+        : { tenantId: docId, businessId: null, coll: 'settings', docId: settingsDocId, data: fullData },
+      { upsert: true }
+    );
+    return { id: settingsDocId };
+  }
+
+  // Generic top-level doc: roles/rid1, permissions/pid1, role_permissions/rpid1
+  const genericColls = ['roles', 'permissions', 'role_permissions'];
+  if (genericColls.includes(col) && docId && subPath.length === 0) {
+    const fullData = { ...data, updatedAt: new Date() };
+    await FirestoreDoc.findOneAndUpdate(
+      { coll: col, docId, businessId: null },
+      merge
+        ? { $set: { data: fullData } }
+        : { tenantId: tenantId || '_system', businessId: null, coll: col, docId, data: fullData },
+      { upsert: true }
+    );
+    return { id: docId };
+  }
+
   throw new Error(`Unsupported path for setDocument: ${path}`);
 }
 
@@ -406,6 +483,20 @@ export async function deleteDocument(path: string, tenantId?: string): Promise<v
     const filter: Record<string, unknown> = { businessId: docId, coll: subCol, docId: subDocId };
     if (tenantId) filter.tenantId = tenantId;
     await FirestoreDoc.deleteOne(filter);
+    return;
+  }
+
+  if (col === 'tenants' && docId && subPath.length === 2 && subPath[0] === 'settings') {
+    if (tenantId && tenantId !== docId) {
+      throw new Error(`Forbidden: cannot delete another tenant's settings`);
+    }
+    const settingsDocId = subPath[1];
+    await FirestoreDoc.deleteOne({
+      tenantId: docId,
+      businessId: null,
+      coll: 'settings',
+      docId: settingsDocId,
+    });
     return;
   }
 

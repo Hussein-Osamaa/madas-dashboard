@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply antialiased;
+  background-color: #0a0b1a;
+  color: #fff;
+}
+
+[data-theme="light"] body {
+  background-color: #f9fafb;
+  color: #111827;
+}

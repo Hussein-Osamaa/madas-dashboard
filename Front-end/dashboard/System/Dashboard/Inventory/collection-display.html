@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collection - MADAS Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            /* MADAS Brand Colors - Official Guidelines */
+            --madas-dark-moss: #2b4a24;
+            --madas-pop-pink: #f0c9e0;
+            --madas-deep-graphite: #171817;
+            --madas-cloud-white: #f4f4f4;
+
+            /* Secondary Colors */
+            --madas-burnt-orange: #f05a2c;
+            --madas-bolt-yellow: #fcdb11;
+            --madas-electric-blue: #19a0cb;
+
+            /* Brand Typography - Lama Sans */
+            --madas-font-family: 'Lama Sans', 'Inter', sans-serif;
+            --madas-font-weight-thin: 100;
+            --madas-font-weight-light: 300;
+            --madas-font-weight-normal: 400;
+            --madas-font-weight-medium: 500;
+            --madas-font-weight-semibold: 600;
+            --madas-font-weight-bold: 700;
+            --madas-font-weight-black: 900;
+        }
+
+        body {
+            font-family: var(--madas-font-family);
+            background: #f4f4f4;
+            color: #171817;
+        }
+
+        .nav-link {
+            font-weight: var(--madas-font-weight-medium);
+            transition: color 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .nav-link:hover {
+            color: var(--madas-pop-pink);
+        }
+
+        .product-card {
+            background: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-input {
+            border: 1px solid #e5e7eb;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--madas-pop-pink);
+            outline: none;
+        }
+
+        .filter-button {
+            transition: all 0.3s ease;
+        }
+
+        .filter-button.active {
+            background-color: var(--madas-pop-pink);
+            color: var(--madas-dark-moss);
+        }
+
+        .filter-button:hover {
+            background-color: var(--madas-pop-pink);
+            color: var(--madas-dark-moss);
+        }
+
+        .category-badge {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: var(--madas-pop-pink);
+            color: var(--madas-dark-moss);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: var(--madas-font-weight-bold);
+            text-transform: uppercase;
+        }
+
+        .price-tag {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--madas-dark-moss);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: var(--madas-font-weight-bold);
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--madas-pop-pink);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Pagination Styles */
+        #paginationSection button {
+            transition: all 0.2s ease;
+        }
+
+        #paginationSection button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #paginationSection button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #paginationSection .material-icons {
+            font-size: 18px;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <a href="../E-comm/index.html"
+                        class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <div class="w-10 h-10 flex items-center justify-center">
+                            <img src="../assets/img/madas.png" alt="MADAS Logo"
+                                class="w-full h-full object-cover hidden md:block">
+                            <img src="../assets/img/madas-logo.png" alt="MADAS Logo"
+                                class="w-full h-full object-cover md:hidden">
+                        </div>
+                        <h1 class="text-2xl font-bold text-[var(--madas-dark-moss)]">MADAS</h1>
+                    </a>
+                </div>
+
+                <!-- Back to Collections Button -->
+                <div class="flex items-center space-x-4">
+                    <a href="./collections.html"
+                        class="flex items-center space-x-2 text-[var(--madas-dark-moss)] hover:text-[var(--madas-pop-pink)] transition-colors">
+                        <span class="material-icons">arrow_back</span>
+                        <span class="hidden md:inline">Back to Collections</span>
+                    </a>
+                </div>
+
+                <!-- Search and Actions -->
+                <div class="flex items-center space-x-4">
+                    <!-- Desktop Search -->
+                    <div class="relative hidden md:block">
+                        <input type="text" placeholder="Search products..." id="searchInput"
+                            class="search-input pl-10 pr-4 py-2 rounded-full text-sm w-64 focus:w-80 transition-all duration-300">
+                        <button class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                            <span class="material-icons text-gray-400 text-sm">search</span>
+                        </button>
+                    </div>
+
+                    <!-- User Actions -->
+                    <div class="flex items-center space-x-2">
+                        <!-- Wishlist -->
+                        <button class="relative p-2 rounded-full hover:bg-gray-100 transition-colors group">
+                            <span
+                                class="material-icons text-[var(--madas-dark-moss)] group-hover:text-[var(--madas-pop-pink)]">favorite_border</span>
+                            <span
+                                class="absolute -top-1 -right-1 bg-[var(--madas-pop-pink)] text-[var(--madas-dark-moss)] text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">3</span>
+                        </button>
+
+                        <!-- Cart -->
+                        <button class="relative p-2 rounded-full hover:bg-gray-100 transition-colors group"
+                            onclick="window.location.href='../E-comm/cart.html'">
+                            <span
+                                class="material-icons text-[var(--madas-dark-moss)] group-hover:text-[var(--madas-pop-pink)]">shopping_bag</span>
+                            <span
+                                class="absolute -top-1 -right-1 bg-[var(--madas-dark-moss)] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">2</span>
+                        </button>
+
+                        <!-- User Account -->
+                        <div class="relative group">
+                            <button class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                                <span class="material-icons text-[var(--madas-dark-moss)]">account_circle</span>
+                            </button>
+                            <div
+                                class="absolute top-full right-0 bg-white shadow-lg border border-gray-200 rounded-lg py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                                <a href="#"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[var(--madas-pop-pink)]">Sign
+                                    In</a>
+                                <a href="#"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[var(--madas-pop-pink)]">Create
+                                    Account</a>
+                                <div class="border-t border-gray-200 my-1"></div>
+                                <a href="#"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[var(--madas-pop-pink)]">Order
+                                    History</a>
+                                <a href="#"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[var(--madas-pop-pink)]">Settings</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="py-16">
+        <div class="container mx-auto px-4 text-center">
+            <div class="loading-spinner"></div>
+            <p class="text-gray-600 mt-4">Loading collection...</p>
+        </div>
+    </div>
+
+    <!-- Page Header -->
+    <section id="pageHeader" class="bg-white py-16 hidden">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <h1 id="collectionTitle" class="text-4xl md:text-6xl font-bold text-[var(--madas-dark-moss)] mb-4">
+                    Collection</h1>
+                <p id="collectionDescription" class="text-xl text-gray-600">Loading...</p>
+                <div class="mt-4 flex items-center justify-center space-x-4">
+                    <span id="productCount" class="text-sm text-gray-500">0 products</span>
+                    <span class="text-gray-300">•</span>
+                    <span id="collectionType" class="text-sm text-gray-500">Collection Type</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filters -->
+    <section id="filtersSection" class="bg-white border-b border-gray-200 py-8 hidden">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-wrap gap-4 justify-center">
+                <button class="filter-button active px-6 py-2 rounded-lg border border-gray-300 font-semibold"
+                    data-category="all">
+                    All Products
+                </button>
+                <button class="filter-button px-6 py-2 rounded-lg border border-gray-300 font-semibold"
+                    data-category="electronics">
+                    Electronics
+                </button>
+                <button class="filter-button px-6 py-2 rounded-lg border border-gray-300 font-semibold"
+                    data-category="clothing">
+                    Clothing
+                </button>
+                <button class="filter-button px-6 py-2 rounded-lg border border-gray-300 font-semibold"
+                    data-category="home">
+                    Home & Garden
+                </button>
+                <button class="filter-button px-6 py-2 rounded-lg border border-gray-300 font-semibold"
+                    data-category="sports">
+                    Sports & Fitness
+                </button>
+                <button class="filter-button px-6 py-2 rounded-lg border border-gray-300 font-semibold"
+                    data-category="books">
+                    Books
+                </button>
+                <button class="filter-button px-6 py-2 rounded-lg border border-gray-300 font-semibold"
+                    data-category="beauty">
+                    Beauty & Health
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Grid -->
+    <section id="productsSection" class="py-16 hidden">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" id="productsGrid">
+                <!-- Products will be loaded here -->
+            </div>
+
+            <!-- Pagination -->
+            <div id="paginationSection" class="mt-12 flex justify-center items-center space-x-2">
+                <!-- Pagination buttons will be generated here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Empty State -->
+    <section id="emptyState" class="py-16 hidden">
+        <div class="container mx-auto px-4 text-center">
+            <span class="material-icons text-gray-300 text-6xl mb-4">inventory_2</span>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p class="text-gray-600 mb-6">This collection doesn't have any products yet.</p>
+            <a href="./collections.html"
+                class="bg-[var(--madas-pop-pink)] text-[var(--madas-dark-moss)] px-6 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">
+                Back to Collections
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="font-bold text-[var(--madas-dark-moss)] mb-4">MADAS</h3>
+                    <p class="text-gray-600 text-sm">Bold. Confident. Unapologetically Real.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-[var(--madas-dark-moss)] mb-4">Shop</h4>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><a href="../E-comm/shoes-store.html?category=men"
+                                class="hover:text-[var(--madas-pop-pink)]">Men</a></li>
+                        <li><a href="../E-comm/shoes-store.html?category=women"
+                                class="hover:text-[var(--madas-pop-pink)]">Women</a></li>
+                        <li><a href="../E-comm/shoes-store.html?category=kids"
+                                class="hover:text-[var(--madas-pop-pink)]">Kids</a></li>
+                        <li><a href="../E-comm/shoes-store.html?category=classic"
+                                class="hover:text-[var(--madas-pop-pink)]">Classic</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-[var(--madas-dark-moss)] mb-4">Support</h4>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><a href="../E-comm/contact.html" class="hover:text-[var(--madas-pop-pink)]">Contact</a></li>
+                        <li><a href="#" class="hover:text-[var(--madas-pop-pink)]">Shipping</a></li>
+                        <li><a href="#" class="hover:text-[var(--madas-pop-pink)]">Returns</a></li>
+                        <li><a href="#" class="hover:text-[var(--madas-pop-pink)]">Size Guide</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-[var(--madas-dark-moss)] mb-4">About</h4>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><a href="../E-comm/about.html" class="hover:text-[var(--madas-pop-pink)]">Our Story</a></li>
+                        <li><a href="../E-comm/brand-guidelines.html"
+                                class="hover:text-[var(--madas-pop-pink)]">Brand</a></li>
+                        <li><a href="#" class="hover:text-[var(--madas-pop-pink)]">Careers</a></li>
+                        <li><a href="#" class="hover:text-[var(--madas-pop-pink)]">Press</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 mt-8 pt-8 text-center">
+                <p class="text-gray-600 text-sm">&copy; 2024 MADAS. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:70470e2204065b4590583d3"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Global variables
+        let currentCollection = null;
+        let allProducts = [];
+        let filteredProducts = [];
+        let currentPage = 1;
+        const productsPerPage = 12;
+
+        // Get collection ID from URL parameters
+        function getCollectionIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // Load collection data
+        async function loadCollection() {
+            const collectionId = getCollectionIdFromUrl();
+
+            if (!collectionId) {
+                showError('No collection ID provided');
+                return;
+            }
+
+            try {
+                // Get collection document
+                const collectionDoc = await getDoc(doc(db, "collections", collectionId));
+
+                if (!collectionDoc.exists()) {
+                    showError('Collection not found');
+                    return;
+                }
+
+                currentCollection = collectionDoc.data();
+                currentCollection.id = collectionId;
+
+                // Update page header
+                updatePageHeader();
+
+                // Load products based on collection type
+                if (currentCollection.type === 'manual') {
+                    await loadManualCollectionProducts();
+                } else {
+                    await loadSmartCollectionProducts();
+                }
+
+                // Hide loading state and show content
+                hideLoadingState();
+                showContent();
+
+            } catch (error) {
+                console.error('Error loading collection:', error);
+                showError('Error loading collection: ' + error.message);
+            }
+        }
+
+        // Update page header with collection info
+        function updatePageHeader() {
+            document.getElementById('collectionTitle').textContent = currentCollection.name || 'Collection';
+            document.getElementById('collectionDescription').textContent = currentCollection.description || 'No description available';
+            document.getElementById('collectionType').textContent = currentCollection.type === 'smart' ? 'Smart Collection' : 'Manual Collection';
+
+            // Update page title
+            document.title = `${currentCollection.name} - MADAS Store`;
+        }
+
+        // Load products for manual collection
+        async function loadManualCollectionProducts() {
+            if (!currentCollection.productIds || currentCollection.productIds.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            try {
+                // Get all products from database
+                const productsSnapshot = await getDocs(collection(db, "products"));
+                const allProductsData = [];
+
+                productsSnapshot.forEach((doc) => {
+                    allProductsData.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                // Filter products that are in this collection
+                allProducts = allProductsData.filter(product =>
+                    currentCollection.productIds.includes(product.id)
+                );
+
+                filteredProducts = [...allProducts];
+                displayProducts();
+                updateProductCount();
+
+            } catch (error) {
+                console.error('Error loading manual collection products:', error);
+                showError('Error loading products: ' + error.message);
+            }
+        }
+
+        // Load products for smart collection
+        async function loadSmartCollectionProducts() {
+            try {
+                // Get all products from database
+                const productsSnapshot = await getDocs(collection(db, "products"));
+                const allProductsData = [];
+
+                productsSnapshot.forEach((doc) => {
+                    allProductsData.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                // Apply smart collection rules
+                allProducts = filterProductsByRules(allProductsData, currentCollection.rules || {});
+                filteredProducts = [...allProducts];
+
+                displayProducts();
+                updateProductCount();
+
+            } catch (error) {
+                console.error('Error loading smart collection products:', error);
+                showError('Error loading products: ' + error.message);
+            }
+        }
+
+        // Filter products based on smart collection rules
+        function filterProductsByRules(products, rules) {
+            return products.filter(product => {
+                // Product type filter
+                if (rules.productType && product.category !== rules.productType) {
+                    return false;
+                }
+
+                // Price range filter
+                if (rules.minPrice && product.price < parseFloat(rules.minPrice)) {
+                    return false;
+                }
+                if (rules.maxPrice && product.price > parseFloat(rules.maxPrice)) {
+                    return false;
+                }
+
+                // Stock status filter
+                if (rules.stockStatus) {
+                    const stockStatus = getStockStatus(product.stock);
+                    if (stockStatus !== rules.stockStatus) {
+                        return false;
+                    }
+                }
+
+                // Vendor filter
+                if (rules.vendor && product.brand !== rules.vendor && product.vendor !== rules.vendor) {
+                    return false;
+                }
+
+                // Tags filter
+                if (rules.tags) {
+                    const requiredTags = rules.tags.split(',').map(tag => tag.trim().toLowerCase());
+                    const productTags = (product.tags || []).map(tag => tag.toLowerCase());
+                    if (!requiredTags.every(tag => productTags.includes(tag))) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+        }
+
+        // Get stock status based on quantity
+        function getStockStatus(stock) {
+            if (stock <= 0) return "out-of-stock";
+            if (stock <= 10) return "low-stock";
+            return "in-stock";
+        }
+
+        // Get product icon based on category
+        function getProductIcon(category) {
+            const icons = {
+                electronics: "📱",
+                clothing: "👕",
+                home: "🏠",
+                sports: "⚽",
+                books: "📚",
+                beauty: "💄",
+                automotive: "🚗",
+                toys: "🧸",
+                food: "🍎",
+                jewelry: "💍"
+            };
+            return icons[category] || "📦";
+        }
+
+        // Display products in the grid with pagination
+        function displayProducts() {
+            const productsGrid = document.getElementById('productsGrid');
+
+            if (filteredProducts.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+            const startIndex = (currentPage - 1) * productsPerPage;
+            const endIndex = startIndex + productsPerPage;
+            const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
+            // Display current page products
+            productsGrid.innerHTML = currentProducts.map(product => `
+                <div class="product-card rounded-lg overflow-hidden fade-in" data-category="${product.category || 'uncategorized'}">
+                    <div class="relative">
+                        <div class="w-full h-64 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                            <span class="text-6xl">${getProductIcon(product.category)}</span>
+                        </div>
+                        <div class="category-badge">${product.category || 'Product'}</div>
+                        <div class="price-tag">$${product.price || 0}</div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-semibold text-lg text-[var(--madas-dark-moss)] mb-2">${product.name || 'Unnamed Product'}</h3>
+                        <p class="text-gray-600 text-sm mb-4">${product.description || 'No description available'}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-[var(--madas-dark-moss)]">$${product.price || 0}</span>
+                            <button onclick="addToCart('${product.id}', '${product.name}')"
+                                class="bg-[var(--madas-pop-pink)] text-[var(--madas-dark-moss)] px-4 py-2 rounded-lg text-sm font-semibold hover:bg-opacity-90 transition-colors">
+                                Add to Cart
+                            </button>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            Stock: ${product.stock || 0} • ${getStockStatus(product.stock) === 'in-stock' ? 'In Stock' : getStockStatus(product.stock) === 'low-stock' ? 'Low Stock' : 'Out of Stock'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Update pagination
+            updatePagination(totalPages);
+        }
+
+        // Update product count
+        function updateProductCount() {
+            document.getElementById('productCount').textContent = `${filteredProducts.length} products`;
+        }
+
+        // Update pagination controls
+        function updatePagination(totalPages) {
+            const paginationSection = document.getElementById('paginationSection');
+
+            if (totalPages <= 1) {
+                paginationSection.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+
+            // Previous button
+            if (currentPage > 1) {
+                paginationHTML += `
+                    <button onclick="goToPage(${currentPage - 1})" 
+                        class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                        <span class="material-icons text-sm">chevron_left</span>
+                    </button>
+                `;
+            } else {
+                paginationHTML += `
+                    <button disabled 
+                        class="px-3 py-2 rounded-lg border border-gray-200 text-gray-400 cursor-not-allowed">
+                        <span class="material-icons text-sm">chevron_left</span>
+                    </button>
+                `;
+            }
+
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            // First page and ellipsis
+            if (startPage > 1) {
+                paginationHTML += `
+                    <button onclick="goToPage(1)" 
+                        class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                        1
+                    </button>
+                `;
+                if (startPage > 2) {
+                    paginationHTML += `<span class="px-2 text-gray-500">...</span>`;
+                }
+            }
+
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === currentPage) {
+                    paginationHTML += `
+                        <button class="px-3 py-2 rounded-lg bg-[var(--madas-pop-pink)] text-[var(--madas-dark-moss)] font-semibold">
+                            ${i}
+                        </button>
+                    `;
+                } else {
+                    paginationHTML += `
+                        <button onclick="goToPage(${i})" 
+                            class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                            ${i}
+                        </button>
+                    `;
+                }
+            }
+
+            // Last page and ellipsis
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHTML += `<span class="px-2 text-gray-500">...</span>`;
+                }
+                paginationHTML += `
+                    <button onclick="goToPage(${totalPages})" 
+                        class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                        ${totalPages}
+                    </button>
+                `;
+            }
+
+            // Next button
+            if (currentPage < totalPages) {
+                paginationHTML += `
+                    <button onclick="goToPage(${currentPage + 1})" 
+                        class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                        <span class="material-icons text-sm">chevron_right</span>
+                    </button>
+                `;
+            } else {
+                paginationHTML += `
+                    <button disabled 
+                        class="px-3 py-2 rounded-lg border border-gray-200 text-gray-400 cursor-not-allowed">
+                        <span class="material-icons text-sm">chevron_right</span>
+                    </button>
+                `;
+            }
+
+            // Page info
+            const startIndex = (currentPage - 1) * productsPerPage + 1;
+            const endIndex = Math.min(currentPage * productsPerPage, filteredProducts.length);
+            paginationHTML += `
+                <div class="ml-4 text-sm text-gray-600">
+                    Showing ${startIndex}-${endIndex} of ${filteredProducts.length} products
+                </div>
+            `;
+
+            paginationSection.innerHTML = paginationHTML;
+        }
+
+        // Go to specific page
+        window.goToPage = function (page) {
+            currentPage = page;
+            displayProducts();
+
+            // Scroll to top of products section
+            document.getElementById('productsSection').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+
+        // Show loading state
+        function showLoadingState() {
+            document.getElementById('loadingState').classList.remove('hidden');
+        }
+
+        // Hide loading state
+        function hideLoadingState() {
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+
+        // Show content sections
+        function showContent() {
+            document.getElementById('pageHeader').classList.remove('hidden');
+            document.getElementById('filtersSection').classList.remove('hidden');
+            document.getElementById('productsSection').classList.remove('hidden');
+        }
+
+        // Show empty state
+        function showEmptyState() {
+            hideLoadingState();
+            document.getElementById('emptyState').classList.remove('hidden');
+        }
+
+        // Show error state
+        function showError(message) {
+            hideLoadingState();
+            document.getElementById('pageHeader').classList.remove('hidden');
+            document.getElementById('pageHeader').innerHTML = `
+                <div class="container mx-auto px-4 text-center">
+                    <span class="material-icons text-red-500 text-6xl mb-4">error</span>
+                    <h1 class="text-2xl font-bold text-red-600 mb-4">Error</h1>
+                    <p class="text-gray-600 mb-6">${message}</p>
+                    <a href="./collections.html" class="bg-[var(--madas-pop-pink)] text-[var(--madas-dark-moss)] px-6 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">
+                        Back to Collections
+                    </a>
+                </div>
+            `;
+        }
+
+        // Filter functionality
+        function setupFilters() {
+            document.querySelectorAll('.filter-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.filter-button').forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    const category = this.getAttribute('data-category');
+                    filterProducts(category);
+                });
+            });
+        }
+
+        // Filter products by category
+        function filterProducts(category) {
+            if (category === 'all') {
+                filteredProducts = [...allProducts];
+            } else {
+                filteredProducts = allProducts.filter(product =>
+                    product.category === category
+                );
+            }
+
+            // Reset to first page when filtering
+            currentPage = 1;
+            displayProducts();
+            updateProductCount();
+        }
+
+        // Search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    const query = this.value.trim().toLowerCase();
+                    searchProducts(query);
+                });
+            }
+        }
+
+        // Search products
+        function searchProducts(query) {
+            if (!query) {
+                filteredProducts = [...allProducts];
+            } else {
+                filteredProducts = allProducts.filter(product =>
+                    (product.name || '').toLowerCase().includes(query) ||
+                    (product.description || '').toLowerCase().includes(query) ||
+                    (product.brand || '').toLowerCase().includes(query) ||
+                    (product.vendor || '').toLowerCase().includes(query)
+                );
+            }
+
+            // Reset to first page when searching
+            currentPage = 1;
+            displayProducts();
+            updateProductCount();
+        }
+
+        // Add to cart functionality
+        window.addToCart = function (productId, productName) {
+            // Here you would typically add the product to a cart
+            // For now, we'll just show an alert
+            alert(`${productName} added to cart!`);
+
+            // You could also store in localStorage or send to a cart API
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const existingItem = cart.find(item => item.id === productId);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ id: productId, name: productName, quantity: 1 });
+            }
+
+            localStorage.setItem('cart', JSON.stringify(cart));
+        };
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function () {
+            setupFilters();
+            setupSearch();
+            loadCollection();
+        });
+    </script>
+</body>
+
+</html>

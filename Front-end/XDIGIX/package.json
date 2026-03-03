@@ -1,0 +1,26 @@
+{
+  "name": "xdigix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "XDIGIX apps and API",
+  "scripts": {
+    "dev": "concurrently -n api,admin -c blue,green \"npm run dev:api\" \"npm run dev:admin\"",
+    "dev:api": "cd backend && npm run dev",
+    "dev:admin": "cd apps/digix-admin && npm run dev",
+    "dev:admin:sys": "cd sys/apps/marketing/apps/digix-admin && npm run dev",
+    "dev:dashboard": "cd apps/dashboard && npm run dev",
+    "dev:dashboard:sys": "cd sys/apps/marketing/apps/dashboard && npm run dev",
+    "dev:apps:marketing": "cd apps/marketing && npm run dev",
+    "dev:apps:dashboard": "cd apps/dashboard && npm run dev",
+    "dev:apps:digix-admin": "cd apps/digix-admin && npm run dev",
+    "dev:apps:finance": "cd apps/finance && npm run dev",
+    "dev:apps:fulfillment": "cd apps/fulfillment && npm run dev",
+    "dev:apps": "concurrently -n api,marketing -c blue,green \"npm run dev:api\" \"npm run dev:apps:marketing\"",
+    "install:all": "npm install && cd backend && npm install && cd .. && npm run install:apps",
+    "install:apps": "npm install && cd apps/marketing && npm install && cd ../dashboard && npm install && cd ../digix-admin && npm install && cd ../finance && npm install && cd ../fulfillment && npm install",
+    "test:api": "cd backend && node -e \"require('http').get('http://localhost:5001', (r) => { console.log('API', r.statusCode); process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

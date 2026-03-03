@@ -1,0 +1,60 @@
+/* Logout Button Styling */
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-button:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.logout-button:active {
+    transform: translateY(0);
+}
+
+.logout-button .material-icons {
+    font-size: 18px;
+}
+
+/* Alternative styling for sidebar integration */
+.sidebar .logout-button {
+    width: 100%;
+    justify-content: flex-start;
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    margin-top: 16px;
+}
+
+.sidebar .logout-button:hover {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+/* Header logout button styling */
+.header .logout-button {
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    padding: 6px 12px;
+}
+
+.header .logout-button:hover {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}

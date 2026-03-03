@@ -6,6 +6,8 @@ import fs from 'fs';
 import { config } from './config';
 import routes from './routes';
 import { errorMiddleware } from './middleware/error.middleware';
+import { rawBodyWebhookMiddleware } from './middleware/raw-body-webhook.middleware';
+import './types/external-api.types'; // Express Request augmentation for external API
 import './services/orderInventoryIntegration'; // Registers order->inventory event handlers
 
 /**
@@ -55,6 +57,8 @@ export function createApp(): Express {
       credentials: true,
     })
   );
+  // Capture raw body for external webhook signature verification (must run before json parser)
+  app.use(rawBodyWebhookMiddleware);
   app.use(express.json({ limit: '10mb' }));
   app.use(
     rateLimit({

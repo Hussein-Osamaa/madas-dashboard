@@ -1,0 +1,13 @@
+{
+  "name": "finance-version",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deploy and build from sys/",
+  "scripts": {
+    "deploy": "cd sys && npm run deploy",
+    "build": "cd sys && npm run build",
+    "deploy:hosting": "cd sys && npm run deploy:hosting",
+    "deploy:functions": "cd sys && npm run deploy:functions",
+    "deploy:firestore": "cd sys && npm run deploy:firestore"
+  }
+}

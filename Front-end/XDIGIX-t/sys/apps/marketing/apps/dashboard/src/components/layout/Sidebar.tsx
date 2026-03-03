@@ -73,6 +73,7 @@ const getBaseSections = (): SidebarSection[] => [
         items: [
           { label: 'Website Builder', to: '/ecommerce/website-builder', icon: 'web' },
           { label: 'Code Editor', to: '/ecommerce/code-editor', icon: 'code' },
+          { label: 'External Website', to: '/ecommerce/external-website', icon: 'link' },
           { label: 'Visit Store', to: '/ecommerce/visit-store', icon: 'shopping_bag' },
           { label: 'Custom Domains', to: '/ecommerce/custom-domains', icon: 'language' },
           { label: 'Navigation', to: '/ecommerce/navigation', icon: 'navigation' }

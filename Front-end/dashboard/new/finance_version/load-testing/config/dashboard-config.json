@@ -1,0 +1,82 @@
+{
+  "project": {
+    "name": "MADAS Dashboard",
+    "firebaseProjectId": "madas-store",
+    "firebaseApiKey": "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+    "authDomain": "madas-store.firebaseapp.com",
+    "storageBucket": "madas-store.firebasestorage.app"
+  },
+  "firestore": {
+    "structure": {
+      "topLevelCollection": "businesses",
+      "subCollections": [
+        "orders",
+        "expenses",
+        "transactions",
+        "payments",
+        "staff",
+        "scan_log",
+        "products",
+        "customers",
+        "collections",
+        "accounts",
+        "budgets",
+        "reports",
+        "tasks"
+      ]
+    },
+    "queries": {
+      "common": [
+        {
+          "collection": "orders",
+          "filters": ["createdAt >= start", "createdAt <= end"],
+          "ordering": ["createdAt desc"]
+        },
+        {
+          "collection": "transactions",
+          "filters": ["createdAt >= start", "createdAt <= end"],
+          "ordering": ["createdAt desc"]
+        },
+        {
+          "collection": "products",
+          "filters": [],
+          "ordering": ["name asc"]
+        }
+      ]
+    }
+  },
+  "routes": {
+    "dashboard": "/",
+    "orders": "/orders",
+    "finance": {
+      "overview": "/finance/overview",
+      "transactions": "/finance/transactions",
+      "payments": "/finance/payments",
+      "expenses": "/finance/expenses",
+      "accounts": "/finance/accounts",
+      "budgets": "/finance/budgets",
+      "reports": "/finance/reports"
+    },
+    "inventory": {
+      "products": "/inventory/products",
+      "collections": "/inventory/collections",
+      "lowStock": "/inventory/low-stock"
+    },
+    "customers": "/customers",
+    "pos": "/pos",
+    "settings": "/settings"
+  },
+  "authentication": {
+    "method": "Firebase Auth REST API",
+    "endpoint": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword",
+    "tokenRefresh": "https://securetoken.googleapis.com/v1/token"
+  },
+  "notes": [
+    "Multi-tenant via businessId in Firestore sub-collections",
+    "Uses client-side Firebase SDK, but load tests use REST API",
+    "Businesses collection contains business documents",
+    "Each business has sub-collections for orders, transactions, etc."
+  ]
+}
+
+

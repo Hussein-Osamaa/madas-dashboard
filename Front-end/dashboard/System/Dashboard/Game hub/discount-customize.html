@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customize Discount Wheel - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/images/madas-logo.png">
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+            background: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        .dark-mode header {
+            background-color: var(--header-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode aside {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .dark-mode .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .dark-mode .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .dark-mode .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .dark-mode .border-gray-200 {
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode .bg-gray-50 {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .hover\:bg-gray-100:hover {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .shadow-sm {
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .dark-mode .divide-gray-200 {
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode .bg-gray-50 {
+            background-color: var(--card-bg) !important;
+        }
+
+        .sidebar-link {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(4px);
+        }
+        /* Inventory Dropdown */
+        .inventory-dropdown {
+            position: relative;
+        }
+
+        .inventory-submenu {
+            transition: all 0.3s ease;
+        }
+
+        .inventory-submenu.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+
+        .inventory-submenu:not(.hidden) {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Input fields and form elements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        textarea,
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Search bar specific styling */
+        input[type="search"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="search"]:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="search"]::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Select dropdowns */
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* Modal styling */
+        .modal,
+        .modal .bg-white,
+        .glass-effect {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Form labels */
+        label {
+            color: var(--text-main) !important;
+        }
+
+        /* Readonly inputs */
+        input[readonly] {
+            background-color: var(--bg-main) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--madas-accent) !important;
+            border-color: var(--madas-accent) !important;
+        }
+
+        .main-dashboard-content {
+            padding: 2.5rem 1.5rem 2rem 1.5rem;
+            margin: 1rem;
+            min-height: calc(100vh - 8rem);
+            background: var(--bg-main);
+            border-radius: 18px;
+        }
+
+        .main-dashboard-content h1,
+        .main-dashboard-content h2,
+        .main-dashboard-content h3 {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dark-mode .sidebar-link {
+            color: var(--text-main) !important;
+        }
+
+        .dark-mode .sidebar-link .material-icons {
+            color: var(--text-main) !important;
+        }
+
+        .sidebar-section-header {
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .dark-mode .sidebar-section-header {
+            color: var(--text-secondary) !important;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--madas-primary)] mx-auto mb-4">
+            </div>
+            <p class="text-[var(--madas-primary)] font-medium">Loading Dashboard...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-[var(--madas-primary)]">MADAS Admin</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                    <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                        <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2">
+                    <a href="../index.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="./orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                                        <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all" id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200" id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="./products.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="./collections.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="./product-reviews.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="./low-stock.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+                    <a href="./Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+                    <a href="./Admin.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">supervisor_account</span>
+                        <span>Staff</span>
+                    </a>
+                    <a href="./finance.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">account_balance_wallet</span>
+                        <span>Finance</span>
+                    </a>
+                    <a href="./discount-customize.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl bg-[var(--madas-primary)] text-white font-medium">
+                        <span class="material-icons">casino</span>
+                        <span>Discount Wheel</span>
+                    </a>
+                    <div class="mt-6 mb-2 text-xs font-bold text-gray-500 sidebar-section-header">Games</div>
+                    <a href="./game-hub.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">sports_esports</span>
+                        <span>Games</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button id="previewWheelBtn"
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">visibility</span>
+                                <span>Preview Wheel</span>
+                            </button>
+                            <button id="exportPrizesBtn"
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">download</span>
+                                <span>Export Prizes</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+            <div class="p-6 lg:p-8">
+                <div class="main-dashboard-content">
+                    <div class="bg-white shadow-2xl rounded-3xl p-8 w-full max-w-4xl mx-auto">
+                        <h1 class="text-2xl font-extrabold text-[var(--madas-primary)] mb-4">Customize Discount Wheel
+                        </h1>
+                        <form id="addPrizeForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 w-full">
+                            <input type="text" id="codeInput" placeholder="Discount Code" required
+                                class="border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition" />
+                            <input type="number" id="percentInput" placeholder="Discount %" min="1" max="100" required
+                                class="border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition" />
+                            <input type="number" id="winPercentInput" placeholder="Win % (1-100)" min="0.1" max="100"
+                                step="0.1" required
+                                class="border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition" />
+                            <input type="color" id="colorInput" value="#FFD300"
+                                class="border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition" />
+                            <textarea id="descriptionInput" placeholder="Prize Description (shown to customer)" required
+                                class="md:col-span-2 border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition"
+                                rows="2"></textarea>
+
+                            <!-- Image/Color Selection -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium mb-2">Prize Appearance</label>
+                                <div class="flex gap-4 items-center">
+                                    <div class="flex items-center space-x-2">
+                                        <input type="radio" id="useColor" name="appearanceType" value="color" checked
+                                            class="text-[var(--madas-primary)]" />
+                                        <label for="useColor" class="text-sm">Use Color</label>
+                                    </div>
+                                </div>
+
+                                <!-- Color Preview -->
+                                <div id="colorPreview" class="mt-3">
+                                    <div class="w-16 h-16 rounded-lg border-2 border-gray-200" id="colorDisplay"></div>
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                class="md:col-span-2 bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#1f3c19] transition">Add
+                                Prize</button>
+                        </form>
+                        <div class="w-full">
+                            <table class="min-w-full text-sm border border-gray-200 rounded-xl overflow-hidden">
+                                <thead class="bg-[var(--madas-primary)] text-white">
+                                    <tr>
+                                        <th class="p-3 text-left">Code</th>
+                                        <th class="p-3 text-left">Discount</th>
+                                        <th class="p-3 text-left">Win %</th>
+                                        <th class="p-3 text-left">Appearance</th>
+                                        <th class="p-3 text-left">Description</th>
+                                        <th class="p-3 text-left">Added By</th>
+                                        <th class="p-3 text-left">Date</th>
+                                        <th class="p-3 text-left">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="prizesTable" class="text-[var(--madas-primary)]">
+                                    <!-- Dynamic rows here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, updateDoc, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut, RecaptchaVerifier } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:70470e2204065b4590583d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let editingPrizeId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "../Login.html";
+                return;
+            }
+
+            try {
+                const q = query(collection(db, "staff"), where("email", "==", user.email));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    window.location.href = "../no-access.html";
+                    return;
+                }
+
+                const userData = querySnapshot.docs[0].data();
+
+                if (user.email === "hesainosama@gmail.com") {
+                    await updateDoc(doc(db, "staff", querySnapshot.docs[0].id), {
+                        approved: true,
+                        permissions: {
+                            home: ["view"],
+                            orders: ["view", "search", "create", "edit"],
+                            inventory: ["view", "edit"],
+                            customers: ["view", "edit"],
+                            employees: ["view", "edit"]
+                        }
+                    });
+                }
+
+                if (!userData.approved) {
+                    window.location.href = "../no-access.html";
+                    return;
+                }
+
+                currentUser = userData;
+                localStorage.setItem("madasUser", JSON.stringify(userData));
+
+                const username = userData.name || userData.firstName + ' ' + userData.lastName || user.displayName || user.email.split("@")[0];
+                document.getElementById("user-name").textContent = username;
+                document.getElementById("user-email").textContent = user.email;
+                document.getElementById("user-initial").textContent = username.charAt(0).toUpperCase();
+
+                document.getElementById('loadingScreen').style.display = 'none';
+                renderPrizes();
+
+            } catch (error) {
+                console.error("Permission check failed:", error);
+                window.location.href = "../Login.html";
+            }
+        });
+
+        // --- Firestore Prize Logic ---
+        const useColorRadio = document.getElementById('useColor');
+
+        async function getPrizes() {
+            const querySnapshot = await getDocs(collection(db, "discountWheelPrizes"));
+            return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        async function setPrizeFirestore(prizeData) {
+            await addDoc(collection(db, "discountWheelPrizes"), prizeData);
+        }
+
+        // --- Render Prizes from Firestore ---
+        async function renderPrizes() {
+            const table = document.getElementById('prizesTable');
+            table.innerHTML = '<tr><td colspan="8" class="text-center py-4"><span class="animate-spin inline-block w-6 h-6 border-4 border-gray-300 border-t-[var(--madas-primary)] rounded-full"></span> Loading...</td></tr>';
+            try {
+                const prizes = await getPrizes();
+                table.innerHTML = '';
+                if (prizes.length === 0) {
+                    table.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-400">No prizes found.</td></tr>';
+                }
+                prizes.forEach((prize, idx) => {
+                    let appearanceCell = '';
+                    if (prize.imageData) {
+                        appearanceCell = `<img src="${prize.imageData}" class="w-12 h-12 rounded object-cover border" alt="Prize" />`;
+                    } else {
+                        // Determine text color for contrast
+                        function getContrastYIQ(hexcolor) {
+                            hexcolor = hexcolor.replace('#', '');
+                            if (hexcolor.length === 3) hexcolor = hexcolor[0] + hexcolor[0] + hexcolor[1] + hexcolor[1] + hexcolor[2] + hexcolor[2];
+                            var r = parseInt(hexcolor.substr(0, 2), 16);
+                            var g = parseInt(hexcolor.substr(2, 2), 16);
+                            var b = parseInt(hexcolor.substr(4, 2), 16);
+                            var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                            return (yiq >= 128) ? '#222' : '#fff';
+                        }
+                        const textColor = getContrastYIQ(prize.color || '#FFD300');
+                        appearanceCell = `<div class="w-12 h-12 rounded border flex items-center justify-center text-xs font-bold" style="background-color: ${prize.color}; color: ${textColor};">${prize.code}</div>`;
+                    }
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="p-3">${prize.code}</td>
+                        <td class="p-3">${prize.percent}%</td>
+                        <td class="p-3">${prize.winPercent}%</td>
+                        <td class="p-3">${appearanceCell}</td>
+                        <td class="p-3">${prize.description}</td>
+                        <td class="p-3 text-sm">${prize.addedBy || 'Unknown'}</td>
+                        <td class="p-3 text-sm">${prize.addedDate ? new Date(prize.addedDate).toLocaleDateString() : ''}</td>
+                        <td class="p-3 flex gap-2">
+                            <button class="edit-btn bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1 rounded text-xs" data-id="${prize.id}">Edit</button>
+                            <button class="delete-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" data-id="${prize.id}">Delete</button>
+                        </td>
+                    `;
+                    table.appendChild(row);
+                });
+                // Attach event listeners for edit and delete
+                table.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = btn.getAttribute('data-id');
+                        if (confirm('Are you sure you want to delete this prize?')) {
+                            await deleteDoc(doc(db, 'discountWheelPrizes', id));
+                            await renderPrizes();
+                        }
+                    });
+                });
+                table.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = btn.getAttribute('data-id');
+                        const prize = prizes.find(p => p.id === id);
+                        if (!prize) return;
+                        document.getElementById('codeInput').value = prize.code;
+                        document.getElementById('percentInput').value = prize.percent;
+                        document.getElementById('winPercentInput').value = prize.winPercent;
+                        document.getElementById('colorInput').value = prize.color;
+                        document.getElementById('descriptionInput').value = prize.description;
+                        addPrizeForm.querySelector('button[type="submit"]').textContent = 'Update Prize';
+                        editingPrizeId = id;
+                    });
+                });
+            } catch (err) {
+                table.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-red-500">Error loading prizes.</td></tr>';
+                console.error('Error loading prizes:', err);
+            }
+        }
+
+        // Show live color preview before adding prize
+        const colorInput = document.getElementById('colorInput');
+        const colorDisplay = document.getElementById('colorDisplay');
+        colorDisplay.style.backgroundColor = colorInput.value;
+        colorInput.addEventListener('input', (e) => {
+            colorDisplay.style.backgroundColor = e.target.value;
+        });
+
+        // Add Try Again checkbox to the form
+        const tryAgainCheckbox = document.createElement('input');
+        tryAgainCheckbox.type = 'checkbox';
+        tryAgainCheckbox.id = 'tryAgainCheckbox';
+        tryAgainCheckbox.className = 'ml-2';
+        const tryAgainLabel = document.createElement('label');
+        tryAgainLabel.htmlFor = 'tryAgainCheckbox';
+        tryAgainLabel.textContent = 'Try Again (no prize)';
+        tryAgainLabel.className = 'ml-2 text-sm';
+        const colorRow = colorInput.parentElement.parentElement;
+        colorRow.appendChild(tryAgainCheckbox);
+        colorRow.appendChild(tryAgainLabel);
+
+        tryAgainCheckbox.addEventListener('change', function () {
+            const isTryAgain = tryAgainCheckbox.checked;
+            document.getElementById('codeInput').disabled = isTryAgain;
+            document.getElementById('percentInput').disabled = isTryAgain;
+            document.getElementById('descriptionInput').disabled = isTryAgain;
+            if (isTryAgain) {
+                document.getElementById('codeInput').value = 'TRYAGAIN';
+                document.getElementById('percentInput').value = 0;
+                document.getElementById('descriptionInput').value = 'Try Again';
+            } else {
+                document.getElementById('codeInput').value = '';
+                document.getElementById('percentInput').value = '';
+                document.getElementById('descriptionInput').value = '';
+            }
+        });
+
+        // Update the form submit handler to handle both add and edit
+        const addPrizeForm = document.getElementById('addPrizeForm');
+        addPrizeForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('Please wait for authentication to complete.');
+                return;
+            }
+            const isTryAgain = tryAgainCheckbox.checked;
+            let code, percent, winPercent, color, description;
+            winPercent = parseFloat(document.getElementById('winPercentInput').value);
+            color = colorInput.value;
+            if (isTryAgain) {
+                code = 'TRYAGAIN';
+                percent = 0;
+                description = 'Try Again';
+            } else {
+                code = document.getElementById('codeInput').value.trim();
+                percent = parseInt(document.getElementById('percentInput').value);
+                description = document.getElementById('descriptionInput').value.trim();
+            }
+            if (!winPercent || winPercent < 0.1 || winPercent > 100) {
+                alert('Please enter a valid Win % (0.1-100).');
+                return;
+            }
+            if (!isTryAgain && (!code || !percent || !description || percent < 1 || percent > 100)) {
+                alert('Please enter valid values for all fields.');
+                return;
+            }
+            const prizeData = {
+                code,
+                percent,
+                winPercent,
+                color,
+                description,
+                addedBy: currentUser.name || currentUser.email,
+                addedDate: new Date().toISOString()
+            };
+            if (editingPrizeId) {
+                await updateDoc(doc(db, 'discountWheelPrizes', editingPrizeId), prizeData);
+                addPrizeForm.querySelector('button[type="submit"]').textContent = 'Add Prize';
+                editingPrizeId = null;
+            } else {
+                await setPrizeFirestore(prizeData);
+            }
+            addPrizeForm.reset();
+            colorInput.value = '#FFD300';
+            colorDisplay.style.backgroundColor = '#FFD700';
+            useColorRadio.checked = true;
+            colorPreview.classList.remove('hidden');
+            tryAgainCheckbox.checked = false;
+            await renderPrizes();
+        });
+
+        // Mobile menu toggle
+        const toggleBtn = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        if (toggleBtn && sidebar) {
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+        }
+
+        // Logout
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                auth.signOut().then(() => {
+                    window.location.href = "../Login.html";
+                });
+            });
+        }
+
+        // Quick actions
+        document.getElementById('previewWheelBtn').addEventListener('click', () => {
+            window.open('./discount-wheel.html', '_blank');
+        });
+
+        document.getElementById('exportPrizesBtn').addEventListener('click', () => {
+            const prizes = getPrizes();
+            const csv = 'Code,Discount,Win%,Color,Description,Added By,Date\n' +
+                prizes.map(p => `${p.code},${p.percent}%,${p.winPercent}%,${p.color},${p.description},${p.addedBy},${new Date(p.addedDate).toLocaleDateString()}`).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'discount-prizes.csv';
+            a.click();
+        });
+    </script>
+    <script>
+        // Dark mode toggle functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z"/>';
+            }
+        }
+
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+    </script>
+</body>
+
+</html>

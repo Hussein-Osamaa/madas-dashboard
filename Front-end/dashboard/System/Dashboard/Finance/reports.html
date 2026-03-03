@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reports - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="../assets/img/madas-logo.png">
+    <script src="../js/permissions.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:70470e2204065b4590583d3"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global variables
+        let currentUser = null;
+
+        // Update user info in header
+        function updateUserInfo(user) {
+            const userNameElement = document.getElementById('user-name');
+            const userEmailElement = document.getElementById('user-email');
+            const userInitialElement = document.getElementById('user-initial');
+
+            if (user) {
+                const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+                const email = user.email || 'No email';
+                const initial = displayName.charAt(0).toUpperCase();
+
+                if (userNameElement) userNameElement.textContent = displayName;
+                if (userEmailElement) userEmailElement.textContent = email;
+                if (userInitialElement) userInitialElement.textContent = initial;
+            } else {
+                if (userNameElement) userNameElement.textContent = 'Guest';
+                if (userEmailElement) userEmailElement.textContent = 'guest@example.com';
+                if (userInitialElement) userInitialElement.textContent = 'G';
+            }
+        }
+
+        // Auth state change listener
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            updateUserInfo(user);
+
+            if (!user) {
+                // Redirect to login if not authenticated
+                window.location.href = "../Login.html";
+            }
+        });
+
+        // Logout functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            // Update user info immediately when DOM is loaded
+            if (currentUser) {
+                updateUserInfo(currentUser);
+            }
+
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    try {
+                        await signOut(auth);
+                        window.location.href = '../Login.html';
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                        alert('Error signing out. Please try again.');
+                    }
+                });
+            }
+
+            // Profile button
+            const profileBtn = document.getElementById('profile-btn');
+            if (profileBtn) {
+                profileBtn.addEventListener('click', () => {
+                    window.location.href = './profile.html';
+                });
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        /* Override specific backgrounds */
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Sidebar and header */
+        #sidebar {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .sidebar-link {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(4px);
+        }
+
+        /* Inventory Dropdown */
+        .inventory-dropdown {
+            position: relative;
+        }
+
+        .inventory-submenu {
+            transition: all 0.3s ease;
+        }
+
+        .inventory-submenu.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+
+        .inventory-submenu:not(.hidden) {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, var(--madas-primary), var(--madas-accent));
+        }
+
+        .report-card {
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .report-card:hover {
+            border-color: var(--madas-primary);
+            transform: translateY(-2px);
+        }
+
+        .report-card.selected {
+            border-color: var(--madas-primary);
+            background: rgba(39, 73, 31, 0.05);
+        }
+
+        /* Finance Dropdown Styles */
+        .finance-dropdown {
+            position: relative;
+        }
+
+        .finance-dropdown-menu {
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .finance-dropdown-menu.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .finance-dropdown-menu.hidden {
+            display: none;
+        }
+
+        .dropdown-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Input fields and form elements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        textarea,
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+            border-width: 1px !important;
+            border-style: solid !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="date"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+            outline: none !important;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        input[type="date"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: var(--text-main) !important;
+            opacity: 0.7;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        /* Form labels */
+        label {
+            color: var(--text-main) !important;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--madas-accent) !important;
+            border-color: var(--madas-accent) !important;
+        }
+
+        /* Main content background */
+        main {
+            background-color: var(--bg-main) !important;
+        }
+
+        /* Modal styling */
+        .modal,
+        .modal .bg-white,
+        .glass-effect {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Modal overlay */
+        #generateReportModal {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+        }
+
+        /* Sidebar scrolling styles */
+        .overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: var(--madas-primary) transparent;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background-color: var(--madas-primary);
+            border-radius: 3px;
+            opacity: 0.3;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            opacity: 0.6;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body class="font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-3">
+                <img src="../assets/img/madas-logo.png" alt="MADAS" class="w-8 h-8">
+                <h1 class="text-xl font-bold text-[var(--madas-primary)]">MADAS</h1>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <!-- Scrollable Navigation Area -->
+                <div class="flex-1 overflow-y-auto">
+                    <nav class="px-4 py-6 space-y-2">
+                        <a href="../index.html"
+                            class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <span class="material-icons">dashboard</span>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="./orders.html"
+                            class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <span class="material-icons">receipt_long</span>
+                            <span>Orders</span>
+                        </a>
+                        <!-- Inventory Dropdown -->
+                        <div class="inventory-dropdown">
+                            <button
+                                class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all"
+                                id="inventory-toggle">
+                                <div class="flex items-center space-x-3">
+                                    <span class="material-icons">inventory_2</span>
+                                    <span>Inventory</span>
+                                </div>
+                                <span class="material-icons transition-transform duration-200"
+                                    id="inventory-arrow">expand_more</span>
+                            </button>
+                            <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                                <a href="./products.html"
+                                    class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                    <span class="material-icons text-lg">inventory</span>
+                                    <span>Products</span>
+                                </a>
+                                <a href="./collections.html"
+                                    class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                    <span class="material-icons text-lg">collections</span>
+                                    <span>Collections</span>
+                                </a>
+                                <a href="./product-reviews.html"
+                                    class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                    <span class="material-icons text-lg">rate_review</span>
+                                    <span>Reviews</span>
+                                </a>
+                                <a href="./low-stock.html"
+                                    class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                    <span class="material-icons text-lg">warning</span>
+                                    <span>Low Stock</span>
+                                </a>
+                            </div>
+                        </div>
+                        <a href="./Customer.html"
+                            class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <span class="material-icons">group</span>
+                            <span>Customers</span>
+                        </a>
+                        <a href="./Admin.html"
+                            class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <span class="material-icons">supervisor_account</span>
+                            <span>Staff</span>
+                        </a>
+
+                        <!-- Finance Dropdown -->
+                        <div class="finance-dropdown">
+                            <button id="finance-dropdown-btn"
+                                class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <div class="flex items-center space-x-3">
+                                    <span class="material-icons">account_balance_wallet</span>
+                                    <span>Finance</span>
+                                </div>
+                                <span
+                                    class="material-icons dropdown-arrow transition-transform duration-200">expand_more</span>
+                            </button>
+                            <div id="finance-dropdown-menu" class="finance-dropdown-menu show">
+                                <a href="./finance.html"
+                                    class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                    <span class="material-icons text-sm">account_balance</span>
+                                    <span>Overview</span>
+                                </a>
+                                <a href="./deposit-money-simple.html"
+                                    class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                    <span class="material-icons text-sm">add_circle</span>
+                                    <span>Add Money Transfer</span>
+                                </a>
+                                <a href="./expenses.html"
+                                    class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all">
+                                    <span class="material-icons text-sm">receipt_long</span>
+                                    <span>Expenses</span>
+                                </a>
+                                <a href="./analytics.html"
+                                    class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                    <span class="material-icons text-sm">analytics</span>
+                                    <span>Analytics</span>
+                                </a>
+                                <a href="./reports.html"
+                                    class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm bg-[var(--madas-primary)] text-white rounded-lg">
+                                    <span class="material-icons text-sm">assessment</span>
+                                    <span>Reports</span>
+                                </a>
+                                <a href="./insights.html"
+                                    class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                    <span class="material-icons text-sm">lightbulb</span>
+                                    <span>Insights</span>
+                                </a>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+
+                <!-- Fixed Quick Actions Section -->
+                <div class="flex-shrink-0 p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button id="generateReportBtn"
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">add</span>
+                                <span>Generate Report</span>
+                            </button>
+                            <button id="scheduleReportBtn"
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">schedule</span>
+                                <span>Schedule Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="p-6 lg:p-8">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Business Reports</h2>
+                            <p class="text-gray-600">Generate and manage comprehensive business reports</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="generateReportBtn"
+                                class="bg-[var(--madas-primary)] text-white px-6 py-3 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                                <span class="material-icons">add</span>
+                                <span>Generate Report</span>
+                            </button>
+                            <button id="scheduleReportBtn"
+                                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                                <span class="material-icons">schedule</span>
+                                <span>Schedule Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Filters -->
+                <div class="glass-effect rounded-xl p-6 mb-8 shadow-sm">
+                    <div class="flex flex-col lg:flex-row gap-4 items-center">
+                        <div class="flex items-center space-x-4">
+                            <label class="text-sm font-medium text-gray-700">
+                                Start Date:
+                                <input type="date" id="startDate"
+                                    class="ml-2 border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]" />
+                            </label>
+                            <label class="text-sm font-medium text-gray-700">
+                                End Date:
+                                <input type="date" id="endDate"
+                                    class="ml-2 border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]" />
+                            </label>
+                        </div>
+                        <select id="reportType"
+                            class="border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]">
+                            <option value="">All Report Types</option>
+                            <option value="sales">Sales Reports</option>
+                            <option value="inventory">Inventory Reports</option>
+                            <option value="financial">Financial Reports</option>
+                            <option value="customer">Customer Reports</option>
+                        </select>
+                        <button id="filterReportsBtn"
+                            class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                            <span class="material-icons">filter_list</span>
+                            <span>Filter</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Report Templates -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Sales Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="sales">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-blue-600">point_of_sale</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Sales</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Sales Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Comprehensive sales analysis with revenue trends, top
+                            products, and performance metrics.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 2 hours ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="inventory">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-green-600">inventory_2</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span
+                                    class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Inventory</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Inventory Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Stock levels, low stock alerts, and inventory turnover
+                            analysis.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 1 day ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Financial Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="financial">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-purple-600">account_balance_wallet</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span
+                                    class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">Financial</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Financial Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Profit & loss, cash flow, and financial performance
+                            analysis.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 3 days ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customer Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="customer">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-orange-600">group</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span
+                                    class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">Customer</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Customer Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Customer behavior, preferences, and lifetime value
+                            analysis.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 1 week ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Performance Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="performance">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-red-600">trending_up</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">Performance</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Performance Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Business performance metrics and KPI analysis.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Last generated: 2 weeks ago</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Report -->
+                    <div class="report-card card-hover glass-effect rounded-xl p-6 shadow-sm cursor-pointer"
+                        data-report-type="custom">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-gray-600">settings</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">Custom</span>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Custom Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">Create a custom report with your specific requirements.
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Create new</span>
+                            <button class="text-[var(--madas-primary)] hover:text-[#1f3c19]">
+                                <span class="material-icons">add</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Reports -->
+                <div class="glass-effect rounded-xl p-6 shadow-sm mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)]">Recent Reports</h3>
+                        <button class="text-[var(--madas-primary)] hover:text-[#1f3c19] text-sm font-medium">
+                            View All
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Report Name</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Type</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Generated</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Size</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentReportsTable">
+                                <!-- Recent reports will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Scheduled Reports -->
+                <div class="glass-effect rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-[var(--madas-primary)]">Scheduled Reports</h3>
+                        <button id="addScheduleBtn"
+                            class="bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                            <span class="material-icons text-sm">add</span>
+                            <span>Add Schedule</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="scheduledReportsGrid">
+                        <!-- Scheduled reports will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Generate Report Modal -->
+    <div id="generateReportModal" class="fixed inset-0 hidden flex items-center justify-center z-50"
+        style="background-color: rgba(0, 0, 0, 0.5);">
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-[var(--madas-primary)]">Generate Report</h3>
+                <button type="button" id="closeGenerateModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+
+            <form id="generateReportForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Report Type *</label>
+                    <select id="modalReportType" required
+                        class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent">
+                        <option value="">Select Report Type</option>
+                        <option value="sales">Sales Report</option>
+                        <option value="inventory">Inventory Report</option>
+                        <option value="financial">Financial Report</option>
+                        <option value="customer">Customer Report</option>
+                        <option value="performance">Performance Report</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date Range *</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" id="modalStartDate" required
+                            class="border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                        <input type="date" id="modalEndDate" required
+                            class="border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Format</label>
+                    <select id="reportFormat"
+                        class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent">
+                        <option value="pdf">PDF</option>
+                        <option value="excel">Excel</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Include Charts</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="includeCharts" checked
+                            class="w-4 h-4 text-[var(--madas-primary)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--madas-accent)] focus:ring-2">
+                        <span class="text-sm text-gray-600">Include visual charts and graphs</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button type="button" id="cancelGenerateBtn"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="generateReportSubmitBtn"
+                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                        Generate Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Permission-based UI controls for reports page
+        document.addEventListener("DOMContentLoaded", async () => {
+            // Initialize permission manager
+            await window.permissionManager.init();
+
+            // Apply permission-based UI controls
+            const uiControls = {
+                'generateReportBtn': { section: 'reports', permission: 'generate' },
+                'addScheduleBtn': { section: 'reports', permission: 'schedule' },
+                'exportReportsBtn': { section: 'reports', permission: 'export' }
+            };
+
+            window.permissionManager.applyUI(uiControls);
+
+            // Apply view-only restrictions if user only has view permission
+            window.permissionManager.applyViewOnlyRestrictions('reports');
+
+            // Add permission checks to report generation
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            if (generateReportBtn) {
+                generateReportBtn.addEventListener('click', () => {
+                    if (window.permissionManager.canPerformAction('reports', 'generate')) {
+                        // Show generate report modal
+                        document.getElementById('generateReportModal').classList.remove('hidden');
+                    } else {
+                        alert('You don\'t have permission to generate reports');
+                    }
+                });
+            }
+
+            // Add permission checks to schedule reports
+            const addScheduleBtn = document.getElementById('addScheduleBtn');
+            if (addScheduleBtn) {
+                addScheduleBtn.addEventListener('click', () => {
+                    if (window.permissionManager.canPerformAction('reports', 'schedule')) {
+                        alert('Schedule report functionality will be implemented here');
+                    } else {
+                        alert('You don\'t have permission to schedule reports');
+                    }
+                });
+            }
+
+            // Add permission checks to download buttons
+            const downloadButtons = document.querySelectorAll('[data-report-type] button');
+            downloadButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (window.permissionManager.canPerformAction('reports', 'export')) {
+                        alert('Download functionality will be implemented here');
+                    } else {
+                        alert('You don\'t have permission to export reports');
+                    }
+                });
+            });
+
+
+        });
+
+        // Dark mode toggle functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z"/>';
+            }
+        }
+
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+
+            // Finance Dropdown functionality
+            const financeDropdownBtn = document.getElementById("finance-dropdown-btn");
+            const financeDropdownMenu = document.getElementById("finance-dropdown-menu");
+            const financeDropdownArrow = document.querySelector("#finance-dropdown-btn .dropdown-arrow");
+
+            if (financeDropdownBtn && financeDropdownMenu && financeDropdownArrow) {
+                financeDropdownBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !financeDropdownMenu.classList.contains("hidden");
+
+                    if (isOpen) {
+                        financeDropdownMenu.classList.add("hidden");
+                        financeDropdownArrow.classList.remove("rotate");
+                    } else {
+                        financeDropdownMenu.classList.remove("hidden");
+                        financeDropdownArrow.classList.add("rotate");
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (!financeDropdownBtn.contains(e.target) && !financeDropdownMenu.contains(e.target)) {
+                        financeDropdownMenu.classList.add("hidden");
+                        financeDropdownArrow.classList.remove("rotate");
+                    }
+                });
+            }
+        });
+    </script>
+    <script type="module" src="../js/reports.js"></script>
+</body>
+
+</html>

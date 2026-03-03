@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/img/madas-logo.png">
+    <style>
+        :root {
+            --madas-primary: #232946;
+            --madas-accent: #FFD700;
+            --madas-light: #E8F4FD;
+            --text-main: #1a1a1a;
+            --text-secondary: #6b7280;
+            --card-bg: #ffffff;
+            --card-border: #e5e7eb;
+            --bg-main: #f9fafb;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .dark-mode {
+            --text-main: #ffffff;
+            --text-secondary: #d1d5db;
+            --card-bg: #1f2937;
+            --card-border: #374151;
+            --bg-main: #111827;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+        }
+
+        .settings-nav-item {
+            transition: all 0.3s ease;
+        }
+
+        .settings-nav-item.active {
+            background-color: var(--madas-primary);
+            color: white;
+        }
+
+        .settings-nav-item:hover:not(.active) {
+            background-color: var(--madas-light);
+            color: var(--madas-primary);
+        }
+
+        .settings-section {
+            display: none;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        .shipping-row {
+            transition: all 0.2s ease;
+        }
+
+        .shipping-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background-color: var(--madas-primary);
+            color: white;
+        }
+
+        .tab-button:hover:not(.active) {
+            background-color: #f1f5f9;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body>
+    <div class="min-h-screen bg-gray-50">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+            <div class="flex items-center justify-between px-6 py-4">
+                <div class="flex items-center space-x-4">
+                    <a href="./Dashboard.html"
+                        class="flex items-center space-x-3 text-[var(--madas-primary)] hover:text-[#1f3c19] transition-colors">
+                        <span class="material-icons">arrow_back</span>
+                        <span class="text-sm font-medium">Back to Dashboard</span>
+                    </a>
+                    <div class="h-6 w-px bg-gray-300"></div>
+                    <div class="flex items-center space-x-3">
+                        <span class="material-icons text-2xl text-[var(--madas-primary)]">settings</span>
+                        <div>
+                            <h1 class="text-2xl font-bold text-[var(--madas-primary)]">Settings</h1>
+                            <p class="text-sm text-gray-600">Manage your store configuration and preferences</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="darkToggle" class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <svg id="darkToggleIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="overflow-y-auto">
+            <!-- Content -->
+            <div class="p-6">
+                <div class="flex gap-6">
+                    <!-- Settings Navigation -->
+                    <div class="w-64 bg-white rounded-xl shadow-lg border border-gray-100 p-4">
+                        <h2 class="text-lg font-semibold text-[var(--madas-primary)] mb-4">Settings</h2>
+                        <nav class="space-y-2">
+                            <button
+                                class="settings-nav-item active w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"
+                                data-section="general">
+                                <span class="material-icons text-sm">tune</span>
+                                <span>General</span>
+                            </button>
+                            <button
+                                class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"
+                                data-section="shipping">
+                                <span class="material-icons text-sm">local_shipping</span>
+                                <span>Shipping & Delivery</span>
+                            </button>
+                            <button
+                                class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"
+                                data-section="payments">
+                                <span class="material-icons text-sm">payment</span>
+                                <span>Payments</span>
+                            </button>
+                            <button
+                                class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"
+                                data-section="integrations">
+                                <span class="material-icons text-sm">extension</span>
+                                <span>Integrations</span>
+                            </button>
+                            <button
+                                class="settings-nav-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"
+                                data-section="social">
+                                <span class="material-icons text-sm">share</span>
+                                <span>Social Media Links</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Settings Content -->
+                    <div class="flex-1">
+                        <!-- General Settings -->
+                        <div id="general" class="settings-section active">
+                            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                                <h2 class="text-xl font-bold text-[var(--madas-primary)] mb-6">General Settings</h2>
+
+                                <div class="space-y-6">
+                                    <!-- Store Information -->
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Store Information</h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Store
+                                                    Name</label>
+                                                <input type="text" id="storeName" value="MADAS Store"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Store
+                                                    Email</label>
+                                                <input type="email" id="storeEmail" value="info@madas.com"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Store
+                                                    Phone</label>
+                                                <input type="tel" id="storePhone" value="+20 123 456 7890"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                            </div>
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                                                <select id="currency"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                    <option value="EGP" selected>Egyptian Pound (EGP)</option>
+                                                    <option value="USD">US Dollar (USD)</option>
+                                                    <option value="EUR">Euro (EUR)</option>
+                                                    <option value="GBP">British Pound (GBP)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Store Description -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Store
+                                            Description</label>
+                                        <textarea id="storeDescription" rows="4"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent"
+                                            placeholder="Describe your store...">Welcome to MADAS Store - Your premier destination for quality products and exceptional service.</textarea>
+                                    </div>
+
+                                    <!-- Store Logo -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Store Logo</label>
+                                        <div class="flex items-center space-x-4">
+                                            <img src="../assets/img/madas-logo.png" alt="Current Logo"
+                                                class="w-16 h-16 object-contain border border-gray-300 rounded-lg">
+                                            <button
+                                                class="bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                                                Change Logo
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex justify-end">
+                                    <button
+                                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                                        Save General Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shipping & Delivery Settings -->
+                        <div id="shipping" class="settings-section">
+                            <div class="bg-white rounded-xl shadow-lg border border-gray-100">
+                                <!-- Header with Tabs -->
+                                <div class="border-b border-gray-200 p-6">
+                                    <h2 class="text-xl font-bold text-[var(--madas-primary)] mb-4">Shipping & Delivery
+                                    </h2>
+                                    <div class="flex space-x-1">
+                                        <button class="tab-button px-4 py-2 rounded-lg text-sm font-medium"
+                                            data-tab="shipping-details">
+                                            SHIPPING DETAILS
+                                        </button>
+                                        <button class="tab-button active px-4 py-2 rounded-lg text-sm font-medium"
+                                            data-tab="shipping-regions">
+                                            SHIPPING REGIONS & EXCEPTIONS
+                                        </button>
+                                        <button class="tab-button px-4 py-2 rounded-lg text-sm font-medium"
+                                            data-tab="cart">
+                                            CART
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tab Content -->
+                                <div class="p-6">
+                                    <!-- Shipping Regions & Exceptions Tab -->
+                                    <div id="shipping-regions" class="tab-content">
+                                        <div class="mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Shipping Regions &
+                                                Exceptions</h3>
+                                            <p class="text-sm text-gray-600">Define shipping rules based on governorates
+                                                and neighborhoods</p>
+                                        </div>
+
+                                        <!-- Table Header -->
+                                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                            <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
+                                                <div class="col-span-3">Governorate</div>
+                                                <div class="col-span-3">Neighborhood</div>
+                                                <div class="col-span-3">Shipping Fees</div>
+                                                <div class="col-span-2">Additional Kilo Fees</div>
+                                                <div class="col-span-1">Actions</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Shipping Rows -->
+                                        <div id="shipping-rows" class="space-y-2">
+                                            <!-- Sample rows will be added here -->
+                                        </div>
+
+                                        <!-- Add New Row Button -->
+                                        <button id="add-shipping-row"
+                                            class="mt-4 bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                                            <span class="material-icons text-sm">add</span>
+                                            <span>Add New Shipping Rule</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Shipping Details Tab -->
+                                    <div id="shipping-details" class="tab-content hidden">
+                                        <div class="space-y-6">
+                                            <div>
+                                                <h3 class="text-lg font-semibold text-gray-800 mb-4">General Shipping
+                                                    Settings</h3>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label
+                                                            class="block text-sm font-medium text-gray-700 mb-2">Default
+                                                            Shipping Rate</label>
+                                                        <input type="number" value="50"
+                                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-2">Free
+                                                            Shipping Threshold (EGP)</label>
+                                                        <input type="number" value="500"
+                                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                    </div>
+                                                    <div>
+                                                        <label
+                                                            class="block text-sm font-medium text-gray-700 mb-2">Express
+                                                            Shipping Rate</label>
+                                                        <input type="number" value="100"
+                                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                    </div>
+                                                    <div>
+                                                        <label
+                                                            class="block text-sm font-medium text-gray-700 mb-2">Additional
+                                                            Kilo Rate</label>
+                                                        <input type="number" value="10"
+                                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Cart Tab -->
+                                    <div id="cart" class="tab-content hidden">
+                                        <div class="space-y-6">
+                                            <div>
+                                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Cart Settings</h3>
+                                                <div class="space-y-4">
+                                                    <label class="flex items-center">
+                                                        <input type="checkbox" checked
+                                                            class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                        <span class="ml-2 text-sm text-gray-700">Show shipping
+                                                            calculator in cart</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="checkbox" checked
+                                                            class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                        <span class="ml-2 text-sm text-gray-700">Allow multiple shipping
+                                                            addresses</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="checkbox"
+                                                            class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                        <span class="ml-2 text-sm text-gray-700">Require shipping
+                                                            address before checkout</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Save Button -->
+                                <div class="border-t border-gray-200 p-6">
+                                    <div class="flex justify-end">
+                                        <button
+                                            class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                                            Save Shipping Settings
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payments Settings -->
+                        <div id="payments" class="settings-section">
+                            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                                <h2 class="text-xl font-bold text-[var(--madas-primary)] mb-6">Payment Settings</h2>
+
+                                <div class="space-y-6">
+                                    <!-- Payment Methods -->
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Payment Methods</h3>
+                                        <div class="space-y-4">
+                                            <div class="border border-gray-200 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <span class="material-icons text-blue-600">credit_card</span>
+                                                        <div>
+                                                            <h4 class="font-medium">Credit/Debit Cards</h4>
+                                                            <p class="text-sm text-gray-600">Visa, Mastercard, American
+                                                                Express</p>
+                                                        </div>
+                                                    </div>
+                                                    <label class="relative inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" id="payment-card" checked
+                                                            class="sr-only peer">
+                                                        <div
+                                                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="border border-gray-200 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <span
+                                                            class="material-icons text-green-600">account_balance</span>
+                                                        <div>
+                                                            <h4 class="font-medium">Bank Transfer</h4>
+                                                            <p class="text-sm text-gray-600">Direct bank transfer</p>
+                                                        </div>
+                                                    </div>
+                                                    <label class="relative inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" id="payment-bank" checked
+                                                            class="sr-only peer">
+                                                        <div
+                                                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="border border-gray-200 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <span class="material-icons text-orange-600">money</span>
+                                                        <div>
+                                                            <h4 class="font-medium">Cash on Delivery</h4>
+                                                            <p class="text-sm text-gray-600">Pay when you receive your
+                                                                order</p>
+                                                        </div>
+                                                    </div>
+                                                    <label class="relative inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" id="payment-cod" checked
+                                                            class="sr-only peer">
+                                                        <div
+                                                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Payment Configuration -->
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Payment Configuration</h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Payment
+                                                    Gateway</label>
+                                                <select
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                    <option value="stripe">Stripe</option>
+                                                    <option value="paypal">PayPal</option>
+                                                    <option value="square">Square</option>
+                                                    <option value="custom">Custom Gateway</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Transaction
+                                                    Fee (%)</label>
+                                                <input type="number" value="2.9" step="0.1"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex justify-end">
+                                    <button id="savePaymentSettings"
+                                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                                        Save Payment Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Integrations Settings -->
+                        <div id="integrations" class="settings-section">
+                            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                                <h2 class="text-xl font-bold text-[var(--madas-primary)] mb-6">Integrations</h2>
+
+                                <div class="space-y-6">
+                                    <!-- Analytics -->
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Analytics & Tracking</h3>
+                                        <div class="space-y-4">
+                                            <div class="border border-gray-200 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <span class="material-icons text-blue-600">analytics</span>
+                                                        <div>
+                                                            <h4 class="font-medium">Google Analytics</h4>
+                                                            <p class="text-sm text-gray-600">Track website traffic and
+                                                                user behavior</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center space-x-2">
+                                                        <input type="text" placeholder="GA-XXXXXXXXX"
+                                                            class="px-3 py-1 border border-gray-300 rounded text-sm w-32">
+                                                        <button
+                                                            class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">Connect</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="border border-gray-200 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <span class="material-icons text-purple-600">facebook</span>
+                                                        <div>
+                                                            <h4 class="font-medium">Facebook Pixel</h4>
+                                                            <p class="text-sm text-gray-600">Track conversions and
+                                                                optimize ads</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center space-x-2">
+                                                        <input type="text" placeholder="Pixel ID"
+                                                            class="px-3 py-1 border border-gray-300 rounded text-sm w-32">
+                                                        <button
+                                                            class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">Connect</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Email Marketing -->
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Email Marketing</h3>
+                                        <div class="space-y-4">
+                                            <div class="border border-gray-200 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <span class="material-icons text-red-600">mail</span>
+                                                        <div>
+                                                            <h4 class="font-medium">Mailchimp</h4>
+                                                            <p class="text-sm text-gray-600">Email marketing automation
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Connect</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Inventory Management -->
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Inventory Management</h3>
+                                        <div class="space-y-4">
+                                            <div class="border border-gray-200 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-3">
+                                                        <span class="material-icons text-green-600">inventory</span>
+                                                        <div>
+                                                            <h4 class="font-medium">Inventory Sync</h4>
+                                                            <p class="text-sm text-gray-600">Sync inventory across
+                                                                platforms</p>
+                                                        </div>
+                                                    </div>
+                                                    <label class="relative inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" class="sr-only peer">
+                                                        <div
+                                                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex justify-end">
+                                    <button
+                                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                                        Save Integration Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Social Media Links -->
+                        <div id="social" class="settings-section">
+                            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                                <h2 class="text-xl font-bold text-[var(--madas-primary)] mb-6">Social Media Links</h2>
+
+                                <div class="space-y-6">
+                                    <!-- Social Platforms -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="space-y-4">
+                                            <div class="flex items-center space-x-3">
+                                                <span class="material-icons text-blue-600">facebook</span>
+                                                <div class="flex-1">
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
+                                                    <input type="url" placeholder="https://facebook.com/yourpage"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center space-x-3">
+                                                <span class="material-icons text-blue-400">alternate_email</span>
+                                                <div class="flex-1">
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700 mb-1">Twitter</label>
+                                                    <input type="url" placeholder="https://twitter.com/yourhandle"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center space-x-3">
+                                                <span class="material-icons text-pink-600">camera_alt</span>
+                                                <div class="flex-1">
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+                                                    <input type="url" placeholder="https://instagram.com/yourhandle"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center space-x-3">
+                                                <span class="material-icons text-blue-800">business</span>
+                                                <div class="flex-1">
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
+                                                    <input type="url"
+                                                        placeholder="https://linkedin.com/company/yourcompany"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-4">
+                                            <div class="flex items-center space-x-3">
+                                                <span class="material-icons text-red-600">play_circle</span>
+                                                <div class="flex-1">
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700 mb-1">YouTube</label>
+                                                    <input type="url" placeholder="https://youtube.com/c/yourchannel"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center space-x-3">
+                                                <span class="material-icons text-green-600">chat</span>
+                                                <div class="flex-1">
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
+                                                    <input type="url" placeholder="https://wa.me/201234567890"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center space-x-3">
+                                                <span class="material-icons text-purple-600">video_call</span>
+                                                <div class="flex-1">
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700 mb-1">TikTok</label>
+                                                    <input type="url" placeholder="https://tiktok.com/@yourhandle"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center space-x-3">
+                                                <span class="material-icons text-gray-600">public</span>
+                                                <div class="flex-1">
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                                                    <input type="url" placeholder="https://yourwebsite.com"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Social Media Display Options -->
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Display Options</h3>
+                                        <div class="space-y-3">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" checked
+                                                    class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                <span class="ml-2 text-sm text-gray-700">Show social media links in
+                                                    footer</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="checkbox" checked
+                                                    class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                <span class="ml-2 text-sm text-gray-700">Show social media links in
+                                                    product pages</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="checkbox"
+                                                    class="rounded border-gray-300 text-[var(--madas-primary)] focus:ring-[var(--madas-primary)]">
+                                                <span class="ml-2 text-sm text-gray-700">Open social media links in new
+                                                    tab</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex justify-end">
+                                    <button
+                                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">
+                                        Save Social Media Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Settings navigation
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.settings-nav-item');
+            const sections = document.querySelectorAll('.settings-section');
+
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Remove active class from all nav items and sections
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    sections.forEach(section => section.classList.remove('active'));
+
+                    // Add active class to clicked nav item
+                    item.classList.add('active');
+
+                    // Show corresponding section
+                    const targetSection = item.getAttribute('data-section');
+                    document.getElementById(targetSection).classList.add('active');
+                });
+            });
+
+            // Shipping tabs functionality
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.add('hidden'));
+
+                    // Add active class to clicked tab
+                    button.classList.add('active');
+
+                    // Show corresponding content
+                    const targetTab = button.getAttribute('data-tab');
+                    const targetContent = document.getElementById(targetTab);
+                    if (targetContent) {
+                        targetContent.classList.remove('hidden');
+                    }
+                });
+            });
+
+            // Add shipping row functionality
+            const addShippingRowBtn = document.getElementById('add-shipping-row');
+            const shippingRowsContainer = document.getElementById('shipping-rows');
+
+            if (addShippingRowBtn && shippingRowsContainer) {
+                addShippingRowBtn.addEventListener('click', addShippingRow);
+
+                // Add initial sample rows
+                addSampleShippingRows();
+            }
+
+            // Payment settings functionality
+            const savePaymentSettingsBtn = document.getElementById('savePaymentSettings');
+            if (savePaymentSettingsBtn) {
+                savePaymentSettingsBtn.addEventListener('click', savePaymentSettings);
+                loadPaymentSettings();
+            }
+        });
+
+        // Egyptian governorates data
+        const egyptianGovernorates = [
+            'Cairo', 'Giza', 'Alexandria', 'Dakahlia', 'Red Sea', 'Beheira', 'Fayyum', 'Gharbia',
+            'Ismailia', 'Monufia', 'Minya', 'Qalyubia', 'New Valley', 'Suez', 'Aswan', 'Asyut',
+            'Beni Suef', 'Port Said', 'Damietta', 'Sharkia', 'South Sinai', 'Kafr el-Sheikh',
+            'Matrouh', 'Luxor', 'Qena', 'North Sinai', 'Sohag'
+        ];
+
+        // Sample neighborhoods for major governorates
+        const neighborhoods = {
+            'Cairo': ['Downtown', 'Zamalek', 'Heliopolis', 'Nasr City', 'Maadi', 'New Cairo', 'Shubra'],
+            'Giza': ['Dokki', 'Agouza', 'Mohandessin', '6th October', 'Sheikh Zayed', 'Haram'],
+            'Alexandria': ['Downtown', 'Stanley', 'Sidi Gaber', 'Smouha', 'Gleem', 'Roushdy'],
+            'Dakahlia': ['Mansoura', 'Talkha', 'Mit Ghamr', 'Aga', 'Belqas'],
+            'Gharbia': ['Tanta', 'Mahalla', 'Kafr el-Zayat', 'Zefta', 'Basyoun'],
+            'Ismailia': ['Ismailia City', 'Fayed', 'Qantara', 'Abu Suweir'],
+            'Monufia': ['Shibin el-Kom', 'Tala', 'Quesna', 'Birket el-Sab'],
+            'Minya': ['Minya City', 'Maghagha', 'Beni Mazar', 'Mallawi'],
+            'Luxor': ['Luxor City', 'Esna', 'Armant', 'Tod'],
+            'New Valley': ['Kharga', 'Dakhla', 'Farafra', 'Bahariya'],
+            'Qena': ['Qena City', 'Nag Hammadi', 'Qus', 'Abu Tesht']
+        };
+
+        function addShippingRow() {
+            const rowId = 'shipping-row-' + Date.now();
+            const row = document.createElement('div');
+            row.className = 'shipping-row bg-white border border-gray-200 rounded-lg p-4';
+            row.id = rowId;
+
+            row.innerHTML = `
+                <div class="grid grid-cols-12 gap-4 items-center">
+                    <div class="col-span-3">
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent governorate-select">
+                            <option value="">Select Governorate</option>
+                            ${egyptianGovernorates.map(gov => `<option value="${gov}">${gov}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="col-span-3">
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent neighborhood-select">
+                            <option value="">Select</option>
+                        </select>
+                    </div>
+                    <div class="col-span-3">
+                        <input type="number" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent" placeholder="Shipping Fees">
+                    </div>
+                    <div class="col-span-2">
+                        <input type="number" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent" placeholder="Additional Kilo">
+                    </div>
+                    <div class="col-span-1 flex justify-center">
+                        <button class="remove-shipping-row text-red-600 hover:text-red-800 transition-colors" data-row-id="${rowId}">
+                            <span class="material-icons text-sm">close</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            shippingRowsContainer.appendChild(row);
+
+            // Add event listener for governorate change
+            const governorateSelect = row.querySelector('.governorate-select');
+            const neighborhoodSelect = row.querySelector('.neighborhood-select');
+
+            governorateSelect.addEventListener('change', (e) => {
+                const selectedGov = e.target.value;
+                neighborhoodSelect.innerHTML = '<option value="">Select</option>';
+
+                if (neighborhoods[selectedGov]) {
+                    neighborhoods[selectedGov].forEach(neighborhood => {
+                        neighborhoodSelect.innerHTML += `<option value="${neighborhood}">${neighborhood}</option>`;
+                    });
+                }
+            });
+
+            // Add event listener for remove button
+            const removeBtn = row.querySelector('.remove-shipping-row');
+            removeBtn.addEventListener('click', () => {
+                row.remove();
+            });
+        }
+
+        function addSampleShippingRows() {
+            const sampleData = [
+                { governorate: 'Cairo', neighborhood: 'Downtown', shippingFee: 90, additionalKilo: 0 },
+                { governorate: 'Ismailia', neighborhood: 'Ismailia City', shippingFee: 100, additionalKilo: 0 },
+                { governorate: 'Minya', neighborhood: 'Minya City', shippingFee: 120, additionalKilo: 0 },
+                { governorate: 'Luxor', neighborhood: 'Luxor City', shippingFee: 120, additionalKilo: 0 },
+                { governorate: 'New Valley', neighborhood: 'Kharga', shippingFee: 150, additionalKilo: 0 },
+                { governorate: 'Qena', neighborhood: 'Qena City', shippingFee: 120, additionalKilo: 0 },
+                { governorate: 'Gharbia', neighborhood: 'Tanta', shippingFee: 100, additionalKilo: 0 },
+                { governorate: 'Giza', neighborhood: 'Dokki', shippingFee: 90, additionalKilo: 0 },
+                { governorate: 'Monufia', neighborhood: 'Shibin el-Kom', shippingFee: 100, additionalKilo: 0 }
+            ];
+
+            sampleData.forEach(data => {
+                const rowId = 'shipping-row-' + Date.now() + Math.random();
+                const row = document.createElement('div');
+                row.className = 'shipping-row bg-white border border-gray-200 rounded-lg p-4';
+                row.id = rowId;
+
+                row.innerHTML = `
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <div class="col-span-3">
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent governorate-select">
+                                <option value="">Select Governorate</option>
+                                ${egyptianGovernorates.map(gov => `<option value="${gov}" ${gov === data.governorate ? 'selected' : ''}>${gov}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-span-3">
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent neighborhood-select">
+                                <option value="">Select</option>
+                                ${neighborhoods[data.governorate] ? neighborhoods[data.governorate].map(neighborhood =>
+                    `<option value="${neighborhood}" ${neighborhood === data.neighborhood ? 'selected' : ''}>${neighborhood}</option>`
+                ).join('') : ''}
+                            </select>
+                        </div>
+                        <div class="col-span-3">
+                            <input type="number" value="${data.shippingFee}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent" placeholder="Shipping Fees">
+                        </div>
+                        <div class="col-span-2">
+                            <input type="number" value="${data.additionalKilo}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--madas-primary)] focus:border-transparent" placeholder="Additional Kilo">
+                        </div>
+                        <div class="col-span-1 flex justify-center">
+                            <button class="remove-shipping-row text-red-600 hover:text-red-800 transition-colors" data-row-id="${rowId}">
+                                <span class="material-icons text-sm">close</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                shippingRowsContainer.appendChild(row);
+
+                // Add event listeners
+                const governorateSelect = row.querySelector('.governorate-select');
+                const neighborhoodSelect = row.querySelector('.neighborhood-select');
+                const removeBtn = row.querySelector('.remove-shipping-row');
+
+                governorateSelect.addEventListener('change', (e) => {
+                    const selectedGov = e.target.value;
+                    neighborhoodSelect.innerHTML = '<option value="">Select</option>';
+
+                    if (neighborhoods[selectedGov]) {
+                        neighborhoods[selectedGov].forEach(neighborhood => {
+                            neighborhoodSelect.innerHTML += `<option value="${neighborhood}">${neighborhood}</option>`;
+                        });
+                    }
+                });
+
+                removeBtn.addEventListener('click', () => {
+                    row.remove();
+                });
+            });
+        }
+
+        // Payment settings functions
+        function savePaymentSettings() {
+            const enabledMethods = [];
+
+            // Check which payment methods are enabled
+            if (document.getElementById('payment-card')?.checked) {
+                enabledMethods.push('card');
+            }
+            if (document.getElementById('payment-bank')?.checked) {
+                enabledMethods.push('bank');
+            }
+            if (document.getElementById('payment-cod')?.checked) {
+                enabledMethods.push('cod');
+            }
+
+            // Save to localStorage
+            const paymentSettings = {
+                enabledMethods: enabledMethods,
+                lastUpdated: new Date().toISOString()
+            };
+
+            localStorage.setItem('paymentSettings', JSON.stringify(paymentSettings));
+            alert('Payment settings saved successfully!');
+        }
+
+        function loadPaymentSettings() {
+            const savedSettings = localStorage.getItem('paymentSettings');
+            if (savedSettings) {
+                try {
+                    const settings = JSON.parse(savedSettings);
+                    const enabledMethods = settings.enabledMethods || ['card', 'bank', 'cod'];
+
+                    // Update checkboxes based on saved settings
+                    document.getElementById('payment-card').checked = enabledMethods.includes('card');
+                    document.getElementById('payment-bank').checked = enabledMethods.includes('bank');
+                    document.getElementById('payment-cod').checked = enabledMethods.includes('cod');
+                } catch (e) {
+                    console.error('Error loading payment settings:', e);
+                }
+            }
+        }
+
+        // Dark mode functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+
+        function setDarkMode(isDark) {
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('dark-mode', '1');
+                darkIcon.innerHTML = '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z" />';
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('dark-mode', '0');
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+            }
+        }
+
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+    </script>
+</body>
+
+</html>

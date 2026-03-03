@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Management - Dashboard</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .staff-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .staff-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .invite-form {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .staff-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .staff-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .staff-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .staff-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #007bff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .staff-details h4 {
+            margin: 0;
+            color: #333;
+        }
+
+        .staff-details p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .staff-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-accepted {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-owner {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .permissions-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .permissions-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .permission-group {
+            margin-bottom: 20px;
+        }
+
+        .permission-group h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .permission-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Dashboard</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="orders.html" class="nav-item">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Orders</span>
+                </a>
+                <a href="products.html" class="nav-item">
+                    <i class="fas fa-box"></i>
+                    <span>Products</span>
+                </a>
+                <a href="customers.html" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </a>
+                <a href="analytics.html" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="staff.html" class="nav-item active">
+                    <i class="fas fa-user-friends"></i>
+                    <span>Staff</span>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1>Staff Management</h1>
+                <div class="header-actions">
+                    <button id="invite-staff-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Invite Staff
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-body">
+                <!-- Invite Staff Form -->
+                <div id="invite-form" class="invite-form" style="display: none;">
+                    <h3>Invite New Staff Member</h3>
+                    <form id="staff-invite-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="staff-email">Email Address</label>
+                                <input type="email" id="staff-email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="staff-role">Role</label>
+                                <select id="staff-role" name="role" required>
+                                    <option value="staff">Staff</option>
+                                    <option value="manager">Manager</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="cancel-invite" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Send Invitation</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Staff List -->
+                <div class="staff-card">
+                    <div class="staff-header">
+                        <h3>Team Members</h3>
+                        <span id="staff-count" class="badge">0 members</span>
+                    </div>
+
+                    <div id="staff-list" class="staff-list">
+                        <!-- Staff members will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Pending Invitations -->
+                <div id="pending-invitations" class="staff-card" style="display: none;">
+                    <div class="staff-header">
+                        <h3>Pending Invitations</h3>
+                    </div>
+                    <div id="pending-list" class="staff-list">
+                        <!-- Pending invitations will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permissions Modal -->
+    <div id="permissions-modal" class="permissions-modal">
+        <div class="permissions-content">
+            <div class="modal-header">
+                <h3>Edit Permissions</h3>
+                <button id="close-permissions" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="permissions-form">
+                    <input type="hidden" id="edit-staff-id">
+
+                    <div class="permission-group">
+                        <h4>Dashboard Access</h4>
+                        <div class="permission-checkboxes">
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-home-view" name="home" value="view">
+                                <label for="perm-home-view">View Home</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-group">
+                        <h4>Orders</h4>
+                        <div class="permission-checkboxes">
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-orders-view" name="orders" value="view">
+                                <label for="perm-orders-view">View Orders</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-orders-search" name="orders" value="search">
+                                <label for="perm-orders-search">Search Orders</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-orders-create" name="orders" value="create">
+                                <label for="perm-orders-create">Create Orders</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-orders-edit" name="orders" value="edit">
+                                <label for="perm-orders-edit">Edit Orders</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-group">
+                        <h4>Inventory</h4>
+                        <div class="permission-checkboxes">
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-inventory-view" name="inventory" value="view">
+                                <label for="perm-inventory-view">View Inventory</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-inventory-edit" name="inventory" value="edit">
+                                <label for="perm-inventory-edit">Edit Inventory</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-group">
+                        <h4>Customers</h4>
+                        <div class="permission-checkboxes">
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-customers-view" name="customers" value="view">
+                                <label for="perm-customers-view">View Customers</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-customers-edit" name="customers" value="edit">
+                                <label for="perm-customers-edit">Edit Customers</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-group">
+                        <h4>Analytics</h4>
+                        <div class="permission-checkboxes">
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-analytics-view" name="analytics" value="view">
+                                <label for="perm-analytics-view">View Analytics</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-analytics-export" name="analytics" value="export">
+                                <label for="perm-analytics-export">Export Reports</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-group">
+                        <h4>Settings</h4>
+                        <div class="permission-checkboxes">
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-settings-view" name="settings" value="view">
+                                <label for="perm-settings-view">View Settings</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-settings-edit" name="settings" value="edit">
+                                <label for="perm-settings-edit">Edit Settings</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="cancel-permissions" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="save-permissions" class="btn btn-primary">Save Permissions</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Config -->
+    <script src="../firebaseConfig.js"></script>
+
+    <script>
+        // Initialize Firebase first
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+    </script>
+
+    <!-- Modules -->
+    <script src="../js/modules/auth.js"></script>
+    <script src="../js/modules/business.js"></script>
+    <script src="../js/modules/staff.js"></script>
+
+    <!-- Staff Management Script -->
+    <script>
+        let currentStaff = [];
+        let pendingInvitations = [];
+
+        // Initialize services
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initializeServices();
+            await loadStaffData();
+            setupEventListeners();
+        });
+
+        async function initializeServices() {
+            // Wait for services to be ready
+            while (!window.authService?.isInitialized || !window.staffService?.isInitialized) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            // Check authentication
+            const currentUser = window.authService.getCurrentUser();
+            if (!currentUser) {
+                window.location.href = '../Login.html';
+                return;
+            }
+
+            // Check if user has permission to manage staff
+            const canManageStaff = await window.staffService.hasPermission('employees', 'edit');
+            if (!canManageStaff) {
+                alert('You do not have permission to manage staff.');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+        }
+
+        async function loadStaffData() {
+            try {
+                // Load staff members
+                currentStaff = await window.staffService.getStaffMembers();
+                renderStaffList();
+
+                // Load pending invitations
+                pendingInvitations = await window.staffService.getPendingInvitations();
+                renderPendingInvitations();
+
+                // Update staff count
+                document.getElementById('staff-count').textContent = `${currentStaff.length} members`;
+            } catch (error) {
+                console.error('Error loading staff data:', error);
+                showError('Failed to load staff data');
+            }
+        }
+
+        function renderStaffList() {
+            const staffList = document.getElementById('staff-list');
+            staffList.innerHTML = '';
+
+            if (currentStaff.length === 0) {
+                staffList.innerHTML = '<p class="text-muted">No staff members found.</p>';
+                return;
+            }
+
+            currentStaff.forEach(staff => {
+                const staffItem = createStaffItem(staff);
+                staffList.appendChild(staffItem);
+            });
+        }
+
+        function renderPendingInvitations() {
+            const pendingSection = document.getElementById('pending-invitations');
+            const pendingList = document.getElementById('pending-list');
+
+            if (pendingInvitations.length === 0) {
+                pendingSection.style.display = 'none';
+                return;
+            }
+
+            pendingSection.style.display = 'block';
+            pendingList.innerHTML = '';
+
+            pendingInvitations.forEach(invitation => {
+                const invitationItem = createInvitationItem(invitation);
+                pendingList.appendChild(invitationItem);
+            });
+        }
+
+        function createStaffItem(staff) {
+            const div = document.createElement('div');
+            div.className = 'staff-item';
+
+            const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'S';
+            const statusClass = staff.role === 'owner' ? 'status-owner' : 'status-accepted';
+            const statusText = staff.role === 'owner' ? 'Owner' : 'Active';
+
+            div.innerHTML = `
+                <div class="staff-info">
+                    <div class="staff-avatar">${initials}</div>
+                    <div class="staff-details">
+                        <h4>${staff.name || 'Unknown'}</h4>
+                        <p>${staff.email}</p>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                <div class="staff-actions">
+                    ${staff.role !== 'owner' ? `
+                        <button class="btn btn-sm btn-outline-primary" onclick="editPermissions('${staff.id}')">
+                            <i class="fas fa-key"></i> Permissions
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="removeStaff('${staff.id}')">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+
+            return div;
+        }
+
+        function createInvitationItem(invitation) {
+            const div = document.createElement('div');
+            div.className = 'staff-item';
+
+            const initials = invitation.email.split('@')[0].substring(0, 2).toUpperCase();
+
+            div.innerHTML = `
+                <div class="staff-info">
+                    <div class="staff-avatar">${initials}</div>
+                    <div class="staff-details">
+                        <h4>${invitation.email}</h4>
+                        <p>Invited by ${invitation.invitedByName}</p>
+                        <span class="status-badge status-pending">Pending</span>
+                    </div>
+                </div>
+                <div class="staff-actions">
+                    <button class="btn btn-sm btn-outline-danger" onclick="cancelInvitation('${invitation.id}')">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            `;
+
+            return div;
+        }
+
+        function setupEventListeners() {
+            // Invite staff button
+            document.getElementById('invite-staff-btn').addEventListener('click', () => {
+                document.getElementById('invite-form').style.display = 'block';
+            });
+
+            // Cancel invite
+            document.getElementById('cancel-invite').addEventListener('click', () => {
+                document.getElementById('invite-form').style.display = 'none';
+                document.getElementById('staff-invite-form').reset();
+            });
+
+            // Staff invite form
+            document.getElementById('staff-invite-form').addEventListener('submit', handleInviteStaff);
+
+            // Permissions modal
+            document.getElementById('close-permissions').addEventListener('click', closePermissionsModal);
+            document.getElementById('cancel-permissions').addEventListener('click', closePermissionsModal);
+            document.getElementById('save-permissions').addEventListener('click', savePermissions);
+        }
+
+        async function handleInviteStaff(e) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const email = formData.get('email');
+            const role = formData.get('role');
+
+            try {
+                await window.staffService.inviteStaff(email, role);
+                showSuccess(`Invitation sent to ${email}`);
+
+                // Reset form and hide
+                e.target.reset();
+                document.getElementById('invite-form').style.display = 'none';
+
+                // Reload data
+                await loadStaffData();
+            } catch (error) {
+                console.error('Error inviting staff:', error);
+                showError(error.message || 'Failed to send invitation');
+            }
+        }
+
+        async function editPermissions(staffId) {
+            const staff = currentStaff.find(s => s.id === staffId);
+            if (!staff) return;
+
+            // Set staff ID
+            document.getElementById('edit-staff-id').value = staffId;
+
+            // Load current permissions
+            const permissions = staff.permissions || {};
+
+            // Clear all checkboxes
+            document.querySelectorAll('#permissions-form input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            // Set permissions
+            Object.keys(permissions).forEach(permission => {
+                permissions[permission].forEach(action => {
+                    const checkbox = document.querySelector(`input[name="${permission}"][value="${action}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            });
+
+            // Show modal
+            document.getElementById('permissions-modal').style.display = 'block';
+        }
+
+        async function savePermissions() {
+            const staffId = document.getElementById('edit-staff-id').value;
+            const formData = new FormData(document.getElementById('permissions-form'));
+
+            // Build permissions object
+            const permissions = {};
+            const checkboxes = document.querySelectorAll('#permissions-form input[type="checkbox"]:checked');
+
+            checkboxes.forEach(checkbox => {
+                const permission = checkbox.name;
+                const action = checkbox.value;
+
+                if (!permissions[permission]) {
+                    permissions[permission] = [];
+                }
+                permissions[permission].push(action);
+            });
+
+            try {
+                await window.staffService.updateStaffPermissions(staffId, permissions);
+                showSuccess('Permissions updated successfully');
+                closePermissionsModal();
+                await loadStaffData();
+            } catch (error) {
+                console.error('Error updating permissions:', error);
+                showError(error.message || 'Failed to update permissions');
+            }
+        }
+
+        async function removeStaff(staffId) {
+            if (!confirm('Are you sure you want to remove this staff member?')) {
+                return;
+            }
+
+            try {
+                await window.staffService.removeStaff(staffId);
+                showSuccess('Staff member removed successfully');
+                await loadStaffData();
+            } catch (error) {
+                console.error('Error removing staff:', error);
+                showError(error.message || 'Failed to remove staff member');
+            }
+        }
+
+        async function cancelInvitation(invitationId) {
+            if (!confirm('Are you sure you want to cancel this invitation?')) {
+                return;
+            }
+
+            try {
+                await window.staffService.removeStaff(invitationId);
+                showSuccess('Invitation cancelled successfully');
+                await loadStaffData();
+            } catch (error) {
+                console.error('Error cancelling invitation:', error);
+                showError(error.message || 'Failed to cancel invitation');
+            }
+        }
+
+        function closePermissionsModal() {
+            document.getElementById('permissions-modal').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            // Create success notification
+            const notification = document.createElement('div');
+            notification.className = 'notification success';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #d4edda;
+                color: #155724;
+                padding: 15px 20px;
+                border-radius: 4px;
+                z-index: 1000;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function showError(message) {
+            // Create error notification
+            const notification = document.createElement('div');
+            notification.className = 'notification error';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #f8d7da;
+                color: #721c24;
+                padding: 15px 20px;
+                border-radius: 4px;
+                z-index: 1000;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>

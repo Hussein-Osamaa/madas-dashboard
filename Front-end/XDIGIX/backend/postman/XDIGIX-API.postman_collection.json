@@ -1,0 +1,270 @@
+{
+  "info": {
+    "name": "XDIGIX API",
+    "description": "REST API for fulfillment service - inventory, orders, returns, payments",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@xdigix.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Staff One\",\n  \"email\": \"staff@xdigix.com\",\n  \"password\": \"staff123\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "Get All Clients",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/clients" }
+        },
+        {
+          "name": "Create Client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brandName\": \"Acme Brand\",\n  \"owner\": {\n    \"name\": \"John Doe\",\n    \"email\": \"john@acme.com\",\n    \"phone\": \"+1234567890\"\n  },\n  \"subscriptionPlan\": \"standard\"\n}"
+            },
+            "url": "{{baseUrl}}/api/clients"
+          }
+        },
+        {
+          "name": "Get Client by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients/:id",
+            "variable": [{ "key": "id", "value": "" }]
+          }
+        },
+        {
+          "name": "Update Client",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"subscriptionPlan\": \"premium\"\n}" },
+            "url": "{{baseUrl}}/api/clients/:id",
+            "variable": [{ "key": "id", "value": "" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products?clientId=", "host": ["{{baseUrl}}"], "path": ["api", "products"], "query": [{ "key": "clientId", "value": "" }] }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"<CLIENT_ID>\",\n  \"name\": \"Test Product\",\n  \"sku\": \"SKU-001\",\n  \"barcode\": \"1234567890123\",\n  \"costPrice\": 10,\n  \"sellingPrice\": 25,\n  \"quantity\": 100,\n  \"lowStockAlert\": 5\n}"
+            },
+            "url": "{{baseUrl}}/api/products"
+          }
+        },
+        {
+          "name": "Get Product by Barcode",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/products/barcode/1234567890123"
+          }
+        },
+        {
+          "name": "Audit Scan",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"<PRODUCT_ID>\",\n  \"quantity\": 95\n}"
+            },
+            "url": "{{baseUrl}}/api/products/audit"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api", "orders"] }
+          }
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"<CLIENT_ID>\",\n  \"customerName\": \"Jane Doe\",\n  \"phone\": \"+9876543210\",\n  \"address\": \"123 Main St\",\n  \"items\": [\n    {\n      \"product\": \"<PRODUCT_ID>\",\n      \"quantity\": 2\n    }\n  ],\n  \"totalPrice\": 50\n}"
+            },
+            "url": "{{baseUrl}}/api/orders"
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingStatus\": \"processing\",\n  \"paymentStatus\": \"paid\"\n}"
+            },
+            "url": "{{baseUrl}}/api/orders/:id",
+            "variable": [{ "key": "id", "value": "" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Returns",
+      "item": [
+        {
+          "name": "Get All Returns",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/returns" }
+        },
+        {
+          "name": "Create Return",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderRef\": \"<ORDER_ID>\",\n  \"items\": [\n    {\n      \"product\": \"<PRODUCT_ID>\",\n      \"quantity\": 1,\n      \"condition\": \"restock\"\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/returns"
+          }
+        },
+        {
+          "name": "Approve Return",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/returns/:id/approve",
+            "variable": [{ "key": "id", "value": "" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get All Payments",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/payments" }
+        },
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order\": \"<ORDER_ID>\",\n  \"amount\": 50,\n  \"paymentMethod\": \"card\"\n}"
+            },
+            "url": "{{baseUrl}}/api/payments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Scan Logs",
+      "item": [
+        {
+          "name": "Get All Scan Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/scan-logs?limit=20"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/users" }
+        }
+      ]
+    }
+  ]
+}

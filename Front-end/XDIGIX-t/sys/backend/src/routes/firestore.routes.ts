@@ -43,7 +43,9 @@ function isOptionalDocument(path: string): boolean {
     if (parts[2] === 'stats' && parts[3] === 'dashboard') return true;
     if (parts[2] === 'analysis') return true; // topProducts, salesByCategory, etc.
   }
-  if (parts[0] === 'tenants' && parts.length >= 4 && parts[2] === 'settings' && parts[3] === 'shipping') return true;
+  if (parts[0] === 'tenants' && parts.length >= 4 && parts[2] === 'settings') {
+    if (parts[3] === 'shipping' || parts[3] === 'externalWebsite' || parts[3] === 'payments') return true;
+  }
   return false;
 }
 

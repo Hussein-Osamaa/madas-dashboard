@@ -1,0 +1,33 @@
+{
+  "name": "madas-dashboard-mobile",
+  "version": "1.0.0",
+  "description": "MADAS Dashboard - Mobile Business Management System",
+  "main": "start-mobile-server.js",
+  "scripts": {
+    "start": "node start-mobile-server.js",
+    "mobile": "node start-mobile-server.js",
+    "dev": "node start-mobile-server.js",
+    "serve": "node start-mobile-server.js"
+  },
+  "keywords": [
+    "dashboard",
+    "mobile",
+    "business",
+    "management",
+    "pwa",
+    "progressive-web-app"
+  ],
+  "author": "MADAS Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/madas-dashboard.git"
+  },
+  "homepage": "https://your-dashboard-url.com",
+  "bugs": {
+    "url": "https://github.com/your-username/madas-dashboard/issues"
+  }
+}

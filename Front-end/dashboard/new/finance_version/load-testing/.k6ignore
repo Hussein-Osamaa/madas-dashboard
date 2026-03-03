@@ -1,0 +1,6 @@
+# k6 ignore patterns (similar to .gitignore)
+node_modules/
+*.log
+.DS_Store
+
+

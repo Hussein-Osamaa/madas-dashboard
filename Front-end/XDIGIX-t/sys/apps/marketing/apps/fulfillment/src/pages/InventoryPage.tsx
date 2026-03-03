@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
-import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer } from 'lucide-react';
+import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
 import { normalizeProductFromApi } from '../components/SizeVariantsEditor';
 import {
@@ -24,6 +24,13 @@ import {
   type ProductWithStock,
   type Warehouse,
 } from '../lib/api';
+import {
+  exportProductsToExcel,
+  importProductsFromExcel,
+  parseExcelDataToProducts,
+  downloadProductTemplate,
+  type ProductRow,
+} from '../utils/excelUtils';
 
 const emptyForm = { name: '', sku: '', barcode: '', warehouse: '' };
 
@@ -56,6 +63,11 @@ export default function InventoryPage() {
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('');
   const [productToDelete, setProductToDelete] = useState<ProductWithStock | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
+  const [deletingBulk, setDeletingBulk] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm.trim()) return products;
@@ -356,6 +368,109 @@ export default function InventoryPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (!selectedClientId || selectedProducts.length === 0) return;
+    const n = selectedProducts.length;
+    if (!window.confirm(`Delete ${n} selected product${n !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    setBulkActionOpen(false);
+    setDeletingBulk(true);
+    setError('');
+    try {
+      for (const p of selectedProducts) {
+        await deleteProduct(selectedClientId, p.id);
+      }
+      setSelectedIds(new Set());
+      await loadProducts();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setDeletingBulk(false);
+    }
+  };
+
+  const handleExportExcel = async (selectedOnly: boolean) => {
+    setExportDropdownOpen(false);
+    const list = selectedOnly ? selectedProducts : filteredProducts;
+    if (list.length === 0) {
+      alert(selectedOnly ? 'Select products to export.' : 'No products to export.');
+      return;
+    }
+    setExporting(true);
+    try {
+      await exportProductsToExcel(list as ProductRow[]);
+      alert(`Exported ${list.length} product(s) to Excel.`);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedClientId) return;
+    const valid = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'];
+    if (!valid.includes(file.type) && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+      alert('Please select a valid Excel file (.xlsx, .xls, or .csv).');
+      return;
+    }
+    setImporting(true);
+    setError('');
+    try {
+      const raw = await importProductsFromExcel(file);
+      const toImport = parseExcelDataToProducts(raw);
+      if (toImport.length === 0) {
+        alert('No valid products found in the file. Check column names: Product Name, SKU, Main Barcode, Size, Quantity, Size Barcode, Warehouse.');
+        setImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+      let created = 0;
+      let updated = 0;
+      let failed = 0;
+      for (const prod of toImport) {
+        try {
+          const existing = products.find(
+            (p) =>
+              (prod.sku && String((p as Record<string, unknown>).sku ?? '').trim() === prod.sku.trim()) ||
+              String((p as Record<string, unknown>).name ?? '').trim().toLowerCase() === prod.name.trim().toLowerCase()
+          );
+          if (existing) {
+            await updateProduct(selectedClientId, existing.id, {
+              name: prod.name,
+              sku: prod.sku,
+              barcode: prod.barcode,
+              warehouse: prod.warehouse,
+              stock: Object.keys(prod.stock).length ? prod.stock : undefined,
+              sizeBarcodes: Object.keys(prod.sizeBarcodes).length ? prod.sizeBarcodes : undefined,
+            });
+            updated++;
+          } else {
+            await createProduct(selectedClientId, {
+              name: prod.name,
+              sku: prod.sku,
+              barcode: prod.barcode,
+              warehouse: prod.warehouse,
+              stock: prod.stock,
+              sizeBarcodes: prod.sizeBarcodes,
+            });
+            created++;
+          }
+        } catch {
+          failed++;
+        }
+      }
+      await loadProducts();
+      alert(`Import done: ${created} created, ${updated} updated${failed ? `, ${failed} failed` : ''}.`);
+    } catch (err) {
+      setError((err as Error).message);
+      alert('Import failed. Check file format.');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="min-w-0">
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">Warehouse products</h1>
@@ -453,6 +568,64 @@ export default function InventoryPage() {
                   className="w-full pl-9 pr-4 py-2.5 sm:py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                 />
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleImportExcel}
+                className="hidden"
+                aria-hidden
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing || !selectedClientId}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 font-medium border border-gray-300 dark:border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Upload className="w-4 h-4" />
+                {importing ? 'Importing...' : 'Upload Excel'}
+              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setExportDropdownOpen((o) => !o)}
+                  disabled={exporting || filteredProducts.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 font-medium border border-gray-300 dark:border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download className="w-4 h-4" />
+                  {exporting ? 'Exporting...' : `Export${selectedProducts.length > 0 ? ` (${selectedProducts.length})` : ''}`}
+                  <ChevronDown className={`w-4 h-4 transition-transform ${exportDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {exportDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" aria-hidden onClick={() => setExportDropdownOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-20 min-w-[200px] py-1 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1a1b3e] shadow-lg">
+                      <button
+                        type="button"
+                        onClick={() => handleExportExcel(false)}
+                        className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
+                      >
+                        Export all products
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExportExcel(true)}
+                        disabled={selectedProducts.length === 0}
+                        className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50"
+                      >
+                        Export selected ({selectedProducts.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { downloadProductTemplate(); setExportDropdownOpen(false); }}
+                        className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
+                      >
+                        Download template
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setShowPrintModal(true)}
@@ -496,6 +669,15 @@ export default function InventoryPage() {
                       >
                         <WarehouseIcon className="w-4 h-4" />
                         Assign to warehouse
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleBulkDelete}
+                        disabled={deletingBulk}
+                        className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        {deletingBulk ? 'Deleting...' : 'Delete selected'}
                       </button>
                       <button
                         type="button"

@@ -1,0 +1,36 @@
+{
+  "name": "madas-saas-platform",
+  "version": "1.0.0",
+  "description": "SaaS platform with Next.js 14, Firebase, and Stripe",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "shared/*",
+    "backend"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "test": "turbo run test",
+    "deploy": "turbo run deploy",
+    "deploy:marketing": "turbo run deploy --filter=marketing",
+    "deploy:dashboard": "turbo run deploy --filter=dashboard",
+    "deploy:webbuilder": "turbo run deploy --filter=webbuilder",
+    "deploy:admin": "turbo run deploy --filter=admin"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^1.10.12",
+    "turbo": "^1.10.12",
+    "prettier": "^3.0.0",
+    "typescript": "^5.2.2"
+  },
+  "packageManager": "npm@10.0.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

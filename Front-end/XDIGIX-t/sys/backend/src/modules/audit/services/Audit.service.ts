@@ -3,8 +3,9 @@ import { AuditScanModel } from '../models/AuditScan.model';
 import { recordTransaction, getAvailableStock } from '../../inventory/services/Inventory.service';
 import { FirestoreDoc } from '../../../schemas/document.schema';
 import { StaffUser } from '../../../schemas/staff-user.schema';
-import { getIo } from '../../../realtime';
+import { getIo, emitWarehouseUpdate } from '../../../realtime';
 import { StockTransactionModel } from '../../inventory/models/StockTransaction.model';
+import { recordBulkPhysicalCount } from './AuditComparison.service';
 
 const ACTIVE_STATUSES = ['ACTIVE', 'in_progress'] as const;
 
@@ -362,6 +363,24 @@ export async function finishAudit(
     }
   }
 
+  // Build SKU-based counts for audit comparison (physical vs system from movements)
+  const productIdsNeedingSku = [...new Set((scans as Array<{ productId: string; productSku?: string }>).filter((s) => !s.productSku?.trim()).map((s) => s.productId))];
+  const productIdToSku = new Map<string, string>();
+  if (productIdsNeedingSku.length > 0) {
+    const docs = await FirestoreDoc.find({ businessId: clientId, coll: 'products', docId: { $in: productIdsNeedingSku } }).select('docId data').lean();
+    for (const d of docs) {
+      const docId = (d as { docId: string }).docId;
+      const sku = ((d as { data?: { sku?: string } }).data?.sku ?? docId)?.trim?.();
+      if (sku) productIdToSku.set(docId, sku);
+    }
+  }
+  const skuCounts = new Map<string, number>();
+  for (const s of scans as Array<{ productId: string; productSku?: string }>) {
+    const sku = (s.productSku?.trim() || productIdToSku.get(s.productId) || s.productId).trim();
+    if (sku) skuCounts.set(sku, (skuCounts.get(sku) ?? 0) + 1);
+  }
+  const auditComparisonCounts = Array.from(skuCounts.entries()).map(([sku, physicalCount]) => ({ sku, physicalCount }));
+
   // All products for this client: Firestore products + any in ledger
   const productDocs = await FirestoreDoc.find({ businessId: clientId, coll: 'products' }).select('docId').lean();
   const productIdsFromDocs = productDocs.map((d: { docId: string }) => d.docId);
@@ -412,6 +431,26 @@ export async function finishAudit(
   session.status = 'FINISHED';
   session.finishedAt = new Date();
   await session.save();
+
+  // Auto-generate audit comparison (physical vs system from movements) for dashboard/alerts
+  if (auditComparisonCounts.length > 0) {
+    try {
+      const result = await recordBulkPhysicalCount({
+        clientId,
+        counts: auditComparisonCounts,
+        shiftName: `Audit ${session.joinCode}`,
+        performedBy: session.createdBy,
+      });
+      const anyAlert = result.comparisons?.some((c) => (c as { alertTriggered?: boolean }).alertTriggered);
+      if (anyAlert) {
+        const serverIo = getIo();
+        if (serverIo) emitWarehouseUpdate(serverIo, { type: 'audit_alert', clientId: String(clientId) });
+      }
+    } catch (e) {
+      // Don't fail finish; comparison is supplementary
+      console.error('[finishAudit] audit comparison error:', e);
+    }
+  }
 
   const serverIo = getIo();
   if (serverIo) {

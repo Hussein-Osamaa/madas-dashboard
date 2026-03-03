@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Plans Customization - Next Gen Coders</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Enhanced Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Particle System -->
+    <div class="particle-system" id="particleSystem"></div>
+
+    <!-- Geometric Shapes -->
+    <div class="geometric-shapes" id="geometricShapes"></div>
+
+    <!-- Floating Elements -->
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+
+    <!-- Navigation -->
+    <nav class="glass-nav">
+        <div class="nav-container">
+            <div class="nav-content">
+                <div class="nav-left">
+                    <div class="nav-brand">
+                        <a href="index.html" class="brand-link">
+                            <img src="Assets/Img/logo.jpeg" alt="Next Gen Coders" class="logo-img">
+                        </a>
+                    </div>
+                    <div class="nav-links" id="navLinks">
+                        <a href="index.html" class="nav-link" data-en="Home" data-ar="الرئيسية">Home</a>
+                        <a href="dashboard.html" class="nav-link" data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</a>
+                        <a href="plans-customization.html" class="nav-link active" data-en="Plans" data-ar="الخطط">Plans</a>
+                        <a href="contact.html" class="nav-link" data-en="Contact" data-ar="اتصل بنا">Contact</a>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <button class="language-toggle" id="languageToggle" aria-label="Toggle Language">
+                        <i class="fas fa-globe"></i>
+                        <span class="lang-text" data-en="EN" data-ar="عربي">EN</span>
+                    </button>
+                    <a href="login.html" class="nav-link login-link" data-en="Login" data-ar="تسجيل الدخول">Login</a>
+                </div>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Plans Customization Section -->
+    <section class="plans-customization-section">
+        <div class="container">
+            <div class="customization-header">
+                <div class="glass-card">
+                    <h1 class="customization-title" data-en="Plans Customization" data-ar="تخصيص الخطط">Plans Customization</h1>
+                    <p class="customization-subtitle" data-en="Customize subscription plans, features, and pricing" data-ar="خصص خطط الاشتراك والميزات والأسعار">Customize subscription plans, features, and pricing</p>
+                </div>
+            </div>
+
+            <!-- Plan Editor -->
+            <div class="plan-editor">
+                <div class="glass-card">
+                    <div class="editor-header">
+                        <h2 class="editor-title" data-en="Plan Editor" data-ar="محرر الخطط">Plan Editor</h2>
+                        <div class="editor-actions">
+                            <button class="glass-button secondary" id="addPlanBtn">
+                                <i class="fas fa-plus"></i>
+                                <span data-en="Add Plan" data-ar="إضافة خطة">Add Plan</span>
+                            </button>
+                            <button class="glass-button primary" id="savePlansBtn">
+                                <i class="fas fa-save"></i>
+                                <span data-en="Save Changes" data-ar="حفظ التغييرات">Save Changes</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="plans-container" id="plansContainer">
+                        <!-- Plans will be dynamically generated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Matrix -->
+            <div class="features-matrix">
+                <div class="glass-card">
+                    <h2 class="matrix-title" data-en="Features Matrix" data-ar="مصفوفة الميزات">Features Matrix</h2>
+                    <div class="matrix-container" id="featuresMatrix">
+                        <!-- Features matrix will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plan Preview -->
+            <div class="plan-preview">
+                <div class="glass-card">
+                    <h2 class="preview-title" data-en="Plan Preview" data-ar="معاينة الخطة">Plan Preview</h2>
+                    <div class="preview-container" id="planPreview">
+                        <!-- Plan preview will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="glass-card footer-card">
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <h3 class="footer-title">Next Gen Coders</h3>
+                        <p class="footer-description"
+                            data-en="Empowering companies to build their digital future with cutting-edge web development tools and comprehensive business solutions powered by AI and quantum computing."
+                            data-ar="تمكين الشركات لبناء مستقبلها الرقمي باستخدام أدوات تطوير الويب المتطورة والحلول التجارية الشاملة المدعومة بالذكاء الاصطناعي والحوسبة الكمية.">
+                            Empowering companies to build their digital future with cutting-edge web development tools
+                            and comprehensive business solutions powered by AI and quantum computing.
+                        </p>
+                    </div>
+
+                    <div class="footer-links">
+                        <div class="footer-column">
+                            <h4 class="footer-heading" data-en="Product" data-ar="المنتج">Product</h4>
+                            <ul class="footer-list">
+                                <li><a href="plans.html" class="footer-link" data-en="Plans" data-ar="الخطط">Plans</a></li>
+                                <li><a href="index.html#features" class="footer-link" data-en="Features" data-ar="الميزات">Features</a></li>
+                                <li><a href="#" class="footer-link" data-en="Pricing" data-ar="الأسعار">Pricing</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="footer-column">
+                            <h4 class="footer-heading" data-en="Support" data-ar="الدعم">Support</h4>
+                            <ul class="footer-list">
+                                <li><a href="#" class="footer-link" data-en="Help Center" data-ar="مركز المساعدة">Help Center</a></li>
+                                <li><a href="contact.html" class="footer-link" data-en="Contact Us" data-ar="اتصل بنا">Contact Us</a></li>
+                                <li><a href="#" class="footer-link" data-en="Documentation" data-ar="الوثائق">Documentation</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-bottom">
+                    <p class="footer-copyright"
+                        data-en="© 2024 Next Gen Coders. All rights reserved. Built for the future."
+                        data-ar="© 2024 مطورو الجيل القادم. جميع الحقوق محفوظة. مبني للمستقبل.">
+                        © 2024 Next Gen Coders. All rights reserved. Built for the future.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="Assets/JS/script.js"></script>
+    <script src="Assets/JS/plans-customization.js"></script>
+</body>
+
+</html>

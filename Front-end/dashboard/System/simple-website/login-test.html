@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-accent: #FFD300;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-[var(--madas-primary)] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="material-icons text-white text-2xl">login</span>
+            </div>
+            <h1 class="text-2xl font-bold text-[var(--madas-primary)] mb-2">Login Test Page</h1>
+            <p class="text-gray-600">This page confirms the login system is working</p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="p-4 bg-green-50 rounded-lg">
+                <h3 class="font-semibold text-green-800 mb-2">✅ Login System Status</h3>
+                <p class="text-green-700 text-sm">The login system is fully functional and not disabled.</p>
+            </div>
+
+            <div class="p-4 bg-blue-50 rounded-lg">
+                <h3 class="font-semibold text-blue-800 mb-2">🔗 Available Login Pages</h3>
+                <div class="space-y-2 text-sm">
+                    <a href="login.html" class="block text-blue-600 hover:text-blue-800 underline">Main Login Page</a>
+                    <a href="Dashboard/Login.html" class="block text-blue-600 hover:text-blue-800 underline">Dashboard
+                        Login (Redirects)</a>
+                    <a href="Dashboard/mobile-dashboard/test-login.html"
+                        class="block text-blue-600 hover:text-blue-800 underline">Test Login Page</a>
+                </div>
+            </div>
+
+            <div class="p-4 bg-yellow-50 rounded-lg">
+                <h3 class="font-semibold text-yellow-800 mb-2">⚠️ If You See "Login Temporarily Disabled"</h3>
+                <p class="text-yellow-700 text-sm">This might be due to:</p>
+                <ul class="text-yellow-700 text-sm mt-2 list-disc list-inside">
+                    <li>Browser cache - try hard refresh (Ctrl+F5)</li>
+                    <li>Wrong URL - make sure you're accessing the correct page</li>
+                    <li>Old bookmark - update your bookmark</li>
+                </ul>
+            </div>
+
+            <div class="flex space-x-4">
+                <a href="login.html"
+                    class="flex-1 bg-[var(--madas-primary)] text-white py-3 rounded-lg text-center font-semibold hover:bg-[#1f3c19] transition-colors">
+                    Go to Main Login
+                </a>
+                <a href="Dashboard/index.html"
+                    class="flex-1 bg-gray-600 text-white py-3 rounded-lg text-center font-semibold hover:bg-gray-700 transition-colors">
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center text-sm text-gray-500">
+            <p>Current URL: <span id="currentUrl"></span></p>
+            <p>Timestamp: <span id="timestamp"></span></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+    </script>
+</body>
+
+</html>

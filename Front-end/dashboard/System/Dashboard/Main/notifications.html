@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Notifications - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com">
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+                    
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+        });</script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/img/madas-logo.png">
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #181825;
+            --text-main: #27491F;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+            background: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        /* Override specific backgrounds */
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .border-gray-200 {
+            border-color: var(--card-border) !important;
+        }
+
+        .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        .hover\:bg-gray-100:hover {
+            background-color: var(--card-bg) !important;
+        }
+
+        .hover\:bg-gray-200:hover {
+            background-color: var(--card-border) !important;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification-item {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .notification-item.unread {
+            background: #eff6ff;
+        }
+
+        .notification-item.unread:hover {
+            background: #dbeafe;
+        }
+
+        .notification-item.read:hover {
+            background: #f9fafb;
+        }
+
+        .notification-icon {
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .notification-title {
+            font-weight: 600;
+        }
+
+        .notification-time {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .notification-list {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <img src="../assets/img/madas.png" alt="Madas Logo" class="w-full h-full object-cover">
+                    </div>
+                    <h1 class="text-xl font-bold text-[var(--madas-primary)]">MADAS Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                    <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                        <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <a href="./notifications.html" class="relative">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span id="notificationCount"
+                        class="bg-red-500 text-white text-xs rounded-full px-2 py-1 absolute -top-2 -right-2"
+                        style="display:none;">0</span>
+                </a>
+                <div class="flex items-center space-x-3">
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="flex h-screen pt-16">
+        <!-- Remove Sidebar -->
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 w-full">
+            <div class="p-6 lg:p-8 max-w-3xl mx-auto">
+                <div class="flex items-center mb-8">
+                    <button id="backBtn"
+                        class="flex items-center text-[var(--madas-primary)] bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg mr-4 transition-colors">
+                        <span class="material-icons mr-2">arrow_back</span>
+                        Back
+                    </button>
+                    <div>
+                        <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-1">All Notifications</h2>
+                        <p class="text-gray-600">View all your notifications in one place</p>
+                    </div>
+                </div>
+                <div class="notification-list space-y-4" id="notificationList">
+                    <!-- Notifications will be loaded here -->
+                    <div class="flex items-center justify-center py-12 text-gray-400">
+                        <span class="material-icons text-5xl mr-2">notifications_none</span>
+                        <span>No notifications found</span>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-8">
+                    <button id="markAllReadBtn"
+                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                        <span class="material-icons text-sm">done_all</span>
+                        <span>Mark all as read</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script type="module">
+        import { initializeNotificationSystem, getNotificationSystem } from "../js/notification-system.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        // Dark mode toggle functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const darkToggle = document.getElementById("darkToggle");
+            const darkToggleIcon = document.getElementById("darkToggleIcon");
+
+            // Check for saved dark mode preference
+            const isDarkMode = localStorage.getItem("darkMode") === "true";
+            if (isDarkMode) {
+                document.body.classList.add("dark-mode");
+                updateDarkToggleIcon(true);
+            }
+
+            // Toggle dark mode
+            darkToggle.addEventListener("click", () => {
+                const isDark = document.body.classList.toggle("dark-mode");
+                localStorage.setItem("darkMode", isDark);
+                updateDarkToggleIcon(isDark);
+            });
+
+            function updateDarkToggleIcon(isDark) {
+                if (isDark) {
+                    darkToggleIcon.innerHTML = `
+                        <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    `;
+                } else {
+                    darkToggleIcon.innerHTML = `
+                        <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    `;
+                }
+            }
+        });
+
+        // Mobile menu toggle
+        const toggleBtn = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        if (toggleBtn && sidebar) {
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+        }
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 1024 && !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+        // Auth and user info
+        const auth = getAuth();
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "../Login.html";
+                return;
+            }
+            // Set user info
+            document.getElementById("user-name").textContent = user.displayName || user.email.split("@")[0];
+            document.getElementById("user-email").textContent = user.email;
+            document.getElementById("user-initial").textContent = (user.displayName ? user.displayName[0] : user.email[0]).toUpperCase();
+        });
+        // Logout logic
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                signOut(auth).then(() => {
+                    window.location.href = "../Login.html";
+                });
+            });
+        }
+
+        // Profile button
+        const profileBtn = document.getElementById("profile-btn");
+        if (profileBtn) {
+            profileBtn.addEventListener("click", () => {
+                window.location.href = "./profile.html";
+            });
+        }
+
+        // Back button logic
+        document.getElementById('backBtn').addEventListener('click', () => {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '../index.html';
+            }
+        });
+        // Notification logic
+        let notificationSystem;
+        async function loadNotifications() {
+            notificationSystem = getNotificationSystem();
+            await notificationSystem.loadNotifications();
+            renderNotifications();
+        }
+        function renderNotifications() {
+            const notificationList = document.getElementById('notificationList');
+            // Only show 'real' notifications: type 'warning' or title/message contains 'stock'
+            const realNotifications = notificationSystem.notifications.filter(n => {
+                const t = (n.title || '').toLowerCase();
+                const m = (n.message || '').toLowerCase();
+                return n.type === 'warning' || t.includes('stock') || m.includes('stock');
+            });
+            if (!realNotifications || realNotifications.length === 0) {
+                notificationList.innerHTML = `<div class="flex items-center justify-center py-12 text-gray-400">
+                    <span class="material-icons text-5xl mr-2">notifications_none</span>
+                    <span>No notifications found</span>
+                </div>`;
+                return;
+            }
+            notificationList.innerHTML = realNotifications.map(n => `
+                <div class="notification-item ${n.read ? 'read' : 'unread'} flex items-start space-x-4 p-4 rounded-lg border border-gray-100" data-id="${n.id}">
+                    <div class="notification-icon ${notificationSystem.getNotificationIconColor(n.type)}">
+                        <span class="material-icons">${n.icon}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="notification-title text-gray-900 mb-1">${n.title}</div>
+                        <div class="text-gray-600 mb-1">${n.message}</div>
+                        <div class="notification-time">${notificationSystem.formatTimestamp(n.timestamp)}</div>
+                    </div>
+                    ${!n.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>' : ''}
+                    <button class="delete-notification-btn ml-4 text-red-500 hover:text-red-700" title="Delete">
+                        <span class="material-icons">delete</span>
+                    </button>
+                </div>
+            `).join('');
+            // Click to mark as read
+            notificationList.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', async (e) => {
+                    // Prevent delete button from marking as read
+                    if (e.target.closest('.delete-notification-btn')) return;
+                    const id = item.getAttribute('data-id');
+                    await notificationSystem.markNotificationAsRead(id);
+                    item.classList.remove('unread');
+                    item.classList.add('read');
+                    item.querySelector('.w-2.h-2')?.remove();
+                });
+            });
+            // Delete button logic
+            notificationList.querySelectorAll('.delete-notification-btn').forEach((btn, idx) => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const item = btn.closest('.notification-item');
+                    const id = item.getAttribute('data-id');
+                    // Remove from Firestore
+                    try {
+                        const { getFirestore, doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+                        const db = getFirestore();
+                        await deleteDoc(doc(db, "notifications", id));
+                        item.remove();
+                    } catch (err) {
+                        alert('Failed to delete notification: ' + err.message);
+                    }
+                });
+            });
+        }
+        // Mark all as read
+        document.getElementById('markAllReadBtn').addEventListener('click', async () => {
+            await notificationSystem.markAllNotificationsAsRead();
+            renderNotifications();
+        });
+        // Initial load
+        initializeNotificationSystem().then(loadNotifications);
+
+        // Dark mode toggle functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z"/>';
+            }
+        }
+
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+    </script>
+</body>
+
+</html>

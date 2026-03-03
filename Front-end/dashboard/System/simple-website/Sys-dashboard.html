@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>System Dashboard - Next Gen Coders</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Enhanced Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Particle System -->
+    <div class="particle-system" id="particleSystem"></div>
+
+    <!-- Geometric Shapes -->
+    <div class="geometric-shapes" id="geometricShapes"></div>
+
+    <!-- Floating Elements -->
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+
+    <!-- Navigation -->
+    <nav class="glass-nav">
+        <div class="nav-container">
+            <div class="nav-content">
+                <div class="nav-left">
+                    <div class="nav-brand">
+                        <a href="index.html" class="brand-link">
+                            <img src="Assets/Img/logo.jpeg" alt="Next Gen Coders" class="logo-img">
+                        </a>
+                    </div>
+                    <div class="nav-links" id="navLinks">
+                        <a href="index.html" class="nav-link" data-en="Home" data-ar="الرئيسية">Home</a>
+                        <a href="dashboard.html" class="nav-link active" data-en="Dashboard"
+                            data-ar="لوحة التحكم">Dashboard</a>
+                        <a href="plans-customization.html" class="nav-link" data-en="Plans" data-ar="الخطط">Plans</a>
+                        <a href="contact.html" class="nav-link" data-en="Contact" data-ar="اتصل بنا">Contact</a>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <button class="language-toggle" id="languageToggle" aria-label="Toggle Language">
+                        <i class="fas fa-globe"></i>
+                        <span class="lang-text" data-en="EN" data-ar="عربي">EN</span>
+                    </button>
+                    <a href="login.html" class="nav-link login-link" data-en="Login" data-ar="تسجيل الدخول">Login</a>
+                </div>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Section -->
+    <section class="dashboard-section">
+        <div class="container">
+            <div class="dashboard-header">
+                <div class="glass-card">
+                    <h1 class="dashboard-title" data-en="System Dashboard" data-ar="لوحة تحكم النظام">System Dashboard
+                    </h1>
+                    <p class="dashboard-subtitle" data-en="Manage clients, subscriptions, and system access"
+                        data-ar="إدارة العملاء والاشتراكات والوصول للنظام">Manage clients, subscriptions, and system
+                        access</p>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="glass-card stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number" id="totalClients">0</h3>
+                        <p class="stat-label" data-en="Total Clients" data-ar="إجمالي العملاء">Total Clients</p>
+                    </div>
+                </div>
+
+                <div class="glass-card stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number" id="activeSubscriptions">0</h3>
+                        <p class="stat-label" data-en="Active Subscriptions" data-ar="الاشتراكات النشطة">Active
+                            Subscriptions</p>
+                    </div>
+                </div>
+
+                <div class="glass-card stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number" id="revenue">$0</h3>
+                        <p class="stat-label" data-en="Monthly Revenue" data-ar="الإيرادات الشهرية">Monthly Revenue</p>
+                    </div>
+                </div>
+
+                <div class="glass-card stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number" id="newThisMonth">0</h3>
+                        <p class="stat-label" data-en="New This Month" data-ar="جديد هذا الشهر">New This Month</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clients Table -->
+            <div class="clients-section">
+                <div class="glass-card">
+                    <div class="section-header">
+                        <h2 class="section-title" data-en="Client Management" data-ar="إدارة العملاء">Client Management
+                        </h2>
+                        <div class="section-actions">
+                            <button class="glass-button secondary" id="refreshBtn">
+                                <i class="fas fa-sync-alt"></i>
+                                <span data-en="Refresh" data-ar="تحديث">Refresh</span>
+                            </button>
+                            <button class="glass-button primary" id="exportBtn">
+                                <i class="fas fa-download"></i>
+                                <span data-en="Export Data" data-ar="تصدير البيانات">Export Data</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="clients-table" id="clientsTable">
+                            <thead>
+                                <tr>
+                                    <th data-en="Client ID" data-ar="معرف العميل">Client ID</th>
+                                    <th data-en="Name" data-ar="الاسم">Name</th>
+                                    <th data-en="Email" data-ar="البريد الإلكتروني">Email</th>
+                                    <th data-en="Company" data-ar="الشركة">Company</th>
+                                    <th data-en="Plan" data-ar="الخطة">Plan</th>
+                                    <th data-en="Status" data-ar="الحالة">Status</th>
+                                    <th data-en="Joined" data-ar="تاريخ الانضمام">Joined</th>
+                                    <th data-en="Actions" data-ar="الإجراءات">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientsTableBody">
+                                <!-- Client data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Emails Section -->
+            <div class="business-emails-section">
+                <div class="glass-card">
+                    <div class="section-header">
+                        <h2 class="section-title" data-en="Business Main Emails"
+                            data-ar="البريد الإلكتروني الرئيسي للشركات">Business Main Emails</h2>
+                        <div class="section-actions">
+                            <button class="glass-button secondary" id="refreshBusinessEmailsBtn">
+                                <i class="fas fa-sync-alt"></i>
+                                <span data-en="Refresh" data-ar="تحديث">Refresh</span>
+                            </button>
+                            <button class="glass-button primary" id="exportBusinessEmailsBtn">
+                                <i class="fas fa-download"></i>
+                                <span data-en="Export Emails" data-ar="تصدير البريد الإلكتروني">Export Emails</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="business-emails-container">
+                        <div class="business-emails-grid" id="businessEmailsGrid">
+                            <!-- Business emails will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plan Access Matrix -->
+            <div class="access-matrix-section">
+                <div class="glass-card">
+                    <h2 class="section-title" data-en="Plan Access Matrix" data-ar="مصفوفة وصول الخطط">Plan Access
+                        Matrix</h2>
+                    <div class="access-matrix" id="accessMatrix">
+                        <!-- Plan access details will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="glass-card footer-card">
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <h3 class="footer-title">Next Gen Coders</h3>
+                        <p class="footer-description"
+                            data-en="Empowering companies to build their digital future with cutting-edge web development tools and comprehensive business solutions powered by AI and quantum computing."
+                            data-ar="تمكين الشركات لبناء مستقبلها الرقمي باستخدام أدوات تطوير الويب المتطورة والحلول التجارية الشاملة المدعومة بالذكاء الاصطناعي والحوسبة الكمية.">
+                            Empowering companies to build their digital future with cutting-edge web development tools
+                            and comprehensive business solutions powered by AI and quantum computing.
+                        </p>
+                    </div>
+
+                    <div class="footer-links">
+                        <div class="footer-column">
+                            <h4 class="footer-heading" data-en="Product" data-ar="المنتج">Product</h4>
+                            <ul class="footer-list">
+                                <li><a href="plans.html" class="footer-link" data-en="Plans" data-ar="الخطط">Plans</a>
+                                </li>
+                                <li><a href="index.html#features" class="footer-link" data-en="Features"
+                                        data-ar="الميزات">Features</a></li>
+                                <li><a href="#" class="footer-link" data-en="Pricing" data-ar="الأسعار">Pricing</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="footer-column">
+                            <h4 class="footer-heading" data-en="Support" data-ar="الدعم">Support</h4>
+                            <ul class="footer-list">
+                                <li><a href="#" class="footer-link" data-en="Help Center" data-ar="مركز المساعدة">Help
+                                        Center</a></li>
+                                <li><a href="contact.html" class="footer-link" data-en="Contact Us"
+                                        data-ar="اتصل بنا">Contact Us</a></li>
+                                <li><a href="#" class="footer-link" data-en="Documentation"
+                                        data-ar="الوثائق">Documentation</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-bottom">
+                    <p class="footer-copyright"
+                        data-en="© 2024 Next Gen Coders. All rights reserved. Built for the future."
+                        data-ar="© 2024 مطورو الجيل القادم. جميع الحقوق محفوظة. مبني للمستقبل.">
+                        © 2024 Next Gen Coders. All rights reserved. Built for the future.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="Assets/JS/script.js"></script>
+    <script src="Assets/JS/dashboard.js"></script>
+</body>
+
+</html>

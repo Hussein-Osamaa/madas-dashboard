@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scratch Card - MADAS</title>
+    <script src="https://cdn.tailwindcss.com">
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+                    
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+        });</script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/images/madas-logo.png">
+    <link rel="stylesheet" href="../assets/CSS/orders.css">
+    <style>
+        :root {
+            /* Modern Color Palette */
+            --primary-bg: #0a0a0a;
+            --secondary-bg: #1a1a1a;
+            --accent-blue: #00d4ff;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-orange: #f97316;
+            --text-white: #ffffff;
+            --text-gray: #a1a1aa;
+            --text-muted: #71717a;
+
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #8b5cf6 50%, #ec4899 100%);
+            --gradient-secondary: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%);
+            --gradient-dark: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+            /* Shadows */
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.3);
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.2);
+
+            /* Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+
+            /* Spacing */
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --spacing-xl: 48px;
+
+            /* Typography */
+            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+            /* Legacy variables for compatibility */
+            --madas-primary: #00d4ff;
+            --madas-accent: #8b5cf6;
+            --bg-main: #0a0a0a;
+            --text-main: #ffffff;
+            --card-bg: rgba(26, 26, 26, 0.8);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+            font-family: var(--font-primary);
+            background: var(--primary-bg);
+            color: var(--text-white);
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
+            animation: backgroundFloat 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(-10px, -10px) scale(1.05);
+            }
+
+            66% {
+                transform: translate(10px, 10px) scale(0.95);
+            }
+        }
+
+        /* Siri Background Effects */
+        body::after {
+            /* Keep the subtle star/particle effect if desired, or comment out for pure Siri look */
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: none;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Floating Background Elements */
+        .floating-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.3;
+            animation: float 15s ease-in-out infinite;
+        }
+
+        .floating-element:nth-child(1) {
+            background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+            width: 300px;
+            height: 300px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .floating-element:nth-child(2) {
+            background: radial-gradient(circle, var(--accent-purple) 0%, transparent 70%);
+            width: 250px;
+            height: 250px;
+            top: 60%;
+            right: 15%;
+            animation-delay: -5s;
+        }
+
+        .floating-element:nth-child(3) {
+            background: radial-gradient(circle, var(--accent-pink) 0%, transparent 70%);
+            width: 200px;
+            height: 200px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: -10s;
+        }
+
+        .floating-element:nth-child(4) {
+            background: radial-gradient(circle, var(--accent-orange) 0%, transparent 70%);
+            width: 180px;
+            height: 180px;
+            top: 30%;
+            right: 30%;
+            animation-delay: -7s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px) translateX(0px) rotate(0deg);
+            }
+
+            25% {
+                transform: translateY(-30px) translateX(20px) rotate(90deg);
+            }
+
+            50% {
+                transform: translateY(-15px) translateX(-15px) rotate(180deg);
+            }
+
+            75% {
+                transform: translateY(20px) translateX(10px) rotate(270deg);
+            }
+        }
+
+        @keyframes backgroundFloat {
+
+            0%,
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            33% {
+                transform: translateY(-20px) rotate(1deg);
+            }
+
+            66% {
+                transform: translateY(10px) rotate(-1deg);
+            }
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background: var(--primary-bg);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .scratch-card-container {
+            background: rgba(26, 26, 26, 0.9);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-soft);
+            padding: var(--spacing-xl) var(--spacing-lg);
+            max-width: 900px;
+            width: 100%;
+            margin: 2rem auto;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(20px);
+            animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+        }
+
+        .scratch-card-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-glass);
+            border-radius: var(--radius-xl);
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        .scratch-card-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-glass);
+            border-radius: var(--radius-xl);
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .scratch-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-white);
+            margin-bottom: var(--spacing-md);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            font-family: var(--font-display);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: textGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes textGlow {
+            from {
+                filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.5));
+            }
+
+            to {
+                filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.8));
+            }
+        }
+
+        .scratch-message {
+            color: var(--text-gray);
+            font-size: 1.1rem;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        #cardsRow {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: nowrap;
+            align-items: flex-start;
+        }
+
+        .card-choice {
+            flex: 1;
+            max-width: 260px;
+            min-width: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .scratch-canvas {
+            display: block;
+            margin: 0 auto 1rem auto;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            background: #bdbdbd;
+            touch-action: none;
+            width: 100%;
+            height: auto;
+            max-width: 240px;
+            min-width: 140px;
+            aspect-ratio: 2/1;
+        }
+
+        .prize-reveal {
+            margin-top: 0.5rem;
+            animation: fadeInPrize 0.7s cubic-bezier(.68, -0.55, .27, 1.55);
+        }
+
+        @keyframes fadeInPrize {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .confetti {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .back-button {
+            position: fixed;
+            top: var(--spacing-md);
+            left: var(--spacing-md);
+            z-index: 1000;
+            background: var(--gradient-primary);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-md);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-soft);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            color: var(--text-white);
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .back-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: var(--radius-md);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: var(--gradient-secondary);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .back-button:hover::before {
+            opacity: 1;
+        }
+
+        .back-button:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .back-button svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Modern Button Styles */
+        #playAgainBtn {
+            background: var(--gradient-primary);
+            color: var(--text-white);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-md);
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #playAgainBtn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: var(--radius-md);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #playAgainBtn:hover {
+            background: var(--gradient-secondary);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: var(--shadow-glow);
+        }
+
+        #playAgainBtn:hover::before {
+            opacity: 1;
+        }
+
+        #playAgainBtn:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        @media (max-width: 900px) {
+            .scratch-card-container {
+                padding: 1.2rem 0.5rem 1rem 0.5rem;
+            }
+
+            #cardsRow {
+                gap: 1rem;
+            }
+
+            .card-choice {
+                max-width: 180px;
+            }
+
+            .scratch-canvas {
+                max-width: 160px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            #cardsRow {
+                flex-direction: column;
+                align-items: center;
+                gap: 1.5rem;
+            }
+
+            .card-choice {
+                max-width: 100%;
+                min-width: 0;
+            }
+
+            .scratch-canvas {
+                max-width: 98vw;
+                min-width: 0;
+            }
+        }
+
+        .galaxy-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        body>.scratch-card-container,
+        body>.dark-toggle {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body>
+    <!-- Floating Background Elements -->
+    <div class="floating-bg">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+    </div>
+
+    <canvas id="galaxyBg" class="galaxy-bg"></canvas>
+    <a href="game-hub.html" class="back-button" title="Back to Madas Hub">
+        <svg viewBox="0 0 24 24">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+        </svg>
+        BACK
+    </a>
+    <div class="scratch-card-container">
+        <div class="scratch-title">🎉 Scratch & Win!</div>
+        <div class="scratch-message">Choose a card and scratch to reveal your prize!</div>
+        <div id="cardsRow"
+            style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1.5rem; flex-wrap: nowrap; align-items: flex-start;">
+            <div class="card-choice" style="flex:1; max-width:260px; min-width:180px;">
+                <canvas id="scratchCanvas0" class="scratch-canvas" width="240" height="120"></canvas>
+            </div>
+            <div class="card-choice" style="flex:1; max-width:260px; min-width:180px;">
+                <canvas id="scratchCanvas1" class="scratch-canvas" width="240" height="120"></canvas>
+            </div>
+            <div class="card-choice" style="flex:1; max-width:260px; min-width:180px;">
+                <canvas id="scratchCanvas2" class="scratch-canvas" width="240" height="120"></canvas>
+            </div>
+        </div>
+        <button id="playAgainBtn" style="display:none;"
+            class="mt-4 bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#1f3c19] transition">Play
+            Again</button>
+        <div class="confetti" id="confetti"></div>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore as getFirestore2, doc as doc2, getDoc as getDoc2, setDoc as setDoc2, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3",
+            measurementId: "G-NQVR1F4N3Q"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth();
+        const db2 = getFirestore2(app);
+        let streakUpdatedToday = false;
+
+        // Show loading spinner
+        const container = document.querySelector('.scratch-card-container');
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'py-8 text-center';
+        loadingDiv.innerHTML = '<span class="animate-spin inline-block w-8 h-8 border-4 border-gray-300 border-t-[var(--madas-primary)] rounded-full"></span> <span class="text-gray-500">Loading prizes...</span>';
+        container.appendChild(loadingDiv);
+
+        function sanitizePrizeColor(color) {
+            // Prevent using the scratch layer color as a prize color
+            if (!color || color.toLowerCase() === '#bdbdbd') return '#FFD700'; // gold fallback
+            return color;
+        }
+
+        async function getPrizesFromFirestore() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "scratchCardPrizes"));
+                const prizes = querySnapshot.docs.map(doc => {
+                    const data = doc.data();
+                    // Sanitize color
+                    if (data.color) data.color = sanitizePrizeColor(data.color);
+                    return { id: doc.id, ...data };
+                });
+                console.log('Fetched prizes:', prizes);
+                return prizes;
+            } catch (err) {
+                console.error('Error fetching prizes:', err);
+                throw err;
+            }
+        }
+
+        function pickPrizesForCards(prizes) {
+            if (!prizes.length) return [null, null, null];
+            let arr = [];
+            for (let i = 0; i < 3; i++) {
+                arr.push(prizes[Math.floor(Math.random() * prizes.length)]);
+            }
+            return arr;
+        }
+
+        // Add a scratch texture pattern
+        let scratchPattern = null;
+        function createScratchPattern(ctx) {
+            const patternCanvas = document.createElement('canvas');
+            patternCanvas.width = 32;
+            patternCanvas.height = 32;
+            const pctx = patternCanvas.getContext('2d');
+            // Draw metallic/foil-like pattern
+            const grad = pctx.createLinearGradient(0, 0, 32, 32);
+            grad.addColorStop(0, '#bdbdbd');
+            grad.addColorStop(0.5, '#e0e0e0');
+            grad.addColorStop(1, '#bdbdbd');
+            pctx.fillStyle = grad;
+            pctx.fillRect(0, 0, 32, 32);
+            // Add some noise
+            for (let i = 0; i < 80; i++) {
+                pctx.fillStyle = `rgba(180,180,180,${Math.random() * 0.25 + 0.1})`;
+                pctx.beginPath();
+                pctx.arc(Math.random() * 32, Math.random() * 32, Math.random() * 2 + 0.5, 0, 2 * Math.PI);
+                pctx.fill();
+            }
+            return ctx.createPattern(patternCanvas, 'repeat');
+        }
+
+        // Add scratch sound effect element to the body
+        const scratchSound = document.createElement('audio');
+        scratchSound.id = 'scratchSound';
+        scratchSound.src = '../assets/Sounds/scratch-36878.mp3';
+        scratchSound.preload = 'auto';
+        document.body.appendChild(scratchSound);
+
+        // --- Streak logic ---
+        async function updateStreakIfNeeded() {
+            return new Promise((resolve) => {
+                onAuthStateChanged(auth, async (user) => {
+                    if (!user || streakUpdatedToday) return resolve();
+                    const streakRef = doc2(db2, 'userStreaks', user.uid);
+                    const streakSnap = await getDoc2(streakRef);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    let streak = 1;
+                    let lastDate = today;
+                    if (streakSnap.exists()) {
+                        const data = streakSnap.data();
+                        if (data.lastActivity) {
+                            const last = new Date(data.lastActivity.seconds * 1000);
+                            last.setHours(0, 0, 0, 0);
+                            const diff = (today - last) / (1000 * 60 * 60 * 24);
+                            if (diff === 1) {
+                                streak = (data.streak || 0) + 1;
+                            } else if (diff === 0) {
+                                streak = data.streak || 1;
+                                streakUpdatedToday = true;
+                                return resolve();
+                            } else {
+                                streak = 1;
+                            }
+                        }
+                    }
+                    await setDoc2(streakRef, { streak, lastActivity: serverTimestamp() }, { merge: true });
+                    streakUpdatedToday = true;
+                    resolve();
+                });
+            });
+        }
+
+        // Main logic
+        (async function () {
+            let allPrizes = [];
+            try {
+                allPrizes = await getPrizesFromFirestore();
+            } catch (err) {
+                loadingDiv.innerHTML = '<span class="text-red-500">Error loading prizes: ' + err.message + '</span>';
+                return;
+            }
+            if (!allPrizes.length) {
+                loadingDiv.innerHTML = '<span class="text-gray-500">No prizes available. Please check with admin.</span>';
+                return;
+            }
+            loadingDiv.remove();
+            let cardPrizes = pickPrizesForCards(allPrizes);
+            let chosen = null;
+            let revealed = [false, false, false];
+            let canvases = [0, 1, 2].map(i => document.getElementById('scratchCanvas' + i));
+            let ctxs = canvases.map(c => c.getContext('2d', { willReadFrequently: true }));
+            let isDrawing = [false, false, false];
+
+            function playScratchSound() {
+                scratchSound.currentTime = 0.05;
+                scratchSound.volume = 0.5;
+                scratchSound.loop = true;
+                if (scratchSound.paused) scratchSound.play();
+            }
+            function stopScratchSound() {
+                scratchSound.pause();
+                scratchSound.currentTime = 0;
+            }
+
+            function drawPrize(i) {
+                let ctx = ctxs[i];
+                let prize = cardPrizes[i];
+                ctx.clearRect(0, 0, canvases[i].width, canvases[i].height);
+                let isDark = document.body.classList.contains('dark-mode');
+                ctx.save();
+                // Draw a visually distinct background (gradient)
+                let grad = ctx.createLinearGradient(0, 0, canvases[i].width, canvases[i].height);
+                if (isDark) {
+                    grad.addColorStop(0, '#232946');
+                    grad.addColorStop(1, '#2d3a5a');
+                } else {
+                    grad.addColorStop(0, '#fffbe6');
+                    grad.addColorStop(1, '#ffe6a7');
+                }
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvases[i].width, canvases[i].height);
+                // Overlay the prize color (with some transparency for effect)
+                if (prize && prize.color) {
+                    ctx.globalAlpha = 0.85;
+                    ctx.fillStyle = prize.color;
+                    ctx.fillRect(0, 0, canvases[i].width, canvases[i].height);
+                    ctx.globalAlpha = 1;
+                }
+                drawPrizeText(ctx, prize, isDark, i);
+                ctx.restore();
+            }
+
+            function drawPrizeText(ctx, prize, isDark, i) {
+                ctx.save();
+                ctx.strokeStyle = isDark ? '#2D3748' : '#E5E7EB';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(16, 0);
+                ctx.lineTo(canvases[i].width - 16, 0);
+                ctx.quadraticCurveTo(canvases[i].width, 0, canvases[i].width, 16);
+                ctx.lineTo(canvases[i].width, canvases[i].height - 16);
+                ctx.quadraticCurveTo(canvases[i].width, canvases[i].height, canvases[i].width - 16, canvases[i].height);
+                ctx.lineTo(16, canvases[i].height);
+                ctx.quadraticCurveTo(0, canvases[i].height, 0, canvases[i].height - 16);
+                ctx.lineTo(0, 16);
+                ctx.quadraticCurveTo(0, 0, 16, 0);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.font = 'bold 1.5rem Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.shadowColor = '#222';
+                ctx.shadowBlur = 4;
+                ctx.fillStyle = isDark ? '#fff' : '#232946';
+                ctx.fillText(prize ? (prize.percent + '% OFF') : 'No Prize', canvases[i].width / 2, 24);
+                ctx.shadowBlur = 0;
+                if (prize) {
+                    ctx.font = '1.1rem Inter, sans-serif';
+                    ctx.fillStyle = isDark ? '#fff' : '#222';
+                    ctx.fillText('Code: ' + prize.code, canvases[i].width / 2, 54);
+                    ctx.font = '0.95rem Inter, sans-serif';
+                    ctx.fillStyle = isDark ? '#b0b0b0' : '#555';
+                    ctx.fillText(prize.description, canvases[i].width / 2, 80);
+                }
+                ctx.restore();
+            }
+
+            function drawCover(i) {
+                // Prize is already drawn underneath
+                let ctx = ctxs[i];
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                if (!scratchPattern) scratchPattern = createScratchPattern(ctx);
+                ctx.fillStyle = scratchPattern;
+                ctx.fillRect(0, 0, canvases[i].width, canvases[i].height);
+                ctx.font = 'bold 1.3rem Inter, sans-serif';
+                ctx.fillStyle = '#888';
+                ctx.textAlign = 'center';
+                ctx.fillText('Scratch!', canvases[i].width / 2, canvases[i].height / 2 + 8);
+                ctx.restore();
+            }
+
+            // Fuzzy/jagged eraser
+            function scratch(i, x, y) {
+                let ctx = ctxs[i];
+                ctx.globalCompositeOperation = 'destination-out';
+                // Fuzzy/jagged brush
+                for (let j = 0; j < 12; j++) {
+                    const angle = Math.random() * 2 * Math.PI;
+                    const radius = 18 + Math.random() * 8;
+                    const dx = Math.cos(angle) * radius * Math.random();
+                    const dy = Math.sin(angle) * radius * Math.random();
+                    ctx.beginPath();
+                    ctx.arc(x + dx, y + dy, 7 + Math.random() * 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+            function getXY(i, e) {
+                const rect = canvases[i].getBoundingClientRect();
+                if (e.touches) {
+                    return {
+                        x: e.touches[0].clientX - rect.left,
+                        y: e.touches[0].clientY - rect.top
+                    };
+                } else {
+                    return {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+                }
+            }
+            function checkReveal(i) {
+                const ctx = ctxs[i];
+                const imageData = ctx.getImageData(0, 0, canvases[i].width, canvases[i].height);
+                let cleared = 0;
+                for (let j = 0; j < imageData.data.length; j += 4) {
+                    if (imageData.data[j + 3] < 128) cleared++;
+                }
+                if (cleared > imageData.data.length / 8) {
+                    revealPrize(i);
+                }
+            }
+            function revealPrize(i) {
+                if (revealed[i]) return;
+                revealed[i] = true;
+                canvases[i].style.pointerEvents = 'none';
+                // Show overlay with prize details
+                let cardDiv = canvases[i].parentElement;
+                let overlay = document.createElement('div');
+                overlay.className = 'prize-reveal-overlay';
+                overlay.style.position = 'absolute';
+                overlay.style.left = 0;
+                overlay.style.top = 0;
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.display = 'flex';
+                overlay.style.flexDirection = 'column';
+                overlay.style.alignItems = 'center';
+                overlay.style.justifyContent = 'center';
+                overlay.style.background = 'rgba(0,0,0,0.55)';
+                overlay.style.borderRadius = '16px';
+                overlay.style.zIndex = 20;
+                overlay.style.animation = 'fadeInPrize 0.7s cubic-bezier(.68,-0.55,.27,1.55)';
+                let prize = cardPrizes[i];
+                overlay.innerHTML = `
+                    <div style="background: #fff; color: #232946; border-radius: 12px; padding: 1.2rem 1.5rem; box-shadow: 0 4px 24px rgba(0,0,0,0.18); min-width: 180px; max-width: 90%; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #FFD700; margin-bottom: 0.5rem;">🎉 You Won!</div>
+                        <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.3rem;">${prize.percent}% OFF</div>
+                        <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.2rem;">Code: <span style="color:#7209b7;">${prize.code}</span></div>
+                        <div style="font-size: 0.95rem; color: #555;">${prize.description}</div>
+                    </div>
+                `;
+                cardDiv.style.position = 'relative';
+                cardDiv.appendChild(overlay);
+                launchConfetti();
+                updateStreakIfNeeded();
+                document.getElementById('playAgainBtn').style.display = '';
+            }
+            canvases.forEach((canvas, i) => {
+                drawPrize(i);
+                drawCover(i);
+                canvas.addEventListener('mousedown', e => {
+                    if (chosen === null) { chosen = i; lockOtherCards(i); }
+                    if (chosen !== i || revealed[i]) return;
+                    isDrawing[i] = true; scratch(i, ...Object.values(getXY(i, e)));
+                    playScratchSound();
+                });
+                canvas.addEventListener('touchstart', e => {
+                    if (chosen === null) { chosen = i; lockOtherCards(i); }
+                    if (chosen !== i || revealed[i]) return;
+                    isDrawing[i] = true; scratch(i, ...Object.values(getXY(i, e)));
+                    playScratchSound();
+                });
+                canvas.addEventListener('mousemove', e => {
+                    if (isDrawing[i] && chosen === i && !revealed[i]) { scratch(i, ...Object.values(getXY(i, e))); checkReveal(i); }
+                });
+                canvas.addEventListener('touchmove', e => {
+                    if (isDrawing[i] && chosen === i && !revealed[i]) { scratch(i, ...Object.values(getXY(i, e))); checkReveal(i); }
+                });
+                canvas.addEventListener('mouseup', () => { isDrawing[i] = false; stopScratchSound(); });
+                canvas.addEventListener('mouseleave', () => { isDrawing[i] = false; stopScratchSound(); });
+                canvas.addEventListener('touchend', () => { isDrawing[i] = false; stopScratchSound(); });
+            });
+            function lockOtherCards(idx) {
+                canvases.forEach((c, i) => { if (i !== idx) c.style.opacity = 0.5; });
+            }
+            document.getElementById('playAgainBtn').onclick = () => {
+                chosen = null;
+                revealed = [false, false, false];
+                cardPrizes = pickPrizesForCards(allPrizes);
+                scratchPattern = null;
+                canvases.forEach((c, i) => {
+                    c.style.pointerEvents = '';
+                    c.style.opacity = 1;
+                    drawPrize(i);
+                    drawCover(i);
+                    // Remove overlay if present
+                    let cardDiv = c.parentElement;
+                    let overlay = cardDiv.querySelector('.prize-reveal-overlay');
+                    if (overlay) overlay.remove();
+                });
+                document.getElementById('playAgainBtn').style.display = 'none';
+            };
+            // Confetti
+            function launchConfetti() {
+                const confetti = document.getElementById('confetti');
+                confetti.innerHTML = '';
+                for (let i = 0; i < 32; i++) {
+                    const div = document.createElement('div');
+                    div.style.position = 'absolute';
+                    div.style.left = (Math.random() * 100) + '%';
+                    div.style.top = '-16px';
+                    div.style.width = '10px';
+                    div.style.height = '18px';
+                    div.style.background = `hsl(${Math.random() * 360},90%,60%)`;
+                    div.style.opacity = 0.8;
+                    div.style.borderRadius = '3px';
+                    div.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    div.style.transition = 'top 1.2s cubic-bezier(.68,-0.55,.27,1.55), opacity 1.2s';
+                    setTimeout(() => {
+                        div.style.top = (60 + Math.random() * 30) + '%';
+                        div.style.opacity = 0;
+                    }, 10);
+                    confetti.appendChild(div);
+                }
+                setTimeout(() => { confetti.innerHTML = ''; }, 1400);
+            }
+        })();
+    </script>
+    <script>
+        // Dark mode toggle logic
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            // Animate icon (optional: swap sun/moon)
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z"/>';
+            }
+            // Update overlays for dark mode
+            document.querySelectorAll('.prize-reveal-overlay').forEach(overlay => {
+                const box = overlay.querySelector('div');
+                if (on) {
+                    overlay.style.background = 'rgba(30,32,60,0.7)';
+                    if (box) {
+                        box.style.background = '#232946';
+                        box.style.color = '#FFD700';
+                        box.querySelectorAll('div,span').forEach(el => {
+                            el.style.color = '';
+                        });
+                    }
+                } else {
+                    overlay.style.background = 'rgba(0,0,0,0.55)';
+                    if (box) {
+                        box.style.background = '#fff';
+                        box.style.color = '#232946';
+                        box.querySelectorAll('div,span').forEach(el => {
+                            el.style.color = '';
+                        });
+                    }
+                }
+            });
+        }
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+    </script>
+    <script>
+        // Galaxy/starfield effect
+        function initGalaxy() {
+            const canvas = document.getElementById('galaxyBg');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+            const numStars = 120;
+            let stars = [];
+            function randomStar() {
+                return {
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 1.2 + 0.3,
+                    alpha: Math.random() * 0.7 + 0.3,
+                    speed: Math.random() * 0.15 + 0.02,
+                    twinkle: Math.random() * 0.05 + 0.01
+                };
+            }
+            function createStars() {
+                stars = [];
+                for (let i = 0; i < numStars; i++) {
+                    stars.push(randomStar());
+                }
+            }
+            createStars();
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let isDark = document.body.classList.contains('dark-mode');
+                for (let star of stars) {
+                    ctx.save();
+                    ctx.globalAlpha = star.alpha;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI);
+                    ctx.fillStyle = isDark ? '#fff' : '#bfa100';
+                    ctx.shadowColor = isDark ? '#fff' : '#FFD700';
+                    ctx.shadowBlur = isDark ? 8 : 4;
+                    ctx.fill();
+                    ctx.restore();
+                    // Twinkle
+                    star.alpha += (Math.random() - 0.5) * star.twinkle;
+                    if (star.alpha < 0.2) star.alpha = 0.2;
+                    if (star.alpha > 1) star.alpha = 1;
+                    // Move star slowly downward for parallax
+                    star.y += star.speed;
+                    if (star.y > canvas.height) {
+                        star.x = Math.random() * canvas.width;
+                        star.y = 0;
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+            // Recreate stars on resize
+            window.addEventListener('resize', () => {
+                resize();
+                createStars();
+            });
+            // Recolor on dark mode toggle
+            if (typeof darkToggle !== 'undefined') {
+                darkToggle.addEventListener('click', () => {
+                    setTimeout(() => createStars(), 200);
+                });
+            }
+        }
+        document.addEventListener('DOMContentLoaded', initGalaxy);
+    </script>
+</body>
+
+</html>

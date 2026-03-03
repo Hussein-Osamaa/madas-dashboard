@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Redirect - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-accent: #FFD300;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-xl shadow-xl p-8">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-[var(--madas-primary)] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="material-icons text-white text-2xl">login</span>
+            </div>
+            <h1 class="text-2xl font-bold text-[var(--madas-primary)] mb-2">Login System Active</h1>
+            <p class="text-gray-600">The login system is fully functional and ready to use.</p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                <div class="flex items-center">
+                    <span class="material-icons text-green-600 mr-2">check_circle</span>
+                    <span class="text-green-800 font-semibold">Login System Status: ACTIVE</span>
+                </div>
+                <p class="text-green-700 text-sm mt-2">No login restrictions are in place.</p>
+            </div>
+
+            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="font-semibold text-blue-800 mb-3">Available Login Options:</h3>
+                <div class="space-y-2">
+                    <a href="login.html"
+                        class="block w-full bg-[var(--madas-primary)] text-white py-3 rounded-lg text-center font-semibold hover:bg-[#1f3c19] transition-colors">
+                        <span class="material-icons inline mr-2">login</span>
+                        Main Login Page
+                    </a>
+                    <a href="Dashboard/Login.html"
+                        class="block w-full bg-blue-600 text-white py-3 rounded-lg text-center font-semibold hover:bg-blue-700 transition-colors">
+                        <span class="material-icons inline mr-2">dashboard</span>
+                        Dashboard Login
+                    </a>
+                    <a href="Dashboard/mobile-dashboard/test-login.html"
+                        class="block w-full bg-purple-600 text-white py-3 rounded-lg text-center font-semibold hover:bg-purple-700 transition-colors">
+                        <span class="material-icons inline mr-2">phone_android</span>
+                        Mobile Test Login
+                    </a>
+                </div>
+            </div>
+
+            <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <h3 class="font-semibold text-yellow-800 mb-2">Troubleshooting:</h3>
+                <ul class="text-yellow-700 text-sm space-y-1">
+                    <li>• Clear browser cache (Ctrl+F5 or Cmd+Shift+R)</li>
+                    <li>• Try incognito/private browsing mode</li>
+                    <li>• Check if you're accessing the correct URL</li>
+                    <li>• Disable browser extensions temporarily</li>
+                </ul>
+            </div>
+
+            <div class="text-center text-sm text-gray-500">
+                <p>Current URL: <span id="currentUrl" class="font-mono"></span></p>
+                <p>Time: <span id="timestamp"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+
+        // Auto-redirect to main login after 5 seconds
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 5000);
+    </script>
+</body>
+
+</html>

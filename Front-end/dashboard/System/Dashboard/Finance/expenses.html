@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expenses - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/img/madas-logo.png">
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+            background: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Transition all elements */
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        /* Override specific backgrounds */
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Sidebar and header */
+        #sidebar {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode header {
+            background-color: var(--header-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode aside {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .dark-mode .bg-white {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .dark-mode .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        .dark-mode .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .dark-mode .border-gray-200 {
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode .border-gray-100 {
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        .dark-mode .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .hover\:bg-gray-100:hover {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .shadow-sm {
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .dark-mode .divide-gray-200 {
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode .bg-gray-50 {
+            background-color: var(--card-bg) !important;
+        }
+
+        main {
+            background-color: var(--bg-main) !important;
+        }
+
+        .bg-gray-50 {
+            background-color: var(--bg-main) !important;
+        }
+
+        /* Table header styling */
+        thead {
+            background-color: var(--card-bg) !important;
+        }
+
+        .sidebar-link {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(4px);
+        }
+        /* Inventory Dropdown */
+        .inventory-dropdown {
+            position: relative;
+        }
+
+        .inventory-submenu {
+            transition: all 0.3s ease;
+        }
+
+        .inventory-submenu.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+
+        .inventory-submenu:not(.hidden) {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--madas-primary), #1f3c19);
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, var(--madas-primary), var(--madas-accent));
+        }
+
+        /* Input fields and form elements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        textarea,
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+            border-width: 1px !important;
+            border-style: solid !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="date"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+            outline: none !important;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        input[type="date"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: var(--text-main) !important;
+            opacity: 0.7;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        /* Search bar specific styling */
+        input[type="search"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="search"]:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        input[type="search"]::placeholder {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Select dropdowns */
+        select {
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        select:focus {
+            border-color: var(--madas-accent) !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* Modal styling */
+        .modal,
+        .modal .bg-white,
+        .glass-effect {
+            background-color: var(--card-bg) !important;
+        }
+
+        /* Modal overlay */
+        #expenseModal {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+        }
+
+        /* Form labels */
+        label {
+            color: var(--text-main) !important;
+        }
+
+        /* Readonly inputs */
+        input[readonly] {
+            background-color: var(--bg-main) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--madas-accent) !important;
+            border-color: var(--madas-accent) !important;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body class="font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <img src="../assets/img/madas.png" alt="Madas Logo" class="w-full h-full object-cover">
+                    </div>
+                    <h1 class="text-xl font-bold text-[var(--madas-primary)]">MADAS Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Dark mode toggle button -->
+                    <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                        <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2">
+                    <a href="../index.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="./orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                                        <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all" id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200" id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="./products.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="./collections.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="./product-reviews.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="./low-stock.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+                    <a href="./Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+                    <a href="./Admin.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">supervisor_account</span>
+                        <span>Staff</span>
+                    </a>
+                    <a href="https://your-store.madas.com" target="_blank"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">shopping_bag</span>
+                        <span>MY Store</span>
+                    </a>
+                    <div class="finance-dropdown">
+                        <button id="finance-dropdown-btn"
+                            class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">account_balance_wallet</span>
+                                <span>Finance</span>
+                            </div>
+                            <span
+                                class="material-icons dropdown-arrow transition-transform duration-200">expand_more</span>
+                        </button>
+                        <div id="finance-dropdown-menu" class="finance-dropdown-menu hidden">
+                            <a href="./finance.html"
+                                class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">account_balance</span>
+                                <span>Overview</span>
+                            </a>
+                            <a href="./deposit-money-simple.html"
+                                class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">add_circle</span>
+                                <span>Add Money Transfer</span>
+                            </a>
+                            <a href="./expenses.html"
+                                class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">money_off</span>
+                                <span>Expenses</span>
+                            </a>
+                            <a href="./analytics.html"
+                                class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">analytics</span>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="./reports.html"
+                                class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">assessment</span>
+                                <span>Reports</span>
+                            </a>
+                            <a href="./insights.html"
+                                class="flex items-center space-x-3 px-4 py-2 ml-8 text-sm text-gray-600 hover:text-[var(--madas-primary)] hover:bg-[var(--madas-light)] rounded-lg transition-all">
+                                <span class="material-icons text-sm">lightbulb</span>
+                                <span>Insights</span>
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        </aside>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="p-6 lg:p-8">
+                <div class="mb-8 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Expenses</h2>
+                        <p class="text-gray-600">Track and manage all your business expenses</p>
+                    </div>
+                    <button id="addExpenseBtn"
+                        class="bg-[var(--madas-primary)] text-white px-6 py-3 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                        <span class="material-icons text-sm">add</span>
+                        <span>Add Expense</span>
+                    </button>
+                </div>
+                <!-- Time Filter -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-[var(--madas-primary)] mb-2">Filter Expenses</h3>
+                            <p class="text-sm text-gray-600">Select a time period to filter your expenses</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm font-medium text-gray-700">Time Period:</label>
+                                <select id="timeFilter"
+                                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-[var(--madas-accent)]">
+                                    <option value="all">All Time</option>
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month" selected>This Month</option>
+                                    <option value="quarter">This Quarter</option>
+                                    <option value="year">This Year</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                            </div>
+                            <div id="customDateRange" class="hidden flex items-center space-x-2">
+                                <input type="date" id="startDate"
+                                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-[var(--madas-accent)]">
+                                <span class="text-gray-500">to</span>
+                                <input type="date" id="endDate"
+                                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-[var(--madas-accent)]">
+                            </div>
+                            <button id="applyFilter"
+                                class="bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors flex items-center space-x-2">
+                                <span class="material-icons text-sm">filter_list</span>
+                                <span>Apply Filter</span>
+                            </button>
+                            <button id="clearFilter"
+                                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors flex items-center space-x-2">
+                                <span class="material-icons text-sm">clear</span>
+                                <span>Clear</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-gray-100 stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Expenses</p>
+                                <p id="total-expenses" class="text-2xl font-bold text-[var(--madas-primary)]">$0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-red-600">money_off</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-gray-100 stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Categories</p>
+                                <p id="expense-categories" class="text-2xl font-bold text-[var(--madas-primary)]">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-yellow-600">category</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-gray-100 stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">This Month</p>
+                                <p id="monthly-expenses" class="text-2xl font-bold text-[var(--madas-primary)]">$0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-blue-600">calendar_today</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-gray-100 stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Average/Expense</p>
+                                <p id="average-expense" class="text-2xl font-bold text-[var(--madas-primary)]">$0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-green-600">analytics</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Category Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Salaries Card -->
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-green-200 stat-card">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-green-600">payments</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-500">Total</p>
+                                <p class="text-sm font-semibold text-green-700">Salaries</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-[var(--madas-primary)]" id="salary-expenses">$0</p>
+                            <p class="text-gray-500 text-xs mt-1">Payroll expenses</p>
+                        </div>
+                    </div>
+                    <!-- Personal Expenses Card -->
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-purple-200 stat-card">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-purple-600">person</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-500">Total</p>
+                                <p class="text-sm font-semibold text-purple-700">Personal</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-[var(--madas-primary)]" id="personal-expenses">EGP0</p>
+                            <p class="text-gray-500 text-xs mt-1">Personal expenses</p>
+                        </div>
+                    </div>
+                    <!-- Supplies Card -->
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-yellow-200 stat-card">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-yellow-600">inventory_2</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-500">Total</p>
+                                <p class="text-sm font-semibold text-yellow-700">Supplies</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-[var(--madas-primary)]" id="supplies-expenses">EGP0</p>
+                            <p class="text-gray-500 text-xs mt-1">Net Supplies (Total - Finance Capital Return)</p>
+                        </div>
+                    </div>
+                    <!-- Marketing Card -->
+                    <div class="card-hover bg-white rounded-xl p-6 shadow-sm border border-pink-200 stat-card">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center">
+                                <span class="material-icons text-pink-600">campaign</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-500">Total</p>
+                                <p class="text-sm font-semibold text-pink-700">Marketing</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-[var(--madas-primary)]" id="marketing-expenses">EGP0</p>
+                            <p class="text-gray-500 text-xs mt-1">Marketing expenses</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Expenses Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Category</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Description</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Amount</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expensesTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Example salary row -->
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2024-06-01</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-semibold">Salaries
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">June payroll</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">EGP2,500</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
+                                    <button class="text-red-600 hover:text-red-900">Delete</button>
+                                </td>
+                            </tr>
+                            <!-- Expenses will be loaded here -->
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                    <span class="material-icons text-2xl text-gray-300 mb-2">money_off</span>
+                                    <p>No expenses found</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Add Expense Modal -->
+    <div id="expenseModal" class="fixed inset-0 hidden z-50 flex items-center justify-center"
+        style="background-color: rgba(0, 0, 0, 0.5);">
+        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-[var(--madas-primary)]" id="expenseModalTitle">Add Expense</h3>
+                <button id="closeExpenseModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <form id="expenseForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" id="expenseDate" required
+                        class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select id="expenseCategory" required
+                        class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]">
+                        <option value="">Select category</option>
+                        <option value="Salaries">Salaries</option>
+                        <option value="Rent">Rent</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Supplies">Supplies</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input type="text" id="expenseDescription" required
+                        class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <input type="number" id="expenseAmount" min="0" step="0.01" required
+                        class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]" />
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button type="button" id="cancelExpenseBtn"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">Cancel</button>
+                    <button type="submit" id="saveExpenseBtn"
+                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-[#1f3c19] transition-colors">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.appspot.com",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:70470e2204065b4590583d3",
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        // Auth and user info
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "../Login.html";
+                return;
+            }
+            document.getElementById("user-name").textContent = user.displayName || user.email.split("@")[0];
+            document.getElementById("user-email").textContent = user.email;
+            document.getElementById("user-initial").textContent = (user.displayName ? user.displayName[0] : user.email[0]).toUpperCase();
+        });
+        // Logout logic
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                signOut(auth).then(() => {
+                    window.location.href = "../Login.html";
+                });
+            });
+        }
+        // Modal controls
+        const expenseModal = document.getElementById('expenseModal');
+        const addExpenseBtn = document.getElementById('addExpenseBtn');
+        const closeExpenseModalBtn = document.getElementById('closeExpenseModalBtn');
+        const cancelExpenseBtn = document.getElementById('cancelExpenseBtn');
+        const expenseForm = document.getElementById('expenseForm');
+        let editingExpenseId = null;
+        function openExpenseModal(expense = null) {
+            expenseModal.classList.remove('hidden');
+            document.getElementById('expenseModalTitle').textContent = expense ? 'Edit Expense' : 'Add Expense';
+            if (expense) {
+                document.getElementById('expenseDate').value = expense.date;
+                document.getElementById('expenseCategory').value = expense.category;
+                document.getElementById('expenseDescription').value = expense.description;
+                document.getElementById('expenseAmount').value = expense.amount;
+                editingExpenseId = expense.id;
+            } else {
+                expenseForm.reset();
+                editingExpenseId = null;
+            }
+        }
+        function closeExpenseModal() {
+            expenseModal.classList.add('hidden');
+            expenseForm.reset();
+            editingExpenseId = null;
+        }
+        if (addExpenseBtn) addExpenseBtn.addEventListener('click', () => openExpenseModal());
+        if (closeExpenseModalBtn) closeExpenseModalBtn.addEventListener('click', closeExpenseModal);
+        if (cancelExpenseBtn) cancelExpenseBtn.addEventListener('click', closeExpenseModal);
+        // Expense CRUD
+        function renderExpenses(expenses) {
+            const expensesTableBody = document.getElementById('expensesTableBody');
+            if (!expenses.length) {
+                expensesTableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500"><span class="material-icons text-2xl text-gray-300 mb-2">money_off</span><p>No expenses found</p></td></tr>`;
+                return;
+            }
+            expensesTableBody.innerHTML = expenses.map(exp => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${exp.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm ${exp.category === 'Salaries' ? 'text-green-700 font-semibold' : exp.category === 'Personal' ? 'text-purple-700 font-semibold' : 'text-gray-700'}">${exp.category}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.description}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">EGP${exp.amount.toLocaleString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-blue-600 hover:text-blue-900 mr-3 edit-expense-btn" data-id="${exp.id}">Edit</button>
+                        <button class="text-red-600 hover:text-red-900 delete-expense-btn" data-id="${exp.id}">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+            // Attach edit/delete listeners
+            expensesTableBody.querySelectorAll('.edit-expense-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    const docSnap = await getDocs(query(collection(db, 'expenses'), orderBy('date', 'desc')));
+                    let expense = null;
+                    docSnap.forEach(d => { if (d.id === id) expense = { id: d.id, ...d.data(), date: d.data().date instanceof Timestamp ? d.data().date.toDate().toISOString().slice(0, 10) : d.data().date }; });
+                    if (expense) openExpenseModal(expense);
+                });
+            });
+            expensesTableBody.querySelectorAll('.delete-expense-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    if (confirm('Delete this expense?')) {
+                        await deleteDoc(doc(db, 'expenses', id));
+                        loadExpenses();
+                    }
+                });
+            });
+        }
+        async function updateSummaryCards(expenses) {
+            // Total expenses (excluding Supplies)
+            const total = expenses.filter(e => e.category !== 'Supplies').reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('total-expenses').textContent = `EGP${total.toLocaleString()}`;
+            // Categories
+            const categories = new Set(expenses.map(e => e.category));
+            document.getElementById('expense-categories').textContent = categories.size;
+            // This month (excluding Supplies)
+            const now = new Date();
+            const month = now.getMonth();
+            const year = now.getFullYear();
+            const monthly = expenses.filter(e => {
+                const d = new Date(e.date);
+                return d.getMonth() === month && d.getFullYear() === year && e.category !== 'Supplies';
+            }).reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('monthly-expenses').textContent = `EGP${monthly.toLocaleString()}`;
+            // Salaries
+            const salaries = expenses.filter(e => e.category === 'Salaries').reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('salary-expenses').textContent = `EGP${salaries.toLocaleString()}`;
+            // Personal Expenses
+            const personal = expenses.filter(e => e.category === 'Personal').reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('personal-expenses').textContent = `EGP${personal.toLocaleString()}`;
+            // Supplies calculation: Total Supplies - Capital Return (from finance system)
+            const totalSupplies = expenses.filter(e => e.category === 'Supplies').reduce((sum, e) => sum + e.amount, 0);
+            const capitalReturnFromFinance = await getCapitalReturnFromFinance();
+            const netSupplies = totalSupplies - capitalReturnFromFinance;
+            document.getElementById('supplies-expenses').textContent = `EGP${netSupplies.toLocaleString()}`;
+
+            // Marketing
+            const marketing = expenses.filter(e => e.category === 'Marketing').reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('marketing-expenses').textContent = `EGP${marketing.toLocaleString()}`;
+            // Average expense (excluding Supplies)
+            const expensesExcludingSupplies = expenses.filter(e => e.category !== 'Supplies');
+            const average = expensesExcludingSupplies.length > 0 ? total / expensesExcludingSupplies.length : 0;
+            document.getElementById('average-expense').textContent = `EGP${average.toFixed(2)}`;
+        }
+        // Add/Edit Expense
+        expenseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = document.getElementById('expenseDate').value;
+            const category = document.getElementById('expenseCategory').value;
+            const description = document.getElementById('expenseDescription').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            if (!date || !category || !description || isNaN(amount)) return;
+            if (editingExpenseId) {
+                await updateDoc(doc(db, 'expenses', editingExpenseId), { date, category, description, amount });
+            } else {
+                await addDoc(collection(db, 'expenses'), { date, category, description, amount });
+            }
+            closeExpenseModal();
+            loadExpenses();
+        });
+        // Initial load
+        loadExpenses();
+
+        // Time filter functionality
+        let allExpenses = [];
+        let filteredExpenses = [];
+
+        const timeFilter = document.getElementById('timeFilter');
+        const customDateRange = document.getElementById('customDateRange');
+        const startDate = document.getElementById('startDate');
+        const endDate = document.getElementById('endDate');
+        const applyFilter = document.getElementById('applyFilter');
+        const clearFilter = document.getElementById('clearFilter');
+
+        // Show/hide custom date range inputs
+        if (timeFilter) {
+            timeFilter.addEventListener('change', () => {
+                if (timeFilter.value === 'custom') {
+                    customDateRange.classList.remove('hidden');
+                } else {
+                    customDateRange.classList.add('hidden');
+                }
+            });
+        }
+
+        // Apply filter function
+        async function applyTimeFilter() {
+            const filterValue = timeFilter.value;
+            const now = new Date();
+            let start, end;
+
+            switch (filterValue) {
+                case 'today':
+                    start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+                    break;
+                case 'week':
+                    const dayOfWeek = now.getDay();
+                    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToSubtract);
+                    end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (6 - dayOfWeek), 23, 59, 59);
+                    break;
+                case 'month':
+                    start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                    break;
+                case 'quarter':
+                    const quarter = Math.floor(now.getMonth() / 3);
+                    start = new Date(now.getFullYear(), quarter * 3, 1);
+                    end = new Date(now.getFullYear(), (quarter + 1) * 3, 0, 23, 59, 59);
+                    break;
+                case 'year':
+                    start = new Date(now.getFullYear(), 0, 1);
+                    end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+                    break;
+                case 'custom':
+                    if (startDate.value && endDate.value) {
+                        start = new Date(startDate.value);
+                        end = new Date(endDate.value);
+                        end.setHours(23, 59, 59);
+                    } else {
+                        alert('Please select both start and end dates');
+                        return;
+                    }
+                    break;
+                default: // 'all'
+                    start = new Date(0);
+                    end = new Date(9999, 11, 31);
+                    break;
+            }
+
+            filteredExpenses = allExpenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                return expenseDate >= start && expenseDate <= end;
+            });
+
+            renderExpenses(filteredExpenses);
+            await updateSummaryCards(filteredExpenses);
+        }
+
+        // Clear filter function
+        async function clearTimeFilter() {
+            timeFilter.value = 'month';
+            customDateRange.classList.add('hidden');
+            startDate.value = '';
+            endDate.value = '';
+            filteredExpenses = [...allExpenses];
+            renderExpenses(allExpenses);
+            await updateSummaryCards(allExpenses);
+        }
+
+        // Event listeners for filter buttons
+        if (applyFilter) {
+            applyFilter.addEventListener('click', applyTimeFilter);
+        }
+
+        if (clearFilter) {
+            clearFilter.addEventListener('click', clearTimeFilter);
+        }
+
+        // Update loadExpenses function to store all expenses
+        async function loadExpenses() {
+            const expensesTableBody = document.getElementById('expensesTableBody');
+            expensesTableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500"><span class="material-icons text-2xl text-gray-300 mb-2">money_off</span><p>Loading...</p></td></tr>`;
+            const q = query(collection(db, 'expenses'), orderBy('date', 'desc'));
+            const snapshot = await getDocs(q);
+            allExpenses = [];
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                allExpenses.push({
+                    id: docSnap.id,
+                    date: data.date instanceof Timestamp ? data.date.toDate().toISOString().slice(0, 10) : data.date,
+                    category: data.category,
+                    description: data.description,
+                    amount: parseFloat(data.amount)
+                });
+            });
+            filteredExpenses = [...allExpenses];
+            renderExpenses(allExpenses);
+            await updateSummaryCards(allExpenses);
+        }
+
+        // Profile button
+        const profileBtn = document.getElementById("profile-btn");
+        if (profileBtn) {
+            profileBtn.addEventListener("click", () => {
+                window.location.href = "./profile.html";
+            });
+        }
+
+        // Dark mode toggle functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z" />';
+            }
+        }
+
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+
+        // Get Capital Return from Finance System
+        async function getCapitalReturnFromFinance() {
+            try {
+                console.log("Getting capital return from finance system...");
+
+                // Import Firebase modules
+                const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+                const { getFirestore, collection, getDocs, query, orderBy } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+                // Firebase configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+                    authDomain: "madas-store.firebaseapp.com",
+                    projectId: "madas-store",
+                    storageBucket: "madas-store.firebasestorage.app",
+                    messagingSenderId: "527071300010",
+                    appId: "1:527071300010:web:70470e2204065b4590583d3",
+                };
+
+                // Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+
+                // Get scan logs to calculate capital return
+                const q = query(
+                    collection(db, "scan_log"),
+                    orderBy("timestamp", "desc")
+                );
+
+                const scanLogsSnapshot = await getDocs(q);
+                let capitalReturn = 0;
+                let orderCount = 0;
+                let returnCount = 0;
+
+                console.log("Found", scanLogsSnapshot.size, "scan log entries in expenses calculation");
+
+                scanLogsSnapshot.forEach((doc) => {
+                    const log = doc.data();
+                    console.log("Processing log in expenses:", log);
+
+                    if (log.type === "order") {
+                        // Add to capital return when order is processed
+                        const price = parseFloat(log.price || 0);
+                        capitalReturn += price;
+                        orderCount++;
+                        console.log("Order found in expenses - price:", price, "running total:", capitalReturn);
+                    } else if (log.type === "return") {
+                        // Subtract from capital return when return is processed
+                        const price = parseFloat(log.price || 0);
+                        capitalReturn -= price;
+                        returnCount++;
+                        console.log("Return found in expenses - price:", price, "running total:", capitalReturn);
+                    }
+                });
+
+                console.log("Final capital return from expenses calculation:", capitalReturn);
+                console.log("Orders processed:", orderCount, "Returns processed:", returnCount);
+
+                return capitalReturn;
+            } catch (error) {
+                console.error("Error getting capital return from finance system:", error);
+                return 0;
+            }
+        }
+
+        // Finance dropdown functionality
+        const financeDropdownBtn = document.getElementById('finance-dropdown-btn');
+        const financeDropdownMenu = document.getElementById('finance-dropdown-menu');
+        const dropdownArrow = financeDropdownBtn.querySelector('.dropdown-arrow');
+
+        if (financeDropdownBtn && financeDropdownMenu) {
+            financeDropdownBtn.addEventListener('click', () => {
+                const isHidden = financeDropdownMenu.classList.contains('hidden');
+                if (isHidden) {
+                    financeDropdownMenu.classList.remove('hidden');
+                    dropdownArrow.style.transform = 'rotate(180deg)';
+                } else {
+                    financeDropdownMenu.classList.add('hidden');
+                    dropdownArrow.style.transform = 'rotate(0deg)';
+                }
+            });
+        }
+
+        // Burger menu functionality
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', () => {
+                const isHidden = sidebar.classList.contains('-translate-x-full');
+                if (isHidden) {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                }
+            });
+
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth < 1024) { // Only on mobile
+                    if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

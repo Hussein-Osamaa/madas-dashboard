@@ -39,6 +39,7 @@ import BuilderPage from './pages/ecommerce/BuilderPage';
 import StorePreviewPage from './pages/ecommerce/StorePreviewPage';
 import PublicWebsitePage from './pages/ecommerce/PublicWebsitePage';
 import CodeEditorPage from './pages/ecommerce/CodeEditorPage';
+import ExternalWebsitePage from './pages/ecommerce/ExternalWebsitePage';
 import ProductsPage from './pages/ecommerce/ProductsPage';
 import AboutPage from './pages/ecommerce/AboutPage';
 import LastPiecesPage from './pages/ecommerce/LastPiecesPage';
@@ -197,6 +198,10 @@ export const router = createBrowserRouter([
       {
         path: 'ecommerce/code-editor',
         element: <CodeEditorPage />
+      },
+      {
+        path: 'ecommerce/external-website',
+        element: <ExternalWebsitePage />
       },
       {
         path: 'rbac/roles',

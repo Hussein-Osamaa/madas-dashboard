@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mobile Connectivity - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/img/madas-logo.png">
+
+    <!-- Mobile API and Interface Scripts -->
+    <script src="../js/mobile-api.js"></script>
+    <script src="../js/mobile-interface.js"></script>
+
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+        }
+
+        .mobile-connectivity-card {
+            background: linear-gradient(135deg, var(--madas-primary) 0%, #1f3c19 100%);
+            color: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mobile-connectivity-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .mobile-connectivity-card>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .status-online {
+            background-color: #10B981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .status-offline {
+            background-color: #EF4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .status-syncing {
+            background-color: #F59E0B;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .mobile-feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .mobile-feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-code {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body class="font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <img src="../assets/img/madas.png" alt="Madas Logo" class="w-full h-full object-cover">
+                    </div>
+                    <h1 class="text-xl font-bold text-[var(--madas-primary)]">Mobile Connectivity</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-3">
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto pt-16">
+        <div class="p-6 lg:p-8">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-[var(--madas-primary)] mb-2">Mobile Connectivity</h2>
+                <p class="text-gray-600">Connect your mobile devices to access your business data on the go</p>
+            </div>
+
+            <!-- Connection Status -->
+            <div class="mobile-connectivity-card">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-2xl font-bold">Mobile Connection Status</h3>
+                    <button id="refresh-status-btn"
+                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-colors">
+                        <span class="material-icons mr-2">refresh</span>
+                        Refresh
+                    </button>
+                </div>
+
+                <div class="connection-status">
+                    <span id="connection-status-indicator" class="status-indicator status-offline"></span>
+                    <span id="connection-status-text">Checking connection...</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm opacity-90">API Status</span>
+                            <span id="api-status" class="text-sm font-medium">Unknown</span>
+                        </div>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm opacity-90">Last Sync</span>
+                            <span id="last-sync" class="text-sm font-medium">Never</span>
+                        </div>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm opacity-90">Offline Queue</span>
+                            <span id="offline-queue-size" class="text-sm font-medium">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Features -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Mobile App Download -->
+                <div class="mobile-feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <span class="material-icons text-blue-600">download</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Mobile App</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Download the MADAS mobile app for iOS and Android</p>
+                    <div class="space-y-2">
+                        <button
+                            class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                            <span class="material-icons mr-2">phone_android</span>
+                            Download for Android
+                        </button>
+                        <button
+                            class="w-full bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors flex items-center justify-center">
+                            <span class="material-icons mr-2">phone_iphone</span>
+                            Download for iOS
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Code Connection -->
+                <div class="mobile-feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                            <span class="material-icons text-green-600">qr_code</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">QR Code Connect</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Scan QR code to connect your mobile device</p>
+                    <div class="qr-code">
+                        <div id="qr-code-placeholder"
+                            class="w-32 h-32 bg-gray-200 rounded flex items-center justify-center">
+                            <span class="text-gray-500">QR Code</span>
+                        </div>
+                    </div>
+                    <button id="generate-qr-btn"
+                        class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors mt-2">
+                        Generate QR Code
+                    </button>
+                </div>
+
+                <!-- Push Notifications -->
+                <div class="mobile-feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                            <span class="material-icons text-purple-600">notifications</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Push Notifications</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Enable push notifications for real-time updates</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Notifications</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="notifications-toggle" class="sr-only peer">
+                            <div
+                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Data Sync -->
+                <div class="mobile-feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
+                            <span class="material-icons text-orange-600">sync</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Data Sync</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Synchronize your business data across devices</p>
+                    <button id="sync-now-btn"
+                        class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
+                        Sync Now
+                    </button>
+                </div>
+
+                <!-- Offline Mode -->
+                <div class="mobile-feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
+                            <span class="material-icons text-red-600">offline_bolt</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Offline Mode</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Access your data even when offline</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Offline Access</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="offline-toggle" class="sr-only peer" checked>
+                            <div
+                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Mobile Analytics -->
+                <div class="mobile-feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
+                            <span class="material-icons text-indigo-600">analytics</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Mobile Analytics</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">View mobile usage statistics and performance</p>
+                    <button id="view-analytics-btn"
+                        class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                        View Analytics
+                    </button>
+                </div>
+            </div>
+
+            <!-- Connected Devices -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Connected Devices</h3>
+                    <button id="add-device-btn"
+                        class="bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                        <span class="material-icons mr-2">add</span>
+                        Add Device
+                    </button>
+                </div>
+
+                <div id="connected-devices" class="space-y-4">
+                    <!-- Devices will be populated here -->
+                </div>
+            </div>
+
+            <!-- Mobile Settings -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-xl font-semibold text-gray-900 mb-6">Mobile Settings</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sync Frequency</label>
+                        <select id="sync-frequency"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]">
+                            <option value="30">Every 30 seconds</option>
+                            <option value="60">Every minute</option>
+                            <option value="300">Every 5 minutes</option>
+                            <option value="900">Every 15 minutes</option>
+                            <option value="3600">Every hour</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Data Limit</label>
+                        <select id="data-limit"
+                            class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--madas-accent)]">
+                            <option value="10">10 MB</option>
+                            <option value="50">50 MB</option>
+                            <option value="100">100 MB</option>
+                            <option value="500">500 MB</option>
+                            <option value="1000">1 GB</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Auto-sync</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="auto-sync"
+                                class="w-4 h-4 text-[var(--madas-primary)] rounded focus:ring-[var(--madas-accent)]"
+                                checked>
+                            <label for="auto-sync" class="ml-2 text-sm text-gray-700">Enable automatic data
+                                synchronization</label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Background Sync</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="background-sync"
+                                class="w-4 h-4 text-[var(--madas-primary)] rounded focus:ring-[var(--madas-accent)]"
+                                checked>
+                            <label for="background-sync" class="ml-2 text-sm text-gray-700">Allow background
+                                synchronization</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button id="reset-settings-btn"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                        Reset Settings
+                    </button>
+                    <button id="save-settings-btn"
+                        class="bg-[var(--madas-primary)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Mobile Connectivity Management
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeMobileConnectivity();
+        });
+
+        function initializeMobileConnectivity() {
+            // Check connection status
+            checkConnectionStatus();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Load connected devices
+            loadConnectedDevices();
+
+            // Setup real-time updates
+            setupRealTimeUpdates();
+        }
+
+        function checkConnectionStatus() {
+            if (window.mobileAPI) {
+                const status = window.mobileAPI.getMobileAnalytics();
+                updateConnectionStatus(status);
+            } else {
+                updateConnectionStatus({
+                    connectionStatus: false,
+                    lastSync: 'Never',
+                    offlineQueueSize: 0
+                });
+            }
+        }
+
+        function updateConnectionStatus(status) {
+            const indicator = document.getElementById('connection-status-indicator');
+            const text = document.getElementById('connection-status-text');
+            const apiStatus = document.getElementById('api-status');
+            const lastSync = document.getElementById('last-sync');
+            const queueSize = document.getElementById('offline-queue-size');
+
+            if (status.connectionStatus) {
+                indicator.className = 'status-indicator status-online';
+                text.textContent = 'Connected to mobile API';
+                apiStatus.textContent = 'Online';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                text.textContent = 'Disconnected from mobile API';
+                apiStatus.textContent = 'Offline';
+            }
+
+            lastSync.textContent = status.lastSync || 'Never';
+            queueSize.textContent = status.offlineQueueSize || 0;
+        }
+
+        function setupEventListeners() {
+            // Refresh status button
+            document.getElementById('refresh-status-btn').addEventListener('click', checkConnectionStatus);
+
+            // Generate QR code button
+            document.getElementById('generate-qr-btn').addEventListener('click', generateQRCode);
+
+            // Sync now button
+            document.getElementById('sync-now-btn').addEventListener('click', syncNow);
+
+            // Add device button
+            document.getElementById('add-device-btn').addEventListener('click', addDevice);
+
+            // Save settings button
+            document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+
+            // Reset settings button
+            document.getElementById('reset-settings-btn').addEventListener('click', resetSettings);
+
+            // Notifications toggle
+            document.getElementById('notifications-toggle').addEventListener('change', toggleNotifications);
+        }
+
+        function generateQRCode() {
+            const qrPlaceholder = document.getElementById('qr-code-placeholder');
+            qrPlaceholder.innerHTML = `
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-black rounded mb-2"></div>
+                    <p class="text-xs text-gray-600">QR Code Generated</p>
+                </div>
+            `;
+
+            // In a real implementation, you would generate an actual QR code
+            console.log('QR Code generated for mobile connection');
+        }
+
+        function syncNow() {
+            if (window.mobileAPI) {
+                window.mobileAPI.syncData();
+                checkConnectionStatus();
+            }
+        }
+
+        function addDevice() {
+            // Show add device modal or redirect to device setup
+            alert('Add device functionality would open here');
+        }
+
+        function saveSettings() {
+            const settings = {
+                syncFrequency: document.getElementById('sync-frequency').value,
+                dataLimit: document.getElementById('data-limit').value,
+                autoSync: document.getElementById('auto-sync').checked,
+                backgroundSync: document.getElementById('background-sync').checked
+            };
+
+            localStorage.setItem('mobile-settings', JSON.stringify(settings));
+            alert('Settings saved successfully!');
+        }
+
+        function resetSettings() {
+            document.getElementById('sync-frequency').value = '60';
+            document.getElementById('data-limit').value = '100';
+            document.getElementById('auto-sync').checked = true;
+            document.getElementById('background-sync').checked = true;
+        }
+
+        function toggleNotifications() {
+            const enabled = document.getElementById('notifications-toggle').checked;
+            if (enabled && window.mobileAPI) {
+                window.mobileAPI.requestNotificationPermission();
+            }
+        }
+
+        function loadConnectedDevices() {
+            const devicesContainer = document.getElementById('connected-devices');
+            const devices = [
+                {
+                    name: 'iPhone 13 Pro',
+                    type: 'iOS',
+                    lastSeen: '2 minutes ago',
+                    status: 'online'
+                },
+                {
+                    name: 'Samsung Galaxy S21',
+                    type: 'Android',
+                    lastSeen: '1 hour ago',
+                    status: 'offline'
+                }
+            ];
+
+            devicesContainer.innerHTML = devices.map(device => `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-gray-600">phone_android</span>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">${device.name}</h4>
+                            <p class="text-sm text-gray-600">${device.type} • ${device.lastSeen}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="status-indicator ${device.status === 'online' ? 'status-online' : 'status-offline'}"></span>
+                        <button class="text-red-600 hover:text-red-800">
+                            <span class="material-icons">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupRealTimeUpdates() {
+            // Update connection status every 30 seconds
+            setInterval(checkConnectionStatus, 30000);
+        }
+    </script>
+</body>
+
+</html>

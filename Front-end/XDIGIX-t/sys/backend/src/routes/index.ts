@@ -8,6 +8,7 @@ import warehouseRoutes from './warehouse.routes';
 import auditRoutes from './audit.routes';
 import clientWarehouseRoutes from './client-warehouse.routes';
 import staffRoutes from './staff.routes';
+import externalRoutes from './external.routes';
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.get('/health', (_req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
+router.use('/external', externalRoutes);
 router.use('/auth', authRoutes);
 router.use('/staff', staffRoutes);
 router.use('/', clientsRoutes);

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MADAS Pass Customization - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/CSS/orders.css">
+    <link rel="icon" type="image/x-icon" href="../assets/img/madas-logo.png">
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+            background: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        .main-dashboard-content {
+            padding: 2.5rem 1.5rem 2rem 1.5rem;
+            margin: 1rem;
+            min-height: calc(100vh - 8rem);
+            background: var(--bg-main);
+            border-radius: 18px;
+        }
+
+        .main-dashboard-content h1,
+        .main-dashboard-content h2,
+        .main-dashboard-content h3 {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .customization-card {
+            background: var(--card-bg);
+            box-shadow: 0 4px 24px 0 rgba(39, 73, 31, 0.10);
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 2.5rem auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            color: var(--madas-primary);
+            margin-bottom: 1.1rem;
+            font-weight: bold;
+        }
+
+        .dashboard-table {
+            margin-bottom: 1.5rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: var(--card-bg);
+            width: 100%;
+        }
+
+        .dashboard-table th,
+        .dashboard-table td {
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.75rem 1rem;
+        }
+
+        .dashboard-table th {
+            background: var(--madas-primary);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .dashboard-table tr:hover {
+            background: #f9fafb;
+            transition: background 0.2s;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .form-row label {
+            color: var(--madas-primary);
+            font-weight: 500;
+            margin-right: 0.3rem;
+            min-width: 120px;
+        }
+
+        .form-row input {
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            border: 1.5px solid var(--madas-accent);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 1rem;
+            width: 100%;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-row input:focus {
+            border-color: var(--madas-primary);
+            box-shadow: 0 0 0 2px rgba(39, 73, 31, 0.10);
+        }
+
+        .form-row input[type="number"] {
+            max-width: 90px;
+        }
+
+        .form-row input[type="text"] {
+            max-width: 120px;
+        }
+
+        .form-row .action-btn {
+            margin: 0;
+        }
+
+        .action-btn {
+            background: var(--madas-accent);
+            color: var(--madas-dark);
+            border: none;
+            border-radius: 8px;
+            padding: 0.3rem 0.9rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(255, 211, 0, 0.08);
+        }
+
+        .action-btn:hover {
+            background: #ffe066;
+            box-shadow: 0 4px 16px rgba(255, 211, 0, 0.13);
+        }
+
+        .action-btn.delete {
+            background: #ff6b6b;
+            color: #fff;
+        }
+
+        .action-btn.delete:hover {
+            background: #e64949;
+        }
+
+        .icon-cell {
+            font-size: 1.5rem;
+        }
+
+        .divider {
+            border: none;
+            border-top: 2px solid var(--card-border);
+            margin: 2.5rem 0 1.5rem 0;
+            width: 100%;
+        }
+
+        @media (max-width: 700px) {
+            .customization-card {
+                padding: 1.2rem 0.5rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-[var(--madas-primary)]">MADAS Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                    <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                        <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2">
+                    <a href="../index.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="./orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                                        <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all" id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200" id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="./products.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="./collections.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="./product-reviews.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="./low-stock.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+                    <a href="./Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+                    <a href="./Admin.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">supervisor_account</span>
+                        <span>Staff</span>
+                    </a>
+                    <a href="./finance.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">account_balance_wallet</span>
+                        <span>Finance</span>
+                    </a>
+                    <div class="mt-6 mb-2 text-xs font-bold text-gray-500 sidebar-section-header">Games</div>
+                    <a href="./game-hub.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">sports_esports</span>
+                        <span>Games</span>
+                    </a>
+                    <a href="./madas-pass-customization.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl bg-[var(--madas-primary)] text-white font-medium">
+                        <span class="material-icons">stars</span>
+                        <span>MADAS Pass</span>
+                    </a>
+                </nav>
+                <div class="p-4 border-t border-gray-200">
+                    <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-[var(--madas-primary)] mb-2">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button id="previewPassBtn"
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">visibility</span>
+                                <span>Preview Pass</span>
+                            </button>
+                            <button id="exportRewardsBtn"
+                                class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                                <span class="material-icons text-sm">download</span>
+                                <span>Export Rewards</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+            <div class="p-6 lg:p-8">
+                <div class="main-dashboard-content">
+                    <div class="customization-card">
+                        <h1 class="text-2xl font-extrabold text-[var(--madas-primary)] mb-4">MADAS Pass Customization
+                        </h1>
+                        <div>
+                            <div class="section-title">1. Rewards (Tiers)</div>
+                            <table id="rewardsTable" class="dashboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tier</th>
+                                        <th>Image</th>
+                                        <th>Name</th>
+                                        <th>Points</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                            <form id="rewardForm" class="form-row">
+                                <label>Tier <input type="number" id="rewardTier" min="1" required /></label>
+                                <label>Image URL <input type="text" id="rewardImage" maxlength="256"
+                                        placeholder="https://..." required /></label>
+                                <img id="rewardImagePreview" src="https://placehold.co/80x80?text=Preview" alt="Preview"
+                                    style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-left:8px;display:none;">
+                                <label>Name <input type="text" id="rewardName" maxlength="32" required /></label>
+                                <label>Points <input type="number" id="rewardPoints" min="1" required /></label>
+                                <button type="submit" class="action-btn">Add/Update</button>
+                            </form>
+                        </div>
+                        <hr class="divider" />
+                        <div>
+                            <div class="section-title">2. Quests</div>
+                            <table id="questsTable" class="dashboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Points</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                            <form id="questForm" class="form-row">
+                                <label>Description <input type="text" id="questDesc" maxlength="64" required /></label>
+                                <label>Points <input type="number" id="questPoints" min="1" required /></label>
+                                <button type="submit" class="action-btn">Add/Update</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        // Mobile menu toggle
+        const toggleBtn = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        if (toggleBtn && sidebar) {
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+        }
+        // Dark mode toggle functionality
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon = document.getElementById('darkToggleIcon');
+        function setDarkMode(on) {
+            document.body.classList.toggle('dark-mode', on);
+            localStorage.setItem('dark-mode', on ? '1' : '0');
+            if (on) {
+                darkIcon.innerHTML = '<path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28z"/>';
+            } else {
+                darkIcon.innerHTML = '<path d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm5.657 3.343a1 1 0 0 1 1.414 0l.707.707a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 0-1.414zM21 11a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2h1zm-2.929 7.071a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM12 20a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm-7.071-2.929a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM4 13a1 1 0 1 1 0-2H3a1 1 0 1 1 0 2h1zm2.343-7.657a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 4.222 6.05l.707-.707a1 1 0 0 1 1.414 0zM12 6a6 6 0 1 1 0 12A6 6 0 0 1 12 6z"/>';
+            }
+        }
+        darkToggle.addEventListener('click', () => {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        });
+        if (localStorage.getItem('dark-mode') === '1') {
+            setDarkMode(true);
+        }
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.appspot.com",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3",
+            measurementId: "G-NQVR1F4N3Q"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        // --- Rewards (Tiers) ---
+        const rewardsTable = document.getElementById('rewardsTable').querySelector('tbody');
+        const rewardForm = document.getElementById('rewardForm');
+        const rewardTier = document.getElementById('rewardTier');
+        const rewardImage = document.getElementById('rewardImage');
+        const rewardImagePreview = document.getElementById('rewardImagePreview');
+        const rewardName = document.getElementById('rewardName');
+        const rewardPoints = document.getElementById('rewardPoints');
+        let editingRewardTier = null;
+
+        rewardImage.addEventListener('input', () => {
+            if (rewardImage.value) {
+                rewardImagePreview.style.display = 'block';
+                rewardImagePreview.src = rewardImage.value;
+            } else {
+                rewardImagePreview.style.display = 'none';
+                rewardImagePreview.src = '';
+            }
+        });
+        async function loadRewards() {
+            rewardsTable.innerHTML = '';
+            const snap = await getDocs(collection(db, 'madas-pass-customization'));
+            const rewards = snap.docs.map(doc => doc.data()).sort((a, b) => a.points - b.points);
+            rewards.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${r.tier}</td>
+                    <td><img src="${r.image || 'https://placehold.co/40x40?text=Img'}" alt="Reward Image" style="width:40px;height:40px;border-radius:8px;object-fit:cover;"></td>
+                    <td>${r.prize}</td>
+                    <td>${r.points}</td>
+                    <td>
+                        <button class="action-btn" onclick="editReward(${r.tier}, '${(r.image || '').replace(/'/g, "&#39;")}', '${r.prize.replace(/'/g, "&#39;")}', ${r.points})">Edit</button>
+                        <button class="action-btn delete" onclick="deleteReward(${r.tier})">Delete</button>
+                    </td>
+                `;
+                rewardsTable.appendChild(tr);
+            });
+        }
+        window.editReward = (tier, image, name, points) => {
+            rewardTier.value = tier;
+            rewardImage.value = image;
+            rewardName.value = name;
+            rewardPoints.value = points;
+            if (image) {
+                rewardImagePreview.style.display = 'block';
+                rewardImagePreview.src = image;
+            } else {
+                rewardImagePreview.style.display = 'none';
+                rewardImagePreview.src = '';
+            }
+        };
+        window.deleteReward = async (tier) => {
+            await setDoc(doc(db, 'madas-pass-customization', String(tier)), {}, { merge: false });
+            await deleteDoc(doc(db, 'madas-pass-customization', String(tier)));
+            loadRewards();
+        };
+        rewardForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const tier = Number(rewardTier.value);
+            const image = rewardImage.value;
+            const prize = rewardName.value;
+            const points = Number(rewardPoints.value);
+            await setDoc(doc(db, 'madas-pass-customization', String(tier)), {
+                tier, image, prize, points
+            });
+            rewardForm.reset();
+            rewardImagePreview.style.display = 'none';
+            rewardImagePreview.src = '';
+            editingRewardTier = null;
+            loadRewards();
+        };
+        loadRewards();
+        // --- Quests ---
+        const questsTable = document.getElementById('questsTable').querySelector('tbody');
+        const questForm = document.getElementById('questForm');
+        const questDesc = document.getElementById('questDesc');
+        const questPoints = document.getElementById('questPoints');
+        let editingQuestId = null;
+        async function loadQuests() {
+            questsTable.innerHTML = '';
+            const snap = await getDocs(collection(db, 'madas-pass-quests'));
+            const quests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            quests.forEach(q => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${q.description}</td>
+                    <td>${q.points}</td>
+                    <td>
+                        <button class="action-btn" onclick="editQuest('${q.id}', '${q.description.replace(/'/g, "&#39;")}', ${q.points})">Edit</button>
+                        <button class="action-btn delete" onclick="deleteQuest('${q.id}')">Delete</button>
+                    </td>
+                `;
+                questsTable.appendChild(tr);
+            });
+        }
+        window.editQuest = (id, desc, points) => {
+            questDesc.value = desc;
+            questPoints.value = points;
+            editingQuestId = id;
+        };
+        window.deleteQuest = async (id) => {
+            await deleteDoc(doc(db, 'madas-pass-quests', id));
+            loadQuests();
+        };
+        questForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const description = questDesc.value;
+            const points = Number(questPoints.value);
+            let id = editingQuestId;
+            if (!id) {
+                // Generate a new id
+                id = Math.random().toString(36).slice(2, 10);
+            }
+            await setDoc(doc(db, 'madas-pass-quests', id), {
+                description, points
+            });
+            questForm.reset();
+            editingQuestId = null;
+            loadQuests();
+        };
+        loadQuests();
+    </script>
+</body>
+
+</html>

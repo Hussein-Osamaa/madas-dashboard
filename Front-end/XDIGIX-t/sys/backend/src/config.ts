@@ -39,4 +39,15 @@ export const config = {
       10
     ),
   },
+
+  /** External API (multi-tenant): rate limit per tenant */
+  externalApi: {
+    /** Max requests per tenant per window (orders + webhook) */
+    rateLimitPerTenant: parseInt(process.env.EXTERNAL_API_RATE_LIMIT_PER_TENANT || '100', 10),
+    rateLimitWindowMs: parseInt(process.env.EXTERNAL_API_RATE_LIMIT_WINDOW_MS || '60000', 10),
+    /** Webhook signature timestamp: reject if older than this (seconds). Replay protection. */
+    webhookTimestampToleranceSec: parseInt(process.env.EXTERNAL_WEBHOOK_TIMESTAMP_TOLERANCE_SEC || '300', 10),
+    /** Require HTTPS in production for external routes */
+    requireHttps: process.env.EXTERNAL_API_REQUIRE_HTTPS !== 'false' && process.env.NODE_ENV === 'production',
+  },
 };

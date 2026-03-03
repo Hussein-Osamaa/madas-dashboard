@@ -1,0 +1,51 @@
+<!-- Logout Button Template - Add this to any dashboard page -->
+<!-- Include this HTML where you want the logout button to appear -->
+
+<button id="logout-btn" class="logout-button" title="Logout">
+    <span class="material-icons">logout</span>
+    <span>Logout</span>
+</button>
+
+<!-- Include this script to make logout work -->
+<script>
+    // Logout button functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // Clear all user data
+                localStorage.clear();
+                sessionStorage.clear();
+
+                // Clear any cookies
+                document.cookie.split(";").forEach(function (c) {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+
+                // Redirect to login page
+                // Determine correct path based on current location
+                let loginPath = '../../login.html';
+
+                const currentPath = window.location.pathname;
+                if (currentPath.includes('/Dashboard/')) {
+                    loginPath = '../../login.html';
+                } else if (currentPath.includes('/mobile-dashboard/')) {
+                    loginPath = '../../../login.html';
+                } else if (currentPath.includes('/Staff/') || currentPath.includes('/Inventory/') ||
+                    currentPath.includes('/Orders/') || currentPath.includes('/Customers/') ||
+                    currentPath.includes('/Main/') || currentPath.includes('/Finance/') ||
+                    currentPath.includes('/Game hub/')) {
+                    loginPath = '../../../login.html';
+                }
+
+                console.log('🚪 Logging out and redirecting to:', loginPath);
+                window.location.href = loginPath;
+            });
+        }
+    });
+</script>
+
+<!-- Optional: Include universal logout script for enhanced functionality -->
+<script src="../../Assets/JS/universal-logout.js"></script>

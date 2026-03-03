@@ -1,29 +1,65 @@
 /**
- * Permission helpers (shared) - uses Firestore when available
+ * Permission helpers (shared)
+ *
+ * Uses the backend-adapter API when `initPermissionsApi` has been called,
+ * otherwise falls back to direct Firebase Firestore SDK.
  */
-import { getApps } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import type { User, PermissionCheckResult } from '../types/rbac';
 
-function getDb() {
-  const app = getApps()[0];
-  return app ? getFirestore(app) : null;
+/* ------------------------------------------------------------------ */
+/*  Pluggable API surface                                             */
+/* ------------------------------------------------------------------ */
+
+interface FirestoreLikeApi {
+  collection: (db: unknown, ...segments: string[]) => unknown;
+  query: (ref: unknown, ...constraints: unknown[]) => unknown;
+  where: (field: string, op: string, value: unknown) => unknown;
+  getDocs: (q: unknown) => Promise<{ docs: Array<{ id: string; data: () => Record<string, unknown> }> }>;
 }
 
+let _api: FirestoreLikeApi | null = null;
+let _db: unknown = null;
+
+/** Inject a backend-adapter–compatible API so queries go through the backend. */
+export function initPermissionsApi(api: FirestoreLikeApi, db?: unknown) {
+  _api = api;
+  _db = db ?? {};
+}
+
+async function lazyFirebase(): Promise<{ api: FirestoreLikeApi; db: unknown }> {
+  if (_api) return { api: _api, db: _db };
+  const { getApps } = await import('firebase/app');
+  const fb = await import('firebase/firestore');
+  const app = getApps()[0];
+  return {
+    api: {
+      collection: fb.collection,
+      query: fb.query,
+      where: fb.where,
+      getDocs: fb.getDocs,
+    },
+    db: app ? fb.getFirestore(app) : null,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Permission checks                                                 */
+/* ------------------------------------------------------------------ */
+
 export async function getUserPermissions(roleId: string): Promise<string[]> {
-  const db = getDb();
+  const { api, db } = await lazyFirebase();
   if (!db) return [];
   try {
-    const snap = await getDocs(
-      query(
-        collection(db, 'role_permissions'),
-        where('role_id', '==', roleId)
+    const snap = await api.getDocs(
+      api.query(
+        api.collection(db, 'role_permissions'),
+        api.where('role_id', '==', roleId)
       )
     );
     const keys: string[] = [];
     snap.docs.forEach((d) => {
       const k = d.data().permission_key ?? d.data().key;
-      if (k) keys.push(k);
+      if (k) keys.push(k as string);
     });
     return keys;
   } catch {
@@ -36,8 +72,6 @@ export async function checkPermission(
   _permissionKey: string,
   _userType?: string
 ): Promise<PermissionCheckResult> {
-  const db = getDb();
-  if (!db) return { allowed: false };
   try {
     const perms = await getUserPermissions(_roleId);
     return { allowed: perms.includes(_permissionKey) };

@@ -1,0 +1,22 @@
+{
+  "local": {
+    "baseUrl": "http://localhost:3000",
+    "apiUrl": "http://localhost:3000/api",
+    "authUrl": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword",
+    "firestoreUrl": "http://localhost:8080/v1/projects/{{PROJECT_ID}}/databases/(default)/documents"
+  },
+  "staging": {
+    "baseUrl": "https://{{STAGING_DOMAIN}}.web.app",
+    "apiUrl": "https://{{STAGING_DOMAIN}}.web.app/api",
+    "authUrl": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword",
+    "firestoreUrl": "https://firestore.googleapis.com/v1/projects/{{PROJECT_ID}}/databases/(default)/documents"
+  },
+  "prod": {
+    "baseUrl": "https://{{PROD_DOMAIN}}.web.app",
+    "apiUrl": "https://{{PROD_DOMAIN}}.web.app/api",
+    "authUrl": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword",
+    "firestoreUrl": "https://firestore.googleapis.com/v1/projects/{{PROJECT_ID}}/databases/(default)/documents"
+  }
+}
+
+

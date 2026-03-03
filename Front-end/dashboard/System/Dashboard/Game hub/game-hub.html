@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Madas Hub - MADAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Variables for consistent theming */
+        :root {
+            /* Modern Color Palette */
+            --primary-bg: #0a0a0a;
+            --secondary-bg: #1a1a1a;
+            --accent-blue: #00d4ff;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-orange: #f97316;
+            --text-white: #ffffff;
+            --text-gray: #a1a1aa;
+            --text-muted: #71717a;
+
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #8b5cf6 50%, #ec4899 100%);
+            --gradient-secondary: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%);
+            --gradient-dark: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+            /* Shadows */
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.3);
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.2);
+
+            /* Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+
+            /* Spacing */
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --spacing-xl: 48px;
+
+            /* Typography */
+            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-primary);
+            background: var(--primary-bg);
+            color: var(--text-white);
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
+            animation: backgroundFloat 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(-10px, -10px) scale(1.05);
+            }
+
+            66% {
+                transform: translate(10px, 10px) scale(0.95);
+            }
+        }
+
+        /* Siri Background Effects */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: none;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .galaxy-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .nebula {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .nebula1 {
+            background: radial-gradient(circle, #7f5af0 0%, #232946 80%);
+            width: 600px;
+            height: 400px;
+            top: 10%;
+            left: 5%;
+        }
+
+        .nebula2 {
+            background: radial-gradient(circle, #ff6b6b 0%, #232946 80%);
+            width: 400px;
+            height: 300px;
+            bottom: 10%;
+            right: 10%;
+        }
+
+        .nebula3 {
+            background: radial-gradient(circle, #FFD700 0%, #232946 80%);
+            width: 300px;
+            height: 200px;
+            top: 60%;
+            left: 60%;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            from {
+                opacity: 0.6;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .hub-container {
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-soft);
+            padding: var(--spacing-xl) var(--spacing-lg);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(20px);
+            margin: 120px auto var(--spacing-xl) auto;
+        }
+
+        .hub-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-glass);
+            border-radius: var(--radius-xl);
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin: var(--spacing-lg) 0 0 0;
+            justify-items: center;
+            align-items: stretch;
+            animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            padding: var(--spacing-lg) var(--spacing-md);
+            text-align: center;
+            color: var(--text-white);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: var(--shadow-glow);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .game-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .game-icon {
+            font-size: 3rem;
+            filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
+            transition: all 0.3s ease;
+        }
+
+        .game-card:hover .game-icon {
+            filter: drop-shadow(0 0 16px rgba(0, 212, 255, 0.8));
+            transform: scale(1.1);
+        }
+
+        .game-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-white);
+        }
+
+        .game-desc {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            opacity: 0.8;
+        }
+
+        body.dark-mode .game-card {
+            background: rgba(255, 251, 230, 0.92);
+            color: #232946;
+            border-color: #FFD70088;
+        }
+
+        body.dark-mode .game-card:hover {
+            background: rgba(255, 251, 230, 1);
+            box-shadow: 0 8px 32px 0 #FFD70066, 0 0 40px 0 #FFD70044;
+        }
+
+        body.dark-mode .game-title {
+            color: #232946;
+        }
+
+        body.dark-mode .game-desc {
+            color: #7f5af0;
+        }
+
+        .streak-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-md) var(--spacing-lg);
+            gap: var(--spacing-md);
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .streak-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .streak-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .streak-icon {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.6));
+            animation: streakPulse 1.2s infinite alternate;
+        }
+
+        @keyframes streakPulse {
+            from {
+                filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));
+            }
+
+            to {
+                filter: drop-shadow(0 0 24px rgba(0, 212, 255, 0.8));
+            }
+        }
+
+        .streak-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .streak-label {
+            font-size: 1.1rem;
+            color: var(--accent-blue);
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+
+        .streak-value {
+            font-size: 2.1rem;
+            font-weight: bold;
+            color: var(--text-white);
+            margin-bottom: 0.1rem;
+            transition: color 0.3s, transform 0.3s;
+        }
+
+        .streak-value.animated {
+            color: var(--accent-blue);
+            transform: scale(1.25) rotate(-3deg);
+            text-shadow: 0 0 16px rgba(0, 212, 255, 0.6);
+        }
+
+        .high-streak {
+            font-size: 1rem;
+            color: var(--text-gray);
+            opacity: 0.8;
+        }
+
+        body.dark-mode .streak-card {
+            background: rgba(127, 90, 240, 0.13);
+            border-color: #7f5af088;
+        }
+
+        body.dark-mode .streak-value {
+            color: #232946;
+        }
+
+        body.dark-mode .high-streak {
+            color: #7f5af0;
+        }
+
+
+
+        /* Top Navigation Bar */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            position: sticky;
+            top: var(--spacing-md);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-white);
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            position: relative;
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: var(--radius-md);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--gradient-primary);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow:
+                0 8px 16px rgba(0, 0, 0, 0.4),
+                0 4px 8px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .nav-btn:hover::before {
+            opacity: 1;
+        }
+
+        .nav-btn:active {
+            transform: translateY(-1px) scale(0.98);
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.3),
+                0 1px 2px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-btn.active {
+            background: var(--gradient-primary);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow:
+                0 6px 12px rgba(0, 0, 0, 0.4),
+                0 3px 6px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 0 15px rgba(0, 212, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 30px;
+        }
+
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .v-bucks {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: rgba(26, 26, 26, 0.8);
+            padding: 8px 16px;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .v-bucks span {
+            color: #ffffff;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .v-bucks:hover span {
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+
+        .v-bucks:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .points-logo {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            filter: brightness(1.2) contrast(1.1);
+            transition: all 0.3s ease;
+        }
+
+        .v-bucks:hover .points-logo {
+            transform: scale(1.1);
+            filter: brightness(1.4) contrast(1.2);
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <div class="top-bar">
+        <div class="top-left">
+            <div class="nav-buttons">
+                <button class="nav-btn active">MADAS HUB</button>
+                <button class="nav-btn" onclick="window.location.href='madas-pass.html'">MADAS PASS</button>
+            </div>
+        </div>
+        <div class="top-right">
+            <div class="v-bucks">
+                <img src="../assets/img/madas-logo.png" alt="Madas Points" class="points-logo">
+                <span id="userPoints">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="galaxy-bg" id="galaxyBg">
+        <div class="nebula nebula1"></div>
+        <div class="nebula nebula2"></div>
+        <div class="nebula nebula3"></div>
+        <!-- Stars will be added by JS -->
+    </div>
+
+    <div class="hub-container">
+        <div class="streak-card">
+            <div class="streak-icon">🔥</div>
+            <div class="streak-info">
+                <div class="streak-label">Streak</div>
+                <div class="streak-value" id="streakValue">0</div>
+                <div class="high-streak">High Streak: <span id="highStreakValue">0</span></div>
+            </div>
+        </div>
+        <h1
+            style="margin-bottom:var(--spacing-lg); font-size: 2rem; font-weight: 700; color: var(--text-white); text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);">
+            Welcome to the Madas Hub</h1>
+        <div class="games-grid">
+            <a href="scratch-card.html" class="game-card" data-game="scratch-card">
+                <div class="game-icon">🎉</div>
+                <div class="game-title">Scratch Card</div>
+                <div class="game-desc">Scratch and win instant prizes!</div>
+            </a>
+            <a href="discount-wheel.html" class="game-card" data-game="discount-wheel">
+                <div class="game-icon">🎯</div>
+                <div class="game-title">Discount Wheel</div>
+                <div class="game-desc">Spin the wheel for discounts!</div>
+            </a>
+            <a href="#" class="game-card" data-game="memory-match">
+                <div class="game-icon">🧠</div>
+                <div class="game-title">Memory Match</div>
+                <div class="game-desc">Test your memory and win!</div>
+            </a>
+            <a href="#" class="game-card" data-game="spin-bottle">
+                <div class="game-icon">🍾</div>
+                <div class="game-title">Spin the Bottle</div>
+                <div class="game-desc">A classic party game, reimagined.</div>
+            </a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.appspot.com",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:7470e2204065b4590583d3",
+            measurementId: "G-NQVR1F4N3Q"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let streakDocRef = null;
+        let streak = 0, highStreak = 0, lastPlay = null;
+        const streakValue = document.getElementById('streakValue');
+        const highStreakValue = document.getElementById('highStreakValue');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+            streakDocRef = doc(db, 'userStreaks', user.uid);
+
+            // Fetch user points
+            try {
+                const userDoc = await getDoc(doc(db, 'madas-pass-users', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const points = userData.points || 0;
+                    document.getElementById('userPoints').textContent = points;
+                }
+            } catch (error) {
+                console.error('Error fetching user points:', error);
+            }
+
+            // Fetch streak data
+            const docSnap = await getDoc(streakDocRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                streak = data.streak || 0;
+                highStreak = data.highStreak || 0;
+                lastPlay = data.lastPlay ? data.lastPlay.toDate() : null;
+            } else {
+                streak = 0; highStreak = 0; lastPlay = null;
+            }
+            updateStreakUI();
+        });
+
+        function updateStreakUI(animated = false) {
+            streakValue.textContent = streak;
+            highStreakValue.textContent = highStreak;
+            if (animated) {
+                streakValue.classList.add('animated');
+                setTimeout(() => streakValue.classList.remove('animated'), 700);
+            }
+        }
+
+        function isToday(date) {
+            const now = new Date();
+            return date && now.toDateString() === date.toDateString();
+        }
+        function isYesterday(date) {
+            const now = new Date();
+            const yest = new Date(now);
+            yest.setDate(now.getDate() - 1);
+            return date && yest.toDateString() === date.toDateString();
+        }
+
+        // Handle game play (simulate by clicking any game card)
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('click', async (e) => {
+                if (!currentUser) return;
+                const now = new Date();
+                if (isToday(lastPlay)) {
+                    // Already played today, do nothing
+                    return;
+                } else if (isYesterday(lastPlay)) {
+                    streak++;
+                } else {
+                    streak = 1;
+                }
+                lastPlay = now;
+                if (streak > highStreak) highStreak = streak;
+                await setDoc(streakDocRef, {
+                    streak,
+                    highStreak,
+                    lastPlay: serverTimestamp()
+                }, { merge: true });
+                updateStreakUI(true);
+                // Allow navigation after updating streak
+                // (If you want to block navigation until update, use e.preventDefault() and redirect after update)
+            });
+        });
+    
+        // Inventory Dropdown functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            const inventoryToggle = document.getElementById("inventory-toggle");
+            const inventorySubmenu = document.getElementById("inventory-submenu");
+            const inventoryArrow = document.getElementById("inventory-arrow");
+
+            if (inventoryToggle && inventorySubmenu && inventoryArrow) {
+                inventoryToggle.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const isOpen = !inventorySubmenu.classList.contains("hidden");
+                    
+                    if (isOpen) {
+                        inventorySubmenu.classList.add("hidden");
+                        inventoryArrow.style.transform = "rotate(0deg)";
+                    } else {
+                        inventorySubmenu.classList.remove("hidden");
+                        inventoryArrow.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

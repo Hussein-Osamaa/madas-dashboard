@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scratch Card Customization - MADAS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/images/madas-logo.png">
+    <style>
+        :root {
+            --madas-primary: #27491F;
+            --madas-dark: #F0CAE1;
+            --madas-light: #F4F4F4;
+            --madas-accent: #FFD300;
+            --bg-main: #F4F4F4;
+            --text-main: #1F2937;
+            --text-secondary: #6B7280;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --sidebar-bg: #FFFFFF;
+            --header-bg: #FFFFFF;
+        }
+
+        body.dark-mode {
+            --madas-primary: #FFD700;
+            --madas-dark: #232946;
+            --madas-light: #181825;
+            --madas-accent: #7209b7;
+            --bg-main: #181825;
+            --text-main: #F8F8F2;
+            --text-secondary: #A8A8A8;
+            --card-bg: #232946;
+            --card-border: #2D3748;
+            --sidebar-bg: #232946;
+            --header-bg: #232946;
+            background: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .dark-toggle {
+            background: var(--madas-accent);
+            border: 2px solid var(--madas-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--madas-primary);
+            transition: fill 0.3s;
+        }
+
+        .dark-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .dark-toggle:active {
+            transform: scale(0.95);
+        }
+
+        * {
+            transition: background-color 0.5s, color 0.5s, border-color 0.5s;
+        }
+
+        .sidebar-section-header {
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .dark-mode .sidebar-section-header {
+            color: var(--text-secondary) !important;
+        }
+
+        .dark-mode .sidebar-link {
+            color: var(--text-main) !important;
+        }
+
+        .dark-mode .sidebar-link .material-icons {
+            color: var(--text-main) !important;
+        }
+
+        .main-dashboard-content {
+            padding: 2.5rem 1.5rem 2rem 1.5rem;
+            margin: 1rem;
+            min-height: calc(100vh - 8rem);
+            background: var(--bg-main);
+            border-radius: 18px;
+        }
+
+        .main-dashboard-content h1,
+        .main-dashboard-content h2,
+        .main-dashboard-content h3 {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dark-mode .bg-white,
+        .dark-mode .bg-gray-50,
+        .dark-mode .bg-gray-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .text-gray-900 {
+            color: var(--text-main) !important;
+        }
+
+        .dark-mode .text-gray-600,
+        .dark-mode .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        .dark-mode .border-gray-100,
+        .dark-mode .border-gray-200,
+        .dark-mode .divide-gray-200 {
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode .hover\:bg-gray-100:hover {
+            background-color: var(--card-bg) !important;
+        }
+
+        .dark-mode .shadow-sm {
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .dark-mode header {
+            background-color: var(--header-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+
+        .dark-mode aside {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        @keyframes fadeSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(32px) scale(0.97);
+            }
+
+            100% {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        @keyframes iconPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+        }
+
+        .sidebar-link {
+            transition: color 0.3s, background 0.3s, transform 0.2s;
+        }
+
+        .sidebar-link:hover {
+            transform: translateX(6px) scale(1.04);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+        }
+        /* Inventory Dropdown */
+        .inventory-dropdown {
+            position: relative;
+        }
+
+        .inventory-submenu {
+            transition: all 0.3s ease;
+        }
+
+        .inventory-submenu.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+
+        .inventory-submenu:not(.hidden) {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .sidebar-link.active,
+        .sidebar-link.bg-\[var\(--madas-primary\)\] {
+            position: relative;
+        }
+
+        .sidebar-link.active::after,
+        .sidebar-link.bg-\[var\(--madas-primary\)\]::after {
+            content: '';
+            position: absolute;
+            left: 24px;
+            bottom: 8px;
+            width: 24px;
+            height: 2px;
+            background: var(--madas-accent);
+            border-radius: 2px;
+            animation: underlineGrow 0.5s cubic-bezier(.68, -0.55, .27, 1.55);
+        }
+
+        @keyframes underlineGrow {
+            from {
+                width: 0;
+                opacity: 0;
+            }
+
+            to {
+                width: 24px;
+                opacity: 1;
+            }
+        }
+
+        .main-dashboard-content .game-card {
+            animation: fadeSlideIn 0.7s cubic-bezier(.68, -0.55, .27, 1.55);
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+
+        .main-dashboard-content .game-card:hover {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        .main-dashboard-content .game-card .material-icons {
+            transition: color 0.3s, transform 0.3s;
+        }
+
+        .main-dashboard-content .game-card:hover .material-icons {
+            animation: iconPulse 0.7s;
+            color: var(--madas-accent) !important;
+        }
+    </style>
+
+    <!-- Business Isolation Scripts -->
+    <script src="../js/business-isolation.js"></script>
+    <script src="../js/page-template.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
+        <div class="flex items-center justify-between h-full px-4 lg:px-6">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-[var(--madas-primary)] rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">M</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-[var(--madas-primary)]">MADAS Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">
+                    <svg id="darkToggleIcon" viewBox="0 0 24 24">
+                        <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <span class="material-icons text-[var(--madas-primary)]">notifications</span>
+                    <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="hidden md:block text-right">
+                        <p id="user-name" class="text-sm font-medium text-gray-900">Loading...</p>
+                        <p id="user-email" class="text-xs text-gray-500">loading@example.com</p>
+                    </div>
+                    <button id="profile-btn"
+                        class="w-8 h-8 bg-[var(--madas-accent)] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors cursor-pointer">
+                        <span class="text-[var(--madas-primary)] font-bold text-sm" id="user-initial">U</span>
+                    </button>
+                    <button id="logout-btn"
+                        class="text-gray-500 hover:text-[var(--madas-primary)] p-2 rounded-lg hover:bg-gray-100">
+                        <span class="material-icons">logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed lg:static left-0 top-16 h-full w-64 bg-white shadow-lg lg:shadow-none z-30 transform lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-4 py-6 space-y-2">
+                    <a href="../index.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">dashboard</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="./orders.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">receipt_long</span>
+                        <span>Orders</span>
+                    </a>
+                                        <!-- Inventory Dropdown -->
+                    <div class="inventory-dropdown">
+                        <button class="sidebar-link flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all" id="inventory-toggle">
+                            <div class="flex items-center space-x-3">
+                                <span class="material-icons">inventory_2</span>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="material-icons transition-transform duration-200" id="inventory-arrow">expand_more</span>
+                        </button>
+                        <div class="inventory-submenu hidden ml-6 mt-2 space-y-1" id="inventory-submenu">
+                            <a href="./products.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">inventory</span>
+                                <span>Products</span>
+                            </a>
+                            <a href="./collections.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">collections</span>
+                                <span>Collections</span>
+                            </a>
+                            <a href="./product-reviews.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">rate_review</span>
+                                <span>Reviews</span>
+                            </a>
+                            <a href="./low-stock.html" class="sidebar-link flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                                <span class="material-icons text-lg">warning</span>
+                                <span>Low Stock</span>
+                            </a>
+                        </div>
+                    </div>
+                    <a href="./Customer.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">group</span>
+                        <span>Customers</span>
+                    </a>
+                    <a href="./Admin.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">supervisor_account</span>
+                        <span>Staff</span>
+                    </a>
+                    <div class="mt-6 mb-2 text-xs font-bold text-gray-500 sidebar-section-header">Games</div>
+                    <a href="./game-hub.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl bg-[var(--madas-primary)] text-white font-medium">
+                        <span class="material-icons">sports_esports</span>
+                        <span>Games</span>
+                    </a>
+                    <a href="./discount-customize.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">casino</span>
+                        <span>Discount Wheel</span>
+                    </a>
+                    <a href="./scratch-card-customize.html"
+                        class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[var(--madas-light)] hover:text-[var(--madas-primary)] transition-all">
+                        <span class="material-icons">style</span>
+                        <span>Scratch Card</span>
+                    </a>
+                </nav>
+                <div class="bg-[var(--madas-light)] rounded-xl p-4">
+                    <button id="quickPreviewScratchBtn"
+                        class="w-full text-left text-xs text-gray-600 hover:text-[var(--madas-primary)] flex items-center space-x-2">
+                        <span class="material-icons text-sm">visibility</span>
+                        <span>Preview Scratch Card</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+            <div class="main-dashboard-content">
+                <div class="bg-white game-card rounded-xl shadow-sm border border-gray-100 p-6 max-w-4xl mx-auto mb-8">
+                    <div class="flex items-center mb-4">
+                        <span class="material-icons text-3xl text-[var(--madas-primary)] mr-2">style</span>
+                        <h2 class="text-xl font-semibold text-[var(--madas-primary)]">Scratch Card Customization</h2>
+                        <button id="previewScratchBtn"
+                            class="ml-auto bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#1f3c19] transition flex items-center"><span
+                                class="material-icons mr-1">visibility</span>Preview Scratch Card</button>
+                    </div>
+                    <form id="addScratchPrizeForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 w-full">
+                        <input type="text" id="codeInput" placeholder="Discount Code" required
+                            class="border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition" />
+                        <input type="number" id="percentInput" placeholder="Discount %" min="1" max="100" required
+                            class="border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition" />
+                        <input type="number" id="winPercentInput" placeholder="Win % (1-100)" min="0.1" max="100"
+                            step="0.1" required
+                            class="border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition" />
+                        <input type="color" id="colorInput" value="#FFD300"
+                            class="border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition" />
+                        <textarea id="descriptionInput" placeholder="Prize Description (shown to customer)" required
+                            class="md:col-span-2 border-2 border-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-[var(--madas-accent)] focus:border-transparent transition"
+                            rows="2"></textarea>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-2">Prize Appearance</label>
+                            <div class="flex gap-4 items-center">
+                                <div class="flex items-center space-x-2">
+                                    <input type="radio" id="useColor" name="appearanceType" value="color" checked
+                                        class="text-[var(--madas-primary)]" />
+                                    <label for="useColor" class="text-sm">Use Color</label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input type="radio" id="useImage" name="appearanceType" value="image"
+                                        class="text-[var(--madas-primary)]" />
+                                    <label for="useImage" class="text-sm">Use Image</label>
+                                </div>
+                            </div>
+                            <div id="colorPreview" class="mt-3">
+                                <div class="w-16 h-16 rounded-lg border-2 border-gray-200" id="colorDisplay"></div>
+                            </div>
+                            <div id="imageUpload" class="mt-3 hidden">
+                                <input type="file" id="imageInput" accept="image/*" class="hidden" />
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[var(--madas-primary)] transition"
+                                    id="imageUploadArea">
+                                    <span class="material-icons text-gray-400 text-2xl mb-2">cloud_upload</span>
+                                    <p class="text-sm text-gray-500">Click to upload image or drag and drop</p>
+                                    <p class="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 2MB</p>
+                                </div>
+                                <div id="imagePreview" class="mt-3 hidden">
+                                    <img id="previewImg"
+                                        class="w-16 h-16 rounded-lg object-cover border-2 border-gray-200" />
+                                    <button type="button" id="removeImage"
+                                        class="ml-2 text-red-500 text-sm hover:text-red-700">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit"
+                            class="md:col-span-2 bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#1f3c19] transition">Add
+                            Prize</button>
+                    </form>
+                    <div class="w-full">
+                        <table class="min-w-full text-sm border border-gray-200 rounded-xl overflow-hidden">
+                            <thead class="bg-[var(--madas-primary)] text-white">
+                                <tr>
+                                    <th class="p-3 text-left">Code</th>
+                                    <th class="p-3 text-left">Discount</th>
+                                    <th class="p-3 text-left">Win %</th>
+                                    <th class="p-3 text-left">Appearance</th>
+                                    <th class="p-3 text-left">Description</th>
+                                    <th class="p-3 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prizesTable" class="text-[var(--madas-primary)]">
+                                <!-- Dynamic rows here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <script type="module">
+                import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+                import {
+                    getFirestore, collection, getDocs, addDoc, deleteDoc, doc
+                } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+                import {
+                    getStorage, ref as storageRef, uploadBytes, getDownloadURL
+                } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+                // --- Firebase Config ---
+                const firebaseConfig = {
+                    apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+                    authDomain: "madas-store.firebaseapp.com",
+                    projectId: "madas-store",
+                    storageBucket: "madas-store.firebasestorage.app",
+                    messagingSenderId: "527071300010",
+                    appId: "1:527071300010:web:70470e2204065b4590583d3"
+                };
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const storage = getStorage(app);
+
+                // --- UI Elements ---
+                const useColorRadio = document.getElementById('useColor');
+                const useImageRadio = document.getElementById('useImage');
+                const colorPreview = document.getElementById('colorPreview');
+                const imageUpload = document.getElementById('imageUpload');
+                const colorDisplay = document.getElementById('colorDisplay');
+                const imageInput = document.getElementById('imageInput');
+                const imageUploadArea = document.getElementById('imageUploadArea');
+                const imagePreview = document.getElementById('imagePreview');
+                const previewImg = document.getElementById('previewImg');
+                const removeImage = document.getElementById('removeImage');
+                const addBtn = document.querySelector('#addScratchPrizeForm button[type="submit"]');
+                const messageBox = document.createElement('div');
+                messageBox.className = 'my-2 text-center';
+                document.querySelector('.main-dashboard-content').prepend(messageBox);
+                let currentImageData = null;
+
+                // --- UI Logic ---
+                useColorRadio.addEventListener('change', () => {
+                    colorPreview.classList.remove('hidden');
+                    imageUpload.classList.add('hidden');
+                });
+                useImageRadio.addEventListener('change', () => {
+                    colorPreview.classList.add('hidden');
+                    imageUpload.classList.remove('hidden');
+                });
+                document.getElementById('colorInput').addEventListener('input', (e) => {
+                    colorDisplay.style.backgroundColor = e.target.value;
+                });
+                imageUploadArea.addEventListener('click', () => { imageInput.click(); });
+                imageUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); imageUploadArea.classList.add('border-[var(--madas-primary)]'); });
+                imageUploadArea.addEventListener('dragleave', () => { imageUploadArea.classList.remove('border-[var(--madas-primary)]'); });
+                imageUploadArea.addEventListener('drop', (e) => { e.preventDefault(); imageUploadArea.classList.remove('border-[var(--madas-primary)]'); const files = e.dataTransfer.files; if (files.length > 0) handleImageFile(files[0]); });
+                imageInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleImageFile(e.target.files[0]); });
+                removeImage.addEventListener('click', () => { currentImageData = null; imagePreview.classList.add('hidden'); imageInput.value = ''; });
+                function handleImageFile(file) {
+                    if (file.size > 2 * 1024 * 1024) { alert('Image size must be less than 2MB'); return; }
+                    const reader = new FileReader();
+                    reader.onload = (e) => { currentImageData = e.target.result; previewImg.src = currentImageData; imagePreview.classList.remove('hidden'); };
+                    reader.readAsDataURL(file);
+                }
+
+                // --- Render Prizes ---
+                async function renderPrizes() {
+                    messageBox.textContent = '';
+                    const table = document.getElementById('prizesTable');
+                    table.innerHTML = '<tr><td colspan="6" class="text-center py-4"><span class="animate-spin inline-block w-6 h-6 border-4 border-gray-300 border-t-[var(--madas-primary)] rounded-full"></span> Loading...</td></tr>';
+                    try {
+                        const querySnapshot = await getDocs(collection(db, "scratchCardPrizes"));
+                        const prizes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        table.innerHTML = '';
+                        if (prizes.length === 0) {
+                            table.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-400">No prizes found.</td></tr>';
+                        }
+                        prizes.forEach((prize, idx) => {
+                            let appearanceCell = '';
+                            if (prize.appearanceType === 'image' && prize.image) {
+                                appearanceCell = `<img src="${prize.image}" class="w-12 h-12 rounded object-cover border" alt="Prize" />`;
+                            } else {
+                                appearanceCell = `<div class="w-12 h-12 rounded border" style="background-color: ${prize.color}"></div>`;
+                            }
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td class="p-3">${prize.code}</td>
+                                <td class="p-3">${prize.percent}%</td>
+                                <td class="p-3">${prize.winPercent || ''}%</td>
+                                <td class="p-3">${appearanceCell}</td>
+                                <td class="p-3">${prize.description}</td>
+                                <td class="p-3"><button class="deleteBtn text-red-600 hover:underline" data-id="${prize.id}">Delete</button></td>
+                            `;
+                            table.appendChild(row);
+                        });
+                        document.querySelectorAll('.deleteBtn').forEach(btn => {
+                            btn.addEventListener('click', async () => {
+                                const id = btn.getAttribute('data-id');
+                                const prize = prizes.find(p => p.id === id);
+                                if (prize) await deletePrize(prize);
+                            });
+                        });
+                    } catch (err) {
+                        table.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-500">Error loading prizes.</td></tr>';
+                        messageBox.textContent = 'Error loading prizes: ' + err.message;
+                        console.error('Error loading prizes:', err);
+                    }
+                }
+
+                // --- Add Prize ---
+                document.getElementById('addScratchPrizeForm').addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    addBtn.disabled = true;
+                    addBtn.textContent = 'Adding...';
+                    messageBox.textContent = '';
+                    const code = document.getElementById('codeInput').value.trim();
+                    const percent = parseInt(document.getElementById('percentInput').value);
+                    const winPercent = parseFloat(document.getElementById('winPercentInput').value);
+                    const color = document.getElementById('colorInput').value;
+                    const description = document.getElementById('descriptionInput').value.trim();
+                    const useImage = useImageRadio.checked;
+                    const appearanceType = useImage ? 'image' : 'color';
+                    if (!code || !percent || !winPercent || !description || percent < 1 || percent > 100 || winPercent < 0.1 || winPercent > 100) {
+                        messageBox.textContent = 'Please enter valid values for all fields.';
+                        addBtn.disabled = false; addBtn.textContent = 'Add Prize';
+                        return;
+                    }
+                    if (useImage && !currentImageData) {
+                        messageBox.textContent = 'Please upload an image or select a color.';
+                        addBtn.disabled = false; addBtn.textContent = 'Add Prize';
+                        return;
+                    }
+                    let imageUrl = null;
+                    try {
+                        if (useImage && currentImageData) {
+                            // Upload image to Firebase Storage
+                            const fileName = `scratch-prizes/${code}-${Date.now()}.png`;
+                            const response = await fetch(currentImageData);
+                            const blob = await response.blob();
+                            const imgRef = storageRef(storage, fileName);
+                            await uploadBytes(imgRef, blob);
+                            imageUrl = await getDownloadURL(imgRef);
+                        }
+                        // Add to Firestore
+                        const prizeData = {
+                            code, percent, winPercent, color, description, appearanceType
+                        };
+                        if (imageUrl) prizeData.image = imageUrl;
+                        await addDoc(collection(db, "scratchCardPrizes"), prizeData);
+                        messageBox.textContent = 'Prize added successfully!';
+                        document.getElementById('addScratchPrizeForm').reset();
+                        document.getElementById('colorInput').value = '#FFD300';
+                        colorDisplay.style.backgroundColor = '#FFD300';
+                        useColorRadio.checked = true;
+                        colorPreview.classList.remove('hidden');
+                        imageUpload.classList.add('hidden');
+                        imagePreview.classList.add('hidden');
+                        currentImageData = null;
+                        await renderPrizes();
+                    } catch (err) {
+                        messageBox.textContent = 'Error adding prize: ' + err.message;
+                        console.error('Error adding prize:', err);
+                    }
+                    addBtn.disabled = false; addBtn.textContent = 'Add Prize';
+                });
+
+                // --- Delete Prize ---
+                async function deletePrize(prize) {
+                    if (!confirm('Are you sure you want to delete this prize?')) return;
+                    try {
+                        await deleteDoc(doc(db, "scratchCardPrizes", prize.id));
+                        // Optionally delete image from storage
+                        if (prize.appearanceType === 'image' && prize.image) {
+                            // Only delete if the image is in your storage bucket
+                            if (prize.image.includes('firebasestorage.googleapis.com')) {
+                                // Extract the path from the URL
+                                const matches = /%2F(.+?)\?/.exec(prize.image);
+                                if (matches && matches[1]) {
+                                    const imgRef = storageRef(storage, decodeURIComponent(matches[1]));
+                                    try { await imgRef.delete(); } catch (e) { /* ignore */ }
+                                }
+                            }
+                        }
+                        messageBox.textContent = 'Prize deleted.';
+                        await renderPrizes();
+                    } catch (err) {
+                        messageBox.textContent = 'Error deleting prize: ' + err.message;
+                        console.error('Error deleting prize:', err);
+                    }
+                }
+
+                // --- Initial Render ---
+                renderPrizes();
+
+                // Add Reload Prizes button
+                const reloadBtn = document.createElement('button');
+                reloadBtn.textContent = 'Reload Prizes';
+                reloadBtn.className = 'mb-4 bg-[var(--madas-primary)] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#1f3c19] transition';
+                reloadBtn.onclick = async () => {
+                    reloadBtn.disabled = true;
+                    reloadBtn.textContent = 'Loading...';
+                    await renderPrizes();
+                    reloadBtn.disabled = false;
+                    reloadBtn.textContent = 'Reload Prizes';
+                };
+                document.querySelector('.main-dashboard-content').insertBefore(reloadBtn, document.querySelector('.main-dashboard-content').children[1]);
+            </script>

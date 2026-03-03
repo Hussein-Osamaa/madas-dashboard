@@ -8,11 +8,22 @@ import BusinessProvider from './contexts/BusinessContext';
 import RBACProvider from './contexts/RBACContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import { router } from './router';
+import { initRbacApi } from '@shared/lib/rbacService';
+import { initPermissionsApi } from '@shared/lib/permissions';
+import { db, collection, query, where, getDocs, getDoc, doc } from './lib/firebase';
 
 const queryClient = new QueryClient();
 
-// Initialize Firebase Performance and Analytics only when using Firebase (not backend API)
 const useBackend = !!import.meta.env.VITE_API_BACKEND_URL;
+
+// When running against the backend API, inject the adapter into the shared
+// RBAC / permissions libraries so they query through the backend instead of
+// hitting Firebase Firestore directly.
+if (useBackend) {
+  const api = { collection, query, where, getDocs, getDoc, doc } as Parameters<typeof initRbacApi>[0];
+  initRbacApi(api, db);
+  initPermissionsApi(api, db);
+}
 if (typeof window !== 'undefined' && !useBackend) {
   import('./lib/firebase').then(({ app }) => {
     import('firebase/performance').then(({ initializePerformance, getPerformance }) => {

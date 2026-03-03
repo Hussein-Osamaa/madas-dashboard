@@ -1,0 +1,36 @@
+{
+  "name": "system-load-testing",
+  "version": "1.0.0",
+  "description": "k6 load testing suite for System multi-tenant SaaS",
+  "scripts": {
+    "test:dashboard": "k6 run --config k6.config.ts src/tests/main.ts",
+    "test:dashboard-madas": "k6 run --config k6.config.ts src/tests/dashboard-test.ts",
+    "test:performance": "k6 run --config k6.config.ts src/tests/performance-test.ts",
+    "test:performance-sla": "k6 run --config k6.config.ts src/tests/performance-sla.ts",
+    "test:performance-baseline": "k6 run --config k6.config.ts src/tests/performance-baseline.ts",
+    "test:traffic": "k6 run src/tests/traffic-generator-simple.js",
+    "test:traffic:low": "TARGET_USERS=20 DURATION=15m k6 run src/tests/traffic-generator-simple.js",
+    "test:traffic:medium": "TARGET_USERS=100 DURATION=30m k6 run src/tests/traffic-generator-simple.js",
+    "test:traffic:high": "TARGET_USERS=500 DURATION=30m k6 run src/tests/traffic-generator-simple.js",
+    "test:traffic:1000": "TARGET_USERS=1000 DURATION=30m RAMP_DURATION=10m k6 run src/tests/traffic-generator-simple.js",
+    "test:analytics": "node scripts/browser-analytics-test.js",
+    "test:spike": "k6 run --config k6.config.ts src/tests/spike-main.ts",
+    "test:stress": "k6 run --config k6.config.ts src/scenarios/stress.ts",
+    "test:soak": "k6 run --config k6.config.ts src/scenarios/soak.ts",
+    "test:read-heavy": "k6 run --config k6.config.ts src/scenarios/read-heavy.ts",
+    "test:write-heavy": "k6 run --config k6.config.ts src/scenarios/write-heavy.ts",
+    "test:isolation": "k6 run --config k6.config.ts src/scenarios/isolation.ts",
+    "generate-data": "ts-node scripts/generate-test-data.ts",
+    "cleanup-data": "ts-node scripts/cleanup-test-data.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@types/k6": "^0.48.0",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
+

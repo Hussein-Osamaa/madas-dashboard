@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isOwnerOrAdmin(userId) {
+      return isOwner(userId) || isAdmin();
+    }
+    
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidDocumentType() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+    
+    function isValidFileSize() {
+      return request.resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true; // Public read for profile images
+      allow write: if isOwnerOrAdmin(userId) && 
+        isValidImageType() && 
+        isValidFileSize();
+    }
+
+    // Website assets
+    match /websites/{websiteId}/assets/{fileName} {
+      allow read: if true; // Public read for website assets
+      allow write: if isAuthenticated() && 
+        (firestore.exists(/databases/(default)/documents/websites/$(websiteId)) &&
+         firestore.get(/databases/(default)/documents/websites/$(websiteId)).data.ownerId == request.auth.uid) ||
+        isAdmin();
+    }
+
+    // Media library
+    match /media/{userId}/{fileName} {
+      allow read: if true; // Public read for media
+      allow write: if isOwnerOrAdmin(userId) && 
+        (isValidImageType() || isValidDocumentType()) && 
+        isValidFileSize();
+    }
+
+    // Templates and themes
+    match /templates/{templateId}/{fileName} {
+      allow read: if true; // Public read for templates
+      allow write: if isAdmin();
+    }
+
+    // System files (admin only)
+    match /system/{fileName} {
+      allow read, write: if isAdmin();
+    }
+
+    // Backup files (admin only)
+    match /backups/{fileName} {
+      allow read, write: if isAdmin();
+    }
+
+    // Temporary uploads
+    match /temp/{userId}/{fileName} {
+      allow read, write: if isOwnerOrAdmin(userId);
+      // Auto-delete after 24 hours (handled by Cloud Functions)
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

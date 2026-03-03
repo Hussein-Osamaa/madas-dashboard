@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables (contains secrets)
+.env
+.env.local
+.env.production
+
+# Test data (contains potentially sensitive data)
+data/test-*.json
+data/cleanup-*.ts
+!data/test-tenants.json.example
+
+# Generated files
+*.log
+*.tsbuildinfo
+
+# k6 outputs
+k6-results/
+*.json.gz
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+

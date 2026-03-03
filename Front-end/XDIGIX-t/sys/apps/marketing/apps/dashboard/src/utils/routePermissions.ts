@@ -30,6 +30,7 @@ export const routePermissionMap: Record<string, string[]> = {
   '/ecommerce/custom-domains': ['website_settings'],
   '/ecommerce/website-settings': ['website_settings'],
   '/ecommerce/code-editor': ['website_builder'],
+  '/ecommerce/external-website': ['website_settings'],
   '/rbac/users': ['staff_view'],
   '/rbac/roles': ['roles_view'],
   '/settings': ['settings_general'],

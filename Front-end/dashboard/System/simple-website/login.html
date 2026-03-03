@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Login - Next Gen Coders</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Enhanced Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Particle System -->
+    <div class="particle-system" id="particleSystem"></div>
+
+    <!-- Geometric Shapes -->
+    <div class="geometric-shapes" id="geometricShapes"></div>
+
+    <!-- Floating Elements -->
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+
+    <!-- Navigation -->
+    <nav class="glass-nav">
+        <div class="nav-container">
+            <div class="nav-content">
+                <div class="nav-brand">
+                    <a href="index.html" class="brand-link">
+                        <img src="Assets/Img/logo.jpeg" alt="Next Gen Coders" class="logo-img">
+                    </a>
+                </div>
+                <div class="nav-links" id="navLinks">
+                    <a href="index.html" class="nav-link" data-en="Home" data-ar="الرئيسية">Home</a>
+                    <a href="plans.html" class="nav-link" data-en="Plans" data-ar="الخطط">Plans</a>
+                    <a href="contact.html" class="nav-link" data-en="Contact" data-ar="اتصل بنا">Contact</a>
+                    <a href="login.html" class="nav-link active" data-en="Login" data-ar="تسجيل الدخول">Login</a>
+                    <button class="language-toggle" id="languageToggle" aria-label="Toggle Language">
+                        <i class="fas fa-globe"></i>
+                        <span class="lang-text" data-en="EN" data-ar="عربي">EN</span>
+                    </button>
+                </div>
+                <div class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Section with Inline Signup -->
+    <section class="login-section">
+        <div class="container">
+            <div class="login-content">
+                <!-- Main Login Card -->
+                <div class="glass-card login-card">
+                    <div class="login-header">
+                        <div class="login-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <h1 class="login-title" data-en="Welcome Back" data-ar="مرحباً بعودتك">Welcome Back</h1>
+                        <p class="login-subtitle" data-en="Sign in to your Next Gen Coders account"
+                            data-ar="سجل دخولك إلى حساب مطوري الجيل القادم">Sign in to your Next Gen Coders account</p>
+                    </div>
+
+                    <!-- Login/Signup Toggle -->
+                    <div class="auth-toggle">
+                        <button class="toggle-btn active" id="loginToggle" data-en="Login"
+                            data-ar="تسجيل الدخول">Login</button>
+                        <button class="toggle-btn" id="signupToggle" data-en="Sign Up" data-ar="إنشاء حساب">Sign
+                            Up</button>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form class="login-form" id="loginForm">
+                        <div class="form-group">
+                            <label for="email" class="form-label" data-en="Email Address"
+                                data-ar="عنوان البريد الإلكتروني">Email Address</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input type="email" id="email" name="email" class="form-input"
+                                    placeholder="Enter your email" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password" class="form-label" data-en="Password"
+                                data-ar="كلمة المرور">Password</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="password" name="password" class="form-input"
+                                    placeholder="Enter your password" required>
+                                <button type="button" class="password-toggle" id="passwordToggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="remember" name="remember">
+                                <span class="checkmark"></span>
+                                <span class="checkbox-label" data-en="Remember me" data-ar="تذكرني">Remember me</span>
+                            </label>
+                            <a href="#" class="forgot-link" data-en="Forgot Password?"
+                                data-ar="نسيت كلمة المرور؟">Forgot Password?</a>
+                        </div>
+
+                        <button type="submit" class="glass-button primary login-btn" data-en="Sign In"
+                            data-ar="تسجيل الدخول">
+                            <span class="btn-text">Sign In</span>
+                            <i class="fas fa-arrow-right btn-icon"></i>
+                        </button>
+
+                        <div class="login-divider">
+                            <span data-en="or" data-ar="أو">or</span>
+                        </div>
+
+                        <div class="social-login">
+                            <button type="button" class="social-btn google-btn">
+                                <i class="fab fa-google"></i>
+                                <span data-en="Continue with Google" data-ar="المتابعة مع جوجل">Continue with
+                                    Google</span>
+                            </button>
+                            <button type="button" class="social-btn github-btn">
+                                <i class="fab fa-github"></i>
+                                <span data-en="Continue with GitHub" data-ar="المتابعة مع جيت هاب">Continue with
+                                    GitHub</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Signup Form (Hidden by default) -->
+                    <form class="signup-form" id="signupForm" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signupFirstName" class="form-label" data-en="First Name"
+                                    data-ar="الاسم الأول">First Name</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="signupFirstName" name="firstName" class="form-input"
+                                        placeholder="Enter your first name" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="signupLastName" class="form-label" data-en="Last Name"
+                                    data-ar="الاسم الأخير">Last Name</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="signupLastName" name="lastName" class="form-input"
+                                        placeholder="Enter your last name" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signupEmail" class="form-label" data-en="Email Address"
+                                data-ar="عنوان البريد الإلكتروني">Email Address</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input type="email" id="signupEmail" name="email" class="form-input"
+                                    placeholder="Enter your email" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signupPhone" class="form-label" data-en="Phone Number"
+                                data-ar="رقم الهاتف">Phone
+                                Number</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input type="tel" id="signupPhone" name="phone" class="form-input"
+                                    placeholder="Enter your phone number" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signupCompany" class="form-label" data-en="Company Name"
+                                data-ar="اسم الشركة">Company
+                                Name</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-building input-icon"></i>
+                                <input type="text" id="signupCompany" name="company" class="form-input"
+                                    placeholder="Enter your company name" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signupBusinessEmail" class="form-label" data-en="Business Main Email"
+                                data-ar="البريد الإلكتروني الرئيسي للشركة">Business Main Email</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input type="email" id="signupBusinessEmail" name="businessEmail" class="form-input"
+                                    placeholder="Enter your business main email address" required>
+                            </div>
+                            <small class="form-help" data-en="This will be your primary business contact email"
+                                data-ar="سيكون هذا بريدك الإلكتروني الرئيسي للعمل">This will be your primary business
+                                contact email</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signupPassword" class="form-label" data-en="Password"
+                                data-ar="كلمة المرور">Password</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="signupPassword" name="password" class="form-input"
+                                    placeholder="Create a password" required>
+                                <button type="button" class="password-toggle" id="signupPasswordToggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signupConfirmPassword" class="form-label" data-en="Confirm Password"
+                                data-ar="تأكيد كلمة المرور">Confirm Password</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="signupConfirmPassword" name="confirmPassword"
+                                    class="form-input" placeholder="Confirm your password" required>
+                                <button type="button" class="password-toggle" id="signupConfirmPasswordToggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signupPlan" class="form-label" data-en="Choose Plan" data-ar="اختر الخطة">Choose
+                                Plan</label>
+                            <div class="plan-selector">
+                                <div class="plan-option">
+                                    <input type="radio" id="signupStarter" name="plan" value="starter" checked>
+                                    <label for="signupStarter" class="plan-label">
+                                        <div class="plan-header">
+                                            <h4 data-en="Starter" data-ar="البداية">Starter</h4>
+                                            <span class="plan-price" data-en="$29/month"
+                                                data-ar="29$/شهر">$29/month</span>
+                                        </div>
+                                        <p data-en="Perfect for small businesses" data-ar="مثالي للشركات الصغيرة">
+                                            Perfect for small businesses</p>
+                                    </label>
+                                </div>
+                                <div class="plan-option">
+                                    <input type="radio" id="signupProfessional" name="plan" value="professional">
+                                    <label for="signupProfessional" class="plan-label">
+                                        <div class="plan-header">
+                                            <h4 data-en="Professional" data-ar="المهني">Professional</h4>
+                                            <span class="plan-price" data-en="$79/month"
+                                                data-ar="79$/شهر">$79/month</span>
+                                        </div>
+                                        <p data-en="Ideal for growing companies" data-ar="مثالي للشركات النامية">Ideal
+                                            for growing companies</p>
+                                    </label>
+                                </div>
+                                <div class="plan-option">
+                                    <input type="radio" id="signupEnterprise" name="plan" value="enterprise">
+                                    <label for="signupEnterprise" class="plan-label">
+                                        <div class="plan-header">
+                                            <h4 data-en="Enterprise" data-ar="المؤسسات">Enterprise</h4>
+                                            <span class="plan-price" data-en="$199/month"
+                                                data-ar="199$/شهر">$199/month</span>
+                                        </div>
+                                        <p data-en="For large organizations" data-ar="للمؤسسات الكبيرة">For large
+                                            organizations</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="signupTerms" name="terms" required>
+                                <span class="checkmark"></span>
+                                <span class="checkbox-label">
+                                    <span data-en="I agree to the" data-ar="أوافق على">I agree to the</span>
+                                    <a href="#" class="terms-link" data-en="Terms of Service"
+                                        data-ar="شروط الخدمة">Terms of Service</a>
+                                    <span data-en="and" data-ar="و">and</span>
+                                    <a href="#" class="terms-link" data-en="Privacy Policy"
+                                        data-ar="سياسة الخصوصية">Privacy Policy</a>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="signupNewsletter" name="newsletter">
+                                <span class="checkmark"></span>
+                                <span class="checkbox-label" data-en="Subscribe to our newsletter for updates and tips"
+                                    data-ar="اشترك في نشرتنا الإخبارية للحصول على التحديثات والنصائح">Subscribe to our
+                                    newsletter for updates and tips</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="glass-button primary signup-btn" data-en="Create Account"
+                            data-ar="إنشاء الحساب">
+                            <span class="btn-text">Create Account</span>
+                            <i class="fas fa-rocket btn-icon"></i>
+                        </button>
+
+                        <div class="login-divider">
+                            <span data-en="or" data-ar="أو">or</span>
+                        </div>
+
+                        <div class="social-login">
+                            <button type="button" class="social-btn google-btn">
+                                <i class="fab fa-google"></i>
+                                <span data-en="Sign up with Google" data-ar="التسجيل مع جوجل">Sign up with
+                                    Google</span>
+                            </button>
+                            <button type="button" class="social-btn github-btn">
+                                <i class="fab fa-github"></i>
+                                <span data-en="Sign up with GitHub" data-ar="التسجيل مع جيت هاب">Sign up with
+                                    GitHub</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Footer Links -->
+                    <div class="auth-footer">
+                        <a href="index.html" class="footer-link" data-en="Back to Home" data-ar="العودة للرئيسية">Back
+                            to Home</a>
+                    </div>
+                </div>
+
+                <!-- Login Features -->
+                <div class="login-features">
+                    <div class="glass-card feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 data-en="Secure Login" data-ar="تسجيل دخول آمن">Secure Login</h3>
+                        <p data-en="Your data is protected with enterprise-grade security"
+                            data-ar="بياناتك محمية بأمان على مستوى المؤسسات">Your data is protected with
+                            enterprise-grade security</p>
+                    </div>
+
+                    <div class="glass-card feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3 data-en="Lightning Fast" data-ar="سريع كالبرق">Lightning Fast</h3>
+                        <p data-en="Access your dashboard in milliseconds with our quantum infrastructure"
+                            data-ar="الوصول إلى لوحة التحكم في أجزاء من الثانية مع بنيتنا التحتية الكمية">Access your
+                            dashboard in milliseconds with our quantum infrastructure</p>
+                    </div>
+
+                    <div class="glass-card feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3 data-en="Mobile Ready" data-ar="جاهز للجوال">Mobile Ready</h3>
+                        <p data-en="Access your account from any device, anywhere in the world"
+                            data-ar="الوصول إلى حسابك من أي جهاز، في أي مكان في العالم">Access your account from any
+                            device, anywhere in the world</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="glass-card footer-card">
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <h3 class="footer-title">Next Gen Coders</h3>
+                        <p class="footer-description"
+                            data-en="Empowering companies to build their digital future with cutting-edge web development tools and comprehensive business solutions powered by AI and quantum computing."
+                            data-ar="تمكين الشركات لبناء مستقبلها الرقمي باستخدام أدوات تطوير الويب المتطورة والحلول التجارية الشاملة المدعومة بالذكاء الاصطناعي والحوسبة الكمية.">
+                            Empowering companies to build their digital future with cutting-edge web development tools
+                            and comprehensive business solutions powered by AI and quantum computing.
+                        </p>
+                    </div>
+
+                    <div class="footer-links">
+                        <div class="footer-column">
+                            <h4 class="footer-heading" data-en="Product" data-ar="المنتج">Product</h4>
+                            <ul class="footer-list">
+                                <li><a href="plans.html" class="footer-link" data-en="Plans" data-ar="الخطط">Plans</a>
+                                </li>
+                                <li><a href="index.html#features" class="footer-link" data-en="Features"
+                                        data-ar="الميزات">Features</a></li>
+                                <li><a href="#" class="footer-link" data-en="Pricing" data-ar="الأسعار">Pricing</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="footer-column">
+                            <h4 class="footer-heading" data-en="Support" data-ar="الدعم">Support</h4>
+                            <ul class="footer-list">
+                                <li><a href="#" class="footer-link" data-en="Help Center" data-ar="مركز المساعدة">Help
+                                        Center</a></li>
+                                <li><a href="contact.html" class="footer-link" data-en="Contact Us"
+                                        data-ar="اتصل بنا">Contact Us</a></li>
+                                <li><a href="#" class="footer-link" data-en="Documentation"
+                                        data-ar="الوثائق">Documentation</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-bottom">
+                    <p class="footer-copyright"
+                        data-en="© 2024 Next Gen Coders. All rights reserved. Built for the future."
+                        data-ar="© 2024 مطورو الجيل القادم. جميع الحقوق محفوظة. مبني للمستقبل.">
+                        © 2024 Next Gen Coders. All rights reserved. Built for the future.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Configuration -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
+            authDomain: "madas-store.firebaseapp.com",
+            projectId: "madas-store",
+            storageBucket: "madas-store.firebasestorage.app",
+            messagingSenderId: "527071300010",
+            appId: "1:527071300010:web:70470e2204065b4590583d3"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.getAuth(app);
+        const db = firebase.getFirestore(app);
+    </script>
+
+    <script src="Assets/JS/script.js"></script>
+    <script src="Assets/JS/error-fixes.js"></script>
+    <script src="Assets/JS/login.js"></script>
+</body>
+
+</html>

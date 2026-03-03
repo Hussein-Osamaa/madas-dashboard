@@ -1,0 +1,58 @@
+{
+  "projects": {
+    "default": "madas-platform",
+    "production": "madas-platform",
+    "staging": "madas-platform-staging",
+    "development": "madas-platform-dev"
+  },
+  "targets": {
+    "madas-platform": {
+      "hosting": {
+        "marketing": [
+          "madas-platform-marketing"
+        ],
+        "dashboard": [
+          "madas-platform-dashboard"
+        ],
+        "webbuilder": [
+          "madas-platform-webbuilder"
+        ],
+        "admin": [
+          "madas-platform-admin"
+        ]
+      }
+    },
+    "madas-platform-staging": {
+      "hosting": {
+        "marketing": [
+          "madas-platform-staging-marketing"
+        ],
+        "dashboard": [
+          "madas-platform-staging-dashboard"
+        ],
+        "webbuilder": [
+          "madas-platform-staging-webbuilder"
+        ],
+        "admin": [
+          "madas-platform-staging-admin"
+        ]
+      }
+    },
+    "madas-platform-dev": {
+      "hosting": {
+        "marketing": [
+          "madas-platform-dev-marketing"
+        ],
+        "dashboard": [
+          "madas-platform-dev-dashboard"
+        ],
+        "webbuilder": [
+          "madas-platform-dev-webbuilder"
+        ],
+        "admin": [
+          "madas-platform-dev-admin"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin (with error handling)
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/staff/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Helper function to get user's business ID (with error handling)
+    function getUserBusinessId() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) ?
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessId : null;
+    }
+    
+    // Helper function to check if user belongs to a business
+    function belongsToBusiness(businessId) {
+      return getUserBusinessId() == businessId;
+    }
+    
+    // Helper function to check if user is owner of business
+    function isBusinessOwner(businessId) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/businesses/$(businessId)) &&
+        get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerUid == request.auth.uid;
+    }
+    
+    // Helper function to check if user is staff of business
+    function isBusinessStaff(businessId) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/staff/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.businessId == businessId;
+    }
+    
+    // Helper function to check if user has permission for specific action
+    function hasPermission(permission, action) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/staff/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.permissions[permission] != null &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.permissions[permission].hasAny([action]);
+    }
+    
+    // Helper function to check if user has any access to business data
+    function hasBusinessAccess(businessId) {
+      return isAdmin() || 
+        (request.auth != null && 
+         exists(/databases/$(database)/documents/businesses/$(businessId)) &&
+         get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerUid == request.auth.uid) ||
+        (request.auth != null && 
+         exists(/databases/$(database)/documents/staff/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.businessId == businessId);
+    }
+
+    // Businesses collection - only owners and admins can access
+    match /businesses/{businessId} {
+      allow read, write: if isAdmin() || isBusinessOwner(businessId);
+      allow read: if isBusinessStaff(businessId);
+    }
+
+    // Users collection - users can only access their own document
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Staff collection - business isolation
+    match /staff/{staffId} {
+      allow read: if request.auth.uid == staffId || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Business-specific data collections (orders, inventory, customers, etc.)
+    // Simplified rules for better debugging and demo mode support
+    
+    match /orders/{orderId} {
+      allow read, write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+    match /inventory/{itemId} {
+      allow read, write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+    match /products/{productId} {
+      allow read: if true; // Allow anyone to read products for demo mode
+      allow write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+    match /customers/{customerId} {
+      allow read, write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+    match /employees/{employeeId} {
+      allow read, write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+    match /analytics/{analyticsId} {
+      allow read, write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+    match /finance/{financeId} {
+      allow read, write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+    // Sites collection for web builder (business-specific)
+    match /sites/{siteId} {
+      allow read, write: if isAdmin() || hasBusinessAccess(resource.data.businessId);
+      allow create: if isAdmin() || hasBusinessAccess(request.resource.data.businessId);
+    }
+
+
+    // Default rule - deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
