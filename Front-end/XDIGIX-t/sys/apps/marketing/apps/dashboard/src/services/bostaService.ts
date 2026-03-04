@@ -99,17 +99,6 @@ interface OrderData {
   }>;
 }
 
-// Egypt city IDs (common cities)
-export const EGYPT_CITIES: Record<string, string> = {
-  'cairo': 'FceDyHXwpSYYF9zGW',
-  'giza': 'bW5rG8FXAcPkK3Lc7',
-  'alexandria': 'tLYbsRHV8M7JQz9dW',
-  'sharm el sheikh': 'vN3xYkRp9HdTmL2Qf',
-  'hurghada': 'mK7wZnXc4BqPjF6Rs',
-  'luxor': 'hJ2vTyNm8CdWkL9Pb',
-  'aswan': 'qR5xMnKp3FhYtD7Wc'
-};
-
 // When running against the Node backend, proxy through it to avoid CORS.
 // Falls back to the Firebase Cloud Function proxy.
 function getProxyBaseUrl(): string {
@@ -136,6 +125,65 @@ function getAuthHeaders(): Record<string, string> {
 
 // Direct Bosta API URL (for testing only)
 const BOSTA_BASE_URL = 'https://app.bosta.co/api/v2';
+
+// Cached Bosta city list – fetched once from the API.
+let _cityCache: Array<{ _id: string; name: string; nameAr?: string }> | null = null;
+
+async function fetchCityList(apiKey: string): Promise<typeof _cityCache> {
+  if (_cityCache) return _cityCache;
+  try {
+    const cleanKey = apiKey.trim().replace(/^Bearer\s+/i, '');
+    const res = await fetch(
+      `${PROXY_BASE_URL}/bosta/cities?apiKey=${encodeURIComponent(cleanKey)}&countryId=60e4482c7cb7d4bc4849c4d5`,
+      { method: 'GET', headers: { ...getAuthHeaders() } }
+    );
+    const json = await res.json();
+    const list = Array.isArray(json.data) ? json.data : [];
+    _cityCache = list.map((c: { _id: string; name: string; nameAr?: string }) => ({
+      _id: c._id,
+      name: c.name,
+      nameAr: c.nameAr,
+    }));
+    return _cityCache;
+  } catch {
+    return null;
+  }
+}
+
+/** Find a Bosta city by name (English or Arabic, fuzzy match). Always returns a valid _id. */
+async function resolveCityId(
+  cityName: string | undefined,
+  apiKey: string
+): Promise<{ _id: string; name: string }> {
+  const cities = await fetchCityList(apiKey);
+
+  // Pick a default (Cairo or first city in the list)
+  const defaultCity = cities?.find((c) => /cairo/i.test(c.name)) ?? cities?.[0];
+  const fallback = defaultCity
+    ? { _id: defaultCity._id, name: defaultCity.name }
+    : { _id: '60e4482c7cb7d4bc4849c4d5', name: 'Cairo' };
+
+  if (!cityName || !cities || cities.length === 0) return fallback;
+
+  const lower = cityName.trim().toLowerCase();
+
+  // Exact match first
+  const exact = cities.find(
+    (c) => c.name?.toLowerCase() === lower || c.nameAr === cityName.trim()
+  );
+  if (exact) return { _id: exact._id, name: exact.name };
+
+  // Partial / fuzzy match
+  const partial = cities.find(
+    (c) =>
+      c.name?.toLowerCase().includes(lower) ||
+      lower.includes(c.name?.toLowerCase() ?? '')
+  );
+  if (partial) return { _id: partial._id, name: partial.name };
+
+  // No match — return default city but keep the user's city name in the address text
+  return fallback;
+}
 
 /**
  * Test if an API key is valid using the Cloud Function proxy
@@ -190,14 +238,17 @@ export const createBostaDelivery = async (
   const firstName = nameParts[0] || 'Customer';
   const lastName = nameParts.slice(1).join(' ') || '';
 
-  // Determine city ID
-  const cityName = order.shippingAddress?.city?.toLowerCase() || 'cairo';
-  const cityId = EGYPT_CITIES[cityName] || EGYPT_CITIES['cairo'];
+  // Resolve real Bosta city ID from the API
+  const city = await resolveCityId(order.shippingAddress?.city, config.apiKey);
 
   // Build address details
   const addressParts: string[] = [];
   if (order.shippingAddress?.address) addressParts.push(order.shippingAddress.address);
   if (order.shippingAddress?.building) addressParts.push(`Building: ${order.shippingAddress.building}`);
+  if (order.shippingAddress?.district) addressParts.push(order.shippingAddress.district);
+  if (order.shippingAddress?.city && !addressParts.some(p => p.toLowerCase().includes(order.shippingAddress!.city!.toLowerCase()))) {
+    addressParts.push(order.shippingAddress.city);
+  }
   
   const secondLineParts: string[] = [];
   if (order.shippingAddress?.district) secondLineParts.push(order.shippingAddress.district);
@@ -236,8 +287,8 @@ export const createBostaDelivery = async (
       floor: order.shippingAddress?.floor || '',
       apartment: order.shippingAddress?.apartment || '',
       city: {
-        _id: cityId,
-        name: order.shippingAddress?.city || 'Cairo'
+        _id: city._id,
+        name: city.name
       },
       district: order.shippingAddress?.district || ''
     },

@@ -676,13 +676,14 @@ export default function WeeklyAuditScanPage() {
               {finishing ? 'Finishing…' : 'Finish Audit Session'}
             </button>
           )}
-          {isPlatformAdmin && (
+          {isAdmin && (
             <button
+              type="button"
               onClick={handleCancel}
               disabled={!sessionId || sessionClosed}
               className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-500/20 text-red-700 dark:text-red-400 rounded-xl font-medium hover:bg-red-500/30 disabled:opacity-50"
             >
-              <XCircle className="w-5 h-5" />
+              <XCircle className="w-5 h-5 shrink-0" />
               Cancel Session
             </button>
           )}

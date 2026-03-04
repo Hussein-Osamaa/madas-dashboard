@@ -12,6 +12,19 @@ const router = Router();
 router.use(jwtMiddleware);
 router.use(tenantMiddleware);
 
+/** Forward upstream JSON transparently, adding only a `success` flag. */
+async function proxyResponse(res: Response, upstream: globalThis.Response) {
+  const body = await upstream.json() as Record<string, unknown>;
+  // Bosta may return { data: {...} } or a flat object.
+  // Forward as-is so the frontend receives the same shape the old Cloud
+  // Functions proxy returned: { success, data, message }.
+  res.status(upstream.status).json({
+    success: upstream.ok,
+    ...(body.data !== undefined ? { data: body.data } : { data: body }),
+    message: body.message ?? (body as Record<string, unknown>).error,
+  });
+}
+
 router.get('/cities', async (req: Request, res: Response) => {
   const { apiKey, countryId } = req.query as { apiKey?: string; countryId?: string };
   if (!apiKey) {
@@ -23,8 +36,7 @@ router.get('/cities', async (req: Request, res: Response) => {
     const upstream = await fetch(url, {
       headers: { Authorization: apiKey }
     });
-    const data = await upstream.json() as Record<string, unknown>;
-    res.status(upstream.status).json({ success: upstream.ok, data, message: data.message });
+    await proxyResponse(res, upstream);
   } catch (err) {
     res.status(502).json({ success: false, message: (err as Error).message });
   }
@@ -45,8 +57,7 @@ router.post('/deliveries', async (req: Request, res: Response) => {
       },
       body: JSON.stringify(deliveryData)
     });
-    const data = await upstream.json() as Record<string, unknown>;
-    res.status(upstream.status).json({ success: upstream.ok, data, message: data.message });
+    await proxyResponse(res, upstream);
   } catch (err) {
     res.status(502).json({ success: false, message: (err as Error).message });
   }
@@ -63,8 +74,7 @@ router.get('/deliveries/:trackingNumber', async (req: Request, res: Response) =>
     const upstream = await fetch(`${BOSTA_API}/deliveries/track/${encodeURIComponent(trackingNumber)}`, {
       headers: { Authorization: apiKey }
     });
-    const data = await upstream.json() as Record<string, unknown>;
-    res.status(upstream.status).json({ success: upstream.ok, data, message: data.message });
+    await proxyResponse(res, upstream);
   } catch (err) {
     res.status(502).json({ success: false, message: (err as Error).message });
   }

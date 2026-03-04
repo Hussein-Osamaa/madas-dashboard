@@ -58,9 +58,14 @@ type StatusFilter = 'all' | OrderStatus;
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'All statuses' },
   { value: 'pending', label: 'Pending' },
+  { value: 'preparing_for_pickup', label: 'Preparing for Pickup' },
   { value: 'ready_for_pickup', label: 'Ready for Pickup' },
+  { value: 'shipped', label: 'Shipped' },
   { value: 'processing', label: 'Processing' },
+  { value: 'delivered', label: 'Delivered' },
   { value: 'completed', label: 'Completed' },
+  { value: 'returned', label: 'Returned' },
+  { value: 'damaged', label: 'Damaged' },
   { value: 'cancelled', label: 'Cancelled' }
 ];
 
@@ -105,6 +110,7 @@ const OrdersPage = () => {
   const [sendingToBosta, setSendingToBosta] = useState<string | null>(null);
   const [bostaModalOpen, setBostaModalOpen] = useState(false);
   const [selectedOrderForBosta, setSelectedOrderForBosta] = useState<Order | null>(null);
+  const [bostaAddress, setBostaAddress] = useState({ address: '', city: '', district: '', floor: '', apartment: '', building: '' });
   const [courierDetailModal, setCourierDetailModal] = useState<Order | null>(null);
   const [scanResult, setScanResult] = useState<{
     productName: string;
@@ -893,6 +899,10 @@ const OrdersPage = () => {
     try {
       setSendingToBosta(order.id);
       
+      const effectiveAddress = bostaAddress.address
+        ? bostaAddress
+        : order.shippingAddress;
+
       const result = await createBostaDelivery(
         {
           apiKey: bostaConfig.apiKey,
@@ -907,30 +917,39 @@ const OrdersPage = () => {
           customerContact: order.customerContact,
           customerEmail: order.customerEmail,
           total: order.total,
-          codAmount: order.codAmount, // Use pre-calculated COD amount
+          codAmount: order.codAmount,
           shippingFees: order.shippingFees,
           allowOpenPackage: order.allowOpenPackage,
           paymentStatus: order.paymentStatus,
           notes: order.notes,
-          shippingAddress: order.shippingAddress,
+          shippingAddress: effectiveAddress,
           items: order.items
         }
       );
 
       if (result.success) {
-        alert(`✅ Order sent to Bosta successfully!\n\nTracking Number: ${result.data?.trackingNumber || 'N/A'}`);
-        // Optionally update order with tracking info
-        if (result.data?.trackingNumber) {
-          await updateOrder({
-            orderId: order.id,
-            payload: {
-              bostaTrackingNumber: result.data.trackingNumber,
-              bostaDeliveryId: result.data._id,
-              shippingProvider: 'bosta',
-              status: 'ready_for_pickup'
-            }
-          });
-        }
+        const trackingNumber = result.data?.trackingNumber || '';
+        const trackingUrl = trackingNumber
+          ? `https://business.bosta.co/orders/${trackingNumber}`
+          : '';
+
+        await updateOrder({
+          orderId: order.id,
+          payload: {
+            bostaTrackingNumber: trackingNumber || undefined,
+            bostaDeliveryId: result.data?._id || undefined,
+            bostaTrackingUrl: trackingUrl || undefined,
+            shippingProvider: 'bosta',
+            status: 'preparing_for_pickup',
+            ...(effectiveAddress?.address ? { shippingAddress: effectiveAddress } : {}),
+          }
+        });
+
+        alert(
+          `✅ Order sent to Bosta successfully!\n\n` +
+          `Tracking Number: ${trackingNumber || 'N/A'}\n` +
+          (trackingUrl ? `Track: ${trackingUrl}` : '')
+        );
       }
     } catch (error: any) {
       console.error('[OrdersPage] Error sending to Bosta:', error);
@@ -1050,6 +1069,36 @@ ${JSON.stringify(bostaData, null, 2)}
 
   const openBostaModal = (order: Order) => {
     setSelectedOrderForBosta(order);
+
+    let addr = order.shippingAddress;
+
+    if (!addr?.address) {
+      const matched = customers.find(
+        (c) =>
+          (c.phone && c.phone === order.customerContact) ||
+          (c.name && c.name === order.customerName)
+      );
+      if (matched?.addressDetails) {
+        const d = matched.addressDetails;
+        addr = {
+          address: d.line || d.addressLine2 || '',
+          city: d.governorate || d.district || '',
+          district: d.district || d.neighborhood || '',
+          floor: d.floor || '',
+          apartment: d.apartment || '',
+          building: d.building || '',
+        };
+      }
+    }
+
+    setBostaAddress({
+      address: addr?.address || '',
+      city: addr?.city || '',
+      district: addr?.district || '',
+      floor: addr?.floor || '',
+      apartment: addr?.apartment || '',
+      building: addr?.building || '',
+    });
     setBostaModalOpen(true);
   };
 
@@ -1239,8 +1288,14 @@ ${JSON.stringify(bostaData, null, 2)}
       <OrderStats
         total={stats.total}
         pending={stats.pending}
+        preparingForPickup={stats.preparingForPickup}
+        readyForPickup={stats.readyForPickup}
+        shipped={stats.shipped}
         processing={stats.processing}
+        delivered={stats.delivered}
         completed={stats.completed}
+        returned={stats.returned}
+        damaged={stats.damaged}
         cancelled={stats.cancelled}
         revenue={stats.revenue}
       />
@@ -1476,9 +1531,14 @@ ${JSON.stringify(bostaData, null, 2)}
                 {filteredOrders.map((order) => {
                   const statusStyles: Record<OrderStatus, string> = {
                     pending: 'bg-orange-100 text-orange-600',
+                    preparing_for_pickup: 'bg-amber-100 text-amber-700',
                     ready_for_pickup: 'bg-purple-100 text-purple-600',
+                    shipped: 'bg-blue-100 text-blue-600',
                     processing: 'bg-sky-100 text-sky-600',
+                    delivered: 'bg-emerald-100 text-emerald-600',
                     completed: 'bg-green-100 text-green-600',
+                    returned: 'bg-yellow-100 text-yellow-700',
+                    damaged: 'bg-rose-100 text-rose-700',
                     cancelled: 'bg-red-100 text-red-600'
                   };
                   const dateLabel = formatOrderDate(order.date ?? order.createdAt, 'MMM d, yyyy');
@@ -1518,42 +1578,70 @@ ${JSON.stringify(bostaData, null, 2)}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={clsx('inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold capitalize', statusStyles[order.status])}>
                           <span className="material-icons text-xs">
-                            {order.status === 'completed'
+                            {order.status === 'completed' || order.status === 'delivered'
                               ? 'check_circle'
                               : order.status === 'ready_for_pickup'
-                                ? 'local_shipping'
-                                : order.status === 'processing'
-                                  ? 'sync_alt'
-                                  : order.status === 'pending'
-                                    ? 'hourglass_bottom'
-                                    : 'cancel'}
+                                ? 'inventory'
+                                : order.status === 'preparing_for_pickup'
+                                  ? 'package_2'
+                                  : order.status === 'shipped'
+                                    ? 'local_shipping'
+                                    : order.status === 'processing'
+                                      ? 'sync_alt'
+                                      : order.status === 'pending'
+                                        ? 'hourglass_bottom'
+                                        : order.status === 'returned'
+                                          ? 'undo'
+                                          : order.status === 'damaged'
+                                            ? 'warning'
+                                            : 'cancel'}
                           </span>
-                          {order.status === 'ready_for_pickup' ? 'Ready for Pickup' : order.status}
+                          {
+                            {
+                              pending: 'Pending',
+                              preparing_for_pickup: 'Preparing',
+                              ready_for_pickup: 'Ready for Pickup',
+                              shipped: 'Shipped',
+                              processing: 'Processing',
+                              delivered: 'Delivered',
+                              completed: 'Completed',
+                              returned: 'Returned',
+                              damaged: 'Damaged',
+                              cancelled: 'Cancelled'
+                            }[order.status] || order.status
+                          }
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {order.bostaTrackingNumber ? (
-                          <button
-                            type="button"
-                            onClick={() => setCourierDetailModal(order)}
-                            className="flex flex-col gap-1 text-left hover:opacity-80 transition-opacity"
-                          >
-                            <span className={clsx(
-                              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                              order.bostaStatusValue === 45 ? 'bg-green-100 text-green-700' :
-                              order.bostaStatusValue === 47 || order.bostaStatusValue === 46 || order.bostaStatusValue === 48 ? 'bg-red-100 text-red-700' :
-                              order.bostaStatusValue === 24 ? 'bg-blue-100 text-blue-700' :
-                              order.bostaStatusValue && order.bostaStatusValue >= 20 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-700'
-                            )}>
-                              <BostaLogoSmall />
-                              {order.bostaStatusLabel || order.bostaStatus || 'Pending'}
-                            </span>
-                            <span className="text-[10px] text-madas-text/50 flex items-center gap-1">
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setCourierDetailModal(order)}
+                              className="flex flex-col gap-1 text-left hover:opacity-80 transition-opacity"
+                            >
+                              <span className={clsx(
+                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                                order.bostaStatusValue === 45 ? 'bg-green-100 text-green-700' :
+                                order.bostaStatusValue === 47 || order.bostaStatusValue === 46 || order.bostaStatusValue === 48 ? 'bg-red-100 text-red-700' :
+                                order.bostaStatusValue === 24 ? 'bg-blue-100 text-blue-700' :
+                                order.bostaStatusValue && order.bostaStatusValue >= 20 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-700'
+                              )}>
+                                <BostaLogoSmall />
+                                {order.bostaStatusLabel || order.bostaStatus || 'Pending'}
+                              </span>
+                            </button>
+                            <a
+                              href={order.bostaTrackingUrl || `https://business.bosta.co/orders/${order.bostaTrackingNumber}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-primary/60 hover:text-primary flex items-center gap-1 transition-colors"
+                            >
                               #{order.bostaTrackingNumber.slice(-8)}
                               <span className="material-icons text-[10px]">open_in_new</span>
-                            </span>
-                          </button>
+                            </a>
+                          </div>
                         ) : order.shippingAddress?.address ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
                             <span className="material-icons text-xs">local_shipping</span>
@@ -1581,7 +1669,7 @@ ${JSON.stringify(bostaData, null, 2)}
                           >
                             Edit
                           </button>
-                          {isBostaEnabled && order.status !== 'cancelled' && !order.bostaTrackingNumber && (
+                          {isBostaEnabled && order.status === 'pending' && !order.bostaTrackingNumber && (
                             <button
                               type="button"
                               className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
@@ -1594,10 +1682,16 @@ ${JSON.stringify(bostaData, null, 2)}
                             </button>
                           )}
                           {order.bostaTrackingNumber && (
-                            <span className="inline-flex items-center gap-1 rounded-lg bg-green-50 border border-green-200 px-2 py-1 text-xs text-green-700">
+                            <a
+                              href={order.bostaTrackingUrl || `https://business.bosta.co/orders/${order.bostaTrackingNumber}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded-lg bg-green-50 border border-green-200 px-2 py-1 text-xs text-green-700 hover:bg-green-100 transition-colors"
+                            >
                               <BostaLogoSmall />
                               {order.bostaTrackingNumber.slice(-8)}
-                            </span>
+                              <span className="material-icons text-[10px]">open_in_new</span>
+                            </a>
                           )}
                           <button
                             type="button"
@@ -1713,11 +1807,73 @@ ${JSON.stringify(bostaData, null, 2)}
                   <span className="text-madas-text/60">Total (COD):</span>
                   <span className="font-semibold text-primary">{formatCurrency(selectedOrderForBosta.total ?? 0)}</span>
                 </div>
-                {selectedOrderForBosta.shippingAddress?.address && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-madas-text/60">Address:</span>
-                    <span className="font-medium text-right max-w-[200px]">{selectedOrderForBosta.shippingAddress.address}</span>
+              </div>
+
+              {/* Editable shipping address */}
+              <div className="rounded-lg border border-gray-200 p-4 space-y-3">
+                <p className="text-sm font-semibold text-primary flex items-center gap-1">
+                  <span className="material-icons text-base">location_on</span>
+                  Shipping Address
+                </p>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Address / Street *"
+                    value={bostaAddress.address}
+                    onChange={(e) => setBostaAddress(prev => ({ ...prev, address: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="City *"
+                      value={bostaAddress.city}
+                      onChange={(e) => setBostaAddress(prev => ({ ...prev, city: e.target.value }))}
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="District"
+                      value={bostaAddress.district}
+                      onChange={(e) => setBostaAddress(prev => ({ ...prev, district: e.target.value }))}
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    />
                   </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Building"
+                      value={bostaAddress.building}
+                      onChange={(e) => setBostaAddress(prev => ({ ...prev, building: e.target.value }))}
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Floor"
+                      value={bostaAddress.floor}
+                      onChange={(e) => setBostaAddress(prev => ({ ...prev, floor: e.target.value }))}
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Apartment"
+                      value={bostaAddress.apartment}
+                      onChange={(e) => setBostaAddress(prev => ({ ...prev, apartment: e.target.value }))}
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    />
+                  </div>
+                </div>
+                {!bostaAddress.address && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <span className="material-icons text-xs">error</span>
+                    Address is required for Bosta delivery
+                  </p>
+                )}
+                {!bostaAddress.city && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <span className="material-icons text-xs">error</span>
+                    City is required for Bosta delivery
+                  </p>
                 )}
               </div>
               
@@ -1755,7 +1911,7 @@ ${JSON.stringify(bostaData, null, 2)}
                     setBostaModalOpen(false);
                     setSelectedOrderForBosta(null);
                   }}
-                  disabled={sendingToBosta === selectedOrderForBosta.id || !selectedOrderForBosta.customerContact}
+                  disabled={sendingToBosta === selectedOrderForBosta.id || !selectedOrderForBosta.customerContact || !bostaAddress.address || !bostaAddress.city}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-60"
                 >
                   {sendingToBosta === selectedOrderForBosta.id ? (
@@ -1901,13 +2057,13 @@ ${JSON.stringify(bostaData, null, 2)}
 
               {/* Track on Bosta */}
               <a
-                href={`https://bosta.co/tracking/${courierDetailModal.bostaTrackingNumber}`}
+                href={courierDetailModal.bostaTrackingUrl || `https://business.bosta.co/orders/${courierDetailModal.bostaTrackingNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full p-3 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors"
               >
                 <span className="material-icons text-base">open_in_new</span>
-                Track on Bosta Website
+                Track on Bosta Dashboard
               </a>
             </div>
           </div>

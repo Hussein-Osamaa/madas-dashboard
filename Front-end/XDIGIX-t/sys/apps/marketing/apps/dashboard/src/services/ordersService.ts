@@ -13,7 +13,17 @@ import {
 } from '../lib/firebase';
 import { decreaseProductStock, restoreProductStock } from './productsService';
 
-export type OrderStatus = 'pending' | 'ready_for_pickup' | 'processing' | 'completed' | 'cancelled';
+export type OrderStatus =
+  | 'pending'
+  | 'preparing_for_pickup'
+  | 'ready_for_pickup'
+  | 'shipped'
+  | 'processing'
+  | 'delivered'
+  | 'completed'
+  | 'returned'
+  | 'damaged'
+  | 'cancelled';
 
 export type Order = {
   id: string;
@@ -66,6 +76,8 @@ export type Order = {
     timestamp?: string;
     note?: string;
   }>;
+  bostaTrackingUrl?: string;
+  fulfillmentSynced?: boolean;
 };
 
 export type OrderDraft = Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'date'> & {
@@ -157,15 +169,15 @@ export const updateOrder = async (
   orderId: string,
   payload: Partial<Omit<OrderDraft, 'id'>>
 ): Promise<void> => {
-  // If status is being changed to cancelled, restore stock
-  if (payload.status === 'cancelled') {
+  // If status is being changed to cancelled or returned, restore stock
+  if (payload.status === 'cancelled' || payload.status === 'returned') {
     const orderDoc = await getDoc(doc(db, 'businesses', businessId, 'orders', orderId));
     if (orderDoc.exists()) {
       const orderData = orderDoc.data();
       const previousStatus = orderData.status;
       
-      // Only restore stock if order wasn't already cancelled
-      if (previousStatus !== 'cancelled' && orderData.items && orderData.items.length > 0) {
+      // Only restore stock if order wasn't already cancelled/returned
+      if (previousStatus !== 'cancelled' && previousStatus !== 'returned' && orderData.items && orderData.items.length > 0) {
         console.log('[ordersService] Restoring stock for cancelled order:', orderId);
         for (const item of orderData.items) {
           if (item.productId) {

@@ -36,17 +36,32 @@ export const useOrders = (businessId?: string) => {
     onSuccess: invalidate
   });
 
-  const orders = ordersQuery.data ?? [];
+  const orders = useMemo(() => {
+    const list = ordersQuery.data ?? [];
+    return [...list].sort((a, b) => {
+      const dateA = a.date ?? a.createdAt;
+      const dateB = b.date ?? b.createdAt;
+      const tA = dateA instanceof Date ? dateA.getTime() : dateA ? new Date(dateA as unknown as string).getTime() : 0;
+      const tB = dateB instanceof Date ? dateB.getTime() : dateB ? new Date(dateB as unknown as string).getTime() : 0;
+      return tB - tA; // newest first
+    });
+  }, [ordersQuery.data]);
 
   const stats = useMemo(() => {
     const total = orders.length;
     const pending = orders.filter((order) => order.status === 'pending').length;
+    const preparingForPickup = orders.filter((order) => order.status === 'preparing_for_pickup').length;
+    const readyForPickup = orders.filter((order) => order.status === 'ready_for_pickup').length;
+    const shipped = orders.filter((order) => order.status === 'shipped').length;
     const processing = orders.filter((order) => order.status === 'processing').length;
+    const delivered = orders.filter((order) => order.status === 'delivered').length;
     const completed = orders.filter((order) => order.status === 'completed').length;
+    const returned = orders.filter((order) => order.status === 'returned').length;
+    const damaged = orders.filter((order) => order.status === 'damaged').length;
     const cancelled = orders.filter((order) => order.status === 'cancelled').length;
     const revenue = orders.reduce((sum, order) => sum + (order.total ?? 0), 0);
 
-    return { total, pending, processing, completed, cancelled, revenue };
+    return { total, pending, preparingForPickup, readyForPickup, shipped, processing, delivered, completed, returned, damaged, cancelled, revenue };
   }, [orders]);
 
   return {

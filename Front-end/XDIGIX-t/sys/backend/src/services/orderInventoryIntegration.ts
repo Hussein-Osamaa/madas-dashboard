@@ -25,7 +25,7 @@ orderEvents.on(ORDER_STATUS_CHANGED, async (payload: { clientId: string; orderId
   try {
     const { clientId, orderId, previousStatus, newStatus, items } = payload;
     const itemList = items.map((i) => ({ productId: i.productId, quantity: i.quantity, size: i.size }));
-    const wasReserved = ['pending', 'processing', 'ready_for_pickup'].includes(previousStatus || '');
+    const wasReserved = ['pending', 'processing', 'preparing_for_pickup', 'ready_for_pickup'].includes(previousStatus || '');
     const wasShipping = ['shipped', 'ready_for_shipment'].includes(previousStatus || '');
 
     if (newStatus === 'shipped' || newStatus === 'ready_for_shipment') {

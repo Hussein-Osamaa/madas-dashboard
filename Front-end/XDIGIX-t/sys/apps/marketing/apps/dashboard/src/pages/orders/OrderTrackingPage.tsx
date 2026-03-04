@@ -8,11 +8,18 @@ import { useOrders } from '../../hooks/useOrders';
 import { Order, OrderStatus } from '../../services/ordersService';
 import { useShippingIntegrations } from '../../hooks/useShippingIntegrations';
 
-// Order status configuration with timeline order
+// Order status configuration with timeline order (all OrderStatus values for safe lookup)
 const STATUS_CONFIG: Record<OrderStatus, { label: string; icon: string; color: string; bgColor: string; step: number }> = {
   pending: {
     label: 'Pending',
     icon: 'hourglass_empty',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100',
+    step: 1
+  },
+  preparing_for_pickup: {
+    label: 'Preparing for Pickup',
+    icon: 'inventory',
     color: 'text-amber-600',
     bgColor: 'bg-amber-100',
     step: 1
@@ -31,12 +38,40 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; icon: string; color: s
     bgColor: 'bg-purple-100',
     step: 3
   },
-  completed: {
+  shipped: {
+    label: 'Shipped',
+    icon: 'local_shipping',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-100',
+    step: 3
+  },
+  delivered: {
     label: 'Delivered',
     icon: 'check_circle',
     color: 'text-green-600',
     bgColor: 'bg-green-100',
     step: 4
+  },
+  completed: {
+    label: 'Completed',
+    icon: 'check_circle',
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+    step: 4
+  },
+  returned: {
+    label: 'Returned',
+    icon: 'keyboard_return',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+    step: -1
+  },
+  damaged: {
+    label: 'Damaged',
+    icon: 'warning',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+    step: -1
   },
   cancelled: {
     label: 'Cancelled',
@@ -107,6 +142,17 @@ const OrderTrackingPage = () => {
     });
   }, [orders, filterStatus, searchTerm]);
 
+  // Kanban only shows 5 columns; map all order statuses into these buckets
+  const KANBAN_STATUSES: OrderStatus[] = ['pending', 'ready_for_pickup', 'processing', 'completed', 'cancelled'];
+  const statusToKanban = (status: OrderStatus): OrderStatus => {
+    if (KANBAN_STATUSES.includes(status)) return status;
+    if (['preparing_for_pickup'].includes(status)) return 'pending';
+    if (['shipped'].includes(status)) return 'processing';
+    if (['delivered'].includes(status)) return 'completed';
+    if (['returned', 'damaged'].includes(status)) return 'cancelled';
+    return 'pending';
+  };
+
   // Group orders by status for Kanban view
   const ordersByStatus = useMemo(() => {
     const grouped: Record<OrderStatus, Order[]> = {
@@ -118,7 +164,8 @@ const OrderTrackingPage = () => {
     };
 
     filteredOrders.forEach(order => {
-      grouped[order.status].push(order);
+      const bucket = statusToKanban(order.status);
+      grouped[bucket].push(order);
     });
 
     return grouped;
@@ -407,8 +454,8 @@ const TimelineView = ({
               <div 
                 className="absolute top-5 left-0 h-1 bg-primary rounded-full transition-all"
                 style={{ 
-                  width: order.status === 'cancelled' ? '0%' : 
-                         `${((STATUS_CONFIG[order.status].step - 1) / 3) * 100}%` 
+                  width: (STATUS_CONFIG[order.status].step < 0) ? '0%' : 
+                         `${Math.min(100, ((STATUS_CONFIG[order.status].step - 1) / 3) * 100)}%` 
                 }}
               />
 

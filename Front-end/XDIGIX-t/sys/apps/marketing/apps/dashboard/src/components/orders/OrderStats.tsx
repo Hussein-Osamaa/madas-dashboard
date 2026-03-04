@@ -3,14 +3,25 @@ import { useCurrency } from '../../hooks/useCurrency';
 type Props = {
   total: number;
   pending: number;
+  preparingForPickup?: number;
+  readyForPickup?: number;
+  shipped?: number;
   processing: number;
+  delivered?: number;
   completed: number;
+  returned?: number;
+  damaged?: number;
   cancelled: number;
   revenue: number;
 };
 
-const OrderStats = ({ total, pending, processing, completed, cancelled, revenue }: Props) => {
+const OrderStats = ({
+  total, pending, preparingForPickup = 0, readyForPickup = 0, shipped = 0,
+  processing, delivered = 0, completed, returned = 0, damaged = 0, cancelled, revenue
+}: Props) => {
   const { formatCurrency } = useCurrency();
+  const inShipping = preparingForPickup + readyForPickup + shipped;
+
   const cards = [
     {
       label: 'Total Orders',
@@ -25,22 +36,22 @@ const OrderStats = ({ total, pending, processing, completed, cancelled, revenue 
       icon: 'hourglass_bottom'
     },
     {
-      label: 'Processing',
-      value: processing,
-      accent: 'bg-sky-100 text-sky-600',
-      icon: 'sync_alt'
+      label: 'In Shipping',
+      value: inShipping,
+      accent: 'bg-amber-100 text-amber-700',
+      icon: 'local_shipping'
     },
     {
-      label: 'Completed',
-      value: completed,
+      label: 'Delivered',
+      value: delivered + completed,
       accent: 'bg-green-100 text-green-600',
       icon: 'check_circle'
     },
     {
-      label: 'Cancelled',
-      value: cancelled,
+      label: 'Returned / Damaged',
+      value: returned + damaged,
       accent: 'bg-red-100 text-red-600',
-      icon: 'cancel'
+      icon: 'undo'
     },
     {
       label: 'Revenue',
@@ -69,4 +80,3 @@ const OrderStats = ({ total, pending, processing, completed, cancelled, revenue 
 };
 
 export default OrderStats;
-

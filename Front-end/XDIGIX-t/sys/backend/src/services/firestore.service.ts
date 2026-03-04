@@ -352,12 +352,24 @@ export async function setDocument(
   if (col === 'businesses' && docId && subPath.length >= 2) {
     const subCol = subPath[0];
     const subDocId = subPath[1];
-    const fullData = { ...data, updatedAt: new Date() };
-    await FirestoreDoc.findOneAndUpdate(
-      { tenantId, businessId: docId, coll: subCol, docId: subDocId },
-      merge ? { $set: { data: fullData } } : { tenantId, businessId: docId, coll: subCol, docId: subDocId, data: fullData },
-      { upsert: true }
-    );
+    if (merge) {
+      const dotSet: Record<string, unknown> = { 'data.updatedAt': new Date() };
+      for (const [k, v] of Object.entries(data)) {
+        dotSet[`data.${k}`] = v;
+      }
+      await FirestoreDoc.findOneAndUpdate(
+        { tenantId, businessId: docId, coll: subCol, docId: subDocId },
+        { $set: dotSet },
+        { upsert: true }
+      );
+    } else {
+      const fullData = { ...data, updatedAt: new Date() };
+      await FirestoreDoc.findOneAndUpdate(
+        { tenantId, businessId: docId, coll: subCol, docId: subDocId },
+        { tenantId, businessId: docId, coll: subCol, docId: subDocId, data: fullData },
+        { upsert: true }
+      );
+    }
     return { id: subDocId };
   }
 
@@ -367,28 +379,48 @@ export async function setDocument(
       throw new Error(`Forbidden: cannot write to another tenant's settings`);
     }
     const settingsDocId = subPath[1];
-    const fullData = { ...data, updatedAt: new Date() };
-    await FirestoreDoc.findOneAndUpdate(
-      { tenantId: docId, businessId: null, coll: 'settings', docId: settingsDocId },
-      merge
-        ? { $set: { data: fullData } }
-        : { tenantId: docId, businessId: null, coll: 'settings', docId: settingsDocId, data: fullData },
-      { upsert: true }
-    );
+    if (merge) {
+      const dotSet: Record<string, unknown> = { 'data.updatedAt': new Date() };
+      for (const [k, v] of Object.entries(data)) {
+        dotSet[`data.${k}`] = v;
+      }
+      await FirestoreDoc.findOneAndUpdate(
+        { tenantId: docId, businessId: null, coll: 'settings', docId: settingsDocId },
+        { $set: dotSet },
+        { upsert: true }
+      );
+    } else {
+      const fullData = { ...data, updatedAt: new Date() };
+      await FirestoreDoc.findOneAndUpdate(
+        { tenantId: docId, businessId: null, coll: 'settings', docId: settingsDocId },
+        { tenantId: docId, businessId: null, coll: 'settings', docId: settingsDocId, data: fullData },
+        { upsert: true }
+      );
+    }
     return { id: settingsDocId };
   }
 
   // Generic top-level doc: roles/rid1, permissions/pid1, role_permissions/rpid1
   const genericColls = ['roles', 'permissions', 'role_permissions'];
   if (genericColls.includes(col) && docId && subPath.length === 0) {
-    const fullData = { ...data, updatedAt: new Date() };
-    await FirestoreDoc.findOneAndUpdate(
-      { coll: col, docId, businessId: null },
-      merge
-        ? { $set: { data: fullData } }
-        : { tenantId: tenantId || '_system', businessId: null, coll: col, docId, data: fullData },
-      { upsert: true }
-    );
+    if (merge) {
+      const dotSet: Record<string, unknown> = { 'data.updatedAt': new Date() };
+      for (const [k, v] of Object.entries(data)) {
+        dotSet[`data.${k}`] = v;
+      }
+      await FirestoreDoc.findOneAndUpdate(
+        { coll: col, docId, businessId: null },
+        { $set: dotSet },
+        { upsert: true }
+      );
+    } else {
+      const fullData = { ...data, updatedAt: new Date() };
+      await FirestoreDoc.findOneAndUpdate(
+        { coll: col, docId, businessId: null },
+        { tenantId: tenantId || '_system', businessId: null, coll: col, docId, data: fullData },
+        { upsert: true }
+      );
+    }
     return { id: docId };
   }
 
