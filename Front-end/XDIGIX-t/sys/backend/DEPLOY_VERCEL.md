@@ -75,6 +75,13 @@ To run the report cron via Vercel Cron:
   - Ensure **Root Directory** is exactly the backend folder (e.g. `sys/backend` or `Front-end/XDIGIX-t/sys/backend` from repo root) so `api/` and `vercel.json` are in the deployment.
 - Set **CORS_ORIGIN** in the backend project to your frontend URL (e.g. `https://xdigix-os.vercel.app`).
 
+## 5a. Troubleshooting 401 on staff login (Warehouse / Fulfillment portal)
+
+If `POST /api/auth/staff/login` returns **401 Unauthorized** even though the staff account exists and is active in the Admin panel:
+
+- **Same backend, same DB**: The Warehouse/Fulfillment app must call the **same API** (and thus the same MongoDB) where staff are created. Staff are stored in the **backend’s MongoDB** (`StaffUser` collection), not in the Admin (Vercel) app’s Firestore. If the fulfillment app uses `VITE_API_BACKEND_URL` pointing to **Railway** while staff were created via an Admin that uses a **different** backend/DB, that backend won’t have those staff → 401.
+- **Fix**: Point the fulfillment app’s API base to the backend that has the correct `MONGODB_URI` (the one your Admin backend uses), or ensure your Railway backend uses the **same** MongoDB as the system where you create staff. Then staff login will succeed.
+
 ## 6. Troubleshooting 500 / FUNCTION_INVOCATION_FAILED
 
 - **Check Vercel logs**: Project → **Deployments** → select deployment → **Functions** → click the function → **Logs**. The handler now catches errors and logs `[Vercel handler] <error>`; the stack trace will show the real cause.

@@ -135,7 +135,7 @@ export async function finish(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * POST /audit/cancel - Cancel session without reconciliation (admin only).
+ * POST /audit/cancel - Cancel session without reconciliation. Allowed for ADMIN or STAFF with WAREHOUSE (same as scan/view).
  */
 export async function cancel(req: Request, res: Response): Promise<void> {
   const { sessionId } = req.body;

@@ -22,7 +22,7 @@ const validate = (req: import('express').Request, res: import('express').Respons
 
 const staffWarehouse = [requireAccountType('STAFF'), requireApp('WAREHOUSE')];
 
-/** Platform admin only (e.g. cancel). */
+/** Platform admin only (e.g. some destructive ops). Kept for any future admin-only audit actions. */
 function requireAdmin(req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) {
   if ((req as any).accountPayload?.accountType === 'ADMIN') return next();
   res.status(403).json({ error: 'Admin only' });
@@ -77,6 +77,7 @@ router.get('/session/:id', staffWarehouseOrAdmin, AuditController.getSession);
 router.get('/restore/:id', staffWarehouseOrAdmin, AuditController.restore);
 router.post('/finish', requireCanStartOrFinishAudit, [body('sessionId').isString().notEmpty()], validate, AuditController.finish);
 
-router.post('/cancel', requireAdmin, [body('sessionId').isString().notEmpty()], validate, AuditController.cancel);
+/** Cancel: anyone who can use the audit (ADMIN or STAFF with WAREHOUSE) can cancel. */
+router.post('/cancel', staffWarehouseOrAdmin, [body('sessionId').isString().notEmpty()], validate, AuditController.cancel);
 
 export default router;
