@@ -360,6 +360,7 @@ interface SizeBreakdownItem {
   scannedCount: number;
   sizeBarcode?: string;
   difference: number;
+  status?: string;
 }
 
 interface DetailedProduct {
@@ -516,14 +517,14 @@ async function generatePdf(report: ReportData): Promise<string | null> {
       doc.moveDown(1);
 
       // Column positions for size sub-table
-      const sizeIndent = LEFT + 20;
-      const sizeColWidths = { size: 90, barcode: 120, expected: 70, scanned: 70, diff: 70 };
+      const sizeIndent = LEFT + 10;
       const sizeCols = [
-        { label: 'Size', x: sizeIndent, w: sizeColWidths.size },
-        { label: 'Size Barcode', x: sizeIndent + sizeColWidths.size, w: sizeColWidths.barcode },
-        { label: 'Expected', x: sizeIndent + sizeColWidths.size + sizeColWidths.barcode, w: sizeColWidths.expected },
-        { label: 'Scanned', x: sizeIndent + sizeColWidths.size + sizeColWidths.barcode + sizeColWidths.expected, w: sizeColWidths.scanned },
-        { label: 'Diff', x: sizeIndent + sizeColWidths.size + sizeColWidths.barcode + sizeColWidths.expected + sizeColWidths.scanned, w: sizeColWidths.diff },
+        { label: 'Size', x: sizeIndent, w: 70 },
+        { label: 'Barcode', x: sizeIndent + 70, w: 95 },
+        { label: 'Expected', x: sizeIndent + 165, w: 60 },
+        { label: 'Scanned', x: sizeIndent + 225, w: 60 },
+        { label: 'Diff', x: sizeIndent + 285, w: 50 },
+        { label: 'Status', x: sizeIndent + 335, w: 80 },
       ];
 
       for (const product of discrepancyProducts) {
@@ -556,6 +557,7 @@ async function generatePdf(report: ReportData): Promise<string | null> {
               { text: String(sb.expectedCount), x: sizeCols[2].x, width: sizeCols[2].w },
               { text: String(sb.scannedCount), x: sizeCols[3].x, width: sizeCols[3].w },
               { text: diffStr, x: sizeCols[4].x, width: sizeCols[4].w },
+              { text: sb.status || '-', x: sizeCols[5].x, width: sizeCols[5].w },
             ], false);
             doc.y = rY + 14;
           }
@@ -616,13 +618,14 @@ async function generatePdf(report: ReportData): Promise<string | null> {
       doc.fontSize(12).font('Helvetica-Bold').text('Size-Level Detail for Extra Products', LEFT);
       doc.moveDown(0.5);
 
-      const sizeIndent = LEFT + 20;
+      const sizeIndent = LEFT + 10;
       const sizeCols2 = [
-        { label: 'Size', x: sizeIndent, w: 90 },
-        { label: 'Size Barcode', x: sizeIndent + 90, w: 120 },
-        { label: 'Expected', x: sizeIndent + 210, w: 70 },
-        { label: 'Scanned', x: sizeIndent + 280, w: 70 },
-        { label: 'Excess', x: sizeIndent + 350, w: 70 },
+        { label: 'Size', x: sizeIndent, w: 70 },
+        { label: 'Barcode', x: sizeIndent + 70, w: 95 },
+        { label: 'Expected', x: sizeIndent + 165, w: 60 },
+        { label: 'Scanned', x: sizeIndent + 225, w: 60 },
+        { label: 'Excess', x: sizeIndent + 285, w: 50 },
+        { label: 'Status', x: sizeIndent + 335, w: 80 },
       ];
 
       for (const product of extras) {
@@ -650,6 +653,7 @@ async function generatePdf(report: ReportData): Promise<string | null> {
             { text: String(sb.expectedCount), x: sizeCols2[2].x, width: sizeCols2[2].w },
             { text: String(sb.scannedCount), x: sizeCols2[3].x, width: sizeCols2[3].w },
             { text: `+${sb.difference}`, x: sizeCols2[4].x, width: sizeCols2[4].w },
+            { text: sb.status || 'Surplus', x: sizeCols2[5].x, width: sizeCols2[5].w },
           ], false);
           doc.y = rY + 14;
         }

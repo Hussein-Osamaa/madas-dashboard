@@ -35,6 +35,7 @@ export interface IInventoryReport extends Document {
       scannedCount: number;
       sizeBarcode?: string;
       difference: number;
+      status: string;
     }>;
   }>;
   /** Products scanned MORE than expected (extras/unreturned) */
@@ -53,6 +54,7 @@ export interface IInventoryReport extends Document {
       scannedCount: number;
       sizeBarcode?: string;
       difference: number;
+      status: string;
     }>;
   }>;
   // Monthly: opening from previous month

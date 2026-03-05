@@ -354,6 +354,7 @@ export interface ProductAuditDetail {
     scannedCount: number;
     sizeBarcode?: string;
     difference: number;
+    status: string;
   }>;
 }
 
@@ -471,12 +472,20 @@ export async function finishAudit(
     for (const size of allSizes) {
       const expectedForSize = stock[size] ?? 0;
       const scannedForSize = sizeScans.get(size) ?? 0;
+      const diff = scannedForSize - expectedForSize;
+      let sizeStatus: string;
+      if (expectedForSize === 0 && scannedForSize === 0) sizeStatus = 'Out of Stock';
+      else if (scannedForSize === 0 && expectedForSize > 0) sizeStatus = 'Lost';
+      else if (diff < 0) sizeStatus = 'Missing';
+      else if (diff > 0) sizeStatus = 'Surplus';
+      else sizeStatus = 'In Stock';
       sizeBreakdown.push({
         size,
         expectedCount: expectedForSize,
         scannedCount: scannedForSize,
         sizeBarcode: sizeBarcodes[size] || undefined,
-        difference: scannedForSize - expectedForSize,
+        difference: diff,
+        status: sizeStatus,
       });
     }
 
@@ -489,6 +498,7 @@ export async function finishAudit(
         scannedCount: unknownSizeScans,
         sizeBarcode: mainBarcode,
         difference: unknownSizeScans,
+        status: 'Surplus',
       });
     }
 
