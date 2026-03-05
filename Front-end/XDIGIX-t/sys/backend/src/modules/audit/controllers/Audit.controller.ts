@@ -43,7 +43,7 @@ export async function scan(req: Request, res: Response): Promise<void> {
   if (auditSessionId && workerId && barcode != null) {
     try {
       const product = await AuditService.scanBarcodeMultiWorker(auditSessionId, String(barcode).trim(), workerId);
-      res.json({ success: true, product: { id: product.productId, name: product.name, sku: product.sku } });
+      res.json({ success: true, product: { id: product.productId, name: product.name, sku: product.sku, size: product.size } });
       return;
     } catch (err: unknown) {
       const e = err as Error & { code?: string };
@@ -63,7 +63,7 @@ export async function scan(req: Request, res: Response): Promise<void> {
   }
   try {
     const product = await AuditService.scanBarcodeByCode(sessionId, barcode);
-    res.json({ success: true, product: { id: product.productId, name: product.name, sku: product.sku } });
+    res.json({ success: true, product: { id: product.productId, name: product.name, sku: product.sku, size: product.size } });
   } catch (err: unknown) {
     const e = err as Error & { code?: string };
     if (e.code === 'UNKNOWN_BARCODE') {

@@ -31,6 +31,7 @@ export interface RecordCountInput {
 export interface RecordCountResult {
   comparisonId: string;
   sku: string;
+  size?: string;
   physicalCount: number;
   systemStock: number;
   difference: number;
@@ -97,11 +98,13 @@ export async function recordPhysicalCount(input: RecordCountInput): Promise<Reco
 
 export interface RecordBulkCountInput {
   clientId: string;
-  counts: Array<{ sku: string; physicalCount: number }>;
+  counts: Array<{ sku: string; size?: string; physicalCount: number }>;
   shiftId?: string;
   shiftName?: string;
   performedBy?: string;
   note?: string;
+  /** Per-size system stock from Firestore product data (overrides movement-based stock). */
+  sizeStockMap?: Record<string, Record<string, number>>;
 }
 
 export interface RecordBulkCountResult {
@@ -109,7 +112,7 @@ export interface RecordBulkCountResult {
 }
 
 export async function recordBulkPhysicalCount(input: RecordBulkCountInput): Promise<RecordBulkCountResult> {
-  const { clientId, counts, shiftId, shiftName, performedBy, note } = input;
+  const { clientId, counts, shiftId, shiftName, performedBy, note, sizeStockMap } = input;
   if (!counts?.length) throw new Error('counts array is required and must not be empty');
 
   const skus = counts.map((c) => String(c.sku).trim()).filter(Boolean);
@@ -124,6 +127,7 @@ export async function recordBulkPhysicalCount(input: RecordBulkCountInput): Prom
     clientId: string;
     comparisonId: unknown;
     sku: string;
+    size?: string;
     physicalCount: number;
     systemStock: number;
     difference: number;
@@ -133,19 +137,30 @@ export async function recordBulkPhysicalCount(input: RecordBulkCountInput): Prom
     performedBy?: string;
   }> = [];
 
-  for (const { sku, physicalCount } of counts) {
+  for (const { sku, size, physicalCount } of counts) {
     const skuTrim = String(sku).trim();
     if (!skuTrim) continue;
     const count = Number(physicalCount);
     if (Number.isNaN(count) || count < 0) continue;
+    const sizeTrim = size?.trim() || undefined;
 
-    const systemStock = systemMap[skuTrim] ?? 0;
+    // Use per-size stock from Firestore when available, otherwise fall back to movement-based total
+    let systemStock: number;
+    if (sizeTrim && sizeStockMap?.[skuTrim]) {
+      systemStock = sizeStockMap[skuTrim][sizeTrim] ?? 0;
+    } else if (!sizeTrim && sizeStockMap?.[skuTrim]) {
+      systemStock = Object.values(sizeStockMap[skuTrim]).reduce((a, b) => a + b, 0);
+    } else {
+      systemStock = systemMap[skuTrim] ?? 0;
+    }
+
     const difference = count - systemStock;
     const alertTriggered = Math.abs(difference) > threshold;
 
     const comparison = await AuditComparisonModel.create({
       clientId,
       sku: skuTrim,
+      size: sizeTrim,
       physicalCount: count,
       systemStock,
       difference,
@@ -160,6 +175,7 @@ export async function recordBulkPhysicalCount(input: RecordBulkCountInput): Prom
     comparisons.push({
       comparisonId: comparison._id.toString(),
       sku: skuTrim,
+      size: sizeTrim,
       physicalCount: count,
       systemStock,
       difference,
@@ -172,6 +188,7 @@ export async function recordBulkPhysicalCount(input: RecordBulkCountInput): Prom
         clientId,
         comparisonId: comparison._id,
         sku: skuTrim,
+        size: sizeTrim,
         physicalCount: count,
         systemStock,
         difference,
@@ -185,7 +202,11 @@ export async function recordBulkPhysicalCount(input: RecordBulkCountInput): Prom
 
   for (const a of alertsToCreate) {
     const alert = await AuditAlertModel.create(a);
-    const comp = comparisons.find((c) => c.sku === a.sku && c.alertTriggered);
+    const key = a.size ? `${a.sku}::${a.size}` : a.sku;
+    const comp = comparisons.find((c) => {
+      const cKey = c.size ? `${c.sku}::${c.size}` : c.sku;
+      return cKey === key && c.alertTriggered;
+    });
     if (comp) comp.alertId = alert._id.toString();
   }
 
@@ -234,6 +255,7 @@ export async function listComparisons(params: {
       id: (d._id as { toString(): string }).toString(),
       clientId: String(d.clientId ?? ''),
       sku: String(d.sku ?? ''),
+      size: d.size != null ? String(d.size) : undefined,
       physicalCount: Number(d.physicalCount ?? 0),
       systemStock: Number(d.systemStock ?? 0),
       difference: Number(d.difference ?? 0),
@@ -297,6 +319,7 @@ export async function listAlerts(params: {
       clientId: String(d.clientId ?? ''),
       comparisonId: (d.comparisonId as { toString(): string }).toString(),
       sku: String(d.sku ?? ''),
+      size: d.size != null ? String(d.size) : undefined,
       physicalCount: Number(d.physicalCount ?? 0),
       systemStock: Number(d.systemStock ?? 0),
       difference: Number(d.difference ?? 0),

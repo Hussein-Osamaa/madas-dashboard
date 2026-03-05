@@ -8,6 +8,8 @@ export interface IAuditScanDoc extends Document {
   scannedAt: Date;
   productName?: string;
   productSku?: string;
+  /** Size variant matched from sizeBarcodes (e.g. "M", "42", "L|Black"). */
+  size?: string;
 }
 
 const AuditScanSchema = new Schema<IAuditScanDoc>(
@@ -19,6 +21,7 @@ const AuditScanSchema = new Schema<IAuditScanDoc>(
     scannedAt: { type: Date, default: Date.now },
     productName: { type: String },
     productSku: { type: String },
+    size: { type: String },
   },
   { timestamps: true }
 );

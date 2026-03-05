@@ -71,11 +71,11 @@ function normalizeBarcode(str: string): string {
   return str.toLowerCase().replace(/\s+/g, '').replace(/-/g, '');
 }
 
-/** Resolve barcode to product for a client. Returns { productId, name, sku } or null. */
+/** Resolve barcode to product for a client. Returns { productId, name, sku, size } or null. */
 export async function resolveBarcode(
   clientId: string,
   barcode: string
-): Promise<{ productId: string; name?: string; sku?: string } | null> {
+): Promise<{ productId: string; name?: string; sku?: string; size?: string } | null> {
   const docs = await FirestoreDoc.find({ businessId: clientId, coll: 'products' }).select('docId data').lean();
   const trimmed = barcode.trim().toLowerCase();
   const normalized = normalizeBarcode(trimmed);
@@ -96,16 +96,16 @@ export async function resolveBarcode(
       };
     }
     const sizeBarcodes = (data.sizeBarcodes as Record<string, string>) || {};
-    for (const sb of Object.values(sizeBarcodes)) {
+    for (const [size, sb] of Object.entries(sizeBarcodes)) {
       const s = String(sb || '').toLowerCase();
       if (s === trimmed || normalizeBarcode(s) === normalized)
-        return { productId: d.docId, name: (data.name as string) || undefined, sku: (data.sku as string) || undefined };
+        return { productId: d.docId, name: (data.name as string) || undefined, sku: (data.sku as string) || undefined, size };
     }
     const sizeVariants = (data.sizeVariants as Record<string, { barcode?: string }>) || {};
-    for (const v of Object.values(sizeVariants)) {
+    for (const [size, v] of Object.entries(sizeVariants)) {
       const vb = String((v as { barcode?: string })?.barcode || '').toLowerCase();
       if (vb === trimmed || normalizeBarcode(vb) === normalized)
-        return { productId: d.docId, name: (data.name as string) || undefined, sku: (data.sku as string) || undefined };
+        return { productId: d.docId, name: (data.name as string) || undefined, sku: (data.sku as string) || undefined, size };
     }
   }
   return null;
@@ -115,7 +115,7 @@ export async function resolveBarcode(
 export async function scanBarcodeByCode(
   sessionId: string,
   barcode: string
-): Promise<{ productId: string; name?: string; sku?: string }> {
+): Promise<{ productId: string; name?: string; sku?: string; size?: string }> {
   const session = await AuditSessionModel.findOne({ _id: sessionId, status: { $in: ACTIVE_STATUSES } });
   if (!session) throw new Error('Active audit session not found');
   const resolved = await resolveBarcode(session.clientId, barcode);
@@ -125,7 +125,7 @@ export async function scanBarcodeByCode(
     throw err;
   }
   await scanBarcode(sessionId, barcode, resolved.productId, 1);
-  return { productId: resolved.productId, name: resolved.name, sku: resolved.sku };
+  return { productId: resolved.productId, name: resolved.name, sku: resolved.sku, size: resolved.size };
 }
 
 export async function scanBarcode(
@@ -152,7 +152,7 @@ export async function scanBarcodeMultiWorker(
   auditSessionId: string,
   barcode: string,
   workerId: string
-): Promise<{ productId: string; name?: string; sku?: string }> {
+): Promise<{ productId: string; name?: string; sku?: string; size?: string }> {
   const session = await AuditSessionModel.findOne({
     _id: auditSessionId,
     status: { $in: ACTIVE_STATUSES },
@@ -172,7 +172,7 @@ export async function scanBarcodeMultiWorker(
     scannedAt: { $gte: since },
   });
   if (dup) {
-    return { productId: resolved.productId, name: resolved.name, sku: resolved.sku };
+    return { productId: resolved.productId, name: resolved.name, sku: resolved.sku, size: resolved.size };
   }
   await AuditScanModel.create({
     auditSessionId: session._id,
@@ -182,6 +182,7 @@ export async function scanBarcodeMultiWorker(
     scannedAt: new Date(),
     productName: resolved.name,
     productSku: resolved.sku,
+    size: resolved.size,
   });
 
   // If two requests ran concurrently, we may have created a duplicate; keep only the first in the dedupe window
@@ -217,13 +218,14 @@ export async function scanBarcodeMultiWorker(
   const last = recentScans[0];
   const serverIo = getIo();
   if (serverIo) {
-    const toItem = (s: { productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string }) => ({
+    const toItem = (s: { productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string; size?: string }) => ({
       productId: s.productId,
       barcode: s.barcode,
       workerId: s.workerId,
       scannedAt: s.scannedAt,
       productName: s.productName,
       productSku: s.productSku,
+      size: s.size,
     });
     serverIo.to(`audit:${auditSessionId}`).emit('scan_update', {
       totalScans: session.scannedBarcodes.length,
@@ -232,7 +234,7 @@ export async function scanBarcodeMultiWorker(
       recentScans: recentScans.map((s) => toItem(s as any)),
     });
   }
-  return { productId: resolved.productId, name: resolved.name, sku: resolved.sku };
+  return { productId: resolved.productId, name: resolved.name, sku: resolved.sku, size: resolved.size };
 }
 
 /** Get session summary for UI (workers with names, counts, recent scans). */
@@ -244,8 +246,8 @@ export async function getSessionSummary(auditSessionId: string): Promise<{
   workerScanCounts: Record<string, number>;
   workers: Array<{ userId: string; name: string; scanCount: number }>;
   totalScans: number;
-  lastScanned: { productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string } | null;
-  recentScans: Array<{ productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string }>;
+  lastScanned: { productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string; size?: string } | null;
+  recentScans: Array<{ productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string; size?: string }>;
 } | null> {
   const session = await AuditSessionModel.findById(auditSessionId).lean();
   if (!session) return null;
@@ -295,6 +297,7 @@ export async function getSessionSummary(auditSessionId: string): Promise<{
           scannedAt: (last as any).scannedAt,
           productName: (last as any).productName,
           productSku: (last as any).productSku,
+          size: (last as any).size,
         }
       : null,
     recentScans: recentScans.map((r: any) => ({
@@ -304,6 +307,7 @@ export async function getSessionSummary(auditSessionId: string): Promise<{
       scannedAt: r.scannedAt,
       productName: r.productName,
       productSku: r.productSku,
+      size: r.size,
     })),
   };
 }
@@ -321,8 +325,8 @@ export async function getSessionForRestore(
   workerScanCounts: Record<string, number>;
   workers: Array<{ userId: string; name: string; scanCount: number }>;
   totalScans: number;
-  lastScanned: { productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string } | null;
-  recentScans: Array<{ productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string }>;
+  lastScanned: { productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string; size?: string } | null;
+  recentScans: Array<{ productId: string; barcode: string; workerId: string; scannedAt: Date; productName?: string; productSku?: string; size?: string }>;
 } | null> {
   const session = await AuditSessionModel.findById(auditSessionId).lean();
   if (!session) return null;
@@ -363,23 +367,48 @@ export async function finishAudit(
     }
   }
 
-  // Build SKU-based counts for audit comparison (physical vs system from movements)
-  const productIdsNeedingSku = [...new Set((scans as Array<{ productId: string; productSku?: string }>).filter((s) => !s.productSku?.trim()).map((s) => s.productId))];
-  const productIdToSku = new Map<string, string>();
-  if (productIdsNeedingSku.length > 0) {
-    const docs = await FirestoreDoc.find({ businessId: clientId, coll: 'products', docId: { $in: productIdsNeedingSku } }).select('docId data').lean();
-    for (const d of docs) {
-      const docId = (d as { docId: string }).docId;
-      const sku = ((d as { data?: { sku?: string } }).data?.sku ?? docId)?.trim?.();
-      if (sku) productIdToSku.set(docId, sku);
+  // Build SKU+size counts for audit comparison (physical vs system by size)
+  const scannedProductIds = [...new Set((scans as Array<{ productId: string }>).map((s) => s.productId))];
+  const productDocsForScans = await FirestoreDoc.find({ businessId: clientId, coll: 'products', docId: { $in: scannedProductIds } }).select('docId data').lean();
+  const productIdToData = new Map<string, Record<string, unknown>>();
+  for (const d of productDocsForScans) {
+    const docId = (d as { docId: string }).docId;
+    const data = (d as { data?: Record<string, unknown> }).data || {};
+    productIdToData.set(docId, data);
+  }
+
+  // key = "sku::size" or "sku" (no size)
+  const sizeCountKey = (sku: string, size?: string) => (size ? `${sku}::${size}` : sku);
+  const sizeCounts = new Map<string, { sku: string; size?: string; count: number }>();
+  for (const s of scans as Array<{ productId: string; productSku?: string; size?: string }>) {
+    const data = productIdToData.get(s.productId) || {};
+    const sku = (s.productSku?.trim() || (data.sku as string)?.trim() || s.productId).trim();
+    const size = s.size?.trim() || undefined;
+    const key = sizeCountKey(sku, size);
+    const existing = sizeCounts.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      sizeCounts.set(key, { sku, size, count: 1 });
     }
   }
-  const skuCounts = new Map<string, number>();
-  for (const s of scans as Array<{ productId: string; productSku?: string }>) {
-    const sku = (s.productSku?.trim() || productIdToSku.get(s.productId) || s.productId).trim();
-    if (sku) skuCounts.set(sku, (skuCounts.get(sku) ?? 0) + 1);
+
+  // Build per-SKU per-size system stock from Firestore product stock data
+  const sizeStockMap: Record<string, Record<string, number>> = {};
+  for (const [, data] of productIdToData) {
+    const sku = ((data.sku as string) ?? '').trim();
+    if (!sku) continue;
+    const stock = (data.stock as Record<string, number>) || {};
+    if (Object.keys(stock).length > 0) {
+      sizeStockMap[sku] = { ...(sizeStockMap[sku] || {}), ...stock };
+    }
   }
-  const auditComparisonCounts = Array.from(skuCounts.entries()).map(([sku, physicalCount]) => ({ sku, physicalCount }));
+
+  const auditComparisonCounts = Array.from(sizeCounts.values()).map(({ sku, size, count }) => ({
+    sku,
+    size,
+    physicalCount: count,
+  }));
 
   // All products for this client: Firestore products + any in ledger
   const productDocs = await FirestoreDoc.find({ businessId: clientId, coll: 'products' }).select('docId').lean();
@@ -440,6 +469,7 @@ export async function finishAudit(
         counts: auditComparisonCounts,
         shiftName: `Audit ${session.joinCode}`,
         performedBy: session.createdBy,
+        sizeStockMap,
       });
       const anyAlert = result.comparisons?.some((c) => (c as { alertTriggered?: boolean }).alertTriggered);
       if (anyAlert) {

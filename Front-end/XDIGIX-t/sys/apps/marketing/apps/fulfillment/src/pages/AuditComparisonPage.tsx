@@ -35,6 +35,7 @@ export default function AuditComparisonPage() {
   const [comparisons, setComparisons] = useState<Array<{
     id: string;
     sku: string;
+    size?: string;
     physicalCount: number;
     systemStock: number;
     difference: number;
@@ -49,6 +50,7 @@ export default function AuditComparisonPage() {
   const [alerts, setAlerts] = useState<Array<{
     id: string;
     sku: string;
+    size?: string;
     physicalCount: number;
     systemStock: number;
     difference: number;
@@ -307,7 +309,7 @@ export default function AuditComparisonPage() {
                       className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30"
                     >
                       <span className="text-gray-900 dark:text-white">
-                        <strong>{a.sku}</strong>: physical {a.physicalCount}, system {a.systemStock}, difference {a.difference >= 0 ? '+' : ''}{a.difference} (threshold {a.threshold})
+                        <strong>{a.sku}</strong>{a.size ? <span className="ml-1 text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-white/10 font-medium">{a.size}</span> : null}: physical {a.physicalCount}, system {a.systemStock}, difference {a.difference >= 0 ? '+' : ''}{a.difference} (threshold {a.threshold})
                         {a.shiftName && <span className="text-gray-500 dark:text-gray-400 ml-1">· {a.shiftName}</span>}
                       </span>
                       <button
@@ -338,6 +340,7 @@ export default function AuditComparisonPage() {
                   <thead className="bg-gray-50 dark:bg-white/5">
                     <tr>
                       <th className="text-left p-3 text-gray-600 dark:text-gray-400 font-medium">SKU</th>
+                      <th className="text-left p-3 text-gray-600 dark:text-gray-400 font-medium">Size</th>
                       <th className="text-right p-3 text-gray-600 dark:text-gray-400 font-medium">Physical</th>
                       <th className="text-right p-3 text-gray-600 dark:text-gray-400 font-medium">System</th>
                       <th className="text-right p-3 text-gray-600 dark:text-gray-400 font-medium">Difference</th>
@@ -350,6 +353,7 @@ export default function AuditComparisonPage() {
                     {comparisons.map((c) => (
                       <tr key={c.id} className="text-gray-900 dark:text-white">
                         <td className="p-3 font-medium">{c.sku}</td>
+                        <td className="p-3 text-gray-600 dark:text-gray-300">{c.size || '—'}</td>
                         <td className="p-3 text-right">{c.physicalCount}</td>
                         <td className="p-3 text-right">{c.systemStock}</td>
                         <td className={`p-3 text-right ${c.difference !== 0 ? (c.difference > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') : ''}`}>

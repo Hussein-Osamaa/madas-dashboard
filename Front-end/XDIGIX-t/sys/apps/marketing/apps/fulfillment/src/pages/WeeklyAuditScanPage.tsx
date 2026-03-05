@@ -50,6 +50,7 @@ function useBeep() {
 interface RecentScan {
   name: string;
   sku: string;
+  size?: string;
   time: string;
 }
 
@@ -65,7 +66,7 @@ export default function WeeklyAuditScanPage() {
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [totalScans, setTotalScans] = useState(0);
   const [uniqueIds, setUniqueIds] = useState<Set<string>>(new Set());
-  const [lastScanned, setLastScanned] = useState<{ name: string; sku: string } | null>(null);
+  const [lastScanned, setLastScanned] = useState<{ name: string; sku: string; size?: string } | null>(null);
   const [errors, setErrors] = useState(0);
   const [recentScans, setRecentScans] = useState<RecentScan[]>([]);
   const [flash, setFlash] = useState<'success' | 'error' | null>(null);
@@ -135,6 +136,7 @@ export default function WeeklyAuditScanPage() {
           setLastScanned({
             name: data.lastScanned.productName || '—',
             sku: data.lastScanned.productSku || data.lastScanned.barcode,
+            size: data.lastScanned.size,
           });
         } else {
           setLastScanned(null);
@@ -143,6 +145,7 @@ export default function WeeklyAuditScanPage() {
           (data.recentScans || []).map((r) => ({
             name: r.productName || '—',
             sku: r.productSku || r.barcode,
+            size: r.size,
             time: r.scannedAt ? new Date(r.scannedAt).toLocaleTimeString() : '—',
           }))
         );
@@ -182,12 +185,14 @@ export default function WeeklyAuditScanPage() {
           setLastScanned({
             name: s.lastScanned.productName || '—',
             sku: s.lastScanned.productSku || s.lastScanned.barcode,
+            size: s.lastScanned.size,
           });
         }
         setRecentScans(
           (s.recentScans || []).map((r) => ({
             name: r.productName || '—',
             sku: r.productSku || r.barcode,
+            size: r.size,
             time: r.scannedAt ? new Date(r.scannedAt).toLocaleTimeString() : '—',
           }))
         );
@@ -213,11 +218,13 @@ export default function WeeklyAuditScanPage() {
           setLastScanned({
             name: data.lastScanned.productName || '—',
             sku: data.lastScanned.productSku || data.lastScanned.barcode,
+            size: data.lastScanned.size,
           });
           setRecentScans((prev) => [
             {
               name: data.lastScanned!.productName || '—',
               sku: data.lastScanned!.productSku || data.lastScanned!.barcode,
+              size: data.lastScanned!.size,
               time: new Date().toLocaleTimeString(),
             },
             ...prev.slice(0, RECENT_MAX - 1),
@@ -228,6 +235,7 @@ export default function WeeklyAuditScanPage() {
             data.recentScans.slice(0, RECENT_MAX).map((r) => ({
               name: r.productName || '—',
               sku: r.productSku || r.barcode,
+              size: r.size,
               time: r.scannedAt ? new Date(r.scannedAt).toLocaleTimeString() : '—',
             }))
           );
@@ -290,9 +298,9 @@ export default function WeeklyAuditScanPage() {
         const product = res.product;
         if (product) {
           setUniqueIds((prev) => new Set(prev).add(product.id));
-          setLastScanned({ name: product.name || '—', sku: product.sku || product.id });
+          setLastScanned({ name: product.name || '—', sku: product.sku || product.id, size: product.size });
           setRecentScans((prev) => [
-            { name: product.name || '—', sku: product.sku || product.id, time: new Date().toLocaleTimeString() },
+            { name: product.name || '—', sku: product.sku || product.id, size: product.size, time: new Date().toLocaleTimeString() },
             ...prev.slice(0, RECENT_MAX - 1),
           ]);
         }
@@ -608,7 +616,7 @@ export default function WeeklyAuditScanPage() {
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">Last Scanned</p>
-            <p className="font-medium text-gray-900 dark:text-white truncate">{lastScanned?.name ?? '—'}</p>
+            <p className="font-medium text-gray-900 dark:text-white truncate">{lastScanned?.name ?? '—'}{lastScanned?.size ? ` · ${lastScanned.size}` : ''}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{lastScanned?.sku ?? '—'}</p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-4">
@@ -653,7 +661,7 @@ export default function WeeklyAuditScanPage() {
               recentScans.map((s, i) => (
                 <li key={i} className="px-4 py-2 flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white truncate">{s.name}</p>
+                    <p className="font-medium text-gray-900 dark:text-white truncate">{s.name}{s.size ? <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-medium">{s.size}</span> : null}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{s.sku}</p>
                   </div>
                   <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">{s.time}</span>

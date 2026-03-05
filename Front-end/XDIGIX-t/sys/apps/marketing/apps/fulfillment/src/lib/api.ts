@@ -624,8 +624,8 @@ export interface AuditSessionSummary {
   workerScanCounts: Record<string, number>;
   workers: Array<{ userId: string; name: string; scanCount: number }>;
   totalScans: number;
-  lastScanned: { productId: string; barcode: string; workerId: string; scannedAt: string; productName?: string; productSku?: string } | null;
-  recentScans: Array<{ productId: string; barcode: string; workerId: string; scannedAt: string; productName?: string; productSku?: string }>;
+  lastScanned: { productId: string; barcode: string; workerId: string; scannedAt: string; productName?: string; productSku?: string; size?: string } | null;
+  recentScans: Array<{ productId: string; barcode: string; workerId: string; scannedAt: string; productName?: string; productSku?: string; size?: string }>;
 }
 
 export type AuditSessionRestore = AuditSessionSummary & { joinCode: string };
@@ -639,7 +639,7 @@ export async function auditRestore(sessionId: string): Promise<AuditSessionResto
   return fetchApi<AuditSessionRestore>(`/audit/restore/${sessionId}`);
 }
 
-export async function auditScan(sessionId: string, barcode: string): Promise<{ success: true; product: { id: string; name?: string; sku?: string } }> {
+export async function auditScan(sessionId: string, barcode: string): Promise<{ success: true; product: { id: string; name?: string; sku?: string; size?: string } }> {
   return fetchApi('/audit/scan', {
     method: 'POST',
     body: JSON.stringify({ auditSessionId: sessionId, sessionId, barcode }),

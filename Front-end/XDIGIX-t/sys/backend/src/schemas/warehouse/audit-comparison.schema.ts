@@ -7,6 +7,8 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IAuditComparison extends Document {
   clientId: string;
   sku: string;
+  /** Size variant (e.g. "M", "42"). Empty/undefined means product-level (no size). */
+  size?: string;
   physicalCount: number;
   systemStock: number;
   difference: number; // physicalCount - systemStock
@@ -25,6 +27,7 @@ const AuditComparisonSchema = new Schema<IAuditComparison>(
   {
     clientId: { type: String, required: true, index: true },
     sku: { type: String, required: true, index: true },
+    size: { type: String },
     physicalCount: { type: Number, required: true },
     systemStock: { type: Number, required: true },
     difference: { type: Number, required: true },

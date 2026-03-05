@@ -8,6 +8,7 @@ export interface IAuditAlert extends Document {
   clientId: string;
   comparisonId: mongoose.Types.ObjectId;
   sku: string;
+  size?: string;
   physicalCount: number;
   systemStock: number;
   difference: number;
@@ -26,6 +27,7 @@ const AuditAlertSchema = new Schema<IAuditAlert>(
     clientId: { type: String, required: true, index: true },
     comparisonId: { type: Schema.Types.ObjectId, required: true, ref: 'AuditComparison' },
     sku: { type: String, required: true },
+    size: { type: String },
     physicalCount: { type: Number, required: true },
     systemStock: { type: Number, required: true },
     difference: { type: Number, required: true },
