@@ -20,6 +20,41 @@ export interface IInventoryReport extends Document {
   totalDamagedLast7Days?: number;
   previousWeekClosingBalance?: number;
   productBreakdown?: Array<{ productId: string; availableStock: number }>;
+  /** Detailed per-product, per-size audit breakdown */
+  detailedProductBreakdown?: Array<{
+    productId: string;
+    name: string;
+    sku: string;
+    mainBarcode: string;
+    expectedTotal: number;
+    actualTotal: number;
+    type: string;
+    sizeBreakdown: Array<{
+      size: string;
+      expectedCount: number;
+      scannedCount: number;
+      sizeBarcode?: string;
+      difference: number;
+    }>;
+  }>;
+  /** Products scanned MORE than expected (extras/unreturned) */
+  extraProducts?: Array<{
+    productId: string;
+    name: string;
+    sku: string;
+    mainBarcode: string;
+    expectedTotal: number;
+    actualTotal: number;
+    type: string;
+    excessQuantity: number;
+    sizeBreakdown: Array<{
+      size: string;
+      expectedCount: number;
+      scannedCount: number;
+      sizeBarcode?: string;
+      difference: number;
+    }>;
+  }>;
   // Monthly: opening from previous month
   openingBalance?: number;
   // Movement-based weekly: totals from inventory_movements
@@ -51,6 +86,8 @@ const InventoryReportSchema = new Schema<IInventoryReport>(
     totalDamagedLast7Days: Number,
     previousWeekClosingBalance: Number,
     productBreakdown: Schema.Types.Mixed,
+    detailedProductBreakdown: Schema.Types.Mixed,
+    extraProducts: Schema.Types.Mixed,
     openingBalance: Number,
     stockIn: Number,
     picked: Number,

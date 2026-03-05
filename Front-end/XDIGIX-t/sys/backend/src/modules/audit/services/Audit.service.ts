@@ -339,11 +339,29 @@ export async function getSessionForRestore(
   return { ...summary, joinCode: s.joinCode };
 }
 
+/** Per-product, per-size audit detail used in reports. */
+export interface ProductAuditDetail {
+  productId: string;
+  name: string;
+  sku: string;
+  mainBarcode: string;
+  expectedTotal: number;
+  actualTotal: number;
+  type: string; // MISSING | ADJUSTMENT | AUDIT
+  sizeBreakdown: Array<{
+    size: string;
+    expectedCount: number;
+    scannedCount: number;
+    sizeBarcode?: string;
+    difference: number;
+  }>;
+}
+
 export async function finishAudit(
   sessionId: string,
   requestedBy: string,
   options?: { allowAnyAdmin?: boolean }
-): Promise<{ adjustments: Array<{ productId: string; expected: number; actual: number; type: string }>; clientId: string }> {
+): Promise<{ adjustments: Array<{ productId: string; expected: number; actual: number; type: string }>; detailedBreakdown: ProductAuditDetail[]; clientId: string }> {
   const session = await AuditSessionModel.findOne({ _id: sessionId, status: { $in: ACTIVE_STATUSES } });
   if (!session) throw new Error('Active audit session not found');
   const canFinish = session.createdBy === requestedBy || options?.allowAnyAdmin === true;
@@ -367,21 +385,29 @@ export async function finishAudit(
     }
   }
 
-  // Build SKU+size counts for audit comparison (physical vs system by size)
-  const scannedProductIds = [...new Set((scans as Array<{ productId: string }>).map((s) => s.productId))];
-  const productDocsForScans = await FirestoreDoc.find({ businessId: clientId, coll: 'products', docId: { $in: scannedProductIds } }).select('docId data').lean();
-  const productIdToData = new Map<string, Record<string, unknown>>();
-  for (const d of productDocsForScans) {
-    const docId = (d as { docId: string }).docId;
-    const data = (d as { data?: Record<string, unknown> }).data || {};
-    productIdToData.set(docId, data);
+  // Build per-product, per-size scan counts
+  const scansByProductAndSize = new Map<string, Map<string, number>>();
+  for (const s of scans) {
+    const scan = s as { productId: string; size?: string };
+    const pid = scan.productId;
+    const size = scan.size || '__unknown__';
+    if (!scansByProductAndSize.has(pid)) scansByProductAndSize.set(pid, new Map());
+    const sizeMap = scansByProductAndSize.get(pid)!;
+    sizeMap.set(size, (sizeMap.get(size) ?? 0) + 1);
   }
 
-  // key = "sku::size" or "sku" (no size)
+  // Fetch all product Firestore docs with data for detailed info + audit comparison
+  const productDocsWithData = await FirestoreDoc.find({ businessId: clientId, coll: 'products' }).select('docId data').lean();
+  const productDataMap = new Map<string, Record<string, unknown>>();
+  for (const d of productDocsWithData) {
+    productDataMap.set(d.docId, (d as { data?: Record<string, unknown> }).data || {});
+  }
+
+  // Build SKU+size counts for audit comparison (physical vs system by size)
   const sizeCountKey = (sku: string, size?: string) => (size ? `${sku}::${size}` : sku);
   const sizeCounts = new Map<string, { sku: string; size?: string; count: number }>();
   for (const s of scans as Array<{ productId: string; productSku?: string; size?: string }>) {
-    const data = productIdToData.get(s.productId) || {};
+    const data = productDataMap.get(s.productId) || {};
     const sku = (s.productSku?.trim() || (data.sku as string)?.trim() || s.productId).trim();
     const size = s.size?.trim() || undefined;
     const key = sizeCountKey(sku, size);
@@ -393,9 +419,8 @@ export async function finishAudit(
     }
   }
 
-  // Build per-SKU per-size system stock from Firestore product stock data
   const sizeStockMap: Record<string, Record<string, number>> = {};
-  for (const [, data] of productIdToData) {
+  for (const [, data] of productDataMap) {
     const sku = ((data.sku as string) ?? '').trim();
     if (!sku) continue;
     const stock = (data.stock as Record<string, number>) || {};
@@ -410,13 +435,16 @@ export async function finishAudit(
     physicalCount: count,
   }));
 
-  // All products for this client: Firestore products + any in ledger
-  const productDocs = await FirestoreDoc.find({ businessId: clientId, coll: 'products' }).select('docId').lean();
-  const productIdsFromDocs = productDocs.map((d: { docId: string }) => d.docId);
+  // Only reconcile products that exist as Firestore docs (recordTransaction requires it).
+  // Products that only exist in the ledger (deleted docs) are skipped to avoid 400 errors.
+  const productIdsFromDocs = new Set(productDocsWithData.map((d: { docId: string }) => d.docId));
   const productIdsFromLedger = await StockTransactionModel.distinct('productId', { clientId });
-  const allProductIds = [...new Set([...productIdsFromDocs, ...productIdsFromLedger])];
+  const allProductIds = [...new Set([...productIdsFromDocs, ...productIdsFromLedger])].filter(
+    (id) => productIdsFromDocs.has(id)
+  );
 
   const adjustments: Array<{ productId: string; expected: number; actual: number; type: string }> = [];
+  const detailedBreakdown: ProductAuditDetail[] = [];
 
   // Reconciliation: for each product, expectedPhysical from ledger; create exactly one StockTransaction (MISSING / ADJUSTMENT / AUDIT)
   for (const productId of allProductIds) {
@@ -424,6 +452,47 @@ export async function finishAudit(
     const scannedCount = scannedByProduct.get(productId) ?? 0;
     const difference = scannedCount - expectedPhysical;
 
+    // Product data for detailed breakdown
+    const data = productDataMap.get(productId) || {};
+    const name = (data.name as string) || 'Unknown Product';
+    const sku = (data.sku as string) || '';
+    const mainBarcode = (data.barcode as string) || (data.mainBarcode as string) || '';
+    const stock = (data.stock as Record<string, number>) || {};
+    const sizeBarcodes = (data.sizeBarcodes as Record<string, string>) || {};
+
+    // Build per-size breakdown
+    const sizeScans = scansByProductAndSize.get(productId) || new Map<string, number>();
+    const allSizes = new Set([
+      ...Object.keys(stock),
+      ...Array.from(sizeScans.keys()).filter((k) => k !== '__unknown__'),
+    ]);
+
+    const sizeBreakdown: ProductAuditDetail['sizeBreakdown'] = [];
+    for (const size of allSizes) {
+      const expectedForSize = stock[size] ?? 0;
+      const scannedForSize = sizeScans.get(size) ?? 0;
+      sizeBreakdown.push({
+        size,
+        expectedCount: expectedForSize,
+        scannedCount: scannedForSize,
+        sizeBarcode: sizeBarcodes[size] || undefined,
+        difference: scannedForSize - expectedForSize,
+      });
+    }
+
+    // Handle unknown-size scans (main barcode scanned, size not determined)
+    const unknownSizeScans = sizeScans.get('__unknown__') ?? 0;
+    if (unknownSizeScans > 0) {
+      sizeBreakdown.push({
+        size: 'Unknown (main barcode)',
+        expectedCount: 0,
+        scannedCount: unknownSizeScans,
+        sizeBarcode: mainBarcode,
+        difference: unknownSizeScans,
+      });
+    }
+
+    let type: string;
     if (difference < 0) {
       await recordTransaction({
         productId,
@@ -433,7 +502,8 @@ export async function finishAudit(
         referenceId: auditRef,
         performedByStaffId: performedByStaffId || requestedBy,
       });
-      adjustments.push({ productId, expected: expectedPhysical, actual: scannedCount, type: 'MISSING' });
+      type = 'MISSING';
+      adjustments.push({ productId, expected: expectedPhysical, actual: scannedCount, type });
     } else if (difference > 0) {
       await recordTransaction({
         productId,
@@ -443,7 +513,8 @@ export async function finishAudit(
         referenceId: auditRef,
         performedByStaffId: performedByStaffId || requestedBy,
       });
-      adjustments.push({ productId, expected: expectedPhysical, actual: scannedCount, type: 'ADJUSTMENT' });
+      type = 'ADJUSTMENT';
+      adjustments.push({ productId, expected: expectedPhysical, actual: scannedCount, type });
     } else {
       await recordTransaction({
         productId,
@@ -453,8 +524,20 @@ export async function finishAudit(
         referenceId: auditRef,
         performedByStaffId: performedByStaffId || requestedBy,
       });
-      adjustments.push({ productId, expected: expectedPhysical, actual: scannedCount, type: 'AUDIT' });
+      type = 'AUDIT';
+      adjustments.push({ productId, expected: expectedPhysical, actual: scannedCount, type });
     }
+
+    detailedBreakdown.push({
+      productId,
+      name,
+      sku,
+      mainBarcode,
+      expectedTotal: expectedPhysical,
+      actualTotal: scannedCount,
+      type,
+      sizeBreakdown,
+    });
   }
 
   session.status = 'FINISHED';
@@ -487,7 +570,7 @@ export async function finishAudit(
     serverIo.to(`audit:${sessionId}`).emit('audit_closed', { sessionId, adjustments });
   }
 
-  return { adjustments, clientId: String(clientId) };
+  return { adjustments, detailedBreakdown, clientId: String(clientId) };
 }
 
 /** Cancel session without reconciliation (admin only). */

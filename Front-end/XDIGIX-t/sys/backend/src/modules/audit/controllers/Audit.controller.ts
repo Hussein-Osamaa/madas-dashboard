@@ -111,13 +111,13 @@ export async function finish(req: Request, res: Response): Promise<void> {
     const requestedBy = getUserId(req);
     const accountType = (req as any).accountPayload?.accountType;
     const allowAnyAdmin = accountType === 'ADMIN';
-    const { adjustments, clientId } = await AuditService.finishAudit(sessionId, requestedBy, { allowAnyAdmin });
-    res.json({ success: true, adjustments });
+    const { adjustments, detailedBreakdown, clientId } = await AuditService.finishAudit(sessionId, requestedBy, { allowAnyAdmin });
+    res.json({ success: true, adjustments, detailedBreakdown });
 
     // Run report generation in background so the client gets a fast response
     setImmediate(async () => {
       try {
-        const reportId = await generateWeeklyReport(clientId, { adjustments });
+        const reportId = await generateWeeklyReport(clientId, { adjustments, detailedBreakdown });
         const report = await InventoryReportModel.findById(reportId).lean();
         const business = await Business.findOne({ businessId: clientId }).select('owner').lean();
         if (report && business?.owner?.email) {
@@ -128,6 +128,7 @@ export async function finish(req: Request, res: Response): Promise<void> {
       }
     });
   } catch (err) {
+    console.error('[audit/finish] Error:', err);
     const message = err instanceof Error ? err.message : 'Failed to finish audit';
     const status = message.includes('Only the person who started') ? 403 : 400;
     res.status(status).json({ error: message });
