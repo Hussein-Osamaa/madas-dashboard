@@ -7,6 +7,7 @@ import AuthProvider from './contexts/AuthContext';
 import BusinessProvider from './contexts/BusinessContext';
 import RBACProvider from './contexts/RBACContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import { router } from './router';
 import { initRbacApi } from '@shared/lib/rbacService';
 import { initPermissionsApi } from '@shared/lib/permissions';
@@ -58,17 +59,19 @@ if (typeof window !== 'undefined' && !useBackend) {
 
 ReactDOM.createRoot /* v2 */(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <DarkModeProvider>
-        <AuthProvider>
-          <BusinessProvider>
-            <RBACProvider>
-              <RouterProvider router={router} />
-            </RBACProvider>
-          </BusinessProvider>
-        </AuthProvider>
-      </DarkModeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <DarkModeProvider>
+          <AuthProvider>
+            <BusinessProvider>
+              <RBACProvider>
+                <RouterProvider router={router} />
+              </RBACProvider>
+            </BusinessProvider>
+          </AuthProvider>
+        </DarkModeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
 

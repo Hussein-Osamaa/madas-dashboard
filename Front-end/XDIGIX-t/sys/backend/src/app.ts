@@ -20,6 +20,7 @@ export function createApp(): Express {
   const KNOWN_ORIGINS = [
     'https://xdigix-os.vercel.app',
     'https://xdigix-os-xdigix.vercel.app',
+    'https://dist-xdigix.vercel.app',
   ];
   const envOrigins = (config.cors.origin || '')
     .split(',')
@@ -39,6 +40,12 @@ export function createApp(): Express {
           return;
         }
         if (allowedOrigins.includes(incoming)) {
+          callback(null, incoming);
+          return;
+        }
+        // Allow any Vercel preview/production deployment under the xdigix team
+        if (/^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming) ||
+            /^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming.replace(/\/$/, ''))) {
           callback(null, incoming);
           return;
         }

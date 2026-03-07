@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "XDIGIX Dashboard",
+    "slug": "xdigix-mobile-dashboard",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splashscreen_logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f1025"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.xdigix.dashboard"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f1025"
+      },
+      "package": "com.xdigix.dashboard"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "933afead-1da1-4fb9-9604-8f59b5551dfb"
+      }
+    }
+  }
+}

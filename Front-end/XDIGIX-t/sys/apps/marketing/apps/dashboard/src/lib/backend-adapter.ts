@@ -141,13 +141,13 @@ function notifyAuthListeners(user: BackendUser | null) {
 let currentUser: BackendUser | null = null;
 
 async function initAuth() {
-  const token = await getToken();
-  if (!token) {
-    currentUser = null;
-    notifyAuthListeners(null);
-    return;
-  }
   try {
+    const token = await getToken();
+    if (!token) {
+      currentUser = null;
+      notifyAuthListeners(null);
+      return;
+    }
     const data = await fetchApi<{ user: { uid: string; email: string; type?: string } }>('/auth/me');
     if (data?.user) {
       currentUser = {
@@ -169,7 +169,7 @@ async function initAuth() {
   }
 }
 
-initAuth();
+initAuth().catch(() => {});
 
 export const auth = {
   get currentUser() {
