@@ -18,6 +18,26 @@ function getApiBase(): string {
 }
 const API_BASE = getApiBase();
 
+// Bootstrap tokens from URL hash (support mode: admin passes token via #token=...&refreshToken=...&accountType=...)
+function bootstrapFromHash() {
+  if (typeof window === 'undefined' || !window.location.hash) return;
+  const hash = window.location.hash.slice(1);
+  const hp = new URLSearchParams(hash);
+  const t = hp.get('token');
+  const r = hp.get('refreshToken');
+  const a = hp.get('accountType');
+  if (t) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('backend_access_token', t);
+      if (r) localStorage.setItem('backend_refresh_token', r);
+      if (a) localStorage.setItem('backend_account_type', a);
+    }
+    // Clean the hash so the token isn't sitting in the URL / browser history
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+bootstrapFromHash();
+
 let accessToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_access_token') : null;
 let refreshToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_refresh_token') : null;
 let accountType: string = (typeof localStorage !== 'undefined' && localStorage.getItem('backend_account_type')) || 'CLIENT';

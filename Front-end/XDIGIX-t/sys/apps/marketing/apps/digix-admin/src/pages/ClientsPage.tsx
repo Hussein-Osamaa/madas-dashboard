@@ -655,16 +655,13 @@ export default function ClientsPage() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
-                                // Join business for support (backend only; params in URL so it works cross-origin)
                                 const businessId = client.id;
                                 const businessName = client.name;
                                 const adminEmail = (user as any)?.email || '';
                                 const adminName = (user as any)?.name || 'Support Staff';
-                                sessionStorage.setItem('supportMode', 'true');
-                                sessionStorage.setItem('supportBusinessId', businessId);
-                                sessionStorage.setItem('supportBusinessName', businessName);
-                                sessionStorage.setItem('supportAdminEmail', adminEmail);
-                                sessionStorage.setItem('supportAdminName', adminName);
+                                const token = localStorage.getItem('backend_access_token') || '';
+                                const rt = localStorage.getItem('backend_refresh_token') || '';
+                                const at = localStorage.getItem('backend_account_type') || 'ADMIN';
                                 const base = (import.meta.env.VITE_DASHBOARD_URL || `${window.location.origin}/dashboard`).replace(/\/$/, '');
                                 const params = new URLSearchParams({
                                   business: businessId,
@@ -673,7 +670,8 @@ export default function ClientsPage() {
                                   supportAdminName: adminName,
                                   supportAdminEmail: adminEmail
                                 });
-                                window.open(`${base}?${params.toString()}`, '_blank');
+                                const hash = `token=${encodeURIComponent(token)}&refreshToken=${encodeURIComponent(rt)}&accountType=${at}`;
+                                window.open(`${base}?${params.toString()}#${hash}`, '_blank');
                               }}
                               className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
                               title="Join Business for Support"
@@ -1297,16 +1295,13 @@ export default function ClientsPage() {
                     </button>
                     <button
                       onClick={() => {
-                        // Join business for support (backend only; params in URL so it works cross-origin)
                         const businessId = selectedClient.id;
                         const businessName = selectedClient.name;
                         const adminEmail = (user as any)?.email || '';
                         const adminName = (user as any)?.name || 'Support Staff';
-                        sessionStorage.setItem('supportMode', 'true');
-                        sessionStorage.setItem('supportBusinessId', businessId);
-                        sessionStorage.setItem('supportBusinessName', businessName);
-                        sessionStorage.setItem('supportAdminEmail', adminEmail);
-                        sessionStorage.setItem('supportAdminName', adminName);
+                        const token = localStorage.getItem('backend_access_token') || '';
+                        const rt = localStorage.getItem('backend_refresh_token') || '';
+                        const at = localStorage.getItem('backend_account_type') || 'ADMIN';
                         const base = (import.meta.env.VITE_DASHBOARD_URL || `${window.location.origin}/dashboard`).replace(/\/$/, '');
                         const params = new URLSearchParams({
                           business: businessId,
@@ -1315,7 +1310,8 @@ export default function ClientsPage() {
                           supportAdminName: adminName,
                           supportAdminEmail: adminEmail
                         });
-                        window.open(`${base}?${params.toString()}`, '_blank');
+                        const hash = `token=${encodeURIComponent(token)}&refreshToken=${encodeURIComponent(rt)}&accountType=${at}`;
+                        window.open(`${base}?${params.toString()}#${hash}`, '_blank');
                       }}
                       className="px-4 py-3 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/30 transition-all font-medium w-full"
                     >
