@@ -154,7 +154,7 @@ export async function signInWithEmailAndPassword(_auth: typeof auth, email: stri
   return { user: currentUser! };
 }
 
-/** Admin login (MongoDB AdminUser) - for digix-admin super admin access */
+/** Admin login (MongoDB AdminUser) - for digix-admin. Requires an AdminUser seeded via backend seed-admin script. */
 export async function signInAdmin(email: string, password: string): Promise<{ user: BackendUser }> {
   const res = await fetch(`${API_BASE}/auth/admin/login`, {
     method: 'POST',
@@ -162,7 +162,12 @@ export async function signInAdmin(email: string, password: string): Promise<{ us
     body: JSON.stringify({ email: email.trim(), password }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Login failed');
+  if (!res.ok) {
+    const msg = data?.error === 'Invalid credentials' || data?.code === 'auth/invalid-credential'
+      ? 'Invalid email or password. If this is your first login, an admin account must be created (run seed-admin on the backend).'
+      : (data?.error || 'Login failed');
+    throw new Error(msg);
+  }
   if (!data.accessToken || !data.user) throw new Error('Invalid response');
   persistTokens(data.accessToken, data.refreshToken, 'ADMIN');
   currentUser = { uid: data.user.userId || data.user.uid, email: data.user.email || null, displayName: data.user.displayName || null, emailVerified: true, getIdToken: async () => (await getToken()) || '' };

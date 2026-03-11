@@ -22,9 +22,10 @@ import {
   useAddDeposit,
 } from '../hooks/useFinance';
 import { useBusiness } from '../contexts/BusinessContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { KpiCard } from '../components/KpiCard';
 import { EmptyState } from '../components/EmptyState';
-import { colors, spacing, radius, fontSize, fontWeight } from '../theme';
+import { spacing, radius, fontSize, fontWeight } from '../theme';
 import type { ExpenseCategory } from '../types';
 
 type Tab = 'overview' | 'expenses' | 'deposits';
@@ -40,6 +41,7 @@ const EXPENSE_CATEGORIES: { label: string; value: ExpenseCategory; icon: keyof t
 ];
 
 export const FinanceScreen = () => {
+  const { colors, isDark } = useTheme();
   const { formatCurrency } = useBusiness();
   const { data: overview, isLoading, refetch: refetchOverview } = useFinanceOverview();
   const { data: expenses, refetch: refetchExpenses } = useExpenses();
@@ -142,25 +144,27 @@ export const FinanceScreen = () => {
     );
   };
 
+  const cardShadow = !isDark ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 } : {};
+
   if (isLoading) {
     return (
-      <View style={styles.loadingWrap}>
+      <View style={[styles.loadingWrap, { backgroundColor: colors.bgPrimary }]}>
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bgPrimary }]}>
       {/* Tab Selector */}
-      <View style={styles.tabRow}>
+      <View style={[styles.tabRow, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}>
         {(['overview', 'expenses', 'deposits'] as Tab[]).map((t) => (
           <TouchableOpacity
             key={t}
-            style={[styles.tabBtn, tab === t && styles.tabBtnActive]}
+            style={[styles.tabBtn, tab === t && { backgroundColor: colors.accent }]}
             onPress={() => setTab(t)}
           >
-            <Text style={[styles.tabBtnText, tab === t && styles.tabBtnTextActive]}>
+            <Text style={[styles.tabBtnText, { color: tab === t ? colors.textInverse : colors.textMuted }]}>
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </Text>
           </TouchableOpacity>
@@ -203,17 +207,17 @@ export const FinanceScreen = () => {
             </View>
 
             {/* Quick Actions */}
-            <Text style={styles.sectionTitle}>Quick Add</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Quick Add</Text>
             <View style={styles.quickRow}>
               <TouchableOpacity
-                style={[styles.quickBtn, { backgroundColor: colors.dangerBg, borderColor: colors.danger + '30' }]}
+                style={[styles.quickBtn, { backgroundColor: colors.dangerBg, borderColor: colors.danger + '30' }, !isDark && cardShadow]}
                 onPress={() => setShowExpenseModal(true)}
               >
                 <Ionicons name="remove-circle-outline" size={28} color={colors.danger} />
                 <Text style={[styles.quickBtnText, { color: colors.danger }]}>Add Expense</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.quickBtn, { backgroundColor: colors.successBg, borderColor: colors.success + '30' }]}
+                style={[styles.quickBtn, { backgroundColor: colors.successBg, borderColor: colors.success + '30' }, !isDark && cardShadow]}
                 onPress={() => setShowDepositModal(true)}
               >
                 <Ionicons name="add-circle-outline" size={28} color={colors.success} />
@@ -222,12 +226,12 @@ export const FinanceScreen = () => {
             </View>
 
             {/* Recent Expenses */}
-            <Text style={styles.sectionTitle}>Recent Expenses</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Expenses</Text>
             {(expenses || []).length === 0 ? (
-              <View style={styles.emptyCard}><Text style={styles.emptyText}>No expenses yet</Text></View>
+              <View style={[styles.emptyCard, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}><Text style={[styles.emptyText, { color: colors.textMuted }]}>No expenses yet</Text></View>
             ) : (
               (expenses || []).slice(0, 5).map((exp) => (
-                <View key={exp.id} style={styles.transactionCard}>
+                <View key={exp.id} style={[styles.transactionCard, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}>
                   <View style={[styles.txIconWrap, { backgroundColor: colors.dangerBg }]}>
                     <Ionicons
                       name={EXPENSE_CATEGORIES.find((c) => c.value === exp.category)?.icon || 'ellipsis-horizontal'}
@@ -236,9 +240,9 @@ export const FinanceScreen = () => {
                     />
                   </View>
                   <View style={styles.txInfo}>
-                    <Text style={styles.txDesc} numberOfLines={1}>{exp.description}</Text>
-                    <Text style={styles.txMeta}>
-                      {exp.category + (exp.vendor ? ' • ' + exp.vendor : '')}
+                    <Text style={[styles.txDesc, { color: colors.textPrimary }]} numberOfLines={1}>{exp.description}</Text>
+                    <Text style={[styles.txMeta, { color: colors.textMuted }]}>
+                      {String(exp.category + (exp.vendor ? ' • ' + exp.vendor : ''))}
                     </Text>
                   </View>
                   <Text style={[styles.txAmount, { color: colors.danger }]}>
@@ -249,18 +253,18 @@ export const FinanceScreen = () => {
             )}
 
             {/* Recent Deposits */}
-            <Text style={styles.sectionTitle}>Recent Deposits</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Deposits</Text>
             {(deposits || []).length === 0 ? (
-              <View style={styles.emptyCard}><Text style={styles.emptyText}>No deposits yet</Text></View>
+              <View style={[styles.emptyCard, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}><Text style={[styles.emptyText, { color: colors.textMuted }]}>No deposits yet</Text></View>
             ) : (
               (deposits || []).slice(0, 5).map((dep) => (
-                <View key={dep.id} style={styles.transactionCard}>
+                <View key={dep.id} style={[styles.transactionCard, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}>
                   <View style={[styles.txIconWrap, { backgroundColor: colors.successBg }]}>
                     <Ionicons name="arrow-up-circle-outline" size={18} color={colors.success} />
                   </View>
                   <View style={styles.txInfo}>
-                    <Text style={styles.txDesc} numberOfLines={1}>{dep.source}</Text>
-                    {dep.description ? <Text style={styles.txMeta}>{dep.description}</Text> : null}
+                    <Text style={[styles.txDesc, { color: colors.textPrimary }]} numberOfLines={1}>{dep.source}</Text>
+                    {dep.description ? <Text style={[styles.txMeta, { color: colors.textMuted }]}>{dep.description}</Text> : null}
                   </View>
                   <Text style={[styles.txAmount, { color: colors.success }]}>
                     {'+' + formatCurrency(dep.amount)}
@@ -274,19 +278,19 @@ export const FinanceScreen = () => {
         {tab === 'expenses' && (
           <>
             <TouchableOpacity
-              style={styles.addBtn}
+              style={[styles.addBtn, { backgroundColor: colors.danger }]}
               onPress={() => setShowExpenseModal(true)}
               activeOpacity={0.7}
             >
               <Ionicons name="add-circle" size={22} color={colors.textInverse} />
-              <Text style={styles.addBtnText}>Add Expense</Text>
+              <Text style={[styles.addBtnText, { color: colors.textPrimary }]}>Add Expense</Text>
             </TouchableOpacity>
 
             {(expenses || []).length === 0 ? (
               <EmptyState icon="wallet-outline" title="No expenses" subtitle="Add your first expense" />
             ) : (
               (expenses || []).map((exp) => (
-                <View key={exp.id} style={styles.transactionCard}>
+                <View key={exp.id} style={[styles.transactionCard, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}>
                   <View style={[styles.txIconWrap, { backgroundColor: colors.dangerBg }]}>
                     <Ionicons
                       name={EXPENSE_CATEGORIES.find((c) => c.value === exp.category)?.icon || 'ellipsis-horizontal'}
@@ -295,9 +299,9 @@ export const FinanceScreen = () => {
                     />
                   </View>
                   <View style={styles.txInfo}>
-                    <Text style={styles.txDesc} numberOfLines={1}>{exp.description}</Text>
-                    <Text style={styles.txMeta}>
-                      {exp.category + (exp.vendor ? ' • ' + exp.vendor : '') + ' • ' + new Date(exp.date).toLocaleDateString()}
+                    <Text style={[styles.txDesc, { color: colors.textPrimary }]} numberOfLines={1}>{exp.description}</Text>
+                    <Text style={[styles.txMeta, { color: colors.textMuted }]}>
+                      {String(exp.category + (exp.vendor ? ' • ' + exp.vendor : '') + ' • ' + new Date(exp.date).toLocaleDateString())}
                     </Text>
                   </View>
                   <Text style={[styles.txAmount, { color: colors.danger }]}>
@@ -317,21 +321,21 @@ export const FinanceScreen = () => {
               activeOpacity={0.7}
             >
               <Ionicons name="add-circle" size={22} color={colors.textPrimary} />
-              <Text style={styles.addBtnText}>Add Deposit</Text>
+              <Text style={[styles.addBtnText, { color: colors.textPrimary }]}>Add Deposit</Text>
             </TouchableOpacity>
 
             {(deposits || []).length === 0 ? (
               <EmptyState icon="wallet-outline" title="No deposits" subtitle="Add your first deposit" />
             ) : (
               (deposits || []).map((dep) => (
-                <View key={dep.id} style={styles.transactionCard}>
+                <View key={dep.id} style={[styles.transactionCard, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}>
                   <View style={[styles.txIconWrap, { backgroundColor: colors.successBg }]}>
                     <Ionicons name="arrow-up-circle-outline" size={18} color={colors.success} />
                   </View>
                   <View style={styles.txInfo}>
-                    <Text style={styles.txDesc} numberOfLines={1}>{dep.source}</Text>
-                    <Text style={styles.txMeta}>
-                      {(dep.description || '') + (dep.reference ? ' Ref: ' + dep.reference : '') + ' • ' + new Date(dep.date).toLocaleDateString()}
+                    <Text style={[styles.txDesc, { color: colors.textPrimary }]} numberOfLines={1}>{dep.source}</Text>
+                    <Text style={[styles.txMeta, { color: colors.textMuted }]}>
+                      {String((dep.description || '') + (dep.reference ? ' Ref: ' + dep.reference : '') + ' • ' + new Date(dep.date).toLocaleDateString())}
                     </Text>
                   </View>
                   <Text style={[styles.txAmount, { color: colors.success }]}>
@@ -344,41 +348,25 @@ export const FinanceScreen = () => {
         )}
       </ScrollView>
 
-      {/* Floating Quick Add Buttons */}
-      <View style={styles.fabRow}>
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.danger }]}
-          onPress={() => setShowExpenseModal(true)}
-        >
-          <Ionicons name="remove" size={24} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.success }]}
-          onPress={() => setShowDepositModal(true)}
-        >
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
       {/* Add Expense Modal */}
       <Modal visible={showExpenseModal} animationType="slide" transparent>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHandle} />
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgModal }]}>
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Expense</Text>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Add Expense</Text>
               <TouchableOpacity onPress={() => { setShowExpenseModal(false); resetExpenseForm(); }}>
                 <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Amount *</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Amount *</Text>
               <TextInput
-                style={styles.formInput}
+                style={[styles.formInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                 value={expAmount}
                 onChangeText={setExpAmount}
                 placeholder="0.00"
@@ -389,12 +377,12 @@ export const FinanceScreen = () => {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Category</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Category</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
                 {EXPENSE_CATEGORIES.map((cat) => (
                   <TouchableOpacity
                     key={cat.value}
-                    style={[styles.categoryChip, expCategory === cat.value && styles.categoryChipActive]}
+                    style={[styles.categoryChip, { backgroundColor: expCategory === cat.value ? colors.accent : colors.bgCard }]}
                     onPress={() => setExpCategory(cat.value)}
                   >
                     <Ionicons
@@ -405,7 +393,7 @@ export const FinanceScreen = () => {
                     <Text
                       style={[
                         styles.categoryChipText,
-                        expCategory === cat.value && styles.categoryChipTextActive,
+                        { color: expCategory === cat.value ? colors.textInverse : colors.textSecondary },
                       ]}
                     >
                       {cat.label}
@@ -416,9 +404,9 @@ export const FinanceScreen = () => {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Description *</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Description *</Text>
               <TextInput
-                style={styles.formInput}
+                style={[styles.formInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                 value={expDescription}
                 onChangeText={setExpDescription}
                 placeholder="What was this expense for?"
@@ -427,9 +415,9 @@ export const FinanceScreen = () => {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Vendor (optional)</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Vendor (optional)</Text>
               <TextInput
-                style={styles.formInput}
+                style={[styles.formInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                 value={expVendor}
                 onChangeText={setExpVendor}
                 placeholder="Vendor name"
@@ -458,19 +446,19 @@ export const FinanceScreen = () => {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHandle} />
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgModal }]}>
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Deposit</Text>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Add Deposit</Text>
               <TouchableOpacity onPress={() => { setShowDepositModal(false); resetDepositForm(); }}>
                 <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Amount *</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Amount *</Text>
               <TextInput
-                style={styles.formInput}
+                style={[styles.formInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                 value={depAmount}
                 onChangeText={setDepAmount}
                 placeholder="0.00"
@@ -481,9 +469,9 @@ export const FinanceScreen = () => {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Source *</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Source *</Text>
               <TextInput
-                style={styles.formInput}
+                style={[styles.formInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                 value={depSource}
                 onChangeText={setDepSource}
                 placeholder="e.g. Bank Transfer, Cash, Client Payment"
@@ -492,9 +480,9 @@ export const FinanceScreen = () => {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Description (optional)</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Description (optional)</Text>
               <TextInput
-                style={styles.formInput}
+                style={[styles.formInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                 value={depDescription}
                 onChangeText={setDepDescription}
                 placeholder="Notes about this deposit"
@@ -503,9 +491,9 @@ export const FinanceScreen = () => {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Reference (optional)</Text>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Reference (optional)</Text>
               <TextInput
-                style={styles.formInput}
+                style={[styles.formInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                 value={depReference}
                 onChangeText={setDepReference}
                 placeholder="Transaction reference number"
@@ -532,14 +520,14 @@ export const FinanceScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgPrimary },
-  loadingWrap: { flex: 1, backgroundColor: colors.bgPrimary, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: spacing.lg, paddingBottom: 100 },
+  container: { flex: 1 },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  content: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: 100 },
   tabRow: {
     flexDirection: 'row',
     marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    backgroundColor: colors.bgCard,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
     borderRadius: radius.md,
     padding: 3,
   },
@@ -549,11 +537,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     alignItems: 'center',
   },
-  tabBtnActive: { backgroundColor: colors.accent },
-  tabBtnText: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-  tabBtnTextActive: { color: colors.textInverse },
   sectionTitle: {
-    color: colors.textPrimary,
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     marginTop: spacing.xl,
@@ -575,16 +559,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.danger,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     marginBottom: spacing.lg,
   },
-  addBtnText: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  addBtnText: { fontSize: fontSize.md, fontWeight: fontWeight.bold },
   transactionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.lg,
     marginBottom: spacing.sm,
@@ -598,35 +580,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   txInfo: { flex: 1 },
-  txDesc: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.medium },
-  txMeta: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2, textTransform: 'capitalize' },
+  txDesc: { fontSize: fontSize.md, fontWeight: fontWeight.medium },
+  txMeta: { fontSize: fontSize.xs, marginTop: 2, textTransform: 'capitalize' },
   txAmount: { fontSize: fontSize.md, fontWeight: fontWeight.bold },
   emptyCard: {
-    backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.xxxl,
     alignItems: 'center',
   },
-  emptyText: { color: colors.textMuted, fontSize: fontSize.md },
-  fabRow: {
-    position: 'absolute',
-    bottom: 90,
-    right: spacing.lg,
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  fab: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
+  emptyText: { fontSize: fontSize.md },
   // Modal
   modalOverlay: {
     flex: 1,
@@ -634,7 +596,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalSheet: {
-    backgroundColor: colors.bgModal,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.xxl,
@@ -644,7 +605,6 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 4,
-    backgroundColor: colors.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: spacing.md,
@@ -656,23 +616,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
-  modalTitle: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
+  modalTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.bold },
   formGroup: { marginBottom: spacing.lg },
   formLabel: {
-    color: colors.textSecondary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
     marginBottom: spacing.sm,
   },
   formInput: {
-    backgroundColor: colors.bgInput,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     height: 48,
-    color: colors.textPrimary,
     fontSize: fontSize.md,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   categoryRow: { gap: spacing.sm },
   categoryChip: {
@@ -682,11 +638,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.bgCard,
   },
-  categoryChipActive: { backgroundColor: colors.accent },
-  categoryChipText: { color: colors.textSecondary, fontSize: fontSize.sm },
-  categoryChipTextActive: { color: colors.textInverse },
+  categoryChipText: { fontSize: fontSize.sm },
   submitBtn: {
     height: 52,
     borderRadius: radius.md,

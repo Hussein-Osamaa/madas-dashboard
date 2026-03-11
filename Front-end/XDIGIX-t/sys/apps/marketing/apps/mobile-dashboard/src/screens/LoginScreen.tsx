@@ -10,16 +10,20 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
-import { colors, spacing, radius, fontSize, fontWeight } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { spacing, radius, fontSize, fontWeight } from '../theme';
 
 export const LoginScreen = () => {
   const { login } = useAuth();
+  const { colors, isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -38,23 +42,23 @@ export const LoginScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgPrimary }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
         <View style={styles.logoWrap}>
-          <View style={styles.logoCircle}>
+          <View style={[styles.logoCircle, { backgroundColor: colors.bgCard, borderColor: colors.accent + '30' }]}>
             <Ionicons name="grid" size={32} color={colors.accent} />
           </View>
-          <Text style={styles.brand}>XDIGIX</Text>
-          <Text style={styles.subtitle}>Dashboard Mobile</Text>
+          <Text style={[styles.brand, { color: colors.textPrimary }]}>XDIGIX</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Dashboard Mobile</Text>
         </View>
 
         <View style={styles.form}>
-          <View style={styles.inputWrap}>
+          <View style={[styles.inputWrap, { backgroundColor: colors.bgInput, borderColor: colors.border }]}>
             <Ionicons name="mail-outline" size={20} color={colors.textMuted} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.textPrimary }]}
               placeholder="Email address"
               placeholderTextColor={colors.textMuted}
               value={email}
@@ -65,10 +69,10 @@ export const LoginScreen = () => {
             />
           </View>
 
-          <View style={styles.inputWrap}>
+          <View style={[styles.inputWrap, { backgroundColor: colors.bgInput, borderColor: colors.border }]}>
             <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.textPrimary }]}
               placeholder="Password"
               placeholderTextColor={colors.textMuted}
               value={password}
@@ -85,7 +89,7 @@ export const LoginScreen = () => {
           </View>
 
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={loading}
             activeOpacity={0.8}
@@ -93,12 +97,12 @@ export const LoginScreen = () => {
             {loading ? (
               <ActivityIndicator color={colors.textInverse} />
             ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
+              <Text style={[styles.buttonText, { color: colors.textInverse }]}>Sign In</Text>
             )}
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.footer}>
+        <Text style={[styles.footer, { color: colors.textMuted }]}>
           Sign in with your dashboard account
         </Text>
       </View>
@@ -109,7 +113,6 @@ export const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgPrimary,
   },
   inner: {
     flex: 1,
@@ -124,21 +127,17 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
     borderWidth: 2,
-    borderColor: colors.accent + '30',
   },
   brand: {
-    color: colors.textPrimary,
     fontSize: fontSize.xxxl,
     fontWeight: fontWeight.bold,
     letterSpacing: 2,
   },
   subtitle: {
-    color: colors.textMuted,
     fontSize: fontSize.md,
     marginTop: spacing.xs,
   },
@@ -148,21 +147,17 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgInput,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     height: 52,
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   input: {
     flex: 1,
-    color: colors.textPrimary,
     fontSize: fontSize.md,
   },
   button: {
-    backgroundColor: colors.accent,
     height: 52,
     borderRadius: radius.md,
     alignItems: 'center',
@@ -173,12 +168,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: colors.textInverse,
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
   },
   footer: {
-    color: colors.textMuted,
     fontSize: fontSize.sm,
     textAlign: 'center',
     marginTop: spacing.xxxl,

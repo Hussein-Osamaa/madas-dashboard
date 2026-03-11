@@ -16,7 +16,8 @@ import { useBusiness } from '../contexts/BusinessContext';
 import { SearchBar } from '../components/SearchBar';
 import { StatusBadge } from '../components/StatusBadge';
 import { EmptyState } from '../components/EmptyState';
-import { colors, spacing, radius, fontSize, fontWeight } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { spacing, radius, fontSize, fontWeight } from '../theme';
 import type { Order, OrderStatus } from '../types';
 
 const STATUS_FILTERS: { label: string; value: OrderStatus | 'all' }[] = [
@@ -37,10 +38,10 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
 };
 
 export const OrdersScreen = () => {
+  const { colors, isDark } = useTheme();
   const { formatCurrency } = useBusiness();
   const { data: orders, isLoading, refetch } = useOrders();
   const updateStatus = useUpdateOrderStatus();
-
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -96,46 +97,57 @@ export const OrdersScreen = () => {
   const renderOrder = ({ item }: { item: Order }) => {
     const expanded = expandedId === item.id;
     const canAdvance = !!NEXT_STATUS[item.status];
+    const cardStyle = [
+      styles.orderCard,
+      { backgroundColor: colors.bgCard },
+      !isDark && {
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
+      },
+    ];
 
     return (
       <TouchableOpacity
-        style={styles.orderCard}
+        style={cardStyle}
         onPress={() => setExpandedId(expanded ? null : item.id)}
         activeOpacity={0.7}
       >
         <View style={styles.orderHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.customerName} numberOfLines={1}>{item.customerName}</Text>
+            <Text style={[styles.customerName, { color: colors.textPrimary }]} numberOfLines={1}>{item.customerName}</Text>
             {item.customerContact ? (
-              <Text style={styles.contactText}>{item.customerContact}</Text>
+              <Text style={[styles.contactText, { color: colors.textMuted }]}>{item.customerContact}</Text>
             ) : null}
           </View>
-          <Text style={styles.totalText}>{formatCurrency(item.total)}</Text>
+          <Text style={[styles.totalText, { color: colors.accent }]}>{formatCurrency(item.total)}</Text>
         </View>
 
         <View style={styles.orderMeta}>
           <StatusBadge status={item.status} />
-            <Text style={styles.itemCount}>
+            <Text style={[styles.itemCount, { color: colors.textMuted }]}>
             {String(item.productCount) + ' item' + (item.productCount !== 1 ? 's' : '')}
           </Text>
           {item.date ? (
-            <Text style={styles.dateText}>
+            <Text style={[styles.dateText, { color: colors.textMuted }]}>
               {new Date(item.date).toLocaleDateString()}
             </Text>
           ) : null}
         </View>
 
         {expanded && (
-          <View style={styles.expandedSection}>
+          <View style={[styles.expandedSection, { borderTopColor: colors.border }]}>
             {item.items && item.items.length > 0 ? (
               <View style={styles.itemsList}>
                 {item.items.map((it, idx) => (
                   <View key={idx} style={styles.itemRow}>
-                    <Text style={styles.itemName} numberOfLines={1}>
+                    <Text style={[styles.itemName, { color: colors.textSecondary }]} numberOfLines={1}>
                       {it.name}
                     </Text>
-                    <Text style={styles.itemQty}>{'x' + String(it.quantity)}</Text>
-                    <Text style={styles.itemPrice}>{formatCurrency(it.price)}</Text>
+                    <Text style={[styles.itemQty, { color: colors.textMuted }]}>{'x' + String(it.quantity)}</Text>
+                    <Text style={[styles.itemPrice, { color: colors.textPrimary }]}>{formatCurrency(it.price)}</Text>
                   </View>
                 ))}
               </View>
@@ -144,7 +156,7 @@ export const OrdersScreen = () => {
             {item.shippingAddress?.city ? (
               <View style={styles.addressRow}>
                 <Ionicons name="location-outline" size={14} color={colors.textMuted} />
-                <Text style={styles.addressText}>
+                <Text style={[styles.addressText, { color: colors.textMuted }]}>
                   {[item.shippingAddress.address, item.shippingAddress.city]
                     .filter(Boolean)
                     .join(', ')}
@@ -155,7 +167,7 @@ export const OrdersScreen = () => {
             {item.bostaTrackingNumber ? (
               <View style={styles.trackingRow}>
                 <Ionicons name="navigate-outline" size={14} color={colors.info} />
-                <Text style={styles.trackingText}>
+                <Text style={[styles.trackingText, { color: colors.info }]}>
                   {'Tracking: ' + item.bostaTrackingNumber}
                 </Text>
               </View>
@@ -163,12 +175,12 @@ export const OrdersScreen = () => {
 
             {canAdvance ? (
               <TouchableOpacity
-                style={styles.advanceBtn}
+                style={[styles.advanceBtn, { backgroundColor: colors.primary }]}
                 onPress={() => handleAdvanceStatus(item)}
                 activeOpacity={0.7}
               >
                 <Ionicons name="arrow-forward-circle" size={18} color={colors.textInverse} />
-                <Text style={styles.advanceBtnText}>
+                <Text style={[styles.advanceBtnText, { color: colors.textPrimary }]}>
                   {'Move to ' + (NEXT_STATUS[item.status]?.replace(/_/g, ' ') || '')}
                 </Text>
               </TouchableOpacity>
@@ -181,14 +193,14 @@ export const OrdersScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingWrap}>
+      <View style={[styles.loadingWrap, { backgroundColor: colors.bgPrimary }]}>
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bgPrimary }]}>
       <View style={styles.searchWrap}>
         <SearchBar value={search} onChangeText={setSearch} placeholder="Search orders..." />
       </View>
@@ -205,15 +217,22 @@ export const OrdersScreen = () => {
           return (
             <TouchableOpacity
               key={f.value}
-              style={[styles.filterChip, active && styles.filterChipActive]}
+              style={[
+                styles.filterChip,
+                { backgroundColor: active ? colors.accent : colors.bgCard },
+              ]}
               onPress={() => setStatusFilter(f.value)}
             >
-              <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+              <Text style={[styles.filterChipText, { color: active ? colors.textInverse : colors.textSecondary }]}>
                 {f.label}
               </Text>
               {count > 0 ? (
-                <View style={[styles.countBadge, active && styles.countBadgeActive]}>
-                  <Text style={[styles.countText, active && styles.countTextActive]}>
+                <View style={[
+                  styles.countBadge,
+                  { backgroundColor: active ? 'rgba(0,0,0,0.2)' : colors.bgSecondary },
+                ]}
+                >
+                  <Text style={[styles.countText, { color: active ? colors.textInverse : colors.textMuted }]}>
                     {String(count)}
                   </Text>
                 </View>
@@ -246,90 +265,85 @@ export const OrdersScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgPrimary,
   },
   loadingWrap: {
     flex: 1,
-    backgroundColor: colors.bgPrimary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   searchWrap: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.sm,
   },
   filtersRow: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    paddingRight: 48,
+    gap: spacing.md,
+    alignItems: 'center',
   },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
+    alignSelf: 'center',
+    minHeight: 36,
+    minWidth: 56,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: 0,
     borderRadius: radius.full,
-    backgroundColor: colors.bgCard,
     gap: 6,
   },
-  filterChipActive: {
-    backgroundColor: colors.accent,
-  },
   filterChipText: {
-    color: colors.textSecondary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
-  },
-  filterChipTextActive: {
-    color: colors.textInverse,
+    lineHeight: 16,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   countBadge: {
-    backgroundColor: colors.bgSecondary,
     borderRadius: radius.full,
     paddingHorizontal: 6,
     paddingVertical: 1,
     minWidth: 20,
     alignItems: 'center',
   },
-  countBadgeActive: {
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
   countText: {
-    color: colors.textMuted,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
-  },
-  countTextActive: {
-    color: colors.textInverse,
+    lineHeight: 14,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   list: {
     paddingHorizontal: spacing.lg,
     paddingBottom: 100,
+    paddingTop: spacing.xs,
   },
   orderCard: {
-    backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.lg,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: spacing.sm,
+    gap: spacing.md,
+    paddingRight: spacing.xs,
   },
   customerName: {
-    color: colors.textPrimary,
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
   },
   contactText: {
-    color: colors.textMuted,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
   totalText: {
-    color: colors.accent,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
@@ -339,11 +353,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   itemCount: {
-    color: colors.textMuted,
     fontSize: fontSize.xs,
   },
   dateText: {
-    color: colors.textMuted,
     fontSize: fontSize.xs,
     marginLeft: 'auto',
   },
@@ -351,7 +363,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   itemsList: {
     gap: spacing.sm,
@@ -362,17 +373,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   itemName: {
-    color: colors.textSecondary,
     fontSize: fontSize.sm,
     flex: 1,
   },
   itemQty: {
-    color: colors.textMuted,
     fontSize: fontSize.sm,
     marginHorizontal: spacing.md,
   },
   itemPrice: {
-    color: colors.textPrimary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },
@@ -383,7 +391,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   addressText: {
-    color: colors.textMuted,
     fontSize: fontSize.sm,
   },
   trackingRow: {
@@ -393,7 +400,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   trackingText: {
-    color: colors.info,
     fontSize: fontSize.sm,
   },
   advanceBtn: {
@@ -401,13 +407,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.primary,
     borderRadius: radius.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
   },
   advanceBtnText: {
-    color: colors.textPrimary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     textTransform: 'capitalize',

@@ -3,7 +3,8 @@
  * Provides role-based access control functionality to the entire app
  */
 
-const SUPER_ADMIN_EMAILS = ['hesainosama@gmail.com'];
+/** Emails that are treated as super_admin in XDIGIX Admin (no Firestore RBAC record needed). Must also have type: 'super_admin' in backend User collection. */
+const SUPER_ADMIN_EMAILS = ['hesainosama@gmail.com', 'admin@xdigix.com'];
 
 import {
   createContext,

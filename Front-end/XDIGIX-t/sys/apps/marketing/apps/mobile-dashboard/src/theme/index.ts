@@ -1,4 +1,6 @@
-export const colors = {
+export type ColorPalette = typeof darkColors;
+
+export const darkColors = {
   primary: '#6C5CE7',
   primaryLight: '#8B7BF0',
   accent: '#FFD300',
@@ -17,13 +19,13 @@ export const colors = {
   textInverse: '#0f1025',
 
   success: '#10B981',
-  successBg: 'rgba(16, 185, 129, 0.15)',
+  successBg: 'rgba(16, 185, 129, 0.12)',
   danger: '#EF4444',
-  dangerBg: 'rgba(239, 68, 68, 0.15)',
+  dangerBg: 'rgba(239, 68, 68, 0.12)',
   warning: '#F59E0B',
-  warningBg: 'rgba(245, 158, 11, 0.15)',
+  warningBg: 'rgba(245, 158, 11, 0.12)',
   info: '#3B82F6',
-  infoBg: 'rgba(59, 130, 246, 0.15)',
+  infoBg: 'rgba(59, 130, 246, 0.12)',
 
   border: '#2a2c54',
   borderLight: '#353768',
@@ -35,7 +37,54 @@ export const colors = {
   statusDelivered: '#10B981',
   statusCancelled: '#EF4444',
   statusReturned: '#F97316',
+
+  shadow: '#000000',
+  cardElevation: 0,
 } as const;
+
+export const lightColors: ColorPalette = {
+  primary: '#6C5CE7',
+  primaryLight: '#8B7BF0',
+  accent: '#6C5CE7',
+  accentDark: '#5A4BD6',
+
+  bgPrimary: '#F5F6FA',
+  bgSecondary: '#FFFFFF',
+  bgCard: '#FFFFFF',
+  bgCardHover: '#F0F0F5',
+  bgInput: '#F0F1F6',
+  bgModal: '#FFFFFF',
+
+  textPrimary: '#1A1D2E',
+  textSecondary: '#5A5F7A',
+  textMuted: '#8E92A8',
+  textInverse: '#FFFFFF',
+
+  success: '#059669',
+  successBg: 'rgba(5, 150, 105, 0.08)',
+  danger: '#DC2626',
+  dangerBg: 'rgba(220, 38, 38, 0.08)',
+  warning: '#D97706',
+  warningBg: 'rgba(217, 119, 6, 0.08)',
+  info: '#2563EB',
+  infoBg: 'rgba(37, 99, 235, 0.08)',
+
+  border: '#E2E4EB',
+  borderLight: '#ECEDF2',
+  divider: '#E8E9EF',
+
+  statusPending: '#D97706',
+  statusProcessing: '#2563EB',
+  statusShipped: '#7C3AED',
+  statusDelivered: '#059669',
+  statusCancelled: '#DC2626',
+  statusReturned: '#EA580C',
+
+  shadow: '#000000',
+  cardElevation: 2,
+};
+
+export const colors = darkColors;
 
 export const spacing = {
   xs: 4,

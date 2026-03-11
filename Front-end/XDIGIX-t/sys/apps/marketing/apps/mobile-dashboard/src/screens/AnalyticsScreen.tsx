@@ -12,22 +12,35 @@ import { useOrders } from '../hooks/useOrders';
 import { useProducts, getTotalStock, isLowStock, isOutOfStock } from '../hooks/useProducts';
 import { useFinanceOverview } from '../hooks/useFinance';
 import { useBusiness } from '../contexts/BusinessContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { KpiCard } from '../components/KpiCard';
-import { colors, spacing, radius, fontSize, fontWeight } from '../theme';
+import { spacing, radius, fontSize, fontWeight } from '../theme';
 import type { Order, OrderStatus } from '../types';
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: colors.statusPending,
-  processing: colors.statusProcessing,
-  shipped: colors.statusShipped,
-  delivered: colors.statusDelivered,
-  completed: colors.success,
-  cancelled: colors.statusCancelled,
-  returned: colors.statusReturned,
+const cardShadow = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 2,
 };
 
 export const AnalyticsScreen = () => {
+  const { colors, isDark } = useTheme();
   const { formatCurrency } = useBusiness();
+
+  const STATUS_COLORS: Record<string, string> = useMemo(
+    () => ({
+      pending: colors.statusPending,
+      processing: colors.statusProcessing,
+      shipped: colors.statusShipped,
+      delivered: colors.statusDelivered,
+      completed: colors.success,
+      cancelled: colors.statusCancelled,
+      returned: colors.statusReturned,
+    }),
+    [colors],
+  );
   const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useOrders();
   const { data: products, refetch: refetchProducts } = useProducts();
   const { data: finance, refetch: refetchFinance } = useFinanceOverview();
@@ -81,7 +94,7 @@ export const AnalyticsScreen = () => {
 
   if (ordersLoading) {
     return (
-      <View style={styles.loadingWrap}>
+      <View style={[styles.loadingWrap, { backgroundColor: colors.bgPrimary }]}>
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
@@ -89,12 +102,12 @@ export const AnalyticsScreen = () => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.bgPrimary }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
     >
       {/* Revenue & Profit */}
-      <Text style={styles.sectionTitle}>Financial Overview</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Financial Overview</Text>
       <View style={styles.kpiRow}>
         <KpiCard
           title="Revenue"
@@ -125,8 +138,8 @@ export const AnalyticsScreen = () => {
       </View>
 
       {/* Order Breakdown */}
-      <Text style={styles.sectionTitle}>Order Status Breakdown</Text>
-      <View style={styles.breakdownCard}>
+      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Order Status Breakdown</Text>
+      <View style={[styles.breakdownCard, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}>
         {Object.entries(orderStats.statusMap)
           .sort((a, b) => b[1] - a[1])
           .map(([status, count]) => {
@@ -134,8 +147,8 @@ export const AnalyticsScreen = () => {
             return (
               <View key={status} style={styles.breakdownRow}>
                 <View style={[styles.breakdownDot, { backgroundColor: STATUS_COLORS[status] || colors.textMuted }]} />
-                <Text style={styles.breakdownLabel}>{status.replace(/_/g, ' ')}</Text>
-                <View style={styles.barWrap}>
+                <Text style={[styles.breakdownLabel, { color: colors.textSecondary }]}>{status.replace(/_/g, ' ')}</Text>
+                <View style={[styles.barWrap, { backgroundColor: colors.bgSecondary }]}>
                   <View
                     style={[
                       styles.barFill,
@@ -146,18 +159,18 @@ export const AnalyticsScreen = () => {
                     ]}
                   />
                 </View>
-                <Text style={styles.breakdownCount}>{String(count)}</Text>
-                <Text style={styles.breakdownPct}>{pct.toFixed(0) + '%'}</Text>
+                <Text style={[styles.breakdownCount, { color: colors.textPrimary }]}>{String(count)}</Text>
+                <Text style={[styles.breakdownPct, { color: colors.textMuted }]}>{pct.toFixed(0) + '%'}</Text>
               </View>
             );
           })}
         {Object.keys(orderStats.statusMap).length === 0 && (
-          <Text style={styles.noDataText}>No orders data</Text>
+          <Text style={[styles.noDataText, { color: colors.textMuted }]}>No orders data</Text>
         )}
       </View>
 
       {/* Inventory Summary */}
-      <Text style={styles.sectionTitle}>Inventory Summary</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Inventory Summary</Text>
       <View style={styles.kpiRow}>
         <KpiCard
           title="Products"
@@ -177,14 +190,14 @@ export const AnalyticsScreen = () => {
       {/* Low Stock Alert */}
       {lowStockProducts.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>Low Stock Alerts</Text>
-          <View style={styles.alertCard}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Low Stock Alerts</Text>
+          <View style={[styles.alertCard, { backgroundColor: colors.bgCard }, !isDark && cardShadow]}>
             {lowStockProducts.map((p) => {
               const total = getTotalStock(p);
               return (
                 <View key={p.id} style={styles.alertRow}>
                   <View style={[styles.alertDot, { backgroundColor: total === 0 ? colors.danger : colors.warning }]} />
-                  <Text style={styles.alertName} numberOfLines={1}>{p.name}</Text>
+                  <Text style={[styles.alertName, { color: colors.textPrimary }]} numberOfLines={1}>{p.name}</Text>
                   <Text
                     style={[
                       styles.alertStock,
@@ -204,11 +217,10 @@ export const AnalyticsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgPrimary },
-  loadingWrap: { flex: 1, backgroundColor: colors.bgPrimary, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: spacing.lg, paddingBottom: 100 },
+  container: { flex: 1 },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  content: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: 100 },
   sectionTitle: {
-    color: colors.textPrimary,
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     marginTop: spacing.xl,
@@ -216,7 +228,6 @@ const styles = StyleSheet.create({
   },
   kpiRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
   breakdownCard: {
-    backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.lg,
     gap: spacing.md,
@@ -228,7 +239,6 @@ const styles = StyleSheet.create({
   },
   breakdownDot: { width: 8, height: 8, borderRadius: 4 },
   breakdownLabel: {
-    color: colors.textSecondary,
     fontSize: fontSize.sm,
     width: 90,
     textTransform: 'capitalize',
@@ -236,33 +246,29 @@ const styles = StyleSheet.create({
   barWrap: {
     flex: 1,
     height: 6,
-    backgroundColor: colors.bgSecondary,
     borderRadius: 3,
     overflow: 'hidden',
   },
   barFill: { height: '100%', borderRadius: 3 },
   breakdownCount: {
-    color: colors.textPrimary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     width: 30,
     textAlign: 'right',
   },
   breakdownPct: {
-    color: colors.textMuted,
     fontSize: fontSize.xs,
     width: 36,
     textAlign: 'right',
   },
-  noDataText: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center' },
+  noDataText: { fontSize: fontSize.sm, textAlign: 'center' },
   alertCard: {
-    backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.lg,
     gap: spacing.md,
   },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   alertDot: { width: 8, height: 8, borderRadius: 4 },
-  alertName: { color: colors.textPrimary, fontSize: fontSize.sm, flex: 1 },
+  alertName: { fontSize: fontSize.sm, flex: 1 },
   alertStock: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
 });

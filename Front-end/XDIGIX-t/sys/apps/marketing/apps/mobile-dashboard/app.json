@@ -3,6 +3,7 @@
     "name": "XDIGIX Dashboard",
     "slug": "xdigix-mobile-dashboard",
     "version": "1.0.0",
+    "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",

@@ -10,12 +10,14 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useProducts, getTotalStock, isLowStock, isOutOfStock } from '../hooks/useProducts';
 import { useBusiness } from '../contexts/BusinessContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { SearchBar } from '../components/SearchBar';
 import { EmptyState } from '../components/EmptyState';
-import { colors, spacing, radius, fontSize, fontWeight } from '../theme';
+import { spacing, radius, fontSize, fontWeight } from '../theme';
 import type { Product } from '../types';
 
 type StockFilter = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
@@ -24,13 +26,14 @@ const STOCK_FILTERS: { label: string; value: StockFilter }[] = [
   { label: 'All', value: 'all' },
   { label: 'In Stock', value: 'in_stock' },
   { label: 'Low Stock', value: 'low_stock' },
-  { label: 'Out of Stock', value: 'out_of_stock' },
+  { label: 'Out', value: 'out_of_stock' },
 ];
 
 export const InventoryScreen = () => {
+  const navigation = useNavigation<any>();
+  const { colors, isDark } = useTheme();
   const { formatCurrency } = useBusiness();
   const { data: products, isLoading, refetch } = useProducts();
-
   const [search, setSearch] = useState('');
   const [stockFilter, setStockFilter] = useState<StockFilter>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -84,29 +87,47 @@ export const InventoryScreen = () => {
     return `${total} in stock`;
   };
 
+  const cardShadow = !isDark
+    ? {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
+      }
+    : {};
+
   const renderProduct = ({ item }: { item: Product }) => {
     const stockColor = getStockColor(item);
     const stockLabel = getStockLabel(item);
     const displayPrice = item.sellingPrice || item.price;
 
     return (
-      <View style={styles.productCard}>
+      <TouchableOpacity
+        style={[
+          styles.productCard,
+          { backgroundColor: colors.bgCard },
+          cardShadow,
+        ]}
+        onPress={() => navigation.navigate('ProductDetails', { product: item })}
+        activeOpacity={0.7}
+      >
         <View style={styles.productRow}>
           {item.images && item.images.length > 0 ? (
             <Image source={{ uri: item.images[0] }} style={styles.productImage} />
           ) : (
-            <View style={[styles.productImage, styles.placeholderImage]}>
+            <View style={[styles.productImage, styles.placeholderImage, { backgroundColor: colors.bgSecondary }]}>
               <Ionicons name="cube-outline" size={24} color={colors.textMuted} />
             </View>
           )}
 
           <View style={styles.productInfo}>
-            <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-            {item.sku ? <Text style={styles.sku}>{'SKU: ' + item.sku}</Text> : null}
+            <Text style={[styles.productName, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
+            {item.sku ? <Text style={[styles.sku, { color: colors.textMuted }]}>{'SKU: ' + item.sku}</Text> : null}
             <View style={styles.priceRow}>
-              <Text style={styles.price}>{formatCurrency(displayPrice)}</Text>
+              <Text style={[styles.price, { color: colors.accent }]}>{formatCurrency(displayPrice)}</Text>
               {item.sellingPrice != null && item.sellingPrice !== item.price ? (
-                <Text style={styles.originalPrice}>{formatCurrency(item.price)}</Text>
+                <Text style={[styles.originalPrice, { color: colors.textMuted }]}>{formatCurrency(item.price)}</Text>
               ) : null}
             </View>
           </View>
@@ -115,6 +136,7 @@ export const InventoryScreen = () => {
             <View style={[styles.stockDot, { backgroundColor: stockColor }]} />
             <Text style={[styles.stockText, { color: stockColor }]}>{stockLabel}</Text>
           </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </View>
 
         {/* Size breakdown */}
@@ -133,7 +155,7 @@ export const InventoryScreen = () => {
                   { borderColor: (qty || 0) === 0 ? colors.danger + '50' : colors.border },
                 ]}
               >
-                <Text style={styles.sizeLabel}>{size}</Text>
+                <Text style={[styles.sizeLabel, { color: colors.textMuted }]}>{size}</Text>
                 <Text
                   style={[
                     styles.sizeQty,
@@ -146,20 +168,20 @@ export const InventoryScreen = () => {
             ))}
           </ScrollView>
         ) : null}
-      </View>
+      </TouchableOpacity>
     );
   };
 
   if (isLoading) {
     return (
-      <View style={styles.loadingWrap}>
+      <View style={[styles.loadingWrap, { backgroundColor: colors.bgPrimary }]}>
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bgPrimary }]}>
       <View style={styles.searchWrap}>
         <SearchBar value={search} onChangeText={setSearch} placeholder="Search products..." />
       </View>
@@ -168,6 +190,7 @@ export const InventoryScreen = () => {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filtersScroll}
         contentContainerStyle={styles.filtersRow}
       >
         {STOCK_FILTERS.map((f) => {
@@ -176,14 +199,34 @@ export const InventoryScreen = () => {
           return (
             <TouchableOpacity
               key={f.value}
-              style={[styles.filterChip, active && styles.filterChipActive]}
+              style={[
+                styles.filterChip,
+                { backgroundColor: active ? colors.accent : colors.bgCard },
+              ]}
               onPress={() => setStockFilter(f.value)}
             >
-              <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+              <Text
+                style={[
+                  styles.filterChipText,
+                  { color: active ? colors.textInverse : colors.textSecondary },
+                ]}
+              >
                 {f.label}
               </Text>
-              <View style={[styles.countBadge, active && styles.countBadgeActive]}>
-                <Text style={[styles.countText, active && styles.countTextActive]}>{String(count)}</Text>
+              <View
+                style={[
+                  styles.countBadge,
+                  { backgroundColor: active ? 'rgba(0,0,0,0.2)' : colors.bgSecondary },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.countText,
+                    { color: active ? colors.textInverse : colors.textMuted },
+                  ]}
+                >
+                  {String(count)}
+                </Text>
               </View>
             </TouchableOpacity>
           );
@@ -192,17 +235,17 @@ export const InventoryScreen = () => {
 
       {/* Summary stats */}
       <View style={styles.summaryRow}>
-        <View style={[styles.summaryCard, { borderLeftColor: colors.success }]}>
-          <Text style={styles.summaryValue}>{String(stockCounts.in_stock)}</Text>
-          <Text style={styles.summaryLabel}>In Stock</Text>
+        <View style={[styles.summaryCard, { backgroundColor: colors.bgCard, borderLeftColor: colors.success }, cardShadow]}>
+          <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{String(stockCounts.in_stock)}</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>In Stock</Text>
         </View>
-        <View style={[styles.summaryCard, { borderLeftColor: colors.warning }]}>
-          <Text style={styles.summaryValue}>{String(stockCounts.low_stock)}</Text>
-          <Text style={styles.summaryLabel}>Low Stock</Text>
+        <View style={[styles.summaryCard, { backgroundColor: colors.bgCard, borderLeftColor: colors.warning }, cardShadow]}>
+          <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{String(stockCounts.low_stock)}</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Low Stock</Text>
         </View>
-        <View style={[styles.summaryCard, { borderLeftColor: colors.danger }]}>
-          <Text style={styles.summaryValue}>{String(stockCounts.out_of_stock)}</Text>
-          <Text style={styles.summaryLabel}>Out</Text>
+        <View style={[styles.summaryCard, { backgroundColor: colors.bgCard, borderLeftColor: colors.danger }, cardShadow]}>
+          <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{String(stockCounts.out_of_stock)}</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Out</Text>
         </View>
       </View>
 
@@ -227,48 +270,77 @@ export const InventoryScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgPrimary },
-  loadingWrap: { flex: 1, backgroundColor: colors.bgPrimary, justifyContent: 'center', alignItems: 'center' },
-  searchWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  filtersRow: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.sm },
+  container: { flex: 1 },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  searchWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: 0,
+    marginBottom: -4,
+  },
+  filtersScroll: { marginBottom: -4 },
+  filtersRow: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingRight: 48,
+    gap: spacing.md,
+    alignItems: 'center',
+  },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
+    alignSelf: 'center',
+    minHeight: 36,
+    minWidth: 56,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: 0,
     borderRadius: radius.full,
-    backgroundColor: colors.bgCard,
     gap: 6,
   },
-  filterChipActive: { backgroundColor: colors.accent },
-  filterChipText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: fontWeight.medium },
-  filterChipTextActive: { color: colors.textInverse },
-  countBadge: { backgroundColor: colors.bgSecondary, borderRadius: radius.full, paddingHorizontal: 6, paddingVertical: 1, minWidth: 20, alignItems: 'center' },
-  countBadgeActive: { backgroundColor: 'rgba(0,0,0,0.2)' },
-  countText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
-  countTextActive: { color: colors.textInverse },
-  summaryRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, gap: spacing.sm, marginBottom: spacing.sm },
+  filterChipText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 16,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  countBadge: { borderRadius: radius.full, paddingHorizontal: 6, paddingVertical: 1, minWidth: 20, alignItems: 'center' },
+  countText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 14,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    marginTop: -2,
+    marginBottom: spacing.sm,
+  },
   summaryCard: {
     flex: 1,
-    backgroundColor: colors.bgCard,
     borderRadius: radius.sm,
     padding: spacing.md,
     borderLeftWidth: 3,
     alignItems: 'center',
   },
-  summaryValue: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
-  summaryLabel: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 100 },
-  productCard: { backgroundColor: colors.bgCard, borderRadius: radius.md, padding: spacing.lg, marginBottom: spacing.sm },
+  summaryValue: { fontSize: fontSize.xl, fontWeight: fontWeight.bold },
+  summaryLabel: { fontSize: fontSize.xs, marginTop: 2 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: 100, paddingTop: 0 },
+  productCard: { borderRadius: radius.md, padding: spacing.lg, marginBottom: spacing.md },
   productRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   productImage: { width: 52, height: 52, borderRadius: radius.sm },
-  placeholderImage: { backgroundColor: colors.bgSecondary, alignItems: 'center', justifyContent: 'center' },
+  placeholderImage: { alignItems: 'center', justifyContent: 'center' },
   productInfo: { flex: 1 },
-  productName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.semibold },
-  sku: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
+  productName: { fontSize: fontSize.md, fontWeight: fontWeight.semibold },
+  sku: { fontSize: fontSize.xs, marginTop: 2 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 4 },
-  price: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  originalPrice: { color: colors.textMuted, fontSize: fontSize.xs, textDecorationLine: 'line-through' },
+  price: { fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  originalPrice: { fontSize: fontSize.xs, textDecorationLine: 'line-through' },
   stockBadge: { alignItems: 'flex-end', gap: 4 },
   stockDot: { width: 8, height: 8, borderRadius: 4 },
   stockText: { fontSize: fontSize.xs, fontWeight: fontWeight.medium },
@@ -282,6 +354,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 44,
   },
-  sizeLabel: { color: colors.textMuted, fontSize: fontSize.xs },
+  sizeLabel: { fontSize: fontSize.xs },
   sizeQty: { fontSize: fontSize.sm, fontWeight: fontWeight.bold, marginTop: 1 },
 });

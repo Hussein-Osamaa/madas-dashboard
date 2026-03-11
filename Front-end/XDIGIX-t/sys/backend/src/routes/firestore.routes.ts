@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { jwtMiddleware } from '../middleware/jwt.middleware';
+import { centralJwtMiddleware } from '../middleware/central-jwt.middleware';
 import { tenantMiddleware } from '../middleware/tenant.middleware';
 import {
   getDocument,
@@ -25,7 +25,7 @@ function parsePath(path: string): { businessId?: string; subCol?: string; subDoc
 }
 
 const router = Router();
-router.use(jwtMiddleware);
+router.use(centralJwtMiddleware);
 router.use(tenantMiddleware);
 
 function getPath(req: Request): string {

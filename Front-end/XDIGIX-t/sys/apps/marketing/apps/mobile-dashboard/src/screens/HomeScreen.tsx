@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useBusiness } from '../contexts/BusinessContext';
@@ -16,15 +17,28 @@ import { useOrders } from '../hooks/useOrders';
 import { KpiCard } from '../components/KpiCard';
 import { QuickAction } from '../components/QuickAction';
 import { StatusBadge } from '../components/StatusBadge';
-import { colors, spacing, radius, fontSize, fontWeight } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { spacing, radius, fontSize, fontWeight } from '../theme';
 import type { Order } from '../types';
 
 export const HomeScreen = () => {
+  const { colors, isDark } = useTheme();
   const nav = useNavigation<any>();
   const { businessName, formatCurrency } = useBusiness();
   const { logout } = useAuth();
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useDashboardStats();
   const { data: orders, refetch: refetchOrders } = useOrders();
+  const insets = useSafeAreaInsets();
+
+  const cardShadow = !isDark
+    ? {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 4,
+      }
+    : {};
 
   const [refreshing, setRefreshing] = React.useState(false);
   const onRefresh = async () => {
@@ -38,17 +52,20 @@ export const HomeScreen = () => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgPrimary }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
     >
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Welcome back</Text>
-          <Text style={styles.businessName}>{businessName}</Text>
+          <Text style={[styles.greeting, { color: colors.textMuted }]}>Welcome back</Text>
+          <Text style={[styles.businessName, { color: colors.textPrimary }]}>{businessName}</Text>
         </View>
-        <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+        <TouchableOpacity
+          onPress={logout}
+          style={[styles.logoutBtn, { backgroundColor: colors.bgCard }, cardShadow]}
+        >
           <Ionicons name="log-out-outline" size={22} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
@@ -85,7 +102,7 @@ export const HomeScreen = () => {
       </View>
 
       {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Quick Actions</Text>
       <View style={styles.actionsRow}>
         <QuickAction
           title="Orders"
@@ -115,28 +132,33 @@ export const HomeScreen = () => {
 
       {/* Recent Orders */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Recent Orders</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Orders</Text>
         <TouchableOpacity onPress={() => nav.navigate('Orders')}>
-          <Text style={styles.seeAll}>See All</Text>
+          <Text style={[styles.seeAll, { color: colors.accent }]}>See All</Text>
         </TouchableOpacity>
       </View>
 
       {recentOrders.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>No orders yet</Text>
+        <View style={[styles.emptyCard, { backgroundColor: colors.bgCard }, cardShadow]}>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>No orders yet</Text>
         </View>
       ) : (
         recentOrders.map((order: Order) => (
-          <View key={order.id} style={styles.orderCard}>
+          <View
+            key={order.id}
+            style={[styles.orderCard, { backgroundColor: colors.bgCard }, cardShadow]}
+          >
             <View style={styles.orderTop}>
-              <Text style={styles.orderCustomer} numberOfLines={1}>
+              <Text style={[styles.orderCustomer, { color: colors.textPrimary }]} numberOfLines={1}>
                 {order.customerName}
               </Text>
-              <Text style={styles.orderTotal}>{formatCurrency(order.total)}</Text>
+              <Text style={[styles.orderTotal, { color: colors.accent }]}>
+                {formatCurrency(order.total)}
+              </Text>
             </View>
             <View style={styles.orderBottom}>
               <StatusBadge status={order.status} />
-              <Text style={styles.orderItems}>
+              <Text style={[styles.orderItems, { color: colors.textMuted }]}>
                 {String(order.productCount) + ' item' + (order.productCount !== 1 ? 's' : '')}
               </Text>
             </View>
@@ -150,10 +172,10 @@ export const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgPrimary,
   },
   content: {
     padding: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: 100,
   },
   header: {
@@ -164,11 +186,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   greeting: {
-    color: colors.textMuted,
     fontSize: fontSize.sm,
   },
   businessName: {
-    color: colors.textPrimary,
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
   },
@@ -176,7 +196,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -186,7 +205,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    color: colors.textPrimary,
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     marginTop: spacing.xl,
@@ -198,16 +216,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   seeAll: {
-    color: colors.accent,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
   },
   actionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   orderCard: {
-    backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.lg,
     marginBottom: spacing.sm,
@@ -219,14 +236,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   orderCustomer: {
-    color: colors.textPrimary,
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
     flex: 1,
     marginRight: spacing.md,
   },
   orderTotal: {
-    color: colors.accent,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
@@ -236,17 +251,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   orderItems: {
-    color: colors.textMuted,
     fontSize: fontSize.xs,
   },
   emptyCard: {
-    backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.xxxl,
     alignItems: 'center',
   },
   emptyText: {
-    color: colors.textMuted,
     fontSize: fontSize.md,
   },
 });
