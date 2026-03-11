@@ -17,7 +17,7 @@ function getClientId(req: Request): string {
 
 const router = Router();
 router.use(centralJwtMiddleware);
-router.use(requireAccountType('CLIENT'));
+router.use(requireAccountType(['CLIENT', 'ADMIN']));
 router.use(tenantMiddleware);
 router.use((req, _res, next) => {
   req.clientId = getClientId(req);
