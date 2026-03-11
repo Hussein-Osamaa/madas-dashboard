@@ -329,6 +329,17 @@ const NOT_FOUND_DOC = {
   data: () => ({} as Record<string, unknown>)
 };
 
+/** Fetch a single document by path (e.g. businesses/BUSINESS_ID). Used for support mode without Firebase. */
+export async function getDocumentByPath(path: string): Promise<{ id: string; data: Record<string, unknown> } | null> {
+  try {
+    const data = await fetchApi<{ id: string; data: Record<string, unknown> }>(`/firestore/documents/${path}`);
+    if (!data || (data.id === '' && (!data.data || Object.keys(data.data).length === 0))) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 export async function getDoc(ref: { _type?: string; path?: string }) {
   const path = ref.path || (ref as { _path?: string })._path || '';
   try {

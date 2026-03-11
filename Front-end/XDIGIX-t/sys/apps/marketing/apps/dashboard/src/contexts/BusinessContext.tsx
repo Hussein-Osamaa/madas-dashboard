@@ -1,4 +1,5 @@
 import { collection, db, doc, getDoc, getDocs, query, where, updateDoc, arrayUnion, arrayRemove, addDoc, deleteDoc, serverTimestamp } from '../lib/firebase';
+import { getDocumentByPath } from '../lib/backend-adapter';
 import {
   createContext,
   ReactNode,
@@ -143,40 +144,37 @@ const BusinessProvider = ({ children }: Props) => {
       return;
     }
 
-    // Check for support mode first
-    const supportMode = sessionStorage.getItem('supportMode') === 'true';
-    const supportBusinessId = sessionStorage.getItem('supportBusinessId');
-    const supportBusinessName = sessionStorage.getItem('supportBusinessName');
+    // Check for support mode first (backend only – no Firebase). Prefer URL params so it works cross-origin.
     const urlParams = new URLSearchParams(window.location.search);
     const urlSupport = urlParams.get('support') === 'true';
     const urlBusiness = urlParams.get('business');
+    const supportMode = sessionStorage.getItem('supportMode') === 'true' || urlSupport;
+    const supportBusinessId = urlBusiness || sessionStorage.getItem('supportBusinessId');
+    const supportBusinessName = urlParams.get('supportBusinessName') || sessionStorage.getItem('supportBusinessName');
+    const supportAdminName = urlParams.get('supportAdminName') || sessionStorage.getItem('supportAdminName');
+    const supportAdminEmail = urlParams.get('supportAdminEmail') || sessionStorage.getItem('supportAdminEmail');
 
-    if (supportMode || urlSupport) {
-      const businessId = supportBusinessId || urlBusiness;
-      if (businessId) {
-        try {
-          // Load business data for support mode
-          const businessDocRef = doc(db, 'businesses', businessId);
-          const businessDoc = await getDoc(businessDocRef);
-          
-          if (businessDoc.exists()) {
-            const businessData = businessDoc.data();
-            setState({
-              loading: false,
-              noAccess: false,
-              businessId: businessId,
-              businessName: supportBusinessName || businessData.businessName || businessData.name || 'Unknown Business',
-              plan: businessData.plan,
-              role: 'owner', // Support staff gets owner-level access
-              permissions: OWNER_PERMISSIONS, // Full permissions in support mode
-              userDisplayName: sessionStorage.getItem('supportAdminName') || 'Support Staff',
-              userEmail: sessionStorage.getItem('supportAdminEmail') || user.email || ''
-            });
-            return;
-          }
-        } catch (error) {
-          console.error('[BusinessProvider] Error loading business in support mode:', error);
+    if (supportMode && supportBusinessId) {
+      try {
+        // Load business via backend API only (no Firebase)
+        const docResult = await getDocumentByPath(`businesses/${supportBusinessId}`);
+        if (docResult?.data) {
+          const businessData = docResult.data as Record<string, unknown>;
+          setState({
+            loading: false,
+            noAccess: false,
+            businessId: supportBusinessId,
+            businessName: supportBusinessName || (businessData.businessName as string) || (businessData.name as string) || 'Unknown Business',
+            plan: businessData.plan as Plan,
+            role: 'owner',
+            permissions: OWNER_PERMISSIONS,
+            userDisplayName: supportAdminName || 'Support Staff',
+            userEmail: supportAdminEmail || user?.email || ''
+          });
+          return;
         }
+      } catch (error) {
+        console.error('[BusinessProvider] Error loading business in support mode:', error);
       }
     }
 

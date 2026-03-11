@@ -26,21 +26,19 @@ export default function SupportModeBanner() {
   useEffect(() => {
     // Check if support mode is active
     const checkSupportMode = () => {
-      const supportMode = sessionStorage.getItem('supportMode') === 'true';
-      const businessId = sessionStorage.getItem('supportBusinessId');
-      const businessName = sessionStorage.getItem('supportBusinessName');
-      const adminEmail = sessionStorage.getItem('supportAdminEmail');
-      const adminName = sessionStorage.getItem('supportAdminName');
-
-      // Also check URL params
       const urlParams = new URLSearchParams(window.location.search);
       const urlSupport = urlParams.get('support') === 'true';
       const urlBusiness = urlParams.get('business');
+      const supportMode = sessionStorage.getItem('supportMode') === 'true' || urlSupport;
+      const businessId = urlBusiness || sessionStorage.getItem('supportBusinessId');
+      const businessName = urlParams.get('supportBusinessName') || sessionStorage.getItem('supportBusinessName');
+      const adminEmail = urlParams.get('supportAdminEmail') || sessionStorage.getItem('supportAdminEmail');
+      const adminName = urlParams.get('supportAdminName') || sessionStorage.getItem('supportAdminName');
 
-      if (supportMode || urlSupport) {
+      if (supportMode && businessId) {
         setSupportInfo({
           enabled: true,
-          businessId: businessId || urlBusiness || null,
+          businessId,
           businessName: businessName || 'Unknown Business',
           adminEmail: adminEmail || null,
           adminName: adminName || 'Support Staff'
@@ -68,6 +66,9 @@ export default function SupportModeBanner() {
     const url = new URL(window.location.href);
     url.searchParams.delete('support');
     url.searchParams.delete('business');
+    url.searchParams.delete('supportBusinessName');
+    url.searchParams.delete('supportAdminName');
+    url.searchParams.delete('supportAdminEmail');
     window.history.replaceState({}, '', url.toString());
     
     // Reload to exit support mode

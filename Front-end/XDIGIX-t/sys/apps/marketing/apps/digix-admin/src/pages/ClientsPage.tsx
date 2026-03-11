@@ -655,19 +655,25 @@ export default function ClientsPage() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
-                                // Join business for support
+                                // Join business for support (backend only; params in URL so it works cross-origin)
                                 const businessId = client.id;
                                 const businessName = client.name;
-                                
-                                // Store support session info
+                                const adminEmail = (user as any)?.email || '';
+                                const adminName = (user as any)?.name || 'Support Staff';
                                 sessionStorage.setItem('supportMode', 'true');
                                 sessionStorage.setItem('supportBusinessId', businessId);
                                 sessionStorage.setItem('supportBusinessName', businessName);
-                                sessionStorage.setItem('supportAdminEmail', (user as any)?.email || '');
-                                sessionStorage.setItem('supportAdminName', (user as any)?.name || 'Support Staff');
-                                
-                                // Redirect to dashboard with business context
-                                window.open(`/dashboard?business=${businessId}&support=true`, '_blank');
+                                sessionStorage.setItem('supportAdminEmail', adminEmail);
+                                sessionStorage.setItem('supportAdminName', adminName);
+                                const base = (import.meta.env.VITE_DASHBOARD_URL || window.location.origin).replace(/\/$/, '');
+                                const params = new URLSearchParams({
+                                  business: businessId,
+                                  support: 'true',
+                                  supportBusinessName: businessName,
+                                  supportAdminName: adminName,
+                                  supportAdminEmail: adminEmail
+                                });
+                                window.open(`${base}/?${params.toString()}`, '_blank');
                               }}
                               className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
                               title="Join Business for Support"
@@ -1291,19 +1297,25 @@ export default function ClientsPage() {
                     </button>
                     <button
                       onClick={() => {
-                        // Join business for support
+                        // Join business for support (backend only; params in URL so it works cross-origin)
                         const businessId = selectedClient.id;
                         const businessName = selectedClient.name;
-                        
-                        // Store support session info
+                        const adminEmail = (user as any)?.email || '';
+                        const adminName = (user as any)?.name || 'Support Staff';
                         sessionStorage.setItem('supportMode', 'true');
                         sessionStorage.setItem('supportBusinessId', businessId);
                         sessionStorage.setItem('supportBusinessName', businessName);
-                        sessionStorage.setItem('supportAdminEmail', (user as any)?.email || '');
-                        sessionStorage.setItem('supportAdminName', (user as any)?.name || 'Support Staff');
-                        
-                        // Redirect to dashboard with business context
-                        window.open(`/dashboard?business=${businessId}&support=true`, '_blank');
+                        sessionStorage.setItem('supportAdminEmail', adminEmail);
+                        sessionStorage.setItem('supportAdminName', adminName);
+                        const base = (import.meta.env.VITE_DASHBOARD_URL || window.location.origin).replace(/\/$/, '');
+                        const params = new URLSearchParams({
+                          business: businessId,
+                          support: 'true',
+                          supportBusinessName: businessName,
+                          supportAdminName: adminName,
+                          supportAdminEmail: adminEmail
+                        });
+                        window.open(`${base}/?${params.toString()}`, '_blank');
                       }}
                       className="px-4 py-3 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/30 transition-all font-medium w-full"
                     >
@@ -1311,7 +1323,7 @@ export default function ClientsPage() {
                       Join Business for Support
                     </button>
                     <a
-                      href={`/dashboard?business=${selectedClient.id}`}
+                      href={`${(import.meta.env.VITE_DASHBOARD_URL || window.location.origin).replace(/\/$/, '')}/?business=${selectedClient.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl hover:bg-blue-500/30 transition-all font-medium text-center"
