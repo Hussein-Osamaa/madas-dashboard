@@ -47,6 +47,7 @@ export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPlan, setFilterPlan] = useState<string>('all');
+  const [filterFulfillment, setFilterFulfillment] = useState<string>('all');
 
   const [newClient, setNewClient] = useState({
     name: '',
@@ -434,19 +435,28 @@ export default function ClientsPage() {
     return 'basic';
   };
 
+  const hasFulfillment = (c: Tenant) => {
+    const f = (c as any).features || {};
+    return !!(f.fulfillment || f.fulfillment_service || f.fulfillmentService);
+  };
+
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || client.status === filterStatus;
     const clientPlan = getPlanString(client.plan);
     const matchesPlan = filterPlan === 'all' || clientPlan === filterPlan;
-    return matchesSearch && matchesStatus && matchesPlan;
+    const matchesFulfillment = filterFulfillment === 'all' ||
+      (filterFulfillment === 'yes' && hasFulfillment(client)) ||
+      (filterFulfillment === 'no' && !hasFulfillment(client));
+    return matchesSearch && matchesStatus && matchesPlan && matchesFulfillment;
   });
 
   const stats = {
     total: clients.length,
     active: clients.filter(c => c.status === 'active').length,
     trial: clients.filter(c => c.status === 'trial').length,
-    suspended: clients.filter(c => c.status === 'suspended').length
+    suspended: clients.filter(c => c.status === 'suspended').length,
+    fulfillment: clients.filter(c => hasFulfillment(c)).length
   };
 
 
@@ -474,7 +484,7 @@ export default function ClientsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-[#1a1b3e] border border-[#2d2f5a] rounded-xl p-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-lg bg-blue-500/10">
@@ -511,11 +521,23 @@ export default function ClientsPage() {
             </div>
             <p className="text-2xl font-bold text-red-400">{stats.suspended}</p>
           </div>
+          <div
+            className="bg-[#1a1b3e] border border-[#2d2f5a] rounded-xl p-5 cursor-pointer hover:border-purple-500/30 transition-all"
+            onClick={() => setFilterFulfillment(filterFulfillment === 'yes' ? 'all' : 'yes')}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <Truck className="w-5 h-5 text-purple-400" />
+              </div>
+              <span className="text-sm text-gray-400">Fulfillment</span>
+            </div>
+            <p className="text-2xl font-bold text-purple-400">{stats.fulfillment}</p>
+          </div>
         </div>
 
         {/* Filters */}
         <div className="bg-[#1a1b3e] border border-[#2d2f5a] rounded-xl p-5 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
@@ -546,6 +568,15 @@ export default function ClientsPage() {
               <option value="basic">Basic</option>
               <option value="professional">Professional</option>
               <option value="enterprise">Enterprise</option>
+            </select>
+            <select
+              value={filterFulfillment}
+              onChange={(e) => setFilterFulfillment(e.target.value)}
+              className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-gray-300 focus:outline-none focus:border-amber-500/50"
+            >
+              <option value="all">All Fulfillment</option>
+              <option value="yes">Fulfillment Subscribed</option>
+              <option value="no">No Fulfillment</option>
             </select>
           </div>
         </div>
