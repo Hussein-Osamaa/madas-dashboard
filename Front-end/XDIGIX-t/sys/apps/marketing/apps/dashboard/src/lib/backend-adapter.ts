@@ -20,6 +20,7 @@ const API_BASE = getApiBase();
 
 let accessToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_access_token') : null;
 let refreshToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem('backend_refresh_token') : null;
+let accountType: string = (typeof localStorage !== 'undefined' && localStorage.getItem('backend_account_type')) || 'CLIENT';
 const authListeners: Array<(user: BackendUser | null) => void> = [];
 
 export interface BackendUser {
@@ -30,21 +31,25 @@ export interface BackendUser {
   getIdToken: (forceRefresh?: boolean) => Promise<string>;
 }
 
-function persistTokens(acc: string, ref: string) {
+function persistTokens(acc: string, ref: string, type?: string) {
   accessToken = acc;
   refreshToken = ref;
+  if (type) accountType = type;
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('backend_access_token', acc);
     localStorage.setItem('backend_refresh_token', ref);
+    if (type) localStorage.setItem('backend_account_type', type);
   }
 }
 
 function clearTokens() {
   accessToken = null;
   refreshToken = null;
+  accountType = 'CLIENT';
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem('backend_access_token');
     localStorage.removeItem('backend_refresh_token');
+    localStorage.removeItem('backend_account_type');
   }
 }
 
@@ -60,6 +65,9 @@ function isTokenExpired(token: string): boolean {
 }
 
 async function getToken(): Promise<string | null> {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('backend_account_type')) {
+    accountType = localStorage.getItem('backend_account_type') || 'CLIENT';
+  }
   if (accessToken && !isTokenExpired(accessToken)) return accessToken;
   if (accessToken && isTokenExpired(accessToken)) accessToken = null;
   if (!refreshToken) return null;
@@ -67,7 +75,7 @@ async function getToken(): Promise<string | null> {
     const res = await fetch(`${API_BASE}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken })
+      body: JSON.stringify({ refreshToken, accountType: accountType || 'CLIENT' })
     });
     const data = await res.json();
     if (data.accessToken) {
@@ -139,13 +147,13 @@ function notifyAuthListeners(user: BackendUser | null) {
 // ---------------------------------------------------------------------------
 
 let currentUser: BackendUser | null = null;
+let authInitResolved = false;
 
 async function initAuth() {
   try {
     const token = await getToken();
     if (!token) {
       currentUser = null;
-      notifyAuthListeners(null);
       return;
     }
     const data = await fetchApi<{ user: { uid: string; email: string; type?: string } }>('/auth/me');
@@ -157,19 +165,22 @@ async function initAuth() {
         emailVerified: true,
         getIdToken: async () => (await getToken()) || ''
       };
-      notifyAuthListeners(currentUser);
     } else {
       currentUser = null;
-      notifyAuthListeners(null);
     }
   } catch {
     currentUser = null;
     clearTokens();
-    notifyAuthListeners(null);
   }
 }
 
-initAuth().catch(() => {});
+const initAuthPromise = initAuth().then(() => {
+  authInitResolved = true;
+  notifyAuthListeners(currentUser);
+}).catch(() => {
+  authInitResolved = true;
+  notifyAuthListeners(null);
+});
 
 export const auth = {
   get currentUser() {
@@ -191,7 +202,11 @@ export const auth = {
   },
   onAuthStateChanged: (cb: (user: BackendUser | null) => void) => {
     authListeners.push(cb);
-    cb(currentUser);
+    if (authInitResolved) {
+      cb(currentUser);
+    } else {
+      initAuthPromise.then(() => cb(currentUser));
+    }
     return () => {
       const i = authListeners.indexOf(cb);
       if (i >= 0) authListeners.splice(i, 1);

@@ -15,11 +15,16 @@ const AppShell = () => {
   const location = useLocation();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
-  const { loading: businessLoading, noAccess, hasPermission: businessHasPermission, hasAnyPermission: businessHasAnyPermission, role } = useBusiness();
+  const { loading: businessLoading, noAccess, hasPermission: businessHasPermission, hasAnyPermission: businessHasAnyPermission, role, businessId } = useBusiness();
   const { user: rbacUser, loading: rbacLoading, hasPermission: rbacHasPermission, hasAnyPermission: rbacHasAnyPermission } = useRBAC();
   const [shouldRedirectToSuperAdmin, setShouldRedirectToSuperAdmin] = useState(false);
   const [hasRouteAccess, setHasRouteAccess] = useState(true);
   const [checkingRouteAccess, setCheckingRouteAccess] = useState(true);
+
+  const isSupportMode = (() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('support') === 'true' || sessionStorage.getItem('supportMode') === 'true';
+  })();
 
   // Track page load performance and analytics when route changes
   useEffect(() => {
@@ -148,26 +153,30 @@ const AppShell = () => {
     return <FullScreenLoader />;
   }
 
-  if (!user) {
+  if (!user && !isSupportMode) {
     return <Navigate to="/login" replace />;
   }
 
-  // Redirect super admins to their dashboard if they're on root tenant dashboard
-  // But allow access to other tenant routes if needed
-  if (
-    shouldRedirectToSuperAdmin &&
-    (location.pathname === '/' || location.pathname.startsWith('/?'))
-  ) {
-    return <Navigate to="/super-admin" replace />;
+  if (!user && isSupportMode && !businessId) {
+    return <FullScreenLoader />;
   }
 
-  // Check route-level permissions
-  if (!hasRouteAccess && !shouldRedirectToSuperAdmin) {
-    return <Navigate to="/no-access" replace />;
-  }
+  // In support mode, skip redirects and permission checks
+  if (!isSupportMode) {
+    if (
+      shouldRedirectToSuperAdmin &&
+      (location.pathname === '/' || location.pathname.startsWith('/?'))
+    ) {
+      return <Navigate to="/super-admin" replace />;
+    }
 
-  if (noAccess && !shouldRedirectToSuperAdmin) {
-    return <Navigate to="/no-access" replace />;
+    if (!hasRouteAccess && !shouldRedirectToSuperAdmin) {
+      return <Navigate to="/no-access" replace />;
+    }
+
+    if (noAccess && !shouldRedirectToSuperAdmin) {
+      return <Navigate to="/no-access" replace />;
+    }
   }
 
   return (
