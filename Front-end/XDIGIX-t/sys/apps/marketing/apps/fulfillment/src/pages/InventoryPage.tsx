@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
-import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download } from 'lucide-react';
+import { useStaffAuth } from '../contexts/StaffAuthContext';
+import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download, ScanBarcode, X, Check, RotateCcw } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
 import { normalizeProductFromApi } from '../components/SizeVariantsEditor';
 import {
@@ -34,7 +35,27 @@ import {
 
 const emptyForm = { name: '', sku: '', barcode: '', warehouse: '' };
 
+type RestockEntry = {
+  productId: string;
+  productName: string;
+  size: string;
+  barcode: string;
+  count: number;
+};
+
+type RestockSession = {
+  active: boolean;
+  clientId: string;
+  clientName: string;
+  startedAt: Date;
+  scannedBarcodes: string[];
+  entries: Map<string, RestockEntry>;
+};
+
 export default function InventoryPage() {
+  const { user } = useStaffAuth();
+  const isAdmin = user?.allowedApps?.includes('ADMIN') ?? false;
+
   const [clients, setClients] = useState<FulfillmentClient[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [products, setProducts] = useState<ProductWithStock[]>([]);
@@ -68,6 +89,171 @@ export default function InventoryPage() {
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [deletingBulk, setDeletingBulk] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Restock session state
+  const [restockSession, setRestockSession] = useState<RestockSession | null>(null);
+  const [restockScanInput, setRestockScanInput] = useState('');
+  const [restockLastScan, setRestockLastScan] = useState<{ barcode: string; matched: boolean; detail: string } | null>(null);
+  const [restockSubmitting, setRestockSubmitting] = useState(false);
+  const [showRestockConfirm, setShowRestockConfirm] = useState(false);
+  const restockInputRef = useRef<HTMLInputElement>(null);
+
+  const barcodeToProduct = useMemo(() => {
+    const map = new Map<string, { productId: string; productName: string; size: string }>();
+    products.forEach((p) => {
+      const data = p as Record<string, unknown>;
+      const name = String(data.name ?? p.id);
+      const sizeBarcodes = data.sizeBarcodes as Record<string, string> | undefined;
+      if (sizeBarcodes && typeof sizeBarcodes === 'object') {
+        Object.entries(sizeBarcodes).forEach(([size, bc]) => {
+          if (bc) map.set(bc, { productId: p.id, productName: name, size });
+        });
+      }
+      const mainBarcode = String(data.barcode ?? '');
+      if (mainBarcode && !map.has(mainBarcode)) {
+        map.set(mainBarcode, { productId: p.id, productName: name, size: 'default' });
+      }
+    });
+    return map;
+  }, [products]);
+
+  const handleStartRestock = () => {
+    if (!selectedClientId) return;
+    const client = clients.find((c) => c.id === selectedClientId);
+    setRestockSession({
+      active: true,
+      clientId: selectedClientId,
+      clientName: client?.name || selectedClientId,
+      startedAt: new Date(),
+      scannedBarcodes: [],
+      entries: new Map(),
+    });
+    setRestockLastScan(null);
+    setRestockScanInput('');
+    setTimeout(() => restockInputRef.current?.focus(), 100);
+  };
+
+  const handleRestockScan = (barcode: string) => {
+    if (!restockSession || !barcode.trim()) return;
+    const bc = barcode.trim();
+    const match = barcodeToProduct.get(bc);
+
+    setRestockSession((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, scannedBarcodes: [...prev.scannedBarcodes, bc], entries: new Map(prev.entries) };
+      if (match) {
+        const key = `${match.productId}::${match.size}`;
+        const existing = next.entries.get(key);
+        if (existing) {
+          next.entries.set(key, { ...existing, count: existing.count + 1 });
+        } else {
+          next.entries.set(key, {
+            productId: match.productId,
+            productName: match.productName,
+            size: match.size,
+            barcode: bc,
+            count: 1,
+          });
+        }
+      }
+      return next;
+    });
+
+    setRestockLastScan({
+      barcode: bc,
+      matched: !!match,
+      detail: match ? `${match.productName} – ${match.size}` : 'No matching product found',
+    });
+    setRestockScanInput('');
+    restockInputRef.current?.focus();
+  };
+
+  const handleRestockScanKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleRestockScan(restockScanInput);
+    }
+  };
+
+  const handleCancelRestock = () => {
+    if (restockSession && restockSession.scannedBarcodes.length > 0) {
+      if (!window.confirm('Cancel restock session? All scanned data will be lost.')) return;
+    }
+    setRestockSession(null);
+    setRestockLastScan(null);
+    setShowRestockConfirm(false);
+  };
+
+  const handleFinishRestock = async () => {
+    if (!restockSession || restockSession.entries.size === 0) return;
+    setRestockSubmitting(true);
+    setError('');
+
+    try {
+      const scannedProductIds = new Set<string>();
+      const productStockMap = new Map<string, Record<string, number>>();
+      restockSession.entries.forEach((entry) => {
+        scannedProductIds.add(entry.productId);
+        const existing = productStockMap.get(entry.productId) ?? {};
+        existing[entry.size] = (existing[entry.size] ?? 0) + entry.count;
+        productStockMap.set(entry.productId, existing);
+      });
+
+      // Update scanned products with new stock
+      for (const [productId, newStock] of productStockMap) {
+        await updateProduct(restockSession.clientId, productId, { stock: newStock });
+      }
+
+      // Zero out stock for products that were NOT scanned
+      let zeroedCount = 0;
+      for (const p of products) {
+        if (scannedProductIds.has(p.id)) continue;
+        const data = p as Record<string, unknown>;
+        const stock = data.stock as Record<string, number> | undefined;
+        if (!stock || typeof stock !== 'object') continue;
+        const hasStock = Object.values(stock).some((qty) => typeof qty === 'number' && qty > 0);
+        if (!hasStock) continue;
+        const zeroed: Record<string, number> = {};
+        Object.keys(stock).forEach((key) => { zeroed[key] = 0; });
+        await updateProduct(restockSession.clientId, p.id, { stock: zeroed });
+        zeroedCount++;
+      }
+
+      const totalScanned = restockSession.scannedBarcodes.length;
+      const productsUpdated = productStockMap.size;
+      setSaveSuccessMessage(
+        `Restock complete: ${totalScanned} items scanned, ${productsUpdated} product${productsUpdated !== 1 ? 's' : ''} restocked` +
+        (zeroedCount > 0 ? `, ${zeroedCount} product${zeroedCount !== 1 ? 's' : ''} zeroed (not scanned).` : '.')
+      );
+      setTimeout(() => setSaveSuccessMessage(''), 8000);
+
+      setRestockSession(null);
+      setShowRestockConfirm(false);
+      setRestockLastScan(null);
+      await loadProducts();
+    } catch (err) {
+      setError(`Restock failed: ${(err as Error).message}`);
+    } finally {
+      setRestockSubmitting(false);
+    }
+  };
+
+  const restockEntries = useMemo(() => {
+    if (!restockSession) return [];
+    return Array.from(restockSession.entries.values()).sort((a, b) => a.productName.localeCompare(b.productName));
+  }, [restockSession]);
+
+  const unscannedProducts = useMemo(() => {
+    if (!restockSession) return [];
+    const scannedIds = new Set(restockEntries.map((e) => e.productId));
+    return products.filter((p) => {
+      if (scannedIds.has(p.id)) return false;
+      const data = p as Record<string, unknown>;
+      const stock = data.stock as Record<string, number> | undefined;
+      if (!stock || typeof stock !== 'object') return false;
+      return Object.values(stock).some((qty) => typeof qty === 'number' && qty > 0);
+    });
+  }, [restockSession, restockEntries, products]);
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm.trim()) return products;
@@ -487,25 +673,154 @@ export default function InventoryPage() {
       {/* Client selector */}
       <div className="mb-6 sm:mb-8">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Client</label>
-        <div className="relative w-full max-w-md">
-          <select
-            value={selectedClientId}
-            onChange={(e) => setSelectedClientId(e.target.value)}
-            disabled={loadingClients}
-            className="w-full appearance-none px-4 py-3 pr-10 rounded-xl bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 disabled:opacity-50 min-h-[44px]"
-          >
-            <option value="">
-              {loadingClients ? 'Loading clients...' : clients.length === 0 ? 'No fulfillment clients' : 'Select a client'}
-            </option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name || c.id}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-full max-w-md">
+            <select
+              value={selectedClientId}
+              onChange={(e) => setSelectedClientId(e.target.value)}
+              disabled={loadingClients || !!restockSession}
+              className="w-full appearance-none px-4 py-3 pr-10 rounded-xl bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 disabled:opacity-50 min-h-[44px]"
+            >
+              <option value="">
+                {loadingClients ? 'Loading clients...' : clients.length === 0 ? 'No fulfillment clients' : 'Select a client'}
               </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" />
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name || c.id}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" />
+          </div>
+          {isAdmin && selectedClientId && !restockSession && (
+            <button
+              type="button"
+              onClick={handleStartRestock}
+              disabled={loadingProducts || products.length === 0}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ScanBarcode className="w-5 h-5" />
+              Restock
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Restock Session */}
+      {restockSession && (
+        <div className="mb-8 rounded-xl border-2 border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-500/10 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500/20">
+                <ScanBarcode className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Restock Session</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {restockSession.clientName} &middot; Started {restockSession.startedAt.toLocaleTimeString()}
+                  &middot; {restockSession.scannedBarcodes.length} scans
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (restockSession.entries.size === 0) {
+                    alert('No items scanned yet.');
+                    return;
+                  }
+                  setShowRestockConfirm(true);
+                }}
+                disabled={restockSubmitting || restockSession.entries.size === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition-colors disabled:opacity-50"
+              >
+                <Check className="w-4 h-4" />
+                Finish Restock
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelRestock}
+                disabled={restockSubmitting}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 font-medium text-sm border border-gray-300 dark:border-white/10"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
+            </div>
+          </div>
+
+          {/* Scanner input */}
+          <div className="relative mb-4">
+            <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500 pointer-events-none" />
+            <input
+              ref={restockInputRef}
+              type="text"
+              value={restockScanInput}
+              onChange={(e) => setRestockScanInput(e.target.value)}
+              onKeyDown={handleRestockScanKeyDown}
+              placeholder="Scan barcode or type and press Enter..."
+              autoFocus
+              className="w-full pl-11 pr-4 py-3 rounded-lg border-2 border-emerald-500/40 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-base font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+            />
+          </div>
+
+          {/* Last scan feedback */}
+          {restockLastScan && (
+            <div className={`mb-4 px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 ${
+              restockLastScan.matched
+                ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                : 'bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400'
+            }`}>
+              <span className="font-mono text-xs">{restockLastScan.barcode}</span>
+              <span>&rarr;</span>
+              <span>{restockLastScan.detail}</span>
+            </div>
+          )}
+
+          {/* Scanned items table */}
+          {restockEntries.length > 0 ? (
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+                    <th className="text-left py-3 px-4 text-gray-500 dark:text-gray-400 font-medium">Product</th>
+                    <th className="text-left py-3 px-4 text-gray-500 dark:text-gray-400 font-medium">Size</th>
+                    <th className="text-left py-3 px-4 text-gray-500 dark:text-gray-400 font-medium">Barcode</th>
+                    <th className="text-right py-3 px-4 text-gray-500 dark:text-gray-400 font-medium">Scanned Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {restockEntries.map((entry) => (
+                    <tr key={`${entry.productId}::${entry.size}`} className="border-b border-gray-100 dark:border-white/5 last:border-0">
+                      <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">{entry.productName}</td>
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{entry.size}</td>
+                      <td className="py-3 px-4 text-gray-500 dark:text-gray-400 font-mono text-xs">{entry.barcode}</td>
+                      <td className="py-3 px-4 text-right">
+                        <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+                          {entry.count}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+                    <td colSpan={3} className="py-3 px-4 text-gray-700 dark:text-gray-300 font-medium">Total</td>
+                    <td className="py-3 px-4 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                      {restockEntries.reduce((sum, e) => sum + e.count, 0)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">
+              Start scanning barcodes. Each scan adds to the restock count.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Warehouses section */}
       {selectedClientId && (
@@ -1085,6 +1400,100 @@ export default function InventoryPage() {
         products={selectedProducts}
         brandName={selectedClient?.name || selectedClientId || ''}
       />
+
+      {/* Restock Confirmation Modal */}
+      {showRestockConfirm && restockSession && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#1a1b3e] rounded-xl border border-gray-200 dark:border-white/10 max-w-lg w-full p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500/20">
+                <RotateCcw className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Confirm Restock</h2>
+            </div>
+            <div className="mb-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-sm">
+              <strong>Warning:</strong> This will <strong>replace</strong> the existing stock for scanned products with the scanned quantities.
+              {unscannedProducts.length > 0 && (
+                <> Products <strong>not scanned</strong> will have their stock <strong>set to 0</strong> (out of stock).</>
+              )}
+            </div>
+            <div className="mb-4 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <p><strong>Client:</strong> {restockSession.clientName}</p>
+              <p><strong>Total scans:</strong> {restockSession.scannedBarcodes.length}</p>
+              <p><strong>Products restocked:</strong> {new Set(restockEntries.map((e) => e.productId)).size}</p>
+              {unscannedProducts.length > 0 && (
+                <p className="text-red-600 dark:text-red-400">
+                  <strong>Products zeroed (not scanned):</strong> {unscannedProducts.length}
+                </p>
+              )}
+            </div>
+            <div className="max-h-40 overflow-y-auto mb-3 rounded-lg border border-gray-200 dark:border-white/10">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-gray-50 dark:bg-white/5">
+                  <tr>
+                    <th className="text-left py-2 px-3 text-gray-500 dark:text-gray-400">Product</th>
+                    <th className="text-left py-2 px-3 text-gray-500 dark:text-gray-400">Size</th>
+                    <th className="text-right py-2 px-3 text-gray-500 dark:text-gray-400">New Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {restockEntries.map((entry) => (
+                    <tr key={`${entry.productId}::${entry.size}`} className="border-t border-gray-100 dark:border-white/5">
+                      <td className="py-2 px-3 text-gray-900 dark:text-white">{entry.productName}</td>
+                      <td className="py-2 px-3 text-gray-600 dark:text-gray-300">{entry.size}</td>
+                      <td className="py-2 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">{entry.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {unscannedProducts.length > 0 && (
+              <div className="max-h-32 overflow-y-auto mb-4 rounded-lg border border-red-200 dark:border-red-500/20 bg-red-50/50 dark:bg-red-500/5">
+                <p className="sticky top-0 bg-red-50 dark:bg-red-500/10 text-xs font-semibold text-red-600 dark:text-red-400 py-2 px-3 border-b border-red-200 dark:border-red-500/20">
+                  Will be set to 0 stock:
+                </p>
+                {unscannedProducts.map((p) => {
+                  const data = p as Record<string, unknown>;
+                  return (
+                    <div key={p.id} className="flex items-center justify-between py-1.5 px-3 border-t border-red-100 dark:border-red-500/10 first:border-t-0 text-xs">
+                      <span className="text-gray-900 dark:text-white">{String(data.name ?? p.id)}</span>
+                      <span className="text-red-500 font-medium">0</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleFinishRestock}
+                disabled={restockSubmitting}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium disabled:opacity-50"
+              >
+                {restockSubmitting ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 animate-spin" />
+                    Updating stock...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Confirm & Apply
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRestockConfirm(false)}
+                disabled={restockSubmitting}
+                className="px-5 py-2.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
