@@ -21,6 +21,7 @@ import {
   createWarehouse,
   updateProduct,
   deleteProduct,
+  bulkUpdateStock,
   type FulfillmentClient,
   type ProductWithStock,
   type Warehouse,
@@ -48,7 +49,7 @@ type RestockSession = {
   clientId: string;
   clientName: string;
   startedAt: Date;
-  scannedBarcodes: string[];
+  totalScans: number;
   entries: Map<string, RestockEntry>;
 };
 
@@ -64,7 +65,7 @@ function saveRestockToStorage(session: RestockSession | null) {
     clientId: session.clientId,
     clientName: session.clientName,
     startedAt: session.startedAt.toISOString(),
-    scannedBarcodes: session.scannedBarcodes,
+    totalScans: session.totalScans,
     entries: Array.from(session.entries.entries()),
   };
   sessionStorage.setItem(RESTOCK_STORAGE_KEY, JSON.stringify(serializable));
@@ -81,7 +82,7 @@ function loadRestockFromStorage(): RestockSession | null {
       clientId: parsed.clientId,
       clientName: parsed.clientName,
       startedAt: new Date(parsed.startedAt),
-      scannedBarcodes: parsed.scannedBarcodes ?? [],
+      totalScans: parsed.totalScans ?? 0,
       entries: new Map(parsed.entries ?? []),
     };
   } catch {
@@ -171,7 +172,7 @@ export default function InventoryPage() {
       clientId: selectedClientId,
       clientName: client?.name || selectedClientId,
       startedAt: new Date(),
-      scannedBarcodes: [],
+      totalScans: 0,
       entries: new Map(),
     });
     setRestockLastScan(null);
@@ -186,7 +187,7 @@ export default function InventoryPage() {
 
     setRestockSession((prev) => {
       if (!prev) return prev;
-      const next = { ...prev, scannedBarcodes: [...prev.scannedBarcodes, bc], entries: new Map(prev.entries) };
+      const next = { ...prev, totalScans: prev.totalScans + 1, entries: new Map(prev.entries) };
       if (match) {
         const key = `${match.productId}::${match.size}`;
         const existing = next.entries.get(key);
@@ -222,7 +223,7 @@ export default function InventoryPage() {
   };
 
   const handleCancelRestock = () => {
-    if (restockSession && restockSession.scannedBarcodes.length > 0) {
+    if (restockSession && restockSession.totalScans > 0) {
       if (!window.confirm('Cancel restock session? All scanned data will be lost.')) return;
     }
     setRestockSession(null);
@@ -245,12 +246,13 @@ export default function InventoryPage() {
         productStockMap.set(entry.productId, existing);
       });
 
-      // Update scanned products with new stock
+      // Build all updates (scanned + zeroed) into one array for the bulk endpoint
+      const allUpdates: Array<{ productId: string; stock: Record<string, number> }> = [];
+
       for (const [productId, newStock] of productStockMap) {
-        await updateProduct(restockSession.clientId, productId, { stock: newStock });
+        allUpdates.push({ productId, stock: newStock });
       }
 
-      // Zero out stock for products that were NOT scanned
       let zeroedCount = 0;
       for (const p of products) {
         if (scannedProductIds.has(p.id)) continue;
@@ -261,15 +263,18 @@ export default function InventoryPage() {
         if (!hasStock) continue;
         const zeroed: Record<string, number> = {};
         Object.keys(stock).forEach((key) => { zeroed[key] = 0; });
-        await updateProduct(restockSession.clientId, p.id, { stock: zeroed });
+        allUpdates.push({ productId: p.id, stock: zeroed });
         zeroedCount++;
       }
 
-      const totalScanned = restockSession.scannedBarcodes.length;
+      const result = await bulkUpdateStock(restockSession.clientId, allUpdates);
+
+      const totalScanned = restockSession.totalScans;
       const productsUpdated = productStockMap.size;
       setSaveSuccessMessage(
         `Restock complete: ${totalScanned} items scanned, ${productsUpdated} product${productsUpdated !== 1 ? 's' : ''} restocked` +
-        (zeroedCount > 0 ? `, ${zeroedCount} product${zeroedCount !== 1 ? 's' : ''} zeroed (not scanned).` : '.')
+        (zeroedCount > 0 ? `, ${zeroedCount} zeroed.` : '.') +
+        (result.failed > 0 ? ` (${result.failed} failed)` : '')
       );
       setTimeout(() => setSaveSuccessMessage(''), 8000);
 
@@ -776,7 +781,7 @@ export default function InventoryPage() {
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">Restock Session</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {restockSession.clientName} &middot; Started {restockSession.startedAt.toLocaleTimeString()}
-                  &middot; {restockSession.scannedBarcodes.length} scans
+                  &middot; {restockSession.totalScans} scans
                 </p>
               </div>
             </div>
@@ -1506,7 +1511,7 @@ export default function InventoryPage() {
             </div>
             <div className="mb-4 text-sm text-gray-600 dark:text-gray-400 space-y-1">
               <p><strong>Client:</strong> {restockSession.clientName}</p>
-              <p><strong>Total scans:</strong> {restockSession.scannedBarcodes.length}</p>
+              <p><strong>Total scans:</strong> {restockSession.totalScans}</p>
               <p><strong>Products restocked:</strong> {new Set(restockEntries.map((e) => e.productId)).size}</p>
               {unscannedProducts.length > 0 && (
                 <p className="text-red-600 dark:text-red-400">

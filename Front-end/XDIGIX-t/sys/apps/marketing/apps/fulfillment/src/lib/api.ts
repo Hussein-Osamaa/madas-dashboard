@@ -274,6 +274,17 @@ export async function updateProduct(clientId: string, productId: string, input: 
   });
 }
 
+export async function bulkUpdateStock(
+  clientId: string,
+  updates: Array<{ productId: string; stock: Record<string, number> }>
+): Promise<{ succeeded: number; failed: number; total: number }> {
+  const res = await fetchApi('/warehouse/products/bulk-stock', {
+    method: 'POST',
+    body: JSON.stringify({ clientId, updates }),
+  });
+  return res as { succeeded: number; failed: number; total: number };
+}
+
 export async function deleteProduct(clientId: string, productId: string): Promise<void> {
   const url = `/warehouse/products/${productId}?clientId=${encodeURIComponent(clientId)}`;
   await fetchApi(url, { method: 'DELETE' });

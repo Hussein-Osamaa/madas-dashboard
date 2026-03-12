@@ -478,6 +478,49 @@ router.patch(
   }
 );
 
+/** POST /warehouse/products/bulk-stock - Bulk update stock for many products at once (restock). */
+router.post('/products/bulk-stock', async (req: Request, res: Response) => {
+  try {
+    const clientId = (req.body?.clientId && String(req.body.clientId).trim()) || req.clientId;
+    if (!clientId) return res.status(400).json({ error: 'Client ID required' });
+    const updates = req.body?.updates as Array<{ productId: string; stock: Record<string, number> }> | undefined;
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ error: 'updates array required' });
+    }
+
+    const { updateProduct } = await import('../modules/products/controllers/Products.controller');
+    const { logProductActivity } = await import('../modules/products/services/ProductActivityLog.service');
+    const userId = (req.accountPayload as { userId?: string })?.userId ?? '';
+    const email = (req.accountPayload as { email?: string })?.email ?? '';
+
+    let succeeded = 0;
+    let failed = 0;
+    const BATCH = 10;
+    for (let i = 0; i < updates.length; i += BATCH) {
+      const batch = updates.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batch.map(async (u) => {
+          const { productName } = await updateProduct(clientId, u.productId, { stock: u.stock });
+          await logProductActivity({
+            clientId,
+            productId: u.productId,
+            productName,
+            action: 'updated',
+            performedByUserId: userId,
+            performedByEmail: email,
+          });
+        })
+      );
+      results.forEach((r) => { if (r.status === 'fulfilled') succeeded++; else failed++; });
+    }
+
+    emitWarehouseUpdate(getIo(), { type: 'products', clientId });
+    res.json({ success: true, succeeded, failed, total: updates.length });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 /** DELETE /warehouse/products/:id - Delete product. Query: clientId (preferred; body also accepted). */
 router.delete('/products/:id', async (req: Request, res: Response) => {
   try {
