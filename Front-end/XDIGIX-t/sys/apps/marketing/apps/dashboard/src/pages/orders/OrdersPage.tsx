@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useCurrency } from '../../hooks/useCurrency';
@@ -12,6 +12,7 @@ import ScanBarcodeModal from '../../components/orders/ScanBarcodeModal';
 import ScanSuccessModal from '../../components/orders/ScanSuccessModal';
 import { useOrders } from '../../hooks/useOrders';
 import { useProducts } from '../../hooks/useProducts';
+import { useLinkedInventory } from '../../hooks/useLinkedInventory';
 import { useCustomers } from '../../hooks/useCustomers';
 import { useShippingIntegrations } from '../../hooks/useShippingIntegrations';
 import { useAuth } from '../../contexts/AuthContext';
@@ -93,14 +94,30 @@ const OrdersPage = () => {
     updating: updatingProduct
   } = useProducts(businessId);
 
+  const { data: linkedInventory } = useLinkedInventory(!!businessId);
+
   const { customers } = useCustomers(businessId);
   
   const { isBostaEnabled, bostaConfig } = useShippingIntegrations(businessId);
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const param = searchParams.get('status');
+    const valid: StatusFilter[] = ['all', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'];
+    return param && valid.includes(param as StatusFilter) ? (param as StatusFilter) : 'all';
+  });
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+
+  useEffect(() => {
+    if (statusFilter !== 'all') {
+      searchParams.set('status', statusFilter);
+    } else {
+      searchParams.delete('status');
+    }
+    setSearchParams(searchParams, { replace: true });
+  }, [statusFilter]);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [scanModalOpen, setScanModalOpen] = useState(false);
@@ -1731,23 +1748,34 @@ ${JSON.stringify(bostaData, null, 2)}
         submitting={creating || updating}
         deleting={deleting}
         initialValue={editingOrder ?? undefined}
-        products={products.map(p => {
-          // Calculate total stock from stock or stockByLocation
-          const stockFromVariants = p.stock ? Object.values(p.stock).reduce((a, b) => a + b, 0) : 0;
-          const stockFromLocations = p.stockByLocation ? Object.values(p.stockByLocation).reduce((a, b) => a + b, 0) : 0;
-          const totalStock = stockFromVariants || stockFromLocations;
-          
-          return {
-            id: p.id,
-            name: p.name,
-            price: p.price ?? 0,
-            sellingPrice: p.sellingPrice,
-            sku: p.sku,
-            barcode: p.barcode,
-            stock: p.stock,
-            totalStock
-          };
-        })}
+        products={[
+          ...products.map(p => {
+            const stockFromVariants = p.stock ? Object.values(p.stock).reduce((a, b) => a + b, 0) : 0;
+            const stockFromLocations = p.stockByLocation ? Object.values(p.stockByLocation).reduce((a, b) => a + b, 0) : 0;
+            const totalStock = stockFromVariants || stockFromLocations;
+            return {
+              id: p.id,
+              name: p.name,
+              price: p.price ?? 0,
+              sellingPrice: p.sellingPrice,
+              sku: p.sku,
+              barcode: p.barcode,
+              stock: p.stock,
+              images: p.images,
+              totalStock,
+            };
+          }),
+          ...(linkedInventory?.products ?? []).map(lp => ({
+            id: lp.id,
+            name: `${lp.name ?? 'Unnamed'} (XDF)`,
+            price: (lp as Record<string, unknown>).price as number ?? 0,
+            sellingPrice: (lp as Record<string, unknown>).sellingPrice as number | undefined,
+            sku: lp.sku,
+            barcode: lp.barcode,
+            stock: lp.stock,
+            totalStock: lp.availableStock ?? Object.values(lp.stock ?? {}).reduce((a, b) => a + b, 0),
+          })),
+        ]}
         customers={customers.map(c => ({
           id: c.id,
           name: c.name,

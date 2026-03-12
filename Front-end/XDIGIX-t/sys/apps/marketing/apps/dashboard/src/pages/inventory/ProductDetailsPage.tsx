@@ -3,9 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useProducts } from '../../hooks/useProducts';
+import { useLinkedInventory } from '../../hooks/useLinkedInventory';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 import ProductModal, { ProductDraft } from '../../components/inventory/ProductModal';
+import XdfImagePricingModal, { XdfImagePricingPayload } from '../../components/inventory/XdfImagePricingModal';
+import { updateLinkedProductImagePricing } from '../../lib/backend-adapter';
 import { Product } from '../../services/productsService';
 
 const ProductDetailsPage = () => {
@@ -13,20 +16,48 @@ const ProductDetailsPage = () => {
   const navigate = useNavigate();
   const { businessId, loading: businessLoading, businessName } = useBusiness();
   const { products, isLoading, updateProduct } = useProducts(businessId);
+  const { data: linkedInventory } = useLinkedInventory(!!businessId);
   const { warehouses } = useWarehouses(businessId);
   const [product, setProduct] = useState<Product | null>(null);
+  const [isLinkedProduct, setIsLinkedProduct] = useState(false);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, boolean>>({});
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showXdfEditModal, setShowXdfEditModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
-    if (productId && products.length > 0) {
-      const foundProduct = products.find((p) => p.id === productId);
-      setProduct(foundProduct || null);
-      setSelectedImageIndex(0); // Reset to first image when product changes
+    if (!productId) return;
+    // Search in own products first
+    const foundProduct = products.find((p) => p.id === productId);
+    if (foundProduct) {
+      setProduct(foundProduct);
+      setIsLinkedProduct(false);
+      setSelectedImageIndex(0);
+      return;
     }
-  }, [productId, products]);
+    // Fall back to linked inventory
+    const linkedProduct = linkedInventory?.products?.find((p) => p.id === productId);
+    if (linkedProduct) {
+      setProduct({
+        id: linkedProduct.id,
+        name: linkedProduct.name ?? '',
+        description: '',
+        price: (linkedProduct as Record<string, unknown>).price as number ?? 0,
+        sellingPrice: (linkedProduct as Record<string, unknown>).sellingPrice as number | undefined,
+        sku: linkedProduct.sku ?? '',
+        barcode: linkedProduct.barcode,
+        stock: linkedProduct.stock ?? {},
+        sizeBarcodes: linkedProduct.sizeBarcodes ?? {},
+        images: (linkedProduct as Record<string, unknown>).images as string[] | undefined,
+        stockByLocation: {},
+      } as Product);
+      setIsLinkedProduct(true);
+      setSelectedImageIndex(0);
+    } else if (products.length > 0) {
+      setProduct(null);
+    }
+  }, [productId, products, linkedInventory]);
 
   const handleEditSubmit = async (payload: ProductDraft) => {
     if (!product?.id) return;
@@ -38,6 +69,21 @@ const ProductDetailsPage = () => {
       setShowEditModal(false);
     } catch (error) {
       console.error('Error updating product:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleXdfEditSubmit = async (payload: XdfImagePricingPayload) => {
+    if (!product?.id) return;
+    setIsSubmitting(true);
+    try {
+      await updateLinkedProductImagePricing(product.id, payload);
+      setProduct({ ...product, ...payload, id: product.id });
+      setShowXdfEditModal(false);
+    } catch (error) {
+      console.error('Error updating linked product:', error);
+      alert('Failed to save. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -637,7 +683,15 @@ const ProductDetailsPage = () => {
             <span className="material-icons">arrow_back</span>
           </button>
           <div>
-            <h1 className="text-3xl font-semibold text-primary">{product.name || 'Unnamed Product'}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-semibold text-primary">{product.name || 'Unnamed Product'}</h1>
+              {isLinkedProduct && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700">
+                  <span className="material-icons text-xs">link</span>
+                  Linked
+                </span>
+              )}
+            </div>
             <p className="text-sm text-madas-text/70">Product Details</p>
           </div>
         </div>
@@ -939,11 +993,11 @@ const ProductDetailsPage = () => {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => setShowEditModal(true)}
+                onClick={() => isLinkedProduct ? setShowXdfEditModal(true) : setShowEditModal(true)}
                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1f3c19] transition-colors"
               >
                 <span className="material-icons text-base">edit</span>
-                Edit Product
+                {isLinkedProduct ? 'Edit Image & Pricing' : 'Edit Product'}
               </button>
               <button
                 type="button"
@@ -974,6 +1028,15 @@ const ProductDetailsPage = () => {
         initialValue={product}
         submitting={isSubmitting}
         warehouses={warehouses}
+      />
+
+      {/* XDF Image & Pricing Modal */}
+      <XdfImagePricingModal
+        open={showXdfEditModal}
+        onClose={() => setShowXdfEditModal(false)}
+        product={product}
+        onSubmit={handleXdfEditSubmit}
+        submitting={isSubmitting}
       />
     </div>
   );

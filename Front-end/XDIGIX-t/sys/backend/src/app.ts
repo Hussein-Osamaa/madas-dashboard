@@ -49,10 +49,11 @@ export function createApp(): Express {
           callback(null, incoming);
           return;
         }
-        // Allow localhost / 127.0.0.1 on any port for local frontend dev (e.g. Vite on 5180)
+        // Allow localhost / 127.0.0.1 / LAN IPs on any port for local frontend dev
         if (
           incoming.startsWith('http://localhost:') ||
-          incoming.startsWith('http://127.0.0.1:')
+          incoming.startsWith('http://127.0.0.1:') ||
+          /^http:\/\/(10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/.test(incoming)
         ) {
           callback(null, incoming);
           return;

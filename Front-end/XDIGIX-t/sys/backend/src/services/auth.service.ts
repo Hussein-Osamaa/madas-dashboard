@@ -37,15 +37,20 @@ export async function login(email: string, password: string): Promise<LoginResul
   if (!valid) return null;
 
   const uid = user.uid;
-  const payload = { sub: uid, email: user.email, type: user.type, businessId: user.businessId, tenantId: user.tenantId };
+  const accountType = user.type === 'super_admin' ? 'ADMIN' : 'CLIENT';
+  const payload = {
+    sub: uid, userId: uid, email: user.email,
+    type: user.type, accountType, role: user.type,
+    businessId: user.businessId, tenantId: user.tenantId,
+  };
   const options: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'] };
   const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, options);
 
   const refreshTokenValue = uuidv4();
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await RefreshToken.create({
     userId: uid,
-    accountType: 'CLIENT',
+    accountType: accountType as 'CLIENT' | 'ADMIN',
     token: refreshTokenValue,
     expiresAt: refreshExpires,
   });
@@ -98,7 +103,12 @@ export async function refreshAccessToken(refreshTokenValue: string): Promise<{ a
   const user = await User.findOne({ uid: tokenDoc.userId });
   if (!user) return null;
 
-  const payload = { sub: user.uid, email: user.email, type: user.type, businessId: user.businessId, tenantId: user.tenantId };
+  const at = user.type === 'super_admin' ? 'ADMIN' : 'CLIENT';
+  const payload = {
+    sub: user.uid, userId: user.uid, email: user.email,
+    type: user.type, accountType: at, role: user.type,
+    businessId: user.businessId, tenantId: user.tenantId,
+  };
   const options: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'] };
   const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, options);
 
@@ -185,19 +195,26 @@ export async function requestPasswordReset(email: string, resetBaseUrl?: string)
 
   const transporter = await getSmtpTransporter();
   if (transporter) {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@xdigix.com',
-      to: normalizedEmail,
-      subject: 'Password Reset - XDIGIX',
-      html: `
-        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-          <h2 style="color: #1a1b3e;">Password Reset</h2>
-          <p>You requested a password reset. Click the button below to set a new password:</p>
-          <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background: #2d5a27; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Reset Password</a>
-          <p style="margin-top: 16px; font-size: 14px; color: #666;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-        </div>
-      `,
-    });
+    const fromAddr = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@xdigix.com';
+    try {
+      await transporter.sendMail({
+        from: `XDIGIX <${fromAddr}>`,
+        to: normalizedEmail,
+        subject: 'Password Reset - XDIGIX',
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+            <h2 style="color: #1a1b3e;">Password Reset</h2>
+            <p>You requested a password reset. Click the button below to set a new password:</p>
+            <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background: #2d5a27; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Reset Password</a>
+            <p style="margin-top: 16px; font-size: 14px; color: #666;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+          </div>
+        `,
+      });
+      console.log(`[Auth] Password reset email sent to ${normalizedEmail}`);
+    } catch (emailErr) {
+      console.error('[Auth] SMTP send failed:', emailErr);
+      console.log(`[Auth] Fallback reset link: ${resetLink}`);
+    }
   } else {
     console.log(`[Auth] Password reset link (SMTP not configured): ${resetLink}`);
   }

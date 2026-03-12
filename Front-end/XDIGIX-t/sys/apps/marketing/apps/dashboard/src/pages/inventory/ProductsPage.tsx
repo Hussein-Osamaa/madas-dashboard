@@ -60,10 +60,9 @@ const ProductsPage = () => {
   // Fetch orders to get pending orders count
   const { orders } = useOrders(effectiveBusinessId);
   
-  // Calculate pending orders stats
   const pendingOrdersStats = useMemo(() => {
-    const pendingOrders = orders.filter((order) => 
-      order.status === 'pending' || order.status === 'processing'
+    const pendingOrders = orders.filter((order) =>
+      (order.status === 'pending' || order.status === 'processing') && order.customerName
     );
     const pendingItems = pendingOrders.reduce((total, order) => {
       const items = order.items || [];
@@ -88,6 +87,7 @@ const ProductsPage = () => {
   const [processingBulkAction, setProcessingBulkAction] = useState(false);
   const [removingDuplicates, setRemovingDuplicates] = useState(false);
   const [inventorySource, setInventorySource] = useState<'mine' | 'xdf'>('mine');
+  const [statFilter, setStatFilter] = useState<import('../../components/inventory/InventoryStats').StatFilter>('all');
   const [xdfPricingProduct, setXdfPricingProduct] = useState<Product | null>(null);
   const [xdfPricingSubmitting, setXdfPricingSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,9 +130,26 @@ const ProductsPage = () => {
   }, [products, warehouseFilter]);
 
   const filteredProducts = useMemo(() => {
+    let list = productsScopedToWarehouse;
+
+    // Apply stat filter
+    if (statFilter === 'low_stock') {
+      list = list.filter((p) => {
+        const stock = p.stock ?? {};
+        const total = Object.values(stock).reduce((a, b) => a + b, 0);
+        const threshold = p.lowStockAlert ?? 10;
+        return total > 0 && Object.values(stock).some((qty) => qty <= threshold);
+      });
+    } else if (statFilter === 'out_of_stock') {
+      list = list.filter((p) => {
+        const stock = p.stock ?? {};
+        return Object.values(stock).reduce((a, b) => a + b, 0) <= 0;
+      });
+    }
+
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return productsScopedToWarehouse;
-    return productsScopedToWarehouse.filter((product) => {
+    if (!term) return list;
+    return list.filter((product) => {
       const haystacks: Array<string | undefined> = [
         product.name,
         product.description,
@@ -149,7 +166,7 @@ const ProductsPage = () => {
       ];
       return haystacks.some((value) => value && value.toLowerCase().includes(term));
     });
-  }, [productsScopedToWarehouse, searchTerm, warehouseLookup]);
+  }, [productsScopedToWarehouse, searchTerm, warehouseLookup, statFilter]);
 
   const linkedProductsAsProduct = useMemo(() => {
     if (!linkedInventory?.products?.length) return [];
@@ -163,18 +180,36 @@ const ProductsPage = () => {
         return name.includes(term) || sku.includes(term) || barcode.includes(term);
       });
     }
-    return list.map((p) => ({
+    let mapped = list.map((p) => ({
       id: p.id,
       name: p.name ?? '',
-      description: '',
-      price: 0,
+      description: (p as Record<string, unknown>).description as string ?? '',
+      price: (p as Record<string, unknown>).price as number ?? 0,
+      sellingPrice: (p as Record<string, unknown>).sellingPrice as number | undefined,
       sku: p.sku ?? '',
       barcode: p.barcode,
+      images: (p as Record<string, unknown>).images as string[] | undefined,
       stock: p.stock ?? {},
       sizeBarcodes: p.sizeBarcodes ?? {},
-      stockByLocation: {}
+      stockByLocation: {},
     })) as Product[];
-  }, [linkedInventory, searchTerm]);
+
+    if (statFilter === 'low_stock') {
+      mapped = mapped.filter((p) => {
+        const stock = p.stock ?? {};
+        const total = Object.values(stock).reduce((a, b) => a + b, 0);
+        const threshold = p.lowStockAlert ?? 10;
+        return total > 0 && Object.values(stock).some((qty) => qty <= threshold);
+      });
+    } else if (statFilter === 'out_of_stock') {
+      mapped = mapped.filter((p) => {
+        const stock = p.stock ?? {};
+        return Object.values(stock).reduce((a, b) => a + b, 0) <= 0;
+      });
+    }
+
+    return mapped;
+  }, [linkedInventory, searchTerm, statFilter]);
 
   const isLinkedView = inventorySource === 'xdf' || warehouseFilter === 'xdf';
   const displayProducts = isLinkedView ? linkedProductsAsProduct : filteredProducts;
@@ -185,9 +220,32 @@ const ProductsPage = () => {
   );
 
   const filteredTotals = useMemo(
-    () => (isLinkedView ? { totalProducts: displayProducts.length, totalStock: 0, lowStock: 0, outOfStock: 0, totalValue: 0 } : calculateInventoryTotals(filteredProducts)),
-    [isLinkedView, displayProducts, filteredProducts]
+    () => calculateInventoryTotals(displayProducts),
+    [displayProducts]
   );
+
+  const valueBreakdown = useMemo(() => {
+    let inStockVal = 0, lowStockVal = 0, outOfStockVal = 0;
+    displayProducts.forEach((p) => {
+      const locationValues = Object.values(p.stockByLocation ?? {});
+      const sizeValues = Object.values(p.stock ?? {});
+      const hasLocation = locationValues.length > 0;
+      const hasSizes = sizeValues.length > 0;
+      const sum = hasLocation ? locationValues.reduce((a, b) => a + b, 0) : hasSizes ? sizeValues.reduce((a, b) => a + b, 0) : 0;
+      const val = (p.price ?? 0) * sum;
+      const minVals = hasLocation ? locationValues : hasSizes ? sizeValues : [sum];
+      const minStock = minVals.length > 0 ? minVals.reduce((a, b) => Math.min(a, b), Infinity) : sum;
+      const threshold = p.lowStockAlert ?? 10;
+      if (sum <= 0) outOfStockVal += val;
+      else if (minStock <= threshold) lowStockVal += val;
+      else inStockVal += val;
+    });
+    return [
+      { label: 'In Stock', value: inStockVal },
+      { label: 'Low Stock', value: lowStockVal },
+      { label: 'Out of Stock', value: outOfStockVal },
+    ];
+  }, [displayProducts]);
 
   const toggleSelection = (productId: string, checked: boolean) => {
     setSelected((prev) => ({ ...prev, [productId]: checked }));
@@ -246,7 +304,6 @@ const ProductsPage = () => {
   };
 
   const handleExportExcel = async (withImages: boolean = false) => {
-    if (isLinkedView) return;
     const selectedProductsList = displayProducts.filter((p) => selected[p.id]);
     const productsToExport = selectedProductsList.length > 0 ? selectedProductsList : displayProducts;
     
@@ -625,11 +682,11 @@ const ProductsPage = () => {
       setProcessingBulkAction(true);
       await Promise.all(
         selectedIds.map((id) => {
-          const product = products.find((p) => p.id === id);
-          if (product) {
+          const ownProduct = products.find((p) => p.id === id);
+          if (ownProduct) {
             const payload = priceType === 'price' 
-              ? { ...product, price: newPrice }
-              : { ...product, sellingPrice: newPrice };
+              ? { ...ownProduct, price: newPrice }
+              : { ...ownProduct, sellingPrice: newPrice };
             return updateProduct({
               productId: id,
               payload
@@ -637,9 +694,16 @@ const ProductsPage = () => {
               console.error('[ProductsPage] Failed to update product:', error);
             });
           }
+          const linkedProduct = linkedProductsAsProduct.find((p) => p.id === id);
+          if (linkedProduct) {
+            return updateLinkedProductImagePricing(id, { [priceType]: newPrice }).catch((error) => {
+              console.error('[ProductsPage] Failed to update linked product:', error);
+            });
+          }
           return Promise.resolve();
         })
       );
+      if (isLinkedView) await refetchLinkedInventory();
       setSelected({});
       setBulkActionsModalOpen(false);
     } catch (error) {
@@ -689,8 +753,7 @@ const ProductsPage = () => {
     setBarcodePrintModalOpen(true);
   };
 
-  // Get selected products for barcode printing
-  const selectedProducts = products.filter((p) => selected[p.id]);
+  const selectedProducts = displayProducts.filter((p) => selected[p.id]);
 
   if (loading) {
     return <FullScreenLoader message="Loading business context..." />;
@@ -844,7 +907,7 @@ const ProductsPage = () => {
             type="button"
             className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-madas-text/70 hover:bg-base transition-colors disabled:opacity-60"
               onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-              disabled={exporting || displayProducts.length === 0 || isLinkedView}
+              disabled={exporting || displayProducts.length === 0}
           >
             <span className="material-icons text-base text-current">
               {exporting ? 'hourglass_empty' : 'download'}
@@ -909,6 +972,9 @@ const ProductsPage = () => {
         totalValue={filteredTotals.totalValue}
         pendingOrders={pendingOrdersStats.count}
         pendingItems={pendingOrdersStats.items}
+        activeFilter={statFilter}
+        onFilterChange={setStatFilter}
+        valueBreakdown={valueBreakdown}
       />
 
       <section className="rounded-xl border border-dashed border-gray-200 bg-base/40 px-4 py-3 text-sm text-madas-text/70 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -923,8 +989,6 @@ const ProductsPage = () => {
               }
             }}
             onChange={(event) => handleSelectAll(event.target.checked)}
-            disabled={isLinkedView}
-            title={isLinkedView ? 'Selection disabled for linked inventory' : undefined}
           />
           <span>{selectedCount} selected</span>
         </div>
@@ -933,7 +997,7 @@ const ProductsPage = () => {
           <button
             type="button"
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-madas-text/70 hover:bg-base transition-colors disabled:opacity-60"
-            disabled={selectedCount === 0 || !canEdit || isLinkedView}
+            disabled={selectedCount === 0 || (!canEdit && !isLinkedView)}
             onClick={handleBulkActions}
           >
             Bulk Actions
@@ -941,7 +1005,7 @@ const ProductsPage = () => {
           <button
             type="button"
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-madas-text/70 hover:bg-base transition-colors disabled:opacity-60"
-            disabled={selectedCount === 0 || isLinkedView}
+            disabled={selectedCount === 0}
             onClick={handlePrintBarcodes}
           >
             Print Barcodes

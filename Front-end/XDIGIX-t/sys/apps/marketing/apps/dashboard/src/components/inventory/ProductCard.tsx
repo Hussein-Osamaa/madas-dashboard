@@ -36,7 +36,16 @@ const ProductCard = ({ product, selected, viewMode, onSelect, onEdit, onDelete, 
       <header className="flex flex-col gap-1 bg-transparent">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-primary">{product.name || 'Unnamed Product'}</h3>
-          <span className="text-primary font-semibold">{formatCurrency(product.price ?? 0)}</span>
+          <span className="text-primary font-semibold">
+            {product.sellingPrice && product.sellingPrice !== product.price ? (
+              <>
+                {formatCurrency(product.sellingPrice)}
+                <span className="ml-1 text-xs text-madas-text/40 line-through">{formatCurrency(product.price ?? 0)}</span>
+              </>
+            ) : (
+              formatCurrency(product.price ?? 0)
+            )}
+          </span>
         </div>
         <p className="text-sm text-madas-text/70">{product.description || 'No description'}</p>
       </header>
@@ -111,16 +120,14 @@ const ProductCard = ({ product, selected, viewMode, onSelect, onEdit, onDelete, 
           : 'px-6 py-5 space-y-4'
       )}
     >
-      {!readOnly && (
-        <div className="absolute top-3 left-3">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-accent bg-white checked:bg-primary checked:border-primary"
-            checked={selected}
-            onChange={(event) => onSelect(event.target.checked)}
-          />
-        </div>
-      )}
+      <div className="absolute top-3 left-3">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-accent bg-white checked:bg-primary checked:border-primary"
+          checked={selected}
+          onChange={(event) => onSelect(event.target.checked)}
+        />
+      </div>
 
       {viewMode === 'list' ? (
         <>
@@ -142,9 +149,18 @@ const ProductCard = ({ product, selected, viewMode, onSelect, onEdit, onDelete, 
         </>
       ) : (
         <div className="mt-6 space-y-4">
-            {details}
-            {actions}
-          </div>
+          {product.images && product.images.length > 0 && (
+            <div className="w-full aspect-[4/3] rounded-lg bg-base overflow-hidden">
+              <img
+                src={product.images[0]}
+                alt={product.name || 'Product'}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          {details}
+          {actions}
+        </div>
       )}
     </article>
   );
