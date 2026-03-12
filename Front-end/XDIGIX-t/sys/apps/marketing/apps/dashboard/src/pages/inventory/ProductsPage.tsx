@@ -43,8 +43,10 @@ const ProductsPage = () => {
   
   const { warehouses, refetch: refetchWarehouses } = useWarehouses(effectiveBusinessId);
   const { formatCurrency } = useCurrency();
-  const { data: linkedInventory, isLoading: linkedLoading, refetch: refetchLinkedInventory } = useLinkedInventory(!!effectiveBusinessId);
+  const { data: linkedInventory, isLoading: linkedLoading, error: linkedError, refetch: refetchLinkedInventory } = useLinkedInventory(!!effectiveBusinessId);
   const { subscribed: fulfillmentSubscribed } = useFulfillmentSubscription(!!effectiveBusinessId);
+  const hasLinkedProducts = (linkedInventory?.products?.length ?? 0) > 0;
+  const effectivelySubscribed = fulfillmentSubscribed || hasLinkedProducts;
   const {
     products,
     isLoading,
@@ -1011,10 +1013,22 @@ const ProductsPage = () => {
               <>
                 <span className="material-icons text-4xl text-madas-text/30">inventory_2</span>
                 <p className="text-sm text-madas-text/70">
-                  {fulfillmentSubscribed
-                    ? 'No linked inventory products.'
-                    : 'Your business must be subscribed to the fulfillment service to view XDF (linked) inventory. Contact your administrator or support to enable it.'}
+                  {linkedError
+                    ? 'Unable to load linked inventory. Please try again later.'
+                    : effectivelySubscribed
+                      ? 'No linked inventory products.'
+                      : 'Your business must be subscribed to the fulfillment service to view XDF (linked) inventory. Contact your administrator or support to enable it.'}
                 </p>
+                {linkedError && (
+                  <button
+                    type="button"
+                    className="mx-auto flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-madas-text hover:bg-base transition-colors"
+                    onClick={() => refetchLinkedInventory()}
+                  >
+                    <span className="material-icons text-sm">refresh</span>
+                    Retry
+                  </button>
+                )}
               </>
             ) : searchTerm ? (
               <>

@@ -51,6 +51,7 @@ import RegisterPage from './pages/ecommerce/RegisterPage';
 import RolesPage from './pages/rbac/RolesPage';
 import UsersPage from './pages/rbac/UsersPage';
 import SetupPasswordPage from './pages/auth/SetupPasswordPage';
+import ResetPasswordPage from './pages/core/ResetPasswordPage';
 import DiscountsPage from './pages/marketing/DiscountsPage';
 import PricingPage from './pages/marketing/PricingPage';
 
@@ -268,6 +269,10 @@ export const router = createBrowserRouter([
   {
     path: '/setup-password',
     element: <SetupPasswordPage />
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />
   },
   {
     path: '/no-access',

@@ -293,8 +293,13 @@ export function onAuthStateChanged(_auth: typeof auth, cb: (user: BackendUser | 
 }
 
 export async function sendPasswordResetEmail(_auth: typeof auth, email: string) {
-  console.warn('[Backend] Password reset not implemented');
-  throw new Error('Password reset not available with backend API');
+  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error || 'Failed to send reset email');
 }
 
 // ---------------------------------------------------------------------------
@@ -551,14 +556,23 @@ export type LinkedInventoryResponse = {
   products: LinkedInventoryProduct[];
 };
 
+function getClientIdParam(): string {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('business') || '';
+}
+
 export async function fetchLinkedInventory(): Promise<LinkedInventoryResponse> {
-  return fetchApi<LinkedInventoryResponse>('/client/warehouse/linked-inventory');
+  const cid = getClientIdParam();
+  const qs = cid ? `?clientId=${encodeURIComponent(cid)}` : '';
+  return fetchApi<LinkedInventoryResponse>(`/client/warehouse/linked-inventory${qs}`);
 }
 
 export type FulfillmentStatusResponse = { subscribed: boolean };
 
 export async function fetchFulfillmentStatus(): Promise<FulfillmentStatusResponse> {
-  return fetchApi<FulfillmentStatusResponse>('/client/warehouse/fulfillment-status');
+  const cid = getClientIdParam();
+  const qs = cid ? `?clientId=${encodeURIComponent(cid)}` : '';
+  return fetchApi<FulfillmentStatusResponse>(`/client/warehouse/fulfillment-status${qs}`);
 }
 
 export type UpdateLinkedProductImagePricingPayload = {
@@ -571,7 +585,9 @@ export async function updateLinkedProductImagePricing(
   productId: string,
   payload: UpdateLinkedProductImagePricingPayload
 ): Promise<void> {
-  await fetchApi(`/client/warehouse/products/${encodeURIComponent(productId)}`, {
+  const cid = getClientIdParam();
+  const qs = cid ? `?clientId=${encodeURIComponent(cid)}` : '';
+  await fetchApi(`/client/warehouse/products/${encodeURIComponent(productId)}${qs}`, {
     method: 'PATCH',
     body: JSON.stringify(payload)
   });

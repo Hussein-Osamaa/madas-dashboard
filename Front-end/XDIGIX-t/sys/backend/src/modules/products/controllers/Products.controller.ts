@@ -188,15 +188,31 @@ export async function listLinkedInventory(req: Request, res: Response): Promise<
 
 /**
  * GET /client/warehouse/fulfillment-status - Whether the client is subscribed to fulfillment service (XDF)
+ *
+ * Checks two signals:
+ *  1. The `features.fulfillment` flag on the Business document
+ *  2. Whether any XDF products actually exist for this client (fallback – if products
+ *     were added from the fulfillment inventory the client is effectively subscribed)
  */
 export async function fulfillmentStatus(req: Request, res: Response): Promise<void> {
   const clientId = req.clientId!;
+
   const business = await Business.findOne({ businessId: clientId }).select('features').lean();
   const features = (business?.features as Record<string, unknown>) ?? {};
-  const subscribed =
+  let subscribed =
     features.fulfillment === true ||
     features.fulfillment_service === true ||
     features.fulfillmentService === true;
+
+  if (!subscribed) {
+    const xdfCount = await FirestoreDoc.countDocuments({
+      businessId: clientId,
+      coll: 'products',
+      'data.inventorySource': XDF_SOURCE,
+    });
+    subscribed = xdfCount > 0;
+  }
+
   res.json({ subscribed: !!subscribed });
 }
 

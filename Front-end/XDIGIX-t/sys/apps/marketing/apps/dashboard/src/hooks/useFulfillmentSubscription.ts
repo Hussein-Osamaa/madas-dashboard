@@ -7,17 +7,19 @@ const useBackend = !!import.meta.env.VITE_API_BACKEND_URL;
 export function useFulfillmentSubscription(enabledWhenBusinessReady = true): {
   subscribed: boolean;
   isLoading: boolean;
+  error: Error | null;
 } {
   const query = useQuery({
     queryKey: ['fulfillmentStatus'],
     queryFn: fetchFulfillmentStatus,
     enabled: useBackend && enabledWhenBusinessReady,
     staleTime: 60_000,
-    retry: false
+    retry: 1
   });
 
   return {
     subscribed: useBackend && query.data?.subscribed === true,
-    isLoading: useBackend && query.isLoading
+    isLoading: useBackend && query.isLoading,
+    error: query.error as Error | null
   };
 }

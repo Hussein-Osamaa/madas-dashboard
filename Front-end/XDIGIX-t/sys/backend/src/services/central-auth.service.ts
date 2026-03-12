@@ -283,12 +283,26 @@ export async function exchangeFirebaseForAdminToken(
 /** Verify token and return extended payload */
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, config.jwt.accessSecret as jwt.Secret) as JWTPayload & { sub?: string };
+    const decoded = jwt.verify(token, config.jwt.accessSecret as jwt.Secret) as
+      JWTPayload & { sub?: string; type?: string };
+
+    const userId = decoded.userId ?? decoded.sub;
+    if (!userId) return null;
+
+    // Derive accountType from legacy `type` field when `accountType` is absent
+    let accountType: AccountType | undefined = decoded.accountType;
+    const legacyType = decoded.type ?? decoded.role;
+    if (!accountType && legacyType) {
+      if (legacyType === 'super_admin') accountType = 'ADMIN';
+      else if (['warehouse_staff', 'internal_staff'].includes(legacyType)) accountType = 'STAFF';
+      else accountType = 'CLIENT';
+    }
+
     return {
-      userId: decoded.userId ?? decoded.sub,
-      accountType: decoded.accountType,
+      userId,
+      accountType: accountType as AccountType,
       email: decoded.email,
-      role: decoded.role,
+      role: decoded.role ?? legacyType,
       department: decoded.department,
       allowedApps: decoded.allowedApps,
       permissions: decoded.permissions,

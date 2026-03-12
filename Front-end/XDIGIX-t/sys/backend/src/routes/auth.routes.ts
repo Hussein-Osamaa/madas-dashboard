@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { login, signup, refreshAccessToken, logout } from '../services/auth.service';
+import { login, signup, refreshAccessToken, logout, requestPasswordReset, resetPasswordWithToken } from '../services/auth.service';
 import {
   loginClient,
   loginStaff,
@@ -149,6 +149,41 @@ router.post('/logout', centralJwtMiddleware, async (req: Request, res: Response)
   // If we stored refresh token in body or cookie, we'd invalidate it here
   res.json({ success: true });
 });
+
+/** POST /auth/forgot-password - Request password reset email */
+router.post(
+  '/forgot-password',
+  [body('email').isEmail().normalizeEmail()],
+  validate,
+  async (req: Request, res: Response) => {
+    try {
+      await requestPasswordReset(req.body.email, req.body.resetBaseUrl);
+      res.json({ success: true, message: 'If an account exists with that email, a reset link has been sent.' });
+    } catch (err) {
+      console.error('[Auth] Password reset request error:', err);
+      res.json({ success: true, message: 'If an account exists with that email, a reset link has been sent.' });
+    }
+  }
+);
+
+/** POST /auth/reset-password - Reset password with token */
+router.post(
+  '/reset-password',
+  [
+    body('token').isString().notEmpty(),
+    body('email').isEmail().normalizeEmail(),
+    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  ],
+  validate,
+  async (req: Request, res: Response) => {
+    const result = await resetPasswordWithToken(req.body.token, req.body.email, req.body.password);
+    if (!result.success) {
+      res.status(400).json({ error: result.error, code: 'auth/reset-failed' });
+      return;
+    }
+    res.json({ success: true, message: 'Password has been reset successfully.' });
+  }
+);
 
 router.get('/me', centralJwtMiddleware, async (req: Request, res: Response) => {
   const payload = req.accountPayload ?? req.user;

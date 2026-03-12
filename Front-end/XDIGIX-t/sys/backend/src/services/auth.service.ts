@@ -137,3 +137,109 @@ export async function getEffectiveTenantId(uid: string): Promise<string | null> 
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Password reset
+// ---------------------------------------------------------------------------
+import nodemailer from 'nodemailer';
+import { PasswordResetToken, generateResetToken } from '../schemas/password-reset-token.schema';
+import { AdminUser } from '../schemas/admin-user.schema';
+
+const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+
+async function getSmtpTransporter() {
+  const host = process.env.SMTP_HOST;
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+}
+
+/**
+ * Request a password reset. Sends an email with a reset link.
+ * Always returns success (even if email not found) to prevent user enumeration.
+ */
+export async function requestPasswordReset(email: string, resetBaseUrl?: string): Promise<void> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const user = await User.findOne({ email: normalizedEmail });
+  const adminUser = !user ? await AdminUser.findOne({ email: normalizedEmail }) : null;
+  if (!user && !adminUser) return; // silent – don't reveal that the email doesn't exist
+
+  // Invalidate any existing tokens for this email
+  await PasswordResetToken.updateMany({ email: normalizedEmail, used: false }, { $set: { used: true } });
+
+  const token = generateResetToken();
+  await PasswordResetToken.create({
+    email: normalizedEmail,
+    token,
+    expiresAt: new Date(Date.now() + RESET_TOKEN_EXPIRY_MS),
+  });
+
+  const baseUrl = resetBaseUrl
+    || process.env.FRONTEND_URL
+    || process.env.DASHBOARD_URL
+    || 'https://xdigix-os.vercel.app/dashboard';
+  const resetLink = `${baseUrl.replace(/\/$/, '')}/reset-password?token=${token}&email=${encodeURIComponent(normalizedEmail)}`;
+
+  const transporter = await getSmtpTransporter();
+  if (transporter) {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'noreply@xdigix.com',
+      to: normalizedEmail,
+      subject: 'Password Reset - XDIGIX',
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #1a1b3e;">Password Reset</h2>
+          <p>You requested a password reset. Click the button below to set a new password:</p>
+          <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background: #2d5a27; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">Reset Password</a>
+          <p style="margin-top: 16px; font-size: 14px; color: #666;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+        </div>
+      `,
+    });
+  } else {
+    console.log(`[Auth] Password reset link (SMTP not configured): ${resetLink}`);
+  }
+}
+
+/**
+ * Reset password using a valid token.
+ */
+export async function resetPasswordWithToken(
+  token: string,
+  email: string,
+  newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const resetDoc = await PasswordResetToken.findOne({ token, email: normalizedEmail, used: false });
+  if (!resetDoc) return { success: false, error: 'Invalid or expired reset link' };
+  if (resetDoc.expiresAt < new Date()) {
+    resetDoc.used = true;
+    await resetDoc.save();
+    return { success: false, error: 'Reset link has expired' };
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  // Try User collection first, then AdminUser
+  const user = await User.findOne({ email: normalizedEmail });
+  if (user) {
+    user.passwordHash = passwordHash;
+    await user.save();
+  } else {
+    const admin = await AdminUser.findOne({ email: normalizedEmail });
+    if (admin) {
+      admin.passwordHash = passwordHash;
+      await admin.save();
+    } else {
+      return { success: false, error: 'Account not found' };
+    }
+  }
+
+  resetDoc.used = true;
+  await resetDoc.save();
+
+  return { success: true };
+}

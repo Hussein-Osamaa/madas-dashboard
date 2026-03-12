@@ -15,7 +15,7 @@ export function useLinkedInventory(enabledWhenBusinessReady = true): {
     queryFn: fetchLinkedInventory,
     enabled: useBackend && enabledWhenBusinessReady,
     staleTime: 60_000,
-    retry: false
+    retry: 1
   });
 
   return {
