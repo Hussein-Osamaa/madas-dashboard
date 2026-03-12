@@ -26,7 +26,18 @@ function warehouseHistoryFallback() {
 export default defineConfig({
   plugins: [react(), warehouseHistoryFallback()],
   base: '/warehouse/',
-  build: { sourcemap: true, chunkSizeWarningLimit: 1000 },
+  build: {
+    sourcemap: true,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+        },
+      },
+    },
+  },
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },

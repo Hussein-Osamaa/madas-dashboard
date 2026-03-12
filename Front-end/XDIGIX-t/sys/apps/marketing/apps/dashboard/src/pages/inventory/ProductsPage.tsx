@@ -90,6 +90,8 @@ const ProductsPage = () => {
   const [statFilter, setStatFilter] = useState<import('../../components/inventory/InventoryStats').StatFilter>('all');
   const [xdfPricingProduct, setXdfPricingProduct] = useState<Product | null>(null);
   const [xdfPricingSubmitting, setXdfPricingSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 30;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -213,6 +215,14 @@ const ProductsPage = () => {
 
   const isLinkedView = inventorySource === 'xdf' || warehouseFilter === 'xdf';
   const displayProducts = isLinkedView ? linkedProductsAsProduct : filteredProducts;
+
+  const totalPages = Math.max(1, Math.ceil(displayProducts.length / PAGE_SIZE));
+  const paginatedProducts = useMemo(
+    () => displayProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [displayProducts, currentPage]
+  );
+
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, warehouseFilter, inventorySource, statFilter]);
 
   const selectedCount = useMemo(
     () => displayProducts.filter((product) => selected[product.id]).length,
@@ -1125,7 +1135,7 @@ const ProductsPage = () => {
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {displayProducts.map((product) => (
+          {paginatedProducts.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
@@ -1141,7 +1151,7 @@ const ProductsPage = () => {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {displayProducts.map((product) => (
+          {paginatedProducts.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
@@ -1155,6 +1165,54 @@ const ProductsPage = () => {
             />
           ))}
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-between pt-2 pb-4">
+          <span className="text-sm text-madas-text/60">
+            Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, displayProducts.length)} of {displayProducts.length} products
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-madas-text hover:bg-base transition-colors disabled:opacity-40"
+            >
+              <span className="material-icons text-base">chevron_left</span>
+            </button>
+            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+              let page: number;
+              if (totalPages <= 7) { page = i + 1; }
+              else if (currentPage <= 4) { page = i + 1; }
+              else if (currentPage >= totalPages - 3) { page = totalPages - 6 + i; }
+              else { page = currentPage - 3 + i; }
+              return (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPage(page)}
+                  className={clsx(
+                    'inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm transition-colors min-w-[36px]',
+                    page === currentPage
+                      ? 'bg-primary text-white'
+                      : 'border border-gray-200 text-madas-text hover:bg-base'
+                  )}
+                >
+                  {page}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-madas-text hover:bg-base transition-colors disabled:opacity-40"
+            >
+              <span className="material-icons text-base">chevron_right</span>
+            </button>
+          </div>
+        </nav>
       )}
 
       <ProductModal

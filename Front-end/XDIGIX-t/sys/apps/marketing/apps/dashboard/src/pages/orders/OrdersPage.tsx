@@ -124,6 +124,8 @@ const OrdersPage = () => {
   const [scanning, setScanning] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [ordersPage, setOrdersPage] = useState(1);
+  const ORDERS_PAGE_SIZE = 25;
   const [sendingToBosta, setSendingToBosta] = useState<string | null>(null);
   const [bostaModalOpen, setBostaModalOpen] = useState(false);
   const [selectedOrderForBosta, setSelectedOrderForBosta] = useState<Order | null>(null);
@@ -181,6 +183,13 @@ const OrdersPage = () => {
       return matchesStatus && matchesSearch && matchesStart && matchesEnd;
     });
   }, [orders, statusFilter, searchTerm, startDate, endDate]);
+
+  const ordersTotalPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PAGE_SIZE));
+  const paginatedOrders = useMemo(
+    () => filteredOrders.slice((ordersPage - 1) * ORDERS_PAGE_SIZE, ordersPage * ORDERS_PAGE_SIZE),
+    [filteredOrders, ordersPage]
+  );
+  useEffect(() => { setOrdersPage(1); }, [statusFilter, searchTerm, startDate, endDate]);
 
   const openCreateModal = () => {
     setEditingOrder(null);
@@ -1545,7 +1554,7 @@ ${JSON.stringify(bostaData, null, 2)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredOrders.map((order) => {
+                {paginatedOrders.map((order) => {
                   const statusStyles: Record<OrderStatus, string> = {
                     pending: 'bg-orange-100 text-orange-600',
                     preparing_for_pickup: 'bg-amber-100 text-amber-700',
@@ -1726,6 +1735,54 @@ ${JSON.stringify(bostaData, null, 2)}
               </tbody>
             </table>
           </div>
+
+          {ordersTotalPages > 1 && (
+            <nav className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+              <span className="text-sm text-madas-text/60">
+                Showing {(ordersPage - 1) * ORDERS_PAGE_SIZE + 1}–{Math.min(ordersPage * ORDERS_PAGE_SIZE, filteredOrders.length)} of {filteredOrders.length} orders
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={ordersPage <= 1}
+                  onClick={() => setOrdersPage((p) => Math.max(1, p - 1))}
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-madas-text hover:bg-base transition-colors disabled:opacity-40"
+                >
+                  <span className="material-icons text-base">chevron_left</span>
+                </button>
+                {Array.from({ length: Math.min(ordersTotalPages, 7) }, (_, i) => {
+                  let page: number;
+                  if (ordersTotalPages <= 7) { page = i + 1; }
+                  else if (ordersPage <= 4) { page = i + 1; }
+                  else if (ordersPage >= ordersTotalPages - 3) { page = ordersTotalPages - 6 + i; }
+                  else { page = ordersPage - 3 + i; }
+                  return (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setOrdersPage(page)}
+                      className={clsx(
+                        'inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm transition-colors min-w-[36px]',
+                        page === ordersPage
+                          ? 'bg-primary text-white'
+                          : 'border border-gray-200 text-madas-text hover:bg-base'
+                      )}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  disabled={ordersPage >= ordersTotalPages}
+                  onClick={() => setOrdersPage((p) => Math.min(ordersTotalPages, p + 1))}
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-madas-text hover:bg-base transition-colors disabled:opacity-40"
+                >
+                  <span className="material-icons text-base">chevron_right</span>
+                </button>
+              </div>
+            </nav>
+          )}
         </div>
       )}
 

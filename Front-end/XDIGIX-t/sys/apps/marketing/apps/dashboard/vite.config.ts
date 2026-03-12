@@ -7,7 +7,16 @@ export default defineConfig({
   plugins: [react()],
   build: {
     sourcemap: true,
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          'vendor-query': ['@tanstack/react-query'],
+        },
+      },
+    },
   },
   resolve: {
     alias: {

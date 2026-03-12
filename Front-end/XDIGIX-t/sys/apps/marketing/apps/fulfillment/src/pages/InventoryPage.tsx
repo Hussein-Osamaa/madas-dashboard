@@ -52,6 +52,43 @@ type RestockSession = {
   entries: Map<string, RestockEntry>;
 };
 
+const RESTOCK_STORAGE_KEY = 'xdf_restock_session';
+
+function saveRestockToStorage(session: RestockSession | null) {
+  if (!session) {
+    sessionStorage.removeItem(RESTOCK_STORAGE_KEY);
+    return;
+  }
+  const serializable = {
+    active: session.active,
+    clientId: session.clientId,
+    clientName: session.clientName,
+    startedAt: session.startedAt.toISOString(),
+    scannedBarcodes: session.scannedBarcodes,
+    entries: Array.from(session.entries.entries()),
+  };
+  sessionStorage.setItem(RESTOCK_STORAGE_KEY, JSON.stringify(serializable));
+}
+
+function loadRestockFromStorage(): RestockSession | null {
+  try {
+    const raw = sessionStorage.getItem(RESTOCK_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.active) return null;
+    return {
+      active: parsed.active,
+      clientId: parsed.clientId,
+      clientName: parsed.clientName,
+      startedAt: new Date(parsed.startedAt),
+      scannedBarcodes: parsed.scannedBarcodes ?? [],
+      entries: new Map(parsed.entries ?? []),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function InventoryPage() {
   const { user } = useStaffAuth();
   const isAdmin = user?.allowedApps?.includes('ADMIN') ?? false;
@@ -84,14 +121,23 @@ export default function InventoryPage() {
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('');
   const [productToDelete, setProductToDelete] = useState<ProductWithStock | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 30;
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [deletingBulk, setDeletingBulk] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Restock session state
-  const [restockSession, setRestockSession] = useState<RestockSession | null>(null);
+  // Restock session state — persisted to sessionStorage so it survives refresh
+  const [restockSession, setRestockSessionRaw] = useState<RestockSession | null>(loadRestockFromStorage);
+  const setRestockSession = useCallback((value: RestockSession | null | ((prev: RestockSession | null) => RestockSession | null)) => {
+    setRestockSessionRaw((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      saveRestockToStorage(next);
+      return next;
+    });
+  }, []);
   const [restockScanInput, setRestockScanInput] = useState('');
   const [restockLastScan, setRestockLastScan] = useState<{ barcode: string; matched: boolean; detail: string } | null>(null);
   const [restockSubmitting, setRestockSubmitting] = useState(false);
@@ -267,6 +313,14 @@ export default function InventoryPage() {
     });
   }, [products, searchTerm]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const paginatedProducts = useMemo(
+    () => filteredProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredProducts, currentPage]
+  );
+
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedClientId]);
+
   const selectedProducts = useMemo(
     () => filteredProducts.filter((p) => selectedIds.has(p.id)),
     [filteredProducts, selectedIds]
@@ -299,7 +353,11 @@ export default function InventoryPage() {
         if (cancelled) return;
         setClients(res.clients || []);
         if (res.clients?.length && !selectedClientId) {
-          setSelectedClientId(res.clients[0].id);
+          const restored = loadRestockFromStorage();
+          const restoredClient = restored?.clientId && res.clients.some((c: FulfillmentClient) => c.id === restored.clientId)
+            ? restored.clientId
+            : res.clients[0].id;
+          setSelectedClientId(restoredClient);
         }
       } catch (e) {
         if (!cancelled) setError((e as Error).message);
@@ -1049,7 +1107,7 @@ export default function InventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((p) => {
+                  {paginatedProducts.map((p) => {
                     const data = p as Record<string, unknown>;
                     const isSelected = selectedIds.has(p.id);
                     return (
@@ -1121,6 +1179,35 @@ export default function InventoryPage() {
                   })}
                 </tbody>
               </table>
+
+              {totalPages > 1 && (
+                <nav className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-white/10">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredProducts.length)} of {filteredProducts.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors disabled:opacity-40"
+                    >
+                      Prev
+                    </button>
+                    <span className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </nav>
+              )}
             </div>
           )}
         </div>

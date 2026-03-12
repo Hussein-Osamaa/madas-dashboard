@@ -1,19 +1,32 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { StaffAuthProvider, useStaffAuth } from './contexts/StaffAuthContext';
+import { useStaffAuth } from './contexts/StaffAuthContext';
 import Shell from './pages/Shell';
-import LoginPage from './pages/LoginPage';
-import OperationsPage from './pages/OperationsPage';
-import InventoryPage from './pages/InventoryPage';
-import AllOrdersPage from './pages/AllOrdersPage';
-import PendingOrdersPage from './pages/PendingOrdersPage';
-import ReadyForPickupPage from './pages/ReadyForPickupPage';
-import ShippingPage from './pages/ShippingPage';
-import WeeklyAuditScanPage from './pages/WeeklyAuditScanPage';
-import InventoryReportsPage from './pages/InventoryReportsPage';
-import ProductActivityLogPage from './pages/ProductActivityLogPage';
-import DashboardPage from './pages/DashboardPage';
-import SKUTimelinePage from './pages/SKUTimelinePage';
-import AuditComparisonPage from './pages/AuditComparisonPage';
+
+const Lazy = (factory: () => Promise<{ default: React.ComponentType }>) => {
+  const Component = lazy(factory);
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a0b1a] text-gray-500 dark:text-gray-400">Loading...</div>
+    }>
+      <Component />
+    </Suspense>
+  );
+};
+
+const LoginPage = () => import('./pages/LoginPage');
+const OperationsPage = () => import('./pages/OperationsPage');
+const DashboardPage = () => import('./pages/DashboardPage');
+const InventoryPage = () => import('./pages/InventoryPage');
+const AllOrdersPage = () => import('./pages/AllOrdersPage');
+const PendingOrdersPage = () => import('./pages/PendingOrdersPage');
+const ReadyForPickupPage = () => import('./pages/ReadyForPickupPage');
+const ShippingPage = () => import('./pages/ShippingPage');
+const WeeklyAuditScanPage = () => import('./pages/WeeklyAuditScanPage');
+const AuditComparisonPage = () => import('./pages/AuditComparisonPage');
+const InventoryReportsPage = () => import('./pages/InventoryReportsPage');
+const ProductActivityLogPage = () => import('./pages/ProductActivityLogPage');
+const SKUTimelinePage = () => import('./pages/SKUTimelinePage');
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useStaffAuth();
@@ -55,7 +68,7 @@ export const router = createBrowserRouter(
   [
     {
       path: '/login',
-      element: <LoginPage />,
+      element: Lazy(LoginPage),
     },
     {
       path: '/',
@@ -65,18 +78,18 @@ export const router = createBrowserRouter(
         </ProtectedRoute>
       ),
       children: [
-        { index: true, element: <OperationsPage /> },
-        { path: 'dashboard', element: <DashboardPage /> },
-        { path: 'inventory', element: <InventoryPage /> },
-        { path: 'fulfillment', element: <AllOrdersPage /> },
-        { path: 'pending-orders', element: <PendingOrdersPage /> },
-        { path: 'ready-for-pickup', element: <ReadyForPickupPage /> },
-        { path: 'shipping', element: <ShippingPage /> },
-        { path: 'audit', element: <WeeklyAuditScanPage /> },
-        { path: 'stock-audit', element: <AuditComparisonPage /> },
-        { path: 'reports', element: <InventoryReportsPage /> },
-        { path: 'sku-timeline', element: <SKUTimelinePage /> },
-        { path: 'activity-log', element: <AdminRoute><ProductActivityLogPage /></AdminRoute> },
+        { index: true, element: Lazy(OperationsPage) },
+        { path: 'dashboard', element: Lazy(DashboardPage) },
+        { path: 'inventory', element: Lazy(InventoryPage) },
+        { path: 'fulfillment', element: Lazy(AllOrdersPage) },
+        { path: 'pending-orders', element: Lazy(PendingOrdersPage) },
+        { path: 'ready-for-pickup', element: Lazy(ReadyForPickupPage) },
+        { path: 'shipping', element: Lazy(ShippingPage) },
+        { path: 'audit', element: Lazy(WeeklyAuditScanPage) },
+        { path: 'stock-audit', element: Lazy(AuditComparisonPage) },
+        { path: 'reports', element: Lazy(InventoryReportsPage) },
+        { path: 'sku-timeline', element: Lazy(SKUTimelinePage) },
+        { path: 'activity-log', element: <AdminRoute>{Lazy(ProductActivityLogPage)}</AdminRoute> },
       ],
     },
     { path: '*', element: <Navigate to="/" replace /> },

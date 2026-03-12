@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
 import { Product } from '../../services/productsService';
@@ -166,5 +167,5 @@ const ProductCard = ({ product, selected, viewMode, onSelect, onEdit, onDelete, 
   );
 };
 
-export default ProductCard;
+export default memo(ProductCard);
 

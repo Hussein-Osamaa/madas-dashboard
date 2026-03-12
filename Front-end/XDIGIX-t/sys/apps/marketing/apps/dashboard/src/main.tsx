@@ -13,7 +13,16 @@ import { initRbacApi } from '@shared/lib/rbacService';
 import { initPermissionsApi } from '@shared/lib/permissions';
 import { db, collection, query, where, getDocs, getDoc, doc } from './lib/firebase';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const useBackend = !!import.meta.env.VITE_API_BACKEND_URL;
 
