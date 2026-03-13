@@ -31,6 +31,7 @@ type PrintableLabel = {
 };
 
 export default function BarcodePrintModal({ open, onClose, products, brandName }: Props) {
+  const clientName = brandName || 'Labels';
   const [labelSize, setLabelSize] = useState<LabelSize>('50x40');
   const [showName, setShowName] = useState(true);
   const [showSize, setShowSize] = useState(true);
@@ -100,7 +101,7 @@ export default function BarcodePrintModal({ open, onClose, products, brandName }
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Print Barcode Labels</title>
+          <title>${clientName} - Barcodes ${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</title>
           <style>
             @page { size: ${size.width}mm ${size.height}mm; margin: 0; }
             * { margin: 0; padding: 0; box-sizing: border-box; }

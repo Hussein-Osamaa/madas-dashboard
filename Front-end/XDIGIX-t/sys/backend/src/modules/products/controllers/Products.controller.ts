@@ -91,7 +91,7 @@ const XDF_SOURCE = 'XDF'; // XDIGIX-FULFILLMENT – products added from fulfillm
  */
 export async function listProductsWithStock(
   clientId: string,
-  opts?: { fulfillmentOnly?: boolean }
+  opts?: { fulfillmentOnly?: boolean; skipAvailableStock?: boolean }
 ): Promise<Array<Record<string, unknown> & { id: string; availableStock?: number }>> {
   const productDocs = await FirestoreDoc.find({
     businessId: clientId,
@@ -113,7 +113,7 @@ export async function listProductsWithStock(
         : {};
       const data = typeof raw === 'object' && raw !== null ? raw : {};
       const productId = (doc as { docId: string }).docId;
-      const availableStock = await getAvailableStock(productId, clientId);
+      const availableStock = opts?.skipAvailableStock ? 0 : await getAvailableStock(productId, clientId);
       // Build stock: prefer data.stock, fallback to legacy sizeVariants so size variants always return
       let stockRaw: Record<string, unknown> =
         data.stock != null && typeof data.stock === 'object' && !Array.isArray(data.stock)
@@ -359,14 +359,21 @@ export async function updateProduct(clientId: string, productId: string, input: 
       ? { ...input.sizeBarcodes }
       : (existing.sizeBarcodes != null && typeof existing.sizeBarcodes === 'object' ? { ...(existing.sizeBarcodes as Record<string, string>) } : {});
 
-  // Auto-generate unique barcodes for sizes that don't have one
-  const mainBarcode = String((input.barcode ?? existing.barcode) ?? '').trim() || String(existing.barcode ?? '').trim();
+  // Auto-generate unique barcodes for sizes that don't have one,
+  // and regenerate auto-derived size barcodes when the main barcode changes.
+  const oldMainBarcode = String(existing.barcode ?? '').trim();
+  const mainBarcode = String((input.barcode ?? existing.barcode) ?? '').trim() || oldMainBarcode;
+  const mainBarcodeChanged = input.barcode !== undefined && mainBarcode !== oldMainBarcode;
   if (Object.keys(stock).length > 0) {
     const generatedBarcodes = new Set<string>([mainBarcode].filter(Boolean));
     Object.values(sizeBarcodes).forEach((v) => v && generatedBarcodes.add(v));
     for (const size of Object.keys(stock).filter((k) => !k.includes('|'))) {
       const existingBc = (sizeBarcodes[size] ?? '').trim();
-      if (!existingBc) {
+      const wasAutoDerived = existingBc && oldMainBarcode && (
+        existingBc.startsWith(`${oldMainBarcode}-`) ||
+        existingBc.startsWith(`${getClientPrefix(clientId)}-`)
+      );
+      if (!existingBc || (mainBarcodeChanged && wasAutoDerived)) {
         const bc = await generateUniqueSizeBarcode(clientId, size, mainBarcode, generatedBarcodes);
         sizeBarcodes[size] = bc;
         generatedBarcodes.add(bc);

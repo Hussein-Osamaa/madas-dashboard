@@ -239,7 +239,7 @@ export interface ProductWithStock {
 }
 
 export async function listProducts(clientId: string): Promise<{ products: ProductWithStock[] }> {
-  return fetchApi<{ products: ProductWithStock[] }>(`/warehouse/products?clientId=${encodeURIComponent(clientId)}`);
+  return fetchApi<{ products: ProductWithStock[] }>(`/warehouse/products?clientId=${encodeURIComponent(clientId)}&lean=1`);
 }
 
 export interface CreateProductInput {

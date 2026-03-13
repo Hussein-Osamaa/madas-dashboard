@@ -450,7 +450,7 @@ export default function InventoryPage() {
     }
   }, [selectedClientId]);
 
-  useLiveRefresh(() => loadProducts(true), 15_000, [selectedClientId]);
+  useLiveRefresh(() => loadProducts(true), 60_000, [selectedClientId]);
   useRefetchOnVisible(() => {
     if (selectedClientId) {
       loadProducts(true);
@@ -548,17 +548,25 @@ export default function InventoryPage() {
     setSubmitting(true);
     try {
       const { stock, sizeBarcodes } = buildStockPayloadFromVariantsFull(variants, formData.barcode);
-      await updateProduct(selectedClientId, editProduct.id, {
+      const payload = {
         name: formData.name,
         sku: formData.sku,
         barcode: formData.barcode,
         warehouse: formData.warehouse,
         stock: { ...stock },
         sizeBarcodes: { ...sizeBarcodes },
-      });
+      };
+      await updateProduct(selectedClientId, editProduct.id, payload);
+      // Optimistic local update — no need to re-fetch the full list
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === editProduct.id
+            ? normalizeProductFromApi({ ...(p as Record<string, unknown>), ...payload, id: p.id } as Record<string, unknown> & { id?: string }) as ProductWithStock
+            : p
+        )
+      );
       handleCloseModals();
-      setSaveSuccessMessage('Saved. Refreshing list…');
-      await loadProducts();
+      setSaveSuccessMessage('Saved.');
       setTimeout(() => setSaveSuccessMessage(''), 3000);
     } catch (e) {
       setFormError((e as Error).message);

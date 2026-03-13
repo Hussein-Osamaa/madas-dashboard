@@ -52,6 +52,26 @@ export function SizeVariantsEditorFull({
   onMainBarcodeChange,
   disabled,
 }: Props) {
+  const propagateMainBarcode = (newBarcode: string, oldBarcode: string) => {
+    if (!onMainBarcodeChange) return;
+    onMainBarcodeChange(newBarcode);
+    onVariantsChange(
+      variants.map((v) => {
+        const wasAuto = !v.barcode || (oldBarcode && v.barcode.startsWith(`${oldBarcode}-`));
+        const nextBarcode = wasAuto && v.size && newBarcode ? `${newBarcode}-${v.size}` : v.barcode;
+        const updatedSubs = v.subVariants?.map((s) => {
+          const subWasAuto = !s.barcode || (oldBarcode && s.barcode.startsWith(`${oldBarcode}-`));
+          return {
+            ...s,
+            barcode: subWasAuto && v.size && s.name && newBarcode
+              ? `${newBarcode}-${v.size}-${s.name}`
+              : s.barcode,
+          };
+        });
+        return { ...v, barcode: nextBarcode, subVariants: updatedSubs };
+      })
+    );
+  };
   const handleVariantChange = (id: string, field: 'size' | 'stock' | 'barcode', value: string) => {
     onVariantsChange(
       variants.map((v) => {
@@ -157,7 +177,7 @@ export function SizeVariantsEditorFull({
               <input
                 type="text"
                 value={mainBarcode}
-                onChange={(e) => onMainBarcodeChange(e.target.value)}
+                onChange={(e) => propagateMainBarcode(e.target.value, mainBarcode)}
                 disabled={disabled}
                 placeholder="Used for variant barcodes"
                 className="w-36 sm:w-40 px-2 py-1.5 rounded border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm font-mono"
@@ -165,7 +185,7 @@ export function SizeVariantsEditorFull({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => onMainBarcodeChange(generateBarcode())}
+                  onClick={() => propagateMainBarcode(generateBarcode(), mainBarcode)}
                   disabled={disabled}
                   className="px-2 py-1.5 rounded border border-gray-300 dark:border-white/20 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50"
                   title="Generate alphanumeric barcode"
@@ -174,7 +194,7 @@ export function SizeVariantsEditorFull({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onMainBarcodeChange(generateNumericBarcode())}
+                  onClick={() => propagateMainBarcode(generateNumericBarcode(), mainBarcode)}
                   disabled={disabled}
                   className="px-2 py-1.5 rounded border border-gray-300 dark:border-white/20 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50"
                   title="Generate 12-digit numeric barcode (scanner/phone friendly)"

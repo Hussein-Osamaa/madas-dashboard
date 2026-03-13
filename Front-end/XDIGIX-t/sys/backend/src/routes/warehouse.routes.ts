@@ -344,8 +344,9 @@ router.post(
 
 router.get('/products', async (req: Request, res: Response) => {
   try {
+    const lean = req.query.lean === '1';
     const { listProductsWithStock } = await import('../modules/products/controllers/Products.controller');
-    const products = await listProductsWithStock(req.clientId!, { fulfillmentOnly: true });
+    const products = await listProductsWithStock(req.clientId!, { fulfillmentOnly: true, skipAvailableStock: lean });
     res.json({ products });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
