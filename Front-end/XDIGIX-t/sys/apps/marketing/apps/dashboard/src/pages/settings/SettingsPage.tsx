@@ -1720,7 +1720,8 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
       const staffName = `${inviteData.firstName} ${inviteData.lastName}`;
       const inviterName = user?.displayName || user?.email?.split('@')[0] || 'Your Team';
       const baseUrl = window.location.origin;
-      const setupUrl = `${baseUrl}/setup-password?email=${encodeURIComponent(inviteData.email)}&business=${encodeURIComponent(businessName || 'Your Business')}&businessId=${encodeURIComponent(businessId)}&role=${encodeURIComponent(inviteData.role)}&invitation=${inviteDocRef.id}`;
+      // Dashboard is served under /dashboard (router basename), so setup-password must be /dashboard/setup-password
+      const setupUrl = `${baseUrl}/dashboard/setup-password?email=${encodeURIComponent(inviteData.email)}&business=${encodeURIComponent(businessName || 'Your Business')}&businessId=${encodeURIComponent(businessId)}&role=${encodeURIComponent(inviteData.role)}&invitation=${inviteDocRef.id}`;
 
       // Always use production Cloud Functions for email (requires email credentials)
       const apiUrl = 'https://us-central1-madas-store.cloudfunctions.net/api/api/send-invitation';

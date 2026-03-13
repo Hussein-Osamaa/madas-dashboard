@@ -1,5 +1,9 @@
 {
   "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "framework": null
+  "framework": null,
+  "redirects": [
+    { "source": "/setup-password", "destination": "/dashboard/setup-password", "permanent": false },
+    { "source": "/reset-password", "destination": "/dashboard/reset-password", "permanent": false }
+  ]
 }
