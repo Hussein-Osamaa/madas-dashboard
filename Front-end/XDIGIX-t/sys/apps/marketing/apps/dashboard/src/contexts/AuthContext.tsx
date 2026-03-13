@@ -8,6 +8,7 @@ import {
   useState
 } from 'react';
 import { auth, onAuthStateChanged, signOut } from '../lib/firebase';
+import { disconnectDashboardSocket } from '../lib/realtimeSocket';
 
 export type AuthUser = { uid: string; email: string | null; displayName?: string | null; getIdToken: () => Promise<string> };
 
@@ -38,6 +39,7 @@ const AuthProvider = ({ children }: Props) => {
 
   const logout = useCallback(async () => {
     localStorage.removeItem('digixUser');
+    disconnectDashboardSocket();
     await signOut(auth);
   }, []);
 

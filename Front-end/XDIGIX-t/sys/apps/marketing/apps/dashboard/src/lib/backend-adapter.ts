@@ -112,7 +112,7 @@ async function getToken(): Promise<string | null> {
     }
     const data = await res.json();
     if (data.accessToken) {
-      persistTokens(data.accessToken, data.refreshToken || refreshToken ?? '');
+      persistTokens(data.accessToken, (data.refreshToken || refreshToken) ?? '');
       return data.accessToken;
     }
   } catch (err) {
@@ -121,14 +121,15 @@ async function getToken(): Promise<string | null> {
   return null;
 }
 
-async function fetchApi<T>(path: string, opts: RequestInit = {}): Promise<T> {
+async function fetchApi<T>(path: string, opts: RequestInit & { _skipAuthClear?: boolean } = {}): Promise<T> {
+  const { _skipAuthClear, ...fetchOpts } = opts;
   const token = await getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(opts.headers as Record<string, string>)
+    ...(fetchOpts.headers as Record<string, string>)
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  let res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+  let res = await fetch(`${API_BASE}${path}`, { ...fetchOpts, headers });
   let json = await res.json().catch(() => ({}));
   if (res.status === 401) {
     if (token) {
@@ -136,25 +137,29 @@ async function fetchApi<T>(path: string, opts: RequestInit = {}): Promise<T> {
       const newToken = await getToken();
       if (newToken) {
         headers['Authorization'] = `Bearer ${newToken}`;
-        res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+        res = await fetch(`${API_BASE}${path}`, { ...fetchOpts, headers });
         json = await res.json().catch(() => ({}));
-      } else {
+      } else if (!_skipAuthClear) {
         clearTokens();
         currentUser = null;
         notifyAuthListeners(null);
         throw new Error('Session expired. Please sign in again.');
+      } else {
+        throw new Error('Token refresh failed');
       }
-    } else {
+    } else if (!_skipAuthClear) {
       clearTokens();
       currentUser = null;
       notifyAuthListeners(null);
       throw new Error('Session expired. Please sign in again.');
+    } else {
+      throw new Error('No token available');
     }
   }
   if (res.status === 429) {
     const retryAfter = Math.min(parseInt(res.headers.get('Retry-After') || '2', 10), 10);
     await new Promise((r) => setTimeout(r, retryAfter * 1000));
-    res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+    res = await fetch(`${API_BASE}${path}`, { ...fetchOpts, headers });
     json = await res.json().catch(() => ({}));
   }
   // After link-user / subscribe-fulfillment, existing token may lack tenant – refresh once and retry
@@ -163,7 +168,7 @@ async function fetchApi<T>(path: string, opts: RequestInit = {}): Promise<T> {
     const newToken = await getToken();
     if (newToken) {
       headers['Authorization'] = `Bearer ${newToken}`;
-      res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+      res = await fetch(`${API_BASE}${path}`, { ...fetchOpts, headers });
       json = await res.json().catch(() => ({}));
     }
   }
@@ -183,32 +188,50 @@ let currentUser: BackendUser | null = null;
 let authInitResolved = false;
 
 async function initAuth() {
-  try {
-    const token = await getToken();
-    if (!token) {
+  const MAX_RETRIES = 2;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const token = await getToken();
+      if (!token) {
+        const hasRefresh = typeof localStorage !== 'undefined' && !!localStorage.getItem('backend_refresh_token');
+        if (hasRefresh && attempt < MAX_RETRIES) {
+          console.warn(`[auth] initAuth: no access token but refresh token exists, retrying (${attempt + 1}/${MAX_RETRIES})`);
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        currentUser = null;
+        return;
+      }
+      const data = await fetchApi<{ user: { uid: string; email: string; type?: string; accountType?: string } }>('/auth/me', { _skipAuthClear: true });
+      if (data?.user) {
+        if (data.user.accountType && typeof localStorage !== 'undefined') {
+          localStorage.setItem('backend_account_type', data.user.accountType);
+          accountType = data.user.accountType;
+        }
+        currentUser = {
+          uid: data.user.uid,
+          email: data.user.email || null,
+          displayName: null,
+          emailVerified: true,
+          getIdToken: async () => (await getToken()) || ''
+        };
+        return;
+      }
       currentUser = null;
       return;
-    }
-    const data = await fetchApi<{ user: { uid: string; email: string; type?: string } }>('/auth/me');
-    if (data?.user) {
-      currentUser = {
-        uid: data.user.uid,
-        email: data.user.email || null,
-        displayName: null,
-        emailVerified: true,
-        getIdToken: async () => (await getToken()) || ''
-      };
-    } else {
+    } catch (err) {
+      console.warn(`[auth] initAuth attempt ${attempt + 1} failed:`, err);
+      const hasRefresh = typeof localStorage !== 'undefined' && !!localStorage.getItem('backend_refresh_token');
+      if (hasRefresh && attempt < MAX_RETRIES) {
+        accessToken = null;
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      if (!hasRefresh) {
+        clearTokens();
+      }
       currentUser = null;
-    }
-  } catch (err) {
-    console.warn('[auth] initAuth failed:', err);
-    const hasRefresh = typeof localStorage !== 'undefined' && !!localStorage.getItem('backend_refresh_token');
-    if (!hasRefresh) {
-      currentUser = null;
-      clearTokens();
-    } else {
-      currentUser = null;
+      return;
     }
   }
 }
@@ -259,14 +282,15 @@ export async function signInWithEmailAndPassword(
   password: string
 ): Promise<{ user: BackendUser }> {
   const data = await fetchApi<{
-    user: { uid: string; email: string; displayName?: string };
+    user: { uid: string; email: string; displayName?: string; type?: string; accountType?: string };
     accessToken: string;
     refreshToken: string;
   }>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email: email.trim(), password })
   });
-  persistTokens(data.accessToken, data.refreshToken);
+  const userType = data.user.accountType || (data.user.type === 'super_admin' ? 'ADMIN' : 'CLIENT');
+  persistTokens(data.accessToken, data.refreshToken, userType);
   currentUser = {
     uid: data.user.uid,
     email: data.user.email || null,

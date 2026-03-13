@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchLinkedInventory, type LinkedInventoryResponse } from '../lib/backend-adapter';
+import { onWarehouseUpdate } from '../lib/realtimeSocket';
 
 const useBackend = !!import.meta.env.VITE_API_BACKEND_URL;
 
@@ -10,11 +12,23 @@ export function useLinkedInventory(enabledWhenBusinessReady = true): {
   error: Error | null;
   refetch: () => void;
 } {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!useBackend || !enabledWhenBusinessReady) return;
+    const unsub = onWarehouseUpdate((payload) => {
+      if (payload.type === 'products') {
+        queryClient.invalidateQueries({ queryKey: ['linkedInventory'] });
+      }
+    });
+    return unsub;
+  }, [enabledWhenBusinessReady, queryClient]);
+
   const query = useQuery({
     queryKey: ['linkedInventory'],
     queryFn: fetchLinkedInventory,
     enabled: useBackend && enabledWhenBusinessReady,
-    staleTime: 60_000,
+    staleTime: 5_000,
     retry: 1
   });
 
