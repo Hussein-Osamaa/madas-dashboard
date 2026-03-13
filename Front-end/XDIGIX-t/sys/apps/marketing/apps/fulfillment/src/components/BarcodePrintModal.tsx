@@ -2,7 +2,7 @@
  * Print barcode labels for selected products.
  * Extracted from dashboard inventory - includes brand name on each label.
  */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { ProductWithStock } from '../lib/api';
 
 type LabelSize = '50x40' | '60x40' | '70x50' | '80x60';
@@ -40,7 +40,9 @@ export default function BarcodePrintModal({ open, onClose, products, brandName }
   const [copies, setCopies] = useState(1);
   const [labels, setLabels] = useState<PrintableLabel[]>([]);
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(false);
+  if (open && !prevOpen) {
+    setPrevOpen(true);
     const generated: PrintableLabel[] = [];
     products.forEach((product) => {
       const data = product as Record<string, unknown>;
@@ -77,7 +79,10 @@ export default function BarcodePrintModal({ open, onClose, products, brandName }
       }
     });
     setLabels(generated);
-  }, [products]);
+  }
+  if (!open && prevOpen) {
+    setPrevOpen(false);
+  }
 
   const updateLabelQuantity = (index: number, quantity: number) => {
     setLabels((prev) =>
