@@ -90,20 +90,33 @@ async function getToken(): Promise<string | null> {
   }
   if (accessToken && !isTokenExpired(accessToken)) return accessToken;
   if (accessToken && isTokenExpired(accessToken)) accessToken = null;
-  if (!refreshToken) return null;
+  if (!refreshToken) {
+    if (typeof localStorage !== 'undefined') {
+      refreshToken = localStorage.getItem('backend_refresh_token');
+    }
+    if (!refreshToken) return null;
+  }
   try {
     const res = await fetch(`${API_BASE}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken, accountType: accountType || 'CLIENT' })
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        clearTokens();
+      }
+      console.warn('[auth] Token refresh failed:', res.status, (data as { error?: string }).error);
+      return null;
+    }
     const data = await res.json();
     if (data.accessToken) {
-      persistTokens(data.accessToken, refreshToken ?? '');
+      persistTokens(data.accessToken, data.refreshToken || refreshToken ?? '');
       return data.accessToken;
     }
-  } catch {
-    clearTokens();
+  } catch (err) {
+    console.warn('[auth] Token refresh network error, keeping tokens for retry:', err);
   }
   return null;
 }
@@ -188,9 +201,15 @@ async function initAuth() {
     } else {
       currentUser = null;
     }
-  } catch {
-    currentUser = null;
-    clearTokens();
+  } catch (err) {
+    console.warn('[auth] initAuth failed:', err);
+    const hasRefresh = typeof localStorage !== 'undefined' && !!localStorage.getItem('backend_refresh_token');
+    if (!hasRefresh) {
+      currentUser = null;
+      clearTokens();
+    } else {
+      currentUser = null;
+    }
   }
 }
 

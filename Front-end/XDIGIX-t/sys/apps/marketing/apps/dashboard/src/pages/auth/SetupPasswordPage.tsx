@@ -17,10 +17,10 @@ const SetupPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
-  // URL Parameters
+  // URL Parameters (support businessId and common typo businessld)
   const email = searchParams.get('email') || '';
   const businessName = searchParams.get('business') || '';
-  const businessId = searchParams.get('businessId') || '';
+  const businessId = searchParams.get('businessId') || searchParams.get('businessld') || '';
   const role = searchParams.get('role') || 'staff';
   const invitationId = searchParams.get('invitation') || '';
   
