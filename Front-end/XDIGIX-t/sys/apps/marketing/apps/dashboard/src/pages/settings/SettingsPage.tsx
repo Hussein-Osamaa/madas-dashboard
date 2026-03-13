@@ -22,6 +22,9 @@ const SettingsPage = () => {
   const [currency, setCurrency] = useState<string>('USD');
   const [fiscalYearStart, setFiscalYearStart] = useState<string>('january');
   const [businessNameInput, setBusinessNameInput] = useState<string>('');
+  const [defaultInventorySource, setDefaultInventorySource] = useState<'mine' | 'xdf'>(() => {
+    return (localStorage.getItem('defaultInventorySource') as 'mine' | 'xdf') || 'mine';
+  });
 
   const tabs: Array<{ id: SettingsTab; label: string; icon: string }> = [
     { id: 'general', label: 'General', icon: 'tune' },
@@ -193,6 +196,23 @@ const SettingsPage = () => {
                       <option value="UTC">UTC</option>
                       <option value="Africa/Cairo">Africa/Cairo (GMT+2)</option>
                       <option value="America/New_York">America/New_York (GMT-5)</option>
+                    </select>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-100">
+                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Default Inventory</label>
+                    <p className="text-xs text-madas-text/60 mb-2">Choose which inventory view opens by default on the Products page.</p>
+                    <select
+                      value={defaultInventorySource}
+                      onChange={(e) => {
+                        const v = e.target.value as 'mine' | 'xdf';
+                        setDefaultInventorySource(v);
+                        localStorage.setItem('defaultInventorySource', v);
+                      }}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    >
+                      <option value="mine">My Products</option>
+                      <option value="xdf">XDF (XDIGIX-FULFILLMENT)</option>
                     </select>
                   </div>
 

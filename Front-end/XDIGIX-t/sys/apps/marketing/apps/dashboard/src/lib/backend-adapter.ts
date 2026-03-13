@@ -244,6 +244,20 @@ const initAuthPromise = initAuth().then(() => {
   notifyAuthListeners(null);
 });
 
+/** Re-run auth initialization (e.g. after a transient failure). */
+export async function retryAuth(): Promise<BackendUser | null> {
+  accessToken = null;
+  await initAuth();
+  notifyAuthListeners(currentUser);
+  return currentUser;
+}
+
+/** Check whether stored tokens exist (useful to decide whether to retry). */
+export function hasStoredTokens(): boolean {
+  if (typeof localStorage === 'undefined') return false;
+  return !!localStorage.getItem('backend_refresh_token') || !!localStorage.getItem('backend_access_token');
+}
+
 export const auth = {
   get currentUser() {
     return currentUser;

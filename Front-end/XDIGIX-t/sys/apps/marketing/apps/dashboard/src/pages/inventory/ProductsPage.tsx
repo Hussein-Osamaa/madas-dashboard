@@ -76,7 +76,10 @@ const ProductsPage = () => {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [viewMode, setViewMode] = useState<InventoryViewMode>('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const [warehouseFilter, setWarehouseFilter] = useState<string>('all');
+  const [warehouseFilter, setWarehouseFilter] = useState<string>(() => {
+    const saved = localStorage.getItem('defaultInventorySource');
+    return saved === 'xdf' ? 'xdf' : 'all';
+  });
   const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
   const [bulkActionsModalOpen, setBulkActionsModalOpen] = useState(false);
   const [barcodePrintModalOpen, setBarcodePrintModalOpen] = useState(false);
@@ -86,7 +89,9 @@ const ProductsPage = () => {
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [processingBulkAction, setProcessingBulkAction] = useState(false);
   const [removingDuplicates, setRemovingDuplicates] = useState(false);
-  const [inventorySource, setInventorySource] = useState<'mine' | 'xdf'>('mine');
+  const [inventorySource, setInventorySource] = useState<'mine' | 'xdf'>(() => {
+    return (localStorage.getItem('defaultInventorySource') as 'mine' | 'xdf') || 'mine';
+  });
   const [statFilter, setStatFilter] = useState<import('../../components/inventory/InventoryStats').StatFilter>('all');
   const [xdfPricingProduct, setXdfPricingProduct] = useState<Product | null>(null);
   const [xdfPricingSubmitting, setXdfPricingSubmitting] = useState(false);

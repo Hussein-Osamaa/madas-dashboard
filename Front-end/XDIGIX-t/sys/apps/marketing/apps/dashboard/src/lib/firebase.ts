@@ -51,3 +51,6 @@ export const getPerformance = useBackend ? () => null : (api as typeof firebaseA
 export const initializePerformance = useBackend ? () => {} : (api as typeof firebaseApi).initializePerformance;
 export const getAnalytics = useBackend ? () => null : (api as typeof firebaseApi).getAnalytics;
 export const initializeAnalytics = useBackend ? () => {} : (api as typeof firebaseApi).initializeAnalytics;
+
+export const retryAuth = useBackend ? (api as typeof backendApi).retryAuth : async () => null;
+export const hasStoredTokens = useBackend ? (api as typeof backendApi).hasStoredTokens : () => false;

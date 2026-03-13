@@ -5,9 +5,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from 'react';
-import { auth, onAuthStateChanged, signOut } from '../lib/firebase';
+import { auth, onAuthStateChanged, signOut, retryAuth, hasStoredTokens } from '../lib/firebase';
 import { disconnectDashboardSocket } from '../lib/realtimeSocket';
 
 export type AuthUser = { uid: string; email: string | null; displayName?: string | null; getIdToken: () => Promise<string> };
@@ -24,17 +25,38 @@ type Props = {
   children: ReactNode;
 };
 
+const MAX_AUTH_RETRIES = 3;
+
 const AuthProvider = ({ children }: Props) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const retryCountRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: AuthUser | null) => {
+      if (firebaseUser) {
+        retryCountRef.current = 0;
+        setUser(firebaseUser);
+        setLoading(false);
+      } else if (hasStoredTokens() && retryCountRef.current < MAX_AUTH_RETRIES) {
+        retryCountRef.current += 1;
+        const delay = retryCountRef.current * 1500;
+        console.warn(`[AuthProvider] Auth returned null but tokens exist, retrying (${retryCountRef.current}/${MAX_AUTH_RETRIES}) in ${delay}ms`);
+        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = setTimeout(() => {
+          retryAuth().catch(() => {});
+        }, delay);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
   }, []);
 
   const logout = useCallback(async () => {
