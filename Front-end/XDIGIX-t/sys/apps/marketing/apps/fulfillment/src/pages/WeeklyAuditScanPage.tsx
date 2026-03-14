@@ -15,6 +15,7 @@ import {
   type FulfillmentClient,
   type AuditAdjustment,
   type AuditSessionSummary,
+  type FullProductReportItem,
 } from '../lib/api';
 import { useStaffAuth } from '../contexts/StaffAuthContext';
 import { connectAuditSocket, isAuditSocketDisabled } from '../lib/auditSocket';
@@ -77,6 +78,7 @@ export default function WeeklyAuditScanPage() {
     totalScanned: number;
     missingCount: number;
     adjustmentCount: number;
+    fullProductReport: FullProductReportItem[];
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [finishing, setFinishing] = useState(false);
@@ -410,6 +412,7 @@ export default function WeeklyAuditScanPage() {
     try {
       const data = await auditFinish(sessionId);
       const adjustments = Array.isArray(data?.adjustments) ? data.adjustments : [];
+      const fullProductReport = Array.isArray(data?.fullProductReport) ? data.fullProductReport : [];
       const totalExpected = adjustments.reduce((s, a) => s + a.expected, 0);
       const totalScanned = adjustments.reduce((s, a) => s + a.actual, 0);
       const missingCount = adjustments.filter((a) => a.type === 'MISSING').length;
@@ -420,6 +423,7 @@ export default function WeeklyAuditScanPage() {
         totalScanned,
         missingCount,
         adjustmentCount,
+        fullProductReport,
       });
       setSessionId(null);
       setSessionStartTime(null);
@@ -700,16 +704,16 @@ export default function WeeklyAuditScanPage() {
 
       {/* Summary modal */}
       {summary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
-          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-md shadow-xl">
-            <div className="p-6 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 overflow-y-auto">
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-xl flex flex-col my-4">
+            <div className="p-6 border-b border-gray-200 dark:border-white/10 flex items-center justify-between shrink-0">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Audit Summary</h2>
               <button onClick={closeSummary} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="p-6 space-y-4 shrink-0">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Expected stock</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.totalExpected}</p>
@@ -729,7 +733,93 @@ export default function WeeklyAuditScanPage() {
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Reconciliation was applied on the backend.</p>
             </div>
-            <div className="p-6 border-t border-gray-200 dark:border-white/10">
+
+            {/* Full product report – all client products with per-size status from inventory movement system */}
+            {summary.fullProductReport.length > 0 && (
+              <div className="px-6 pb-4 flex-1 min-h-0 flex flex-col">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Full product report (inventory movement status per size)
+                </h3>
+                <div className="border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden flex-1 min-h-0">
+                  <div className="overflow-auto max-h-[40vh] sm:max-h-[50vh]">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-gray-100 dark:bg-white/10 text-left">
+                        <tr>
+                          <th className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300">Product</th>
+                          <th className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300">SKU</th>
+                          <th className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300">Barcode</th>
+                          <th className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300 text-right">Movement qty</th>
+                          <th className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300">Size</th>
+                          <th className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300">Size barcode</th>
+                          <th className="px-3 py-2 font-medium text-gray-700 dark:text-gray-300">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+                        {summary.fullProductReport.map((product) =>
+                          product.sizes.length > 0 ? (
+                            product.sizes.map((sizeRow, idx) => (
+                              <tr key={`${product.productId}-${sizeRow.size}-${idx}`} className="bg-white dark:bg-white/5">
+                                {idx === 0 ? (
+                                  <>
+                                    <td className="px-3 py-2 text-gray-900 dark:text-white font-medium" rowSpan={product.sizes.length}>
+                                      {product.name}
+                                    </td>
+                                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400 font-mono text-xs" rowSpan={product.sizes.length}>
+                                      {product.sku}
+                                    </td>
+                                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400 font-mono text-xs" rowSpan={product.sizes.length}>
+                                      {product.barcode || product.mainBarcode || '—'}
+                                    </td>
+                                    <td className="px-3 py-2 text-gray-900 dark:text-white text-right" rowSpan={product.sizes.length}>
+                                      {product.movementQuantity}
+                                    </td>
+                                  </>
+                                ) : null}
+                                <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{sizeRow.size}</td>
+                                <td className="px-3 py-2 text-gray-500 dark:text-gray-400 font-mono text-xs">{sizeRow.sizeBarcode || '—'}</td>
+                                <td className="px-3 py-2">
+                                  <span
+                                    className={
+                                      sizeRow.status === 'In Stock'
+                                        ? 'inline-flex px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                                        : 'inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-500/20 text-gray-600 dark:text-gray-400'
+                                    }
+                                  >
+                                    {sizeRow.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr key={product.productId} className="bg-white dark:bg-white/5">
+                              <td className="px-3 py-2 text-gray-900 dark:text-white font-medium">{product.name}</td>
+                              <td className="px-3 py-2 text-gray-600 dark:text-gray-400 font-mono text-xs">{product.sku}</td>
+                              <td className="px-3 py-2 text-gray-600 dark:text-gray-400 font-mono text-xs">{product.barcode || product.mainBarcode || '—'}</td>
+                              <td className="px-3 py-2 text-right">{product.movementQuantity}</td>
+                              <td className="px-3 py-2 text-gray-500 dark:text-gray-400">—</td>
+                              <td className="px-3 py-2 text-gray-500 dark:text-gray-400">—</td>
+                              <td className="px-3 py-2">
+                                <span
+                                  className={
+                                    product.movementQuantity > 0
+                                      ? 'inline-flex px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                                      : 'inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-500/20 text-gray-600 dark:text-gray-400'
+                                  }
+                                >
+                                  {product.movementQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="p-6 border-t border-gray-200 dark:border-white/10 shrink-0">
               <button onClick={closeSummary} className="w-full py-2.5 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600">
                 Close
               </button>

@@ -295,39 +295,72 @@ export async function scanOrderBarcode(
   const quantityToDeduct = matchedItem.quantity ?? 1;
   const product = products.find((p) => p.id === match.productId);
   const sku = (product?.sku ?? match.productId).trim() || match.productId;
-  const productIdForClient = match.productId;
-
-  // Check stock from the same source as warehouse Inventory page (client's product.stock in Firestore)
-  const productDoc = await FirestoreDoc.findOne({
-    businessId,
-    coll: 'products',
-    docId: productIdForClient,
-  }).lean();
-  if (!productDoc) {
-    return {
-      matched: false,
-      scannedCount: scannedItems.length,
-      allScanned: false,
-      message: `Product not found for client`,
-    };
-  }
-  const productData = (productDoc as { data?: Record<string, unknown> }).data || {};
-  const stockRaw = (productData.stock != null && typeof productData.stock === 'object' && !Array.isArray(productData.stock))
-    ? (productData.stock as Record<string, number>)
-    : {};
+  const orderItemProductId = (matchedItem as { productId?: string }).productId?.trim();
   const sizeKey = (matchedItem.size || match.matchedSize || 'default' || '').trim() || 'default';
-  let available: number;
-  let deductKey: string;
-  if (typeof stockRaw[sizeKey] === 'number') {
-    available = stockRaw[sizeKey];
-    deductKey = sizeKey;
-  } else if (Object.keys(stockRaw).length === 1) {
-    deductKey = Object.keys(stockRaw)[0] ?? sizeKey;
-    available = stockRaw[deductKey] ?? 0;
-  } else {
-    deductKey = stockRaw['default'] !== undefined ? 'default' : stockRaw[''] !== undefined ? '' : sizeKey;
-    available = stockRaw[deductKey] ?? 0;
+
+  /** Build stock map from product data: data.stock and fallback to data.sizeVariants (same as Products.controller) */
+  function buildStockRaw(data: Record<string, unknown>): Record<string, number> {
+    let raw: Record<string, number> =
+      data.stock != null && typeof data.stock === 'object' && !Array.isArray(data.stock)
+        ? (data.stock as Record<string, number>)
+        : {};
+    if (Object.keys(raw).length === 0 && data.sizeVariants != null && typeof data.sizeVariants === 'object' && !Array.isArray(data.sizeVariants)) {
+      const sv = data.sizeVariants as Record<string, { stock?: number; qty?: number }>;
+      raw = {};
+      for (const [k, v] of Object.entries(sv)) {
+        if (k == null || String(k).includes('|')) continue;
+        const qty = typeof v === 'object' && v != null ? (v.stock ?? v.qty) : undefined;
+        const num = typeof qty === 'number' && !Number.isNaN(qty) ? qty : Number(qty);
+        if (!Number.isNaN(num)) raw[k] = num;
+      }
+    }
+    return raw;
   }
+
+  function getAvailableAndDeductKey(
+    stockRaw: Record<string, number>,
+    size: string
+  ): { available: number; deductKey: string } {
+    if (typeof stockRaw[size] === 'number') {
+      return { available: stockRaw[size], deductKey: size };
+    }
+    if (Object.keys(stockRaw).length === 1) {
+      const k = Object.keys(stockRaw)[0] ?? size;
+      return { available: stockRaw[k] ?? 0, deductKey: k };
+    }
+    const deductKey = stockRaw['default'] !== undefined ? 'default' : stockRaw[''] !== undefined ? '' : size;
+    return { available: stockRaw[deductKey] ?? 0, deductKey };
+  }
+
+  // Try barcode-matched product first, then order item's productId (in case they differ, e.g. dashboard vs fulfillment id)
+  const productIdsToTry = [
+    match.productId,
+    ...(orderItemProductId && orderItemProductId !== match.productId ? [orderItemProductId] : []),
+  ];
+
+  let productDoc: { docId: string; data?: Record<string, unknown> } | null = null;
+  let productIdForClient = match.productId;
+  let stockRaw: Record<string, number> = {};
+  let available = 0;
+  let deductKey = sizeKey;
+
+  for (const pid of productIdsToTry) {
+    const doc = await FirestoreDoc.findOne({ businessId, coll: 'products', docId: pid }).lean();
+    if (!doc) continue;
+    const data = (doc as { data?: Record<string, unknown> }).data || {};
+    const raw = buildStockRaw(data);
+    if (Object.keys(raw).length === 0) continue;
+    const { available: av, deductKey: dk } = getAvailableAndDeductKey(raw, sizeKey);
+    if (av >= quantityToDeduct) {
+      productDoc = doc as { docId: string; data?: Record<string, unknown> };
+      productIdForClient = pid;
+      stockRaw = raw;
+      available = av;
+      deductKey = dk;
+      break;
+    }
+  }
+
   if (available < quantityToDeduct) {
     return {
       matched: false,
@@ -346,7 +379,7 @@ export async function scanOrderBarcode(
     note: `Order ${orderId} scan`,
   });
 
-  // Deduct from client warehouse inventory (Firestore product.stock) so /warehouse/inventory stays in sync
+  // Deduct from client warehouse inventory (Firestore) so /warehouse/inventory stays in sync
   const newStock = { ...stockRaw };
   newStock[deductKey] = Math.max(0, (newStock[deductKey] ?? 0) - quantityToDeduct);
   await FirestoreDoc.updateOne(

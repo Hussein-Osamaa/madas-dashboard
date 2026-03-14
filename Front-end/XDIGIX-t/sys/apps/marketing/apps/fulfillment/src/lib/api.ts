@@ -664,8 +664,33 @@ export interface AuditAdjustment {
   type: string;
 }
 
-export async function auditFinish(sessionId: string): Promise<{ success: boolean; adjustments: AuditAdjustment[] }> {
-  return fetchApi<{ success: boolean; adjustments: AuditAdjustment[] }>('/audit/finish', {
+export interface ProductSizeMovementStatus {
+  size: string;
+  sizeBarcode?: string;
+  movementQuantity: number;
+  status: 'In Stock' | 'Out of Stock';
+}
+
+export interface FullProductReportItem {
+  productId: string;
+  name: string;
+  sku: string;
+  barcode?: string;
+  mainBarcode?: string;
+  movementQuantity: number;
+  sizes: ProductSizeMovementStatus[];
+}
+
+export async function auditFinish(sessionId: string): Promise<{
+  success: boolean;
+  adjustments: AuditAdjustment[];
+  fullProductReport?: FullProductReportItem[];
+}> {
+  return fetchApi<{
+    success: boolean;
+    adjustments: AuditAdjustment[];
+    fullProductReport?: FullProductReportItem[];
+  }>('/audit/finish', {
     method: 'POST',
     body: JSON.stringify({ sessionId }),
   });

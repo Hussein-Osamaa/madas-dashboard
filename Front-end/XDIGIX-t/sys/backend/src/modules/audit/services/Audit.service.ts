@@ -6,6 +6,8 @@ import { StaffUser } from '../../../schemas/staff-user.schema';
 import { getIo, emitWarehouseUpdate } from '../../../realtime';
 import { StockTransactionModel } from '../../inventory/models/StockTransaction.model';
 import { recordBulkPhysicalCount } from './AuditComparison.service';
+import { getClientSkus } from '../../inventory/services/Dashboard.service';
+import { getStockBySkuMap } from '../../inventory/services/InventoryMovement.service';
 
 const ACTIVE_STATUSES = ['ACTIVE', 'in_progress'] as const;
 
@@ -358,11 +360,86 @@ export interface ProductAuditDetail {
   }>;
 }
 
+/** Per-size status from inventory movement system (one quantity per SKU; same status for all sizes of a product). */
+export interface ProductSizeMovementStatus {
+  size: string;
+  sizeBarcode?: string;
+  movementQuantity: number;
+  status: 'In Stock' | 'Out of Stock';
+}
+
+/** Full client product report: all products with details and per-size status from inventory_movements. */
+export interface FullProductReportItem {
+  productId: string;
+  name: string;
+  sku: string;
+  barcode?: string;
+  mainBarcode?: string;
+  movementQuantity: number; // from inventory_movements for this product's SKU
+  sizes: ProductSizeMovementStatus[];
+}
+
+export async function buildFullProductReport(clientId: string): Promise<FullProductReportItem[]> {
+  const productDocs = await FirestoreDoc.find({ businessId: clientId, coll: 'products' })
+    .select('docId data')
+    .lean();
+  const clientSkus = await getClientSkus(clientId);
+  const movementStockBySku = await getStockBySkuMap(clientSkus);
+
+  const report: FullProductReportItem[] = [];
+  for (const doc of productDocs) {
+    const docId = (doc as { docId: string }).docId;
+    const data = (doc as { data?: Record<string, unknown> }).data || {};
+    const sku = ((data.sku as string) ?? docId).trim();
+    const name = (data.name as string) || 'Unknown Product';
+    const barcode = (data.barcode as string) || (data.mainBarcode as string) || '';
+    const sizeBarcodes = (data.sizeBarcodes as Record<string, string>) || {};
+    const movementQuantity = movementStockBySku[sku] ?? 0;
+    const status: 'In Stock' | 'Out of Stock' = movementQuantity > 0 ? 'In Stock' : 'Out of Stock';
+
+    // Build size list from data.stock or data.sizeVariants (same as Products.controller)
+    let stockRaw: Record<string, number> =
+      data.stock != null && typeof data.stock === 'object' && !Array.isArray(data.stock)
+        ? (data.stock as Record<string, number>)
+        : {};
+    if (Object.keys(stockRaw).length === 0 && data.sizeVariants != null && typeof data.sizeVariants === 'object' && !Array.isArray(data.sizeVariants)) {
+      const sv = data.sizeVariants as Record<string, { stock?: number; qty?: number }>;
+      stockRaw = {};
+      for (const [k, v] of Object.entries(sv)) {
+        if (k == null || String(k).includes('|')) continue;
+        const qty = typeof v === 'object' && v != null ? (v.stock ?? v.qty) : undefined;
+        const num = typeof qty === 'number' && !Number.isNaN(qty) ? qty : Number(qty);
+        if (!Number.isNaN(num)) stockRaw[k] = num;
+      }
+    }
+    const sizeKeys = Object.keys(stockRaw).filter((k) => k != null && !String(k).includes('|'));
+    if (sizeKeys.length === 0) sizeKeys.push('default');
+
+    const sizes: ProductSizeMovementStatus[] = sizeKeys.map((size) => ({
+      size,
+      sizeBarcode: sizeBarcodes[size],
+      movementQuantity,
+      status,
+    }));
+
+    report.push({
+      productId: docId,
+      name,
+      sku,
+      barcode: barcode || undefined,
+      mainBarcode: barcode || undefined,
+      movementQuantity,
+      sizes,
+    });
+  }
+  return report;
+}
+
 export async function finishAudit(
   sessionId: string,
   requestedBy: string,
   options?: { allowAnyAdmin?: boolean }
-): Promise<{ adjustments: Array<{ productId: string; expected: number; actual: number; type: string }>; detailedBreakdown: ProductAuditDetail[]; clientId: string }> {
+): Promise<{ adjustments: Array<{ productId: string; expected: number; actual: number; type: string }>; detailedBreakdown: ProductAuditDetail[]; fullProductReport: FullProductReportItem[]; clientId: string }> {
   const session = await AuditSessionModel.findOne({ _id: sessionId, status: { $in: ACTIVE_STATUSES } });
   if (!session) throw new Error('Active audit session not found');
   const canFinish = session.createdBy === requestedBy || options?.allowAnyAdmin === true;
@@ -580,7 +657,8 @@ export async function finishAudit(
     serverIo.to(`audit:${sessionId}`).emit('audit_closed', { sessionId, adjustments });
   }
 
-  return { adjustments, detailedBreakdown, clientId: String(clientId) };
+  const fullProductReport = await buildFullProductReport(clientId);
+  return { adjustments, detailedBreakdown, fullProductReport, clientId: String(clientId) };
 }
 
 /** Cancel session without reconciliation (admin only). */

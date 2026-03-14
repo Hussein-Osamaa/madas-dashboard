@@ -111,8 +111,8 @@ export async function finish(req: Request, res: Response): Promise<void> {
     const requestedBy = getUserId(req);
     const accountType = (req as any).accountPayload?.accountType;
     const allowAnyAdmin = accountType === 'ADMIN';
-    const { adjustments, detailedBreakdown, clientId } = await AuditService.finishAudit(sessionId, requestedBy, { allowAnyAdmin });
-    res.json({ success: true, adjustments, detailedBreakdown });
+    const { adjustments, detailedBreakdown, fullProductReport, clientId } = await AuditService.finishAudit(sessionId, requestedBy, { allowAnyAdmin });
+    res.json({ success: true, adjustments, detailedBreakdown, fullProductReport });
 
     // Run report generation in background so the client gets a fast response
     setImmediate(async () => {
