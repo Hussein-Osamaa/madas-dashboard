@@ -11,7 +11,8 @@ export const useOrders = (businessId?: string) => {
     queryKey: ordersKey(businessId),
     enabled: Boolean(businessId),
     queryFn: () => fetchOrders(businessId!),
-    initialData: [] as Order[]
+    initialData: [] as Order[],
+    initialDataUpdatedAt: 0
   });
 
   const invalidate = () => {

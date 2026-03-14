@@ -14,7 +14,8 @@ export const useBudgetTransactions = (budgetId: string | null) => {
       }
       return fetchBudgetTransactions(scope.businessId!, budgetId);
     },
-    initialData: [] as Awaited<ReturnType<typeof fetchBudgetTransactions>>
+    initialData: [] as Awaited<ReturnType<typeof fetchBudgetTransactions>>,
+    initialDataUpdatedAt: 0
   });
 };
 

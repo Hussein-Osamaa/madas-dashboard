@@ -43,6 +43,7 @@ export const useDashboardAnalysis = (businessId?: string) =>
         salesByCategory
       };
     },
-    initialData: DEFAULT_ANALYSIS
+    initialData: DEFAULT_ANALYSIS,
+    initialDataUpdatedAt: 0
   });
 

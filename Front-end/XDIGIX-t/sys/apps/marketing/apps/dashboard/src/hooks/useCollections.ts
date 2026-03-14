@@ -18,7 +18,8 @@ export const useCollections = (businessId?: string) => {
     queryKey: collectionsKey(businessId),
     enabled: Boolean(businessId),
     queryFn: () => fetchCollections(businessId!),
-    initialData: [] as Collection[]
+    initialData: [] as Collection[],
+    initialDataUpdatedAt: 0
   });
 
   const invalidate = () => {

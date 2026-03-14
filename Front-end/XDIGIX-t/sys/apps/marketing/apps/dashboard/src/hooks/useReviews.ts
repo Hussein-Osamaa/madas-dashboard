@@ -18,7 +18,8 @@ export const useReviews = (businessId?: string) => {
     queryKey: reviewsKey(businessId),
     enabled: Boolean(businessId),
     queryFn: () => fetchReviews(businessId!),
-    initialData: [] as Review[]
+    initialData: [] as Review[],
+    initialDataUpdatedAt: 0
   });
 
   const invalidate = () => {

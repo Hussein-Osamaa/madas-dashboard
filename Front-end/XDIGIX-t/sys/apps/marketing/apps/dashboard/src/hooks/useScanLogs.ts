@@ -10,7 +10,8 @@ export const useScanLogs = (businessId?: string) => {
     queryKey: scanLogsKey(businessId),
     enabled: Boolean(businessId),
     queryFn: () => fetchScanLogs(businessId!),
-    initialData: [] as ScanLog[]
+    initialData: [] as ScanLog[],
+    initialDataUpdatedAt: 0
   });
 
   const invalidate = () => {

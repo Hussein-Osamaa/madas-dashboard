@@ -48,7 +48,8 @@ export const useDashboardTasks = (businessId?: string, userId?: string) => {
         };
       });
     },
-    initialData: [] as DashboardTask[]
+    initialData: [] as DashboardTask[],
+    initialDataUpdatedAt: 0
   });
 
   const addTaskMutation = useMutation({

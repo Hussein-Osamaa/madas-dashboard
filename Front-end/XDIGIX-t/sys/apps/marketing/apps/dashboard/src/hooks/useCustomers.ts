@@ -18,7 +18,8 @@ export const useCustomers = (businessId?: string) => {
     queryKey: customersKey(businessId),
     enabled: Boolean(businessId),
     queryFn: () => fetchCustomers(businessId!),
-    initialData: [] as Customer[]
+    initialData: [] as Customer[],
+    initialDataUpdatedAt: 0
   });
 
   const invalidate = () => {

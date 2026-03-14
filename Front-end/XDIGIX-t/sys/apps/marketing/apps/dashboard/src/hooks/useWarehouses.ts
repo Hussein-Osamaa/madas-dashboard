@@ -6,7 +6,8 @@ export const useWarehouses = (businessId?: string) => {
     queryKey: ['warehouses', businessId],
     enabled: Boolean(businessId),
     queryFn: () => fetchWarehouses(businessId!),
-    initialData: [] as Warehouse[]
+    initialData: [] as Warehouse[],
+    initialDataUpdatedAt: 0
   });
 
   return {

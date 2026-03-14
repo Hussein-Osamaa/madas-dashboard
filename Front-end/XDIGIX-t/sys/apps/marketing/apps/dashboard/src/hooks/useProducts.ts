@@ -58,7 +58,8 @@ export const useProducts = (businessId?: string) => {
     queryKey: productsKey(businessId),
     enabled: Boolean(businessId),
     queryFn: () => fetchProducts(businessId!),
-    initialData: [] as Product[]
+    initialData: [] as Product[],
+    initialDataUpdatedAt: 0
   });
 
   const createMutation = useMutation({
