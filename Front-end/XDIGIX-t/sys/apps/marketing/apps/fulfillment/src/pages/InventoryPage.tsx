@@ -155,6 +155,7 @@ export default function InventoryPage() {
   const [restockScanInput, setRestockScanInput] = useState('');
   const [restockLastScan, setRestockLastScan] = useState<{ barcode: string; matched: boolean; detail: string } | null>(null);
   const [restockSubmitting, setRestockSubmitting] = useState(false);
+  const [restockProgress, setRestockProgress] = useState<{ done: number; total: number } | null>(null);
   const [showRestockConfirm, setShowRestockConfirm] = useState(false);
   const [restockReport, setRestockReport] = useState<RestockReport | null>(null);
   const restockInputRef = useRef<HTMLInputElement>(null);
@@ -248,6 +249,7 @@ export default function InventoryPage() {
   const handleFinishRestock = async () => {
     if (!restockSession || restockSession.entries.size === 0) return;
     setRestockSubmitting(true);
+    setRestockProgress(null);
     setError('');
 
     try {
@@ -281,7 +283,12 @@ export default function InventoryPage() {
         zeroedCount++;
       }
 
-      const result = await bulkUpdateStock(restockSession.clientId, allUpdates);
+      setRestockProgress({ done: 0, total: allUpdates.length });
+      const result = await bulkUpdateStock(
+        restockSession.clientId,
+        allUpdates,
+        (done, total) => setRestockProgress({ done, total })
+      );
 
       // Build items for the restock report email
       const reportItems: RestockSessionItem[] = [];
@@ -344,6 +351,7 @@ export default function InventoryPage() {
       setError(`Restock failed: ${(err as Error).message}`);
     } finally {
       setRestockSubmitting(false);
+      setRestockProgress(null);
     }
   };
 
@@ -1629,10 +1637,25 @@ export default function InventoryPage() {
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium disabled:opacity-50"
               >
                 {restockSubmitting ? (
-                  <>
-                    <RotateCcw className="w-4 h-4 animate-spin" />
-                    Updating stock...
-                  </>
+                  restockProgress && restockProgress.total > 0 ? (
+                    <span className="flex flex-col items-center gap-1 w-full">
+                      <span className="flex items-center gap-2 text-sm">
+                        <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                        Updating {restockProgress.done} / {restockProgress.total} products…
+                      </span>
+                      <span className="w-full h-1.5 rounded-full bg-white/20 overflow-hidden">
+                        <span
+                          className="block h-full rounded-full bg-white transition-all duration-300"
+                          style={{ width: `${Math.round((restockProgress.done / restockProgress.total) * 100)}%` }}
+                        />
+                      </span>
+                    </span>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4 animate-spin" />
+                      Preparing…
+                    </>
+                  )
                 ) : (
                   <>
                     <Check className="w-4 h-4" />

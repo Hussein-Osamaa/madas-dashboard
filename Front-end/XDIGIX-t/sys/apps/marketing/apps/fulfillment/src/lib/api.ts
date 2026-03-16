@@ -298,15 +298,31 @@ export async function updateProduct(clientId: string, productId: string, input: 
   });
 }
 
+/** Chunk size for bulk-stock requests. Keeps each payload small and lets the
+ *  server handle any number of products without a single gigantic request. */
+const BULK_STOCK_CHUNK = 200;
+
 export async function bulkUpdateStock(
   clientId: string,
-  updates: Array<{ productId: string; stock: Record<string, number> }>
+  updates: Array<{ productId: string; stock: Record<string, number> }>,
+  onProgress?: (done: number, total: number) => void
 ): Promise<{ succeeded: number; failed: number; total: number }> {
-  const res = await fetchApi('/warehouse/products/bulk-stock', {
-    method: 'POST',
-    body: JSON.stringify({ clientId, updates }),
-  });
-  return res as { succeeded: number; failed: number; total: number };
+  let succeeded = 0;
+  let failed    = 0;
+  const total   = updates.length;
+
+  for (let i = 0; i < updates.length; i += BULK_STOCK_CHUNK) {
+    const chunk = updates.slice(i, i + BULK_STOCK_CHUNK);
+    const res = await fetchApi('/warehouse/products/bulk-stock', {
+      method: 'POST',
+      body: JSON.stringify({ clientId, updates: chunk }),
+    }) as { succeeded: number; failed: number; total: number };
+    succeeded += res.succeeded ?? 0;
+    failed    += res.failed    ?? 0;
+    onProgress?.(Math.min(i + BULK_STOCK_CHUNK, total), total);
+  }
+
+  return { succeeded, failed, total };
 }
 
 export async function deleteProduct(clientId: string, productId: string): Promise<void> {

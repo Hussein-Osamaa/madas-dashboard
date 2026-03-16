@@ -609,7 +609,11 @@ router.patch(
   }
 );
 
-/** POST /warehouse/products/bulk-stock - Bulk update stock for many products at once (restock). */
+/** POST /warehouse/products/bulk-stock - Bulk update stock for many products at once (restock).
+ *
+ * Scalable path: one MongoDB find() + one bulkWrite() regardless of product count.
+ * Supports partial batches from the frontend (frontend chunks into ≤200-product requests).
+ */
 router.post('/products/bulk-stock', async (req: Request, res: Response) => {
   try {
     const clientId = (req.body?.clientId && String(req.body.clientId).trim()) || req.clientId;
@@ -619,48 +623,82 @@ router.post('/products/bulk-stock', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'updates array required' });
     }
 
-    const { updateProduct } = await import('../modules/products/controllers/Products.controller');
+    const { FirestoreDoc } = await import('../schemas/document.schema');
     const { batchLogProductActivity } = await import('../modules/products/services/ProductActivityLog.service');
     const userId = (req.accountPayload as { userId?: string })?.userId ?? '';
-    const email = (req.accountPayload as { email?: string })?.email ?? '';
+    const email  = (req.accountPayload as { email?: string })?.email  ?? '';
 
-    let succeeded = 0;
-    let failed = 0;
-    const BATCH = 10;
-    // Collect all log entries then write once with insertMany (N writes → 1 write)
+    const productIds = updates.map((u) => u.productId);
+
+    // ── 1. Load ALL existing docs in ONE query ────────────────────────────────
+    const existingDocs = await FirestoreDoc.find(
+      { businessId: clientId, coll: 'products', docId: { $in: productIds } },
+      { docId: 1, data: 1 }
+    ).lean();
+
+    const docMap = new Map<string, Record<string, unknown>>();
+    existingDocs.forEach((d) => docMap.set(String(d.docId), (d.data ?? {}) as Record<string, unknown>));
+
+    // ── 2. Build bulkWrite ops + activity logs in memory ─────────────────────
+    const bulkOps: object[] = [];
     const activityLogs: Parameters<typeof batchLogProductActivity>[0] = [];
+    let succeeded = 0;
+    let failed    = 0;
 
-    for (let i = 0; i < updates.length; i += BATCH) {
-      const batch = updates.slice(i, i + BATCH);
-      const results = await Promise.allSettled(
-        batch.map(async (u) => {
-          const { productName, oldStock } = await updateProduct(clientId, u.productId, { stock: u.stock });
-          // Compute per-variant stock diffs
-          const stockChanges: Record<string, { from: number; to: number; diff: number }> = {};
-          const allKeys = new Set([...Object.keys(u.stock), ...Object.keys(oldStock ?? {})]);
-          for (const key of allKeys) {
-            const from = (oldStock ?? {})[key] ?? 0;
-            const to = u.stock[key] ?? 0;
-            if (from !== to) stockChanges[key] = { from, to, diff: to - from };
-          }
-          activityLogs.push({
-            clientId,
-            productId: u.productId,
-            productName,
-            action: 'updated',
-            performedByUserId: userId,
-            performedByEmail: email,
-            details: {
-              stockChanges: Object.keys(stockChanges).length ? stockChanges : undefined,
-              source: 'bulk-restock',
-            },
-          });
-        })
-      );
-      results.forEach((r) => { if (r.status === 'fulfilled') succeeded++; else failed++; });
+    for (const u of updates) {
+      const existing = docMap.get(u.productId);
+      if (!existing) { failed++; continue; }
+
+      // Compute stock diff for activity log
+      const oldStockRaw = existing.stock as Record<string, unknown> | undefined;
+      const oldStock: Record<string, number> = {};
+      if (oldStockRaw && typeof oldStockRaw === 'object') {
+        for (const [k, v] of Object.entries(oldStockRaw)) {
+          const n = typeof v === 'number' ? v : Number(v);
+          if (!Number.isNaN(n)) oldStock[k] = n;
+        }
+      }
+
+      const stockChanges: Record<string, { from: number; to: number; diff: number }> = {};
+      const allKeys = new Set([...Object.keys(u.stock), ...Object.keys(oldStock)]);
+      for (const key of allKeys) {
+        const from = oldStock[key] ?? 0;
+        const to   = u.stock[key] ?? 0;
+        if (from !== to) stockChanges[key] = { from, to, diff: to - from };
+      }
+
+      // Only update the stock field — preserve everything else (name, sku, barcodes…)
+      bulkOps.push({
+        updateOne: {
+          filter: { businessId: clientId, coll: 'products', docId: u.productId },
+          update: { $set: { 'data.stock': u.stock, 'data.updatedAt': new Date().toISOString() } },
+        },
+      });
+
+      activityLogs.push({
+        clientId,
+        productId:          u.productId,
+        productName:        String(existing.name ?? u.productId),
+        action:             'updated',
+        performedByUserId:  userId,
+        performedByEmail:   email,
+        details: {
+          stockChanges: Object.keys(stockChanges).length ? stockChanges : undefined,
+          source: 'bulk-restock',
+        },
+      });
+      succeeded++;
     }
 
-    // Single bulk insert for all activity log entries
+    // ── 3. ONE bulkWrite for all stock updates ────────────────────────────────
+    if (bulkOps.length > 0) {
+      await (FirestoreDoc as import('mongoose').Model<import('mongoose').Document>).bulkWrite(
+        bulkOps as import('mongoose').AnyBulkWriteOperation[],
+        { ordered: false }   // continue even if one op fails
+      );
+    }
+
+    // ── 4. ONE insertMany for all activity logs ───────────────────────────────
     if (activityLogs.length > 0) {
       await batchLogProductActivity(activityLogs).catch(() => { /* non-critical */ });
     }
