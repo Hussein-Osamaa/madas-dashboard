@@ -1,15 +1,15 @@
 # ================================
 # Stage 1: Build
 # ================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install deps (deterministic; requires in-sync package-lock.json)
+# Install all deps (lockfile-strict install)
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --frozen-lockfile
 
-# Build app
+# Build TypeScript
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
@@ -17,16 +17,16 @@ RUN npm run build
 # ================================
 # Stage 2: Production
 # ================================
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=4000
 
-# Production deps only (deterministic)
+# Production deps only
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev \
+RUN npm install --omit=dev --frozen-lockfile \
     && npm cache clean --force
 
 # Built output only
