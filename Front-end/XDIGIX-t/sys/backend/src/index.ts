@@ -4,6 +4,7 @@ import { connectDb } from './db';
 import { setupRealtime } from './realtime';
 import { createApp } from './app';
 import { startReportCrons } from './cron/reportCron';
+import { startShippingCron } from './modules/shipping/services/sla-cron.service';
 
 // Fallback CORS origin when CORS_ORIGIN is not set (e.g. local dev). Production (Railway) should set CORS_ORIGIN.
 const DEFAULT_ORIGIN = process.env.CORS_ORIGIN?.trim() || '*';
@@ -66,6 +67,7 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL) {
     try {
       await connectDb();
       startReportCrons();
+      startShippingCron();
 
       const app = createApp();
       const httpServer = createServer(app);

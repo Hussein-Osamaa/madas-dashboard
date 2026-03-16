@@ -26,7 +26,7 @@ function adminHistoryFallback() {
 export default defineConfig({
   plugins: [react(), adminHistoryFallback()],
   base: '/admin/',
-  build: { sourcemap: true, chunkSizeWarningLimit: 1000 },
+  build: { sourcemap: false, chunkSizeWarningLimit: 600 },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -39,9 +39,10 @@ export default defineConfig({
   server: {
     port: 5176,
     host: true,
-    fs: {
-      allow: ['..']
-    }
+    fs: { allow: ['..'] },
+    proxy: {
+      '/api': { target: 'http://localhost:4000', changeOrigin: true },
+    },
   },
   preview: {
     port: 4176

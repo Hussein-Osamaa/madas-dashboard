@@ -3,7 +3,7 @@ import { useLiveRefresh } from '../hooks/useLiveRefresh';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 import { useStaffAuth } from '../contexts/StaffAuthContext';
-import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download, ScanBarcode, X, Check, RotateCcw } from 'lucide-react';
+import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download, ScanBarcode, X, Check, RotateCcw, FileText, ClipboardList } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
 import { normalizeProductFromApi } from '../components/SizeVariantsEditor';
 import {
@@ -22,9 +22,11 @@ import {
   updateProduct,
   deleteProduct,
   bulkUpdateStock,
+  finishRestockSession,
   type FulfillmentClient,
   type ProductWithStock,
   type Warehouse,
+  type RestockSessionItem,
 } from '../lib/api';
 import {
   exportProductsToExcel,
@@ -51,6 +53,17 @@ type RestockSession = {
   startedAt: Date;
   totalScans: number;
   entries: Map<string, RestockEntry>;
+};
+
+type RestockReport = {
+  clientName: string;
+  finishedAt: Date;
+  totalScans: number;
+  productsRestocked: number;
+  zeroedCount: number;
+  failed: number;
+  entries: RestockEntry[];                          // sorted by productName
+  zeroedProducts: { id: string; name: string }[];  // products set to 0
 };
 
 const RESTOCK_STORAGE_KEY = 'xdf_restock_session';
@@ -143,6 +156,7 @@ export default function InventoryPage() {
   const [restockLastScan, setRestockLastScan] = useState<{ barcode: string; matched: boolean; detail: string } | null>(null);
   const [restockSubmitting, setRestockSubmitting] = useState(false);
   const [showRestockConfirm, setShowRestockConfirm] = useState(false);
+  const [restockReport, setRestockReport] = useState<RestockReport | null>(null);
   const restockInputRef = useRef<HTMLInputElement>(null);
 
   const barcodeToProduct = useMemo(() => {
@@ -269,19 +283,63 @@ export default function InventoryPage() {
 
       const result = await bulkUpdateStock(restockSession.clientId, allUpdates);
 
+      // Build items for the restock report email
+      const reportItems: RestockSessionItem[] = [];
+      productStockMap.forEach((sizeStock, productId) => {
+        const totalQty = Object.values(sizeStock).reduce((s, q) => s + q, 0);
+        const entry = Array.from(restockSession.entries.values()).find((e) => e.productId === productId);
+        const product = products.find((p) => p.id === productId);
+        const sku = String((product as Record<string, unknown>)?.sku ?? '');
+        reportItems.push({
+          productId,
+          productName: entry?.productName,
+          sku: sku || undefined,
+          quantity: totalQty,
+        });
+      });
+
+      // Fire-and-forget: send email report (don't fail the session if email fails)
+      if (reportItems.length > 0) {
+        finishRestockSession(restockSession.clientId, reportItems).catch((err) =>
+          console.warn('[Restock] Report/email error (non-fatal):', err)
+        );
+      }
+
       const totalScanned = restockSession.totalScans;
       const productsUpdated = productStockMap.size;
-      setSaveSuccessMessage(
-        `Restock complete: ${totalScanned} items scanned, ${productsUpdated} product${productsUpdated !== 1 ? 's' : ''} restocked` +
-        (zeroedCount > 0 ? `, ${zeroedCount} zeroed.` : '.') +
-        (result.failed > 0 ? ` (${result.failed} failed)` : '')
+
+      // Capture all data needed for the report BEFORE clearing the session
+      const capturedEntries = Array.from(restockSession.entries.values()).sort((a, b) =>
+        a.productName.localeCompare(b.productName)
       );
-      setTimeout(() => setSaveSuccessMessage(''), 8000);
+      const scannedIdsForReport = new Set(capturedEntries.map((e) => e.productId));
+      const capturedZeroed = products
+        .filter((p) => {
+          if (scannedIdsForReport.has(p.id)) return false;
+          const d = p as Record<string, unknown>;
+          const stock = d.stock as Record<string, number> | undefined;
+          if (!stock || typeof stock !== 'object') return false;
+          return Object.values(stock).some((qty) => typeof qty === 'number' && qty > 0);
+        })
+        .map((p) => ({ id: p.id, name: String((p as Record<string, unknown>).name ?? p.id) }));
+
+      await loadProducts();
 
       setRestockSession(null);
       setShowRestockConfirm(false);
       setRestockLastScan(null);
-      await loadProducts();
+
+      // Show the full report modal
+      setRestockReport({
+        clientName: restockSession.clientName,
+        finishedAt: new Date(),
+        totalScans: totalScanned,
+        productsRestocked: productsUpdated,
+        zeroedCount,
+        failed: result.failed,
+        entries: capturedEntries,
+        zeroedProducts: capturedZeroed,
+      });
     } catch (err) {
       setError(`Restock failed: ${(err as Error).message}`);
     } finally {
@@ -1594,6 +1652,169 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
+
+      {/* ── Restock Report Modal ─────────────────────────────────────── */}
+      {restockReport && (() => {
+        // Group entries by product for the report table
+        const grouped = new Map<string, { productName: string; sizes: { size: string; count: number }[] }>();
+        restockReport.entries.forEach((e) => {
+          if (!grouped.has(e.productId)) grouped.set(e.productId, { productName: e.productName, sizes: [] });
+          grouped.get(e.productId)!.sizes.push({ size: e.size, count: e.count });
+        });
+        const groupedRows = Array.from(grouped.values());
+        const totalSizes = restockReport.entries.length;
+
+        return (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 print:p-0 print:bg-white print:items-start">
+            <div className="bg-white dark:bg-[#0d0e26] rounded-2xl border border-gray-200 dark:border-white/10 w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] print:max-h-none print:rounded-none print:border-0 print:shadow-none print:max-w-none">
+
+              {/* Header */}
+              <div className="flex items-start justify-between p-6 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/20 print:bg-emerald-100">
+                    <ClipboardList className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Restock Report</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {restockReport.clientName} &nbsp;·&nbsp;{' '}
+                      {restockReport.finishedAt.toLocaleDateString('en-EG', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                      {restockReport.finishedAt.toLocaleTimeString('en-EG', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setRestockReport(null)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 print:hidden"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Summary cards */}
+              <div className="grid grid-cols-4 gap-3 p-4 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+                {[
+                  { label: 'Total Scans', value: restockReport.totalScans, color: 'text-blue-600 dark:text-blue-400' },
+                  { label: 'Products', value: restockReport.productsRestocked, color: 'text-emerald-600 dark:text-emerald-400' },
+                  { label: 'Size Entries', value: totalSizes, color: 'text-amber-600 dark:text-amber-400' },
+                  { label: 'Zeroed', value: restockReport.zeroedCount, color: 'text-red-600 dark:text-red-400' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="text-center p-3 rounded-xl bg-gray-50 dark:bg-white/5 print:bg-gray-100 print:rounded-lg">
+                    <p className={`text-2xl font-bold ${color}`}>{value}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Products & sizes table */}
+              <div className="flex-1 overflow-y-auto print:overflow-visible">
+                <div className="p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" /> Restocked Products
+                  </p>
+                  <div className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden print:border-gray-300">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 dark:bg-white/5 print:bg-gray-100">
+                        <tr>
+                          <th className="text-left py-2.5 px-4 text-gray-500 dark:text-gray-400 font-medium">Product</th>
+                          <th className="text-left py-2.5 px-4 text-gray-500 dark:text-gray-400 font-medium">Sizes & Quantities</th>
+                          <th className="text-right py-2.5 px-4 text-gray-500 dark:text-gray-400 font-medium">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupedRows.map((row, i) => {
+                          const rowTotal = row.sizes.reduce((s, sz) => s + sz.count, 0);
+                          return (
+                            <tr key={i} className="border-t border-gray-100 dark:border-white/5 print:border-gray-200">
+                              <td className="py-3 px-4 font-medium text-gray-900 dark:text-white align-top">
+                                {row.productName}
+                              </td>
+                              <td className="py-3 px-4 align-top">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {row.sizes
+                                    .slice()
+                                    .sort((a, b) => a.size.localeCompare(b.size))
+                                    .map((sz) => (
+                                      <span
+                                        key={sz.size}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-xs"
+                                      >
+                                        <span className="text-gray-600 dark:text-gray-300">{sz.size}</span>
+                                        <span className="font-bold text-emerald-700 dark:text-emerald-400">{sz.count}</span>
+                                      </span>
+                                    ))}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-right font-bold text-emerald-700 dark:text-emerald-400 align-top">
+                                {rowTotal}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot className="bg-gray-50 dark:bg-white/5 print:bg-gray-100">
+                        <tr className="border-t border-gray-200 dark:border-white/10 print:border-gray-300">
+                          <td className="py-2.5 px-4 font-semibold text-gray-900 dark:text-white">Total</td>
+                          <td className="py-2.5 px-4 text-xs text-gray-500 dark:text-gray-400">
+                            {groupedRows.length} product{groupedRows.length !== 1 ? 's' : ''}, {totalSizes} size entr{totalSizes !== 1 ? 'ies' : 'y'}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-bold text-gray-900 dark:text-white">
+                            {restockReport.totalScans}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Zeroed products */}
+                {restockReport.zeroedProducts.length > 0 && (
+                  <div className="px-4 pb-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-red-500 dark:text-red-400 mb-2">
+                      Products Set to 0 (not scanned)
+                    </p>
+                    <div className="rounded-xl border border-red-200 dark:border-red-500/20 overflow-hidden">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {restockReport.zeroedProducts.map((p) => (
+                            <tr key={p.id} className="border-t border-red-100 dark:border-red-500/10 first:border-t-0">
+                              <td className="py-2 px-4 text-gray-900 dark:text-white">{p.name}</td>
+                              <td className="py-2 px-4 text-right font-bold text-red-600 dark:text-red-400">0</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {restockReport.failed > 0 && (
+                  <div className="mx-4 mb-4 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-400">
+                    ⚠️ {restockReport.failed} product update{restockReport.failed !== 1 ? 's' : ''} failed — check inventory logs.
+                  </div>
+                )}
+              </div>
+
+              {/* Footer buttons */}
+              <div className="flex items-center justify-between gap-3 p-4 border-t border-gray-100 dark:border-white/10 print:hidden">
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 text-sm font-medium"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Report
+                </button>
+                <button
+                  onClick={() => setRestockReport(null)}
+                  className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

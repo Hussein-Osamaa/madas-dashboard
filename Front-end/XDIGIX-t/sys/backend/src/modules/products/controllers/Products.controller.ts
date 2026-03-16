@@ -335,7 +335,13 @@ export interface UpdateProductInput {
  * Auto-generates unique barcodes for new size variants that don't have one.
  * Returns product name for activity logging.
  */
-export async function updateProduct(clientId: string, productId: string, input: UpdateProductInput): Promise<{ productName?: string }> {
+export interface UpdateProductResult {
+  productName?: string;
+  oldStock?: Record<string, number>;
+  oldFields?: { name?: string; sku?: string; barcode?: string; warehouse?: string };
+}
+
+export async function updateProduct(clientId: string, productId: string, input: UpdateProductInput): Promise<UpdateProductResult> {
   const doc = await FirestoreDoc.findOne({
     businessId: clientId,
     coll: 'products',
@@ -391,7 +397,28 @@ export async function updateProduct(clientId: string, productId: string, input: 
     { $set: { data: dataToSet } }
   );
   const productName = (existing.name as string) || (input.name as string) || undefined;
-  return { productName };
+
+  // Capture old stock for diff logging
+  let oldStock: Record<string, number> | undefined;
+  const rawOldStock = existing.stock;
+  if (rawOldStock != null && typeof rawOldStock === 'object' && !Array.isArray(rawOldStock)) {
+    oldStock = {};
+    for (const [k, v] of Object.entries(rawOldStock as Record<string, unknown>)) {
+      const num = typeof v === 'number' ? v : Number(v);
+      if (!Number.isNaN(num)) oldStock[k] = num;
+    }
+  }
+
+  return {
+    productName,
+    oldStock,
+    oldFields: {
+      name: existing.name as string | undefined,
+      sku: existing.sku as string | undefined,
+      barcode: existing.barcode as string | undefined,
+      warehouse: existing.warehouse as string | undefined,
+    },
+  };
 }
 
 /**

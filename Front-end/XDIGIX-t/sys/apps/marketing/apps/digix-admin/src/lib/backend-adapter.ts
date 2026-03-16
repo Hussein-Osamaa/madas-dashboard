@@ -114,20 +114,38 @@ async function fetchApi<T>(path: string, opts: RequestInit = {}): Promise<T> {
 }
 
 let currentUser: BackendUser | null = null;
+let authReady = false;
+const pendingListeners: Array<(user: BackendUser | null) => void> = [];
+
+function notifyListeners(user: BackendUser | null) {
+  authListeners.forEach((cb) => cb(user));
+}
 
 async function initAuth() {
-  if (!accessToken) { currentUser = null; authListeners.forEach((cb) => cb(null)); return; }
+  const token = await getToken();
+  if (!token) {
+    currentUser = null;
+    authReady = true;
+    pendingListeners.forEach((cb) => cb(null));
+    pendingListeners.length = 0;
+    notifyListeners(null);
+    return;
+  }
   try {
-    const data = await fetchApi<{ user: { uid: string; email: string } }>('/auth/me');
+    const data = await fetchApi<{ user: { uid: string; email: string; displayName?: string } }>('/auth/me');
     if (data?.user) {
-      currentUser = { uid: data.user.uid, email: data.user.email || null, displayName: null, emailVerified: true, getIdToken: async () => (await getToken()) || '' };
-      authListeners.forEach((cb) => cb(currentUser));
-    } else { currentUser = null; authListeners.forEach((cb) => cb(null)); }
+      currentUser = { uid: data.user.uid, email: data.user.email || null, displayName: data.user.displayName || null, emailVerified: true, getIdToken: async () => (await getToken()) || '' };
+    } else {
+      currentUser = null;
+    }
   } catch {
     currentUser = null;
     clearTokens();
-    authListeners.forEach((cb) => cb(null));
   }
+  authReady = true;
+  pendingListeners.forEach((cb) => cb(currentUser));
+  pendingListeners.length = 0;
+  notifyListeners(currentUser);
 }
 initAuth();
 
@@ -141,8 +159,15 @@ export const auth = {
   },
   onAuthStateChanged: (cb: (user: BackendUser | null) => void) => {
     authListeners.push(cb);
-    cb(currentUser);
-    return () => { const i = authListeners.indexOf(cb); if (i >= 0) authListeners.splice(i, 1); };
+    if (authReady) {
+      cb(currentUser);
+    } else {
+      pendingListeners.push(cb);
+    }
+    return () => {
+      const i = authListeners.indexOf(cb); if (i >= 0) authListeners.splice(i, 1);
+      const j = pendingListeners.indexOf(cb); if (j >= 0) pendingListeners.splice(j, 1);
+    };
   }
 };
 
@@ -185,6 +210,11 @@ export async function createUserWithEmailAndPassword(_auth: typeof auth, email: 
 
 export function signOut(_auth: typeof auth) { return auth.signOut(); }
 export function onAuthStateChanged(_auth: typeof auth, cb: (user: BackendUser | null) => void) { return auth.onAuthStateChanged(cb); }
+
+/** Exported for admin pages that need direct REST calls to the backend API. */
+export async function fetchAdminApi<T = unknown>(path: string, opts: RequestInit = {}): Promise<T> {
+  return fetchApi<T>(path, opts);
+}
 export async function sendPasswordResetEmail() { throw new Error('Password reset not available with backend API'); }
 
 function buildPath(...s: string[]): string { return s.filter(Boolean).join('/'); }
@@ -227,13 +257,21 @@ export async function deleteDoc(ref: { path?: string }) {
 
 export function onSnapshot(q: { path?: string; constraints?: unknown[] }, onNext: (s: { docs: Array<{ id: string; data: () => Record<string, unknown> }> }) => void, onErr?: (e: Error) => void) {
   let active = true;
+  const MIN_INTERVAL = 5_000;   // 5s base
+  const MAX_INTERVAL = 30_000;  // 30s cap
   const poll = async () => {
+    let interval = MIN_INTERVAL;
     while (active) {
       try {
         const data = await fetchApi<{ docs: Array<{ id: string; data: Record<string, unknown> }> }>('/firestore/query', { method: 'POST', body: JSON.stringify({ path: q.path || '', constraints: q.constraints || [] }) });
         onNext({ docs: (data?.docs || []).map((d) => ({ id: d.id, data: () => d.data })) });
-      } catch (e) { onErr?.(e as Error); }
-      await new Promise((r) => setTimeout(r, 2000));
+        interval = MIN_INTERVAL; // reset on success
+      } catch (e) {
+        onErr?.(e as Error);
+        // Exponential backoff on error: 5s → 10s → 20s → 30s cap
+        interval = Math.min(interval * 2, MAX_INTERVAL);
+      }
+      await new Promise((r) => setTimeout(r, interval));
     }
   };
   poll();

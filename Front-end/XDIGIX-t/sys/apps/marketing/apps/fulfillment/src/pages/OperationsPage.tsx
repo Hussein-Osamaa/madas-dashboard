@@ -7,7 +7,7 @@ const cards = [
 
 export default function OperationsPage() {
   return (
-    <div className="min-w-0">
+    <div className="max-w-5xl mx-auto min-w-0">
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">Warehouse Operations</h1>
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 sm:mb-8">Choose an operation below. All actions are recorded and attributed to you.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

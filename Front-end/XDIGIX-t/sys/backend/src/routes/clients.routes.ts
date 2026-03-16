@@ -11,15 +11,35 @@ import { User } from '../schemas/user.schema';
 import { Business } from '../schemas/business.schema';
 import { Tenant } from '../schemas/tenant.schema';
 import { FirestoreDoc } from '../schemas/document.schema';
+import { centralJwtMiddleware } from '../middleware/central-jwt.middleware';
 
 const router = Router();
 const SALT_ROUNDS = 10;
 
+/** Require caller to be an authenticated admin (super_admin / ADMIN accountType) */
+function requireAdmin(req: Request, res: Response, next: () => void): void {
+  const isAdmin =
+    req.accountPayload?.accountType === 'ADMIN' ||
+    req.accountPayload?.role === 'super_admin' ||
+    (req.user as { type?: string } | undefined)?.type === 'super_admin';
+  if (!isAdmin) {
+    res.status(403).json({ error: 'Super admin access required', code: 'auth/forbidden' });
+    return;
+  }
+  next();
+}
+
 router.post(
   '/create-client',
+  centralJwtMiddleware,
+  requireAdmin,
   body('businessName').trim().notEmpty().withMessage('Business name is required'),
   body('ownerEmail').isEmail().normalizeEmail(),
-  body('ownerPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('ownerPassword')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
+    .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
+    .matches(/[0-9]/).withMessage('Password must contain at least one number'),
   body('ownerName').optional().trim(),
   body('brandEmail').optional().isEmail().normalizeEmail(),
   body('plan').optional().isIn(['basic', 'professional', 'enterprise']),
@@ -107,8 +127,6 @@ router.post(
         }
       });
 
-      console.log('[CreateClient] Created:', { businessName, ownerEmail, businessId, tenantId });
-
       res.json({
         success: true,
         businessId,
@@ -117,13 +135,31 @@ router.post(
         message: 'Client created successfully'
       });
     } catch (err) {
-      console.error('[CreateClient] Error:', err);
       res.status(500).json({
         success: false,
-        message: err instanceof Error ? err.message : 'Failed to create client'
+        message: 'Failed to create client'
       });
     }
   }
 );
+
+/** GET /clients/restock-reports - List all restock reports (admin use). Query: clientId?, page?, limit? */
+router.get('/clients/restock-reports', centralJwtMiddleware, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { RestockReport } = await import('../schemas/restock-report.schema');
+    const page = Math.max(1, parseInt((req.query.page as string) || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) || '50', 10)));
+    const clientId = (req.query.clientId as string) || undefined;
+    const filter: Record<string, unknown> = {};
+    if (clientId) filter.clientId = clientId;
+    const [reports, total] = await Promise.all([
+      RestockReport.find(filter).sort({ finishedAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      RestockReport.countDocuments(filter),
+    ]);
+    res.json({ reports, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch reports' });
+  }
+});
 
 export default router;

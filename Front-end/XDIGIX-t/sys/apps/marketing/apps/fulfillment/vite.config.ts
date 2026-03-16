@@ -27,8 +27,8 @@ export default defineConfig({
   plugins: [react(), warehouseHistoryFallback()],
   base: '/warehouse/',
   build: {
-    sourcemap: true,
-    chunkSizeWarningLimit: 1000,
+    sourcemap: false,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {

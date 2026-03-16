@@ -38,3 +38,4 @@ export const createUserWithEmailAndPassword = api.createUserWithEmailAndPassword
 export const signOut = api.signOut;
 export const onAuthStateChanged = api.onAuthStateChanged;
 export const sendPasswordResetEmail = api.sendPasswordResetEmail ?? (() => Promise.reject(new Error('Not available')));
+export const fetchAdminApi = useBackend ? backendApi.fetchAdminApi : undefined;

@@ -9,6 +9,7 @@ export async function logProductActivity(params: {
   action: ProductActivityAction;
   performedByUserId: string;
   performedByEmail: string;
+  details?: Record<string, unknown>;
 }): Promise<void> {
   await ProductActivityLog.create({
     clientId: params.clientId,
@@ -17,7 +18,24 @@ export async function logProductActivity(params: {
     action: params.action,
     performedByUserId: params.performedByUserId,
     performedByEmail: params.performedByEmail,
+    details: params.details,
   });
+}
+
+/** Bulk insert multiple activity log entries in a single DB operation (used by bulk-stock route). */
+export async function batchLogProductActivity(
+  entries: Array<{
+    clientId: string;
+    productId: string;
+    productName?: string;
+    action: ProductActivityAction;
+    performedByUserId: string;
+    performedByEmail: string;
+    details?: Record<string, unknown>;
+  }>
+): Promise<void> {
+  if (entries.length === 0) return;
+  await ProductActivityLog.insertMany(entries);
 }
 
 export async function listProductActivityLog(params: {
@@ -32,6 +50,7 @@ export async function listProductActivityLog(params: {
   action: ProductActivityAction;
   performedByUserId: string;
   performedByEmail: string;
+  details?: Record<string, unknown>;
   createdAt: string;
 }>; total: number }> {
   const page = Math.max(1, params.page ?? 1);
@@ -51,6 +70,7 @@ export async function listProductActivityLog(params: {
       action: e.action as ProductActivityAction,
       performedByUserId: String(e.performedByUserId ?? ''),
       performedByEmail: String(e.performedByEmail ?? ''),
+      details: e.details != null ? (e.details as Record<string, unknown>) : undefined,
       createdAt: (e.createdAt as Date)?.toISOString?.() ?? new Date().toISOString(),
     })),
     total,

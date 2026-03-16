@@ -110,7 +110,7 @@ export default function DashboardPage() {
     : 1;
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <LayoutDashboard className="w-6 h-6 text-amber-500 dark:text-amber-400" />

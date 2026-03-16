@@ -468,7 +468,7 @@ export default function WeeklyAuditScanPage() {
   const isCreator = !!sessionId && (createdBy === user?.userId || isPlatformAdmin);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0b1a] p-3 sm:p-6 pb-[env(safe-area-inset-bottom)]">
+    <div>
       <div className="max-w-4xl mx-auto">
         <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
           <ClipboardCheck className="w-7 h-7 sm:w-8 sm:h-8 text-amber-500 shrink-0" />

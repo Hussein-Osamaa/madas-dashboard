@@ -270,6 +270,101 @@ router.post(
 );
 router.get('/transactions', InventoryController.listTransactions);
 
+/** POST /warehouse/restock-session - Finish a restock session: records INBOUND for each item, saves RestockReport, sends email. */
+router.post(
+  '/restock-session',
+  [
+    body('clientId').isString().notEmpty(),
+    body('items').isArray({ min: 1 }),
+    body('items.*.productId').isString().notEmpty(),
+    body('items.*.quantity').isInt({ min: 1 }),
+    body('sessionNote').optional().isString(),
+  ],
+  validate,
+  async (req: Request, res: Response) => {
+    try {
+      const { clientId, items, sessionNote } = req.body as {
+        clientId: string;
+        items: Array<{ productId: string; productName?: string; sku?: string; quantity: number }>;
+        sessionNote?: string;
+      };
+      const staffId = (req.accountPayload as { userId?: string })?.userId;
+      const staffEmail = (req.accountPayload as { email?: string })?.email;
+
+      const { recordTransaction } = await import('../modules/inventory/services/Inventory.service');
+      for (const item of items) {
+        await recordTransaction({
+          productId: item.productId,
+          clientId,
+          type: 'INBOUND',
+          quantity: item.quantity,
+          referenceId: `restock:session:${Date.now()}`,
+          performedByStaffId: staffId,
+        });
+      }
+
+      const biz = await Business.findOne({ businessId: clientId }).select('name').lean();
+      const clientName = (biz as { name?: string } | null)?.name || clientId;
+
+      const { RestockReport } = await import('../schemas/restock-report.schema');
+      const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+      const report = await RestockReport.create({
+        clientId,
+        clientName,
+        staffId,
+        staffEmail,
+        items,
+        totalItems,
+        sessionNote,
+        finishedAt: new Date(),
+      });
+
+      // Send email notification
+      const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+      if (adminEmail) {
+        try {
+          const nodemailer = await import('nodemailer');
+          const transporter = nodemailer.default.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: Number(process.env.SMTP_PORT) || 587,
+            secure: false,
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+          });
+          const itemRows = items
+            .map((i) => `<tr><td style="padding:4px 8px;border:1px solid #ddd">${i.productName || i.productId}</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:center">${i.sku || '-'}</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:center">${i.quantity}</td></tr>`)
+            .join('');
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM || 'noreply@xdigix.com',
+            to: adminEmail,
+            subject: `Restock Session Complete — ${clientName}`,
+            html: `
+              <h2 style="font-family:sans-serif">Restock Session Report</h2>
+              <p style="font-family:sans-serif"><strong>Client:</strong> ${clientName}</p>
+              <p style="font-family:sans-serif"><strong>Staff:</strong> ${staffEmail || staffId || 'N/A'}</p>
+              <p style="font-family:sans-serif"><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+              ${sessionNote ? `<p style="font-family:sans-serif"><strong>Note:</strong> ${sessionNote}</p>` : ''}
+              <p style="font-family:sans-serif"><strong>Total Units Restocked:</strong> ${totalItems}</p>
+              <table style="border-collapse:collapse;font-family:sans-serif;margin-top:12px">
+                <thead><tr style="background:#f4f4f4"><th style="padding:6px 8px;border:1px solid #ddd">Product</th><th style="padding:6px 8px;border:1px solid #ddd">SKU</th><th style="padding:6px 8px;border:1px solid #ddd">Qty Added</th></tr></thead>
+                <tbody>${itemRows}</tbody>
+              </table>
+            `,
+          });
+          report.emailSent = true;
+          await report.save();
+        } catch (mailErr) {
+          console.error('[RestockSession] Email error:', mailErr);
+        }
+      }
+
+      emitWarehouseUpdate(getIo(), { type: 'products', clientId });
+      res.json({ success: true, reportId: report._id.toString(), totalItems });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  }
+);
+
 /** POST /warehouse/returns/scan - Scan returned product. Creates RETURNED (resellable) or DAMAGED movement. Body: barcode, return_reference_id, condition (resellable|damaged), quantity? */
 router.post(
   '/returns/scan',
@@ -411,6 +506,12 @@ router.post(
         action: 'created',
         performedByUserId: userId,
         performedByEmail: email,
+        details: {
+          sku: req.body.sku ?? null,
+          barcode: req.body.barcode ?? null,
+          warehouse: req.body.warehouse ?? null,
+          initialStock: stock ?? {},
+        },
       });
       emitWarehouseUpdate(getIo(), { type: 'products', clientId: req.clientId! });
       res.status(201).json(result);
@@ -452,7 +553,7 @@ router.patch(
           sizeBarcodes = undefined;
         }
       }
-      const { productName } = await updateProduct(clientId, productId, {
+      const { productName, oldStock, oldFields } = await updateProduct(clientId, productId, {
         name: req.body.name,
         sku: req.body.sku,
         barcode: req.body.barcode,
@@ -463,6 +564,34 @@ router.patch(
       const userId = (req.accountPayload as { userId?: string })?.userId ?? '';
       const email = (req.accountPayload as { email?: string })?.email ?? '';
       const { logProductActivity } = await import('../modules/products/services/ProductActivityLog.service');
+
+      // Compute stock diffs: { M: { from: 30, to: 50, diff: 20 } }
+      const stockChanges: Record<string, { from: number; to: number; diff: number }> = {};
+      if (stock != null) {
+        const allKeys = new Set([...Object.keys(stock), ...Object.keys(oldStock ?? {})]);
+        for (const key of allKeys) {
+          const from = (oldStock ?? {})[key] ?? 0;
+          const to = stock[key] ?? 0;
+          if (from !== to) stockChanges[key] = { from, to, diff: to - from };
+        }
+      }
+
+      // Compute field changes: { name: { from: 'Old', to: 'New' } }
+      const fieldChanges: Record<string, { from: unknown; to: unknown }> = {};
+      if (req.body.name != null && String(oldFields?.name ?? '') !== String(req.body.name))
+        fieldChanges.name = { from: oldFields?.name ?? '', to: req.body.name };
+      if (req.body.sku != null && String(oldFields?.sku ?? '') !== String(req.body.sku))
+        fieldChanges.sku = { from: oldFields?.sku ?? '', to: req.body.sku };
+      if (req.body.barcode != null && String(oldFields?.barcode ?? '') !== String(req.body.barcode))
+        fieldChanges.barcode = { from: oldFields?.barcode ?? '', to: req.body.barcode };
+      if (req.body.warehouse != null && String(oldFields?.warehouse ?? '') !== String(req.body.warehouse))
+        fieldChanges.warehouse = { from: oldFields?.warehouse ?? '', to: req.body.warehouse };
+
+      const logDetails: Record<string, unknown> = {};
+      if (Object.keys(stockChanges).length) logDetails.stockChanges = stockChanges;
+      if (Object.keys(fieldChanges).length) logDetails.fieldChanges = fieldChanges;
+      if (!Object.keys(logDetails).length) logDetails.noChanges = true;
+
       await logProductActivity({
         clientId,
         productId,
@@ -470,6 +599,7 @@ router.patch(
         action: 'updated',
         performedByUserId: userId,
         performedByEmail: email,
+        details: logDetails,
       });
       emitWarehouseUpdate(getIo(), { type: 'products', clientId });
       res.json({ success: true });
@@ -490,29 +620,49 @@ router.post('/products/bulk-stock', async (req: Request, res: Response) => {
     }
 
     const { updateProduct } = await import('../modules/products/controllers/Products.controller');
-    const { logProductActivity } = await import('../modules/products/services/ProductActivityLog.service');
+    const { batchLogProductActivity } = await import('../modules/products/services/ProductActivityLog.service');
     const userId = (req.accountPayload as { userId?: string })?.userId ?? '';
     const email = (req.accountPayload as { email?: string })?.email ?? '';
 
     let succeeded = 0;
     let failed = 0;
     const BATCH = 10;
+    // Collect all log entries then write once with insertMany (N writes → 1 write)
+    const activityLogs: Parameters<typeof batchLogProductActivity>[0] = [];
+
     for (let i = 0; i < updates.length; i += BATCH) {
       const batch = updates.slice(i, i + BATCH);
       const results = await Promise.allSettled(
         batch.map(async (u) => {
-          const { productName } = await updateProduct(clientId, u.productId, { stock: u.stock });
-          await logProductActivity({
+          const { productName, oldStock } = await updateProduct(clientId, u.productId, { stock: u.stock });
+          // Compute per-variant stock diffs
+          const stockChanges: Record<string, { from: number; to: number; diff: number }> = {};
+          const allKeys = new Set([...Object.keys(u.stock), ...Object.keys(oldStock ?? {})]);
+          for (const key of allKeys) {
+            const from = (oldStock ?? {})[key] ?? 0;
+            const to = u.stock[key] ?? 0;
+            if (from !== to) stockChanges[key] = { from, to, diff: to - from };
+          }
+          activityLogs.push({
             clientId,
             productId: u.productId,
             productName,
             action: 'updated',
             performedByUserId: userId,
             performedByEmail: email,
+            details: {
+              stockChanges: Object.keys(stockChanges).length ? stockChanges : undefined,
+              source: 'bulk-restock',
+            },
           });
         })
       );
       results.forEach((r) => { if (r.status === 'fulfilled') succeeded++; else failed++; });
+    }
+
+    // Single bulk insert for all activity log entries
+    if (activityLogs.length > 0) {
+      await batchLogProductActivity(activityLogs).catch(() => { /* non-critical */ });
     }
 
     emitWarehouseUpdate(getIo(), { type: 'products', clientId });
@@ -544,6 +694,7 @@ router.delete('/products/:id', async (req: Request, res: Response) => {
       action: 'deleted',
       performedByUserId: userId,
       performedByEmail: email,
+      details: { deletedName: productName ?? null },
     });
     emitWarehouseUpdate(getIo(), { type: 'products', clientId });
     res.json({ success: true });

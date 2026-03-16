@@ -21,7 +21,16 @@ import {
   Package,
   Truck,
   CheckCircle,
-  Clock
+  Clock,
+  FileText,
+  Globe,
+  Scale,
+  Bike,
+  DollarSign,
+  Warehouse,
+  LineChart,
+  Map,
+  Wallet
 } from 'lucide-react';
 
 type SidebarSection = {
@@ -74,6 +83,32 @@ const sections: SidebarSection[] = [
     items: [
       { type: 'link', label: 'Plan Permissions', icon: <CreditCard className="w-5 h-5" />, to: '/plan-permissions' },
       { type: 'link', label: 'Client Staff Permissions', icon: <Users className="w-5 h-5" />, to: '/client-staff-permissions' }
+    ]
+  },
+  {
+    title: 'Reports',
+    items: [
+      { type: 'link', label: 'Restock Reports', icon: <FileText className="w-5 h-5" />, to: '/reports' }
+    ]
+  },
+  {
+    title: 'Shipping',
+    items: [
+      { type: 'link', label: 'Overview',        icon: <Truck className="w-5 h-5" />,     to: '/shipping/overview' },
+      { type: 'link', label: 'Shipments',       icon: <Package className="w-5 h-5" />,   to: '/shipping/shipments' },
+      { type: 'link', label: 'Couriers',        icon: <Bike className="w-5 h-5" />,      to: '/shipping/couriers' },
+      { type: 'link', label: 'Wallets',         icon: <Wallet className="w-5 h-5" />,    to: '/shipping/wallets' },
+      { type: 'link', label: 'Analytics',       icon: <LineChart className="w-5 h-5" />, to: '/shipping/analytics' },
+    ]
+  },
+  {
+    title: 'Shipping Config',
+    items: [
+      { type: 'link', label: 'Geo Management',  icon: <Globe className="w-5 h-5" />,    to: '/shipping/geo' },
+      { type: 'link', label: 'Weight Rules',    icon: <Scale className="w-5 h-5" />,    to: '/shipping/weights' },
+      { type: 'link', label: 'SLA Rules',       icon: <Clock className="w-5 h-5" />,    to: '/shipping/sla' },
+      { type: 'link', label: 'COD Settings',    icon: <DollarSign className="w-5 h-5" />, to: '/shipping/cod' },
+      { type: 'link', label: 'Warehouse Bins',  icon: <Warehouse className="w-5 h-5" />, to: '/shipping/bins' },
     ]
   },
   {

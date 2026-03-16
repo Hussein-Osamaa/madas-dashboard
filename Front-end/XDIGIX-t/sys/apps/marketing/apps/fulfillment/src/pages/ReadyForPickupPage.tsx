@@ -72,7 +72,7 @@ export default function ReadyForPickupPage() {
   };
 
   return (
-    <div>
+    <div className="max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Ready for Pickup</h1>

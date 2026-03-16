@@ -26,6 +26,19 @@ import ReadyForPickupPage from './pages/ReadyForPickupPage';
 import ShippingPage from './pages/ShippingPage';
 import NoAccessPage from './pages/NoAccessPage';
 import SetupPasswordPage from './pages/SetupPasswordPage';
+import ReportsPage from './pages/ReportsPage';
+
+// Shipping module pages
+import ShippingOverviewPage    from './pages/shipping/ShippingOverviewPage';
+import GeoManagementPage       from './pages/shipping/GeoManagementPage';
+import WeightBracketsPage      from './pages/shipping/WeightBracketsPage';
+import SLARulesPage            from './pages/shipping/SLARulesPage';
+import CODSettingsPage         from './pages/shipping/CODSettingsPage';
+import CouriersPage            from './pages/shipping/CouriersPage';
+import ShipmentsManagementPage from './pages/shipping/ShipmentsManagementPage';
+import ShippingAnalyticsPage   from './pages/shipping/ShippingAnalyticsPage';
+import WarehouseBinsPage       from './pages/shipping/WarehouseBinsPage';
+import MerchantWalletsPage     from './pages/shipping/MerchantWalletsPage';
 
 export const router = createBrowserRouter(
   [
@@ -88,6 +101,51 @@ export const router = createBrowserRouter(
         {
           path: 'shipping',
           element: <ShippingPage />
+        },
+        {
+          path: 'reports',
+          element: <ReportsPage />
+        },
+        // ── Shipping Module ────────────────────────────────────────────
+        {
+          path: 'shipping/overview',
+          element: <ShippingOverviewPage />
+        },
+        {
+          path: 'shipping/shipments',
+          element: <ShipmentsManagementPage />
+        },
+        {
+          path: 'shipping/couriers',
+          element: <CouriersPage />
+        },
+        {
+          path: 'shipping/analytics',
+          element: <ShippingAnalyticsPage />
+        },
+        {
+          path: 'shipping/geo',
+          element: <GeoManagementPage />
+        },
+        {
+          path: 'shipping/weights',
+          element: <WeightBracketsPage />
+        },
+        {
+          path: 'shipping/sla',
+          element: <SLARulesPage />
+        },
+        {
+          path: 'shipping/cod',
+          element: <CODSettingsPage />
+        },
+        {
+          path: 'shipping/bins',
+          element: <WarehouseBinsPage />
+        },
+        {
+          path: 'shipping/wallets',
+          element: <MerchantWalletsPage />
         },
         {
           path: '*',

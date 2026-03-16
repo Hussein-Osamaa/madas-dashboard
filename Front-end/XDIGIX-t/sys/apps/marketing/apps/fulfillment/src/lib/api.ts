@@ -85,10 +85,12 @@ async function refreshAccessToken(): Promise<string | null> {
       body: JSON.stringify({ refreshToken: rt, accountType: 'STAFF' }),
     });
     const data = await res.json();
-    if (data.accessToken) {
+    if (res.ok && data.accessToken) {
       setTokens(data.accessToken, rt);
       return data.accessToken;
     }
+    // Refresh rejected (expired/invalid) — clear session so user goes to login
+    clearTokens();
   } catch {
     clearTokens();
   }
@@ -189,6 +191,28 @@ export async function missing(clientId: string, productId: string, quantity: num
   return fetchApi<{ success: boolean }>('/warehouse/missing', {
     method: 'POST',
     body: JSON.stringify({ clientId, productId, quantity, referenceId }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Restock Session
+// ---------------------------------------------------------------------------
+
+export interface RestockSessionItem {
+  productId: string;
+  productName?: string;
+  sku?: string;
+  quantity: number;
+}
+
+export async function finishRestockSession(
+  clientId: string,
+  items: RestockSessionItem[],
+  sessionNote?: string
+): Promise<{ success: boolean; reportId: string; totalItems: number }> {
+  return fetchApi<{ success: boolean; reportId: string; totalItems: number }>('/warehouse/restock-session', {
+    method: 'POST',
+    body: JSON.stringify({ clientId, items, sessionNote }),
   });
 }
 
@@ -300,6 +324,7 @@ export interface ProductActivityLogEntry {
   action: ProductActivityAction;
   performedByUserId: string;
   performedByEmail: string;
+  details?: Record<string, unknown>;
   createdAt: string;
 }
 

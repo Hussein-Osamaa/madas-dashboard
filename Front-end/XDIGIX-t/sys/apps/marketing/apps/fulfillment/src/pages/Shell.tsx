@@ -184,7 +184,7 @@ export default function Shell() {
         />
       )}
 
-      <main className="flex-1 overflow-auto flex flex-col min-w-0 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] lg:pt-0 md:ml-56 p-4 sm:p-6 bg-gray-50 dark:bg-transparent safe-area-inset-bottom">
+      <main className="flex-1 overflow-auto flex flex-col min-w-0 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pt-[calc(4.5rem+env(safe-area-inset-top,0px))] md:pt-0 md:ml-56 p-4 sm:p-6 bg-gray-50 dark:bg-transparent safe-area-inset-bottom">
         <Outlet />
       </main>
     </div>

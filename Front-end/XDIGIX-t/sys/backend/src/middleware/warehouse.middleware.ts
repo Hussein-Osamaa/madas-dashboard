@@ -11,13 +11,20 @@ declare global {
   }
 }
 
-/** Extract tenant/client from authenticated session, inject req.clientId (businessId). Reject if missing. */
+/**
+ * Extract clientId exclusively from the authenticated JWT payload (req.clientId / req.businessId).
+ * We deliberately do NOT fall back to query params or request body to prevent
+ * authenticated users from accessing other tenants' data by spoofing clientId.
+ *
+ * Routes that serve warehouse staff (who act on behalf of any client) must supply
+ * clientId via a separate super-admin check, not through this middleware.
+ */
 export function requireTenant(req: Request, res: Response, next: NextFunction): void {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized', code: 'auth/required' });
     return;
   }
-  const clientId = req.clientId ?? req.businessId ?? req.query.clientId ?? req.params.clientId ?? req.body?.clientId;
+  const clientId = req.clientId ?? req.businessId;
   if (!clientId || typeof clientId !== 'string') {
     res.status(400).json({ error: 'Client/tenant required', code: 'warehouse/client-required' });
     return;

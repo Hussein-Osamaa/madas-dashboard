@@ -18,6 +18,10 @@ function formatDate(v: string | undefined): string {
   }
 }
 
+function fmtStatus(s?: string) {
+  return (s || 'pending').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function AllOrdersPage() {
   const [orders, setOrders] = useState<FulfillmentOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +86,7 @@ export default function AllOrdersPage() {
   };
 
   return (
-    <div>
+    <div className="max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">All Orders</h1>
@@ -145,7 +149,7 @@ export default function AllOrdersPage() {
                       <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{order.customer?.name || '—'}</p>
                     </div>
                     <span className="px-2 py-1 rounded text-xs font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
-                      {order.fulfillment?.status || 'pending'}
+                      {fmtStatus(order.fulfillment?.status)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2 text-sm">
@@ -213,7 +217,7 @@ export default function AllOrdersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 rounded text-sm font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                        {order.fulfillment?.status || 'pending'}
+                        {fmtStatus(order.fulfillment?.status)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-emerald-600 dark:text-emerald-400 font-medium">

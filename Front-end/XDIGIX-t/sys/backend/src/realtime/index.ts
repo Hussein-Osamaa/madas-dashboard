@@ -12,9 +12,37 @@ export function getIo(): Server | null {
 
 type SocketData = { userId?: string; tenantId?: string; businessId?: string; accountType?: AccountType };
 
+const SOCKET_ALLOWED_ORIGINS = [
+  'https://xdigix-os.vercel.app',
+  'https://xdigix-os-xdigix.vercel.app',
+  'https://dist-xdigix.vercel.app',
+  ...(process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s && s !== '*'),
+];
+
+function isAllowedSocketOrigin(origin: string | undefined): boolean {
+  if (!origin) return false;
+  if (SOCKET_ALLOWED_ORIGINS.includes(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(origin)) return true;
+  if (
+    origin.startsWith('http://localhost:') ||
+    origin.startsWith('http://127.0.0.1:') ||
+    /^http:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(origin)
+  ) return true;
+  return false;
+}
+
 export function setupRealtime(httpServer: HttpServer): Server {
   const io = new Server(httpServer, {
-    cors: { origin: '*' },
+    cors: {
+      origin: (origin, cb) => {
+        if (isAllowedSocketOrigin(origin)) cb(null, true);
+        else cb(new Error('Socket origin not allowed'));
+      },
+      credentials: true,
+    },
     path: '/socket.io',
   });
   ioInstance = io;
@@ -55,18 +83,23 @@ export function setupRealtime(httpServer: HttpServer): Server {
     const businessId = s.businessId;
     const accountType = s.accountType;
 
-    if (tenantId) {
-      socket.join(`tenant:${tenantId}`);
-    }
-    if (businessId) {
-      socket.join(`business:${businessId}`);
-    }
-    if (accountType === 'STAFF') {
-      socket.join('warehouse:staff');
-    }
+    if (tenantId) socket.join(`tenant:${tenantId}`);
+    if (businessId) socket.join(`business:${businessId}`);
+    if (accountType === 'STAFF') socket.join('warehouse:staff');
 
     socket.on('subscribe', (channel: string) => {
-      socket.join(channel);
+      // Only allow subscribing to channels scoped to the user's own tenant/business
+      if (
+        typeof channel === 'string' &&
+        (
+          (tenantId && channel === `tenant:${tenantId}`) ||
+          (businessId && channel === `business:${businessId}`) ||
+          (businessId && channel === `warehouse:client:${businessId}`) ||
+          channel === 'warehouse:staff'
+        )
+      ) {
+        socket.join(channel);
+      }
     });
 
     socket.on('unsubscribe', (channel: string) => {
@@ -74,21 +107,20 @@ export function setupRealtime(httpServer: HttpServer): Server {
     });
 
     socket.on('disconnect', () => {
-      // cleanup if needed
+      // Socket.IO automatically cleans up room memberships on disconnect
     });
   });
 
   return io;
 }
 
-/** Payload for warehouse live updates. type = scope of change; clientId = which client; businessId = which business (for merchant dashboard). */
+/** Payload for warehouse live updates. */
 export type WarehouseUpdatePayload = {
   type: 'products' | 'orders' | 'transactions' | 'warehouses' | 'reports' | 'audit_alert';
   clientId?: string;
   businessId?: string;
 };
 
-/** Emit so staff (fulfillment) and merchants (dashboard) see changes in realtime. */
 export function emitWarehouseUpdate(io: Server | null, payload: WarehouseUpdatePayload): void {
   if (!io) return;
   io.to('warehouse:staff').emit('warehouse:updated', payload);

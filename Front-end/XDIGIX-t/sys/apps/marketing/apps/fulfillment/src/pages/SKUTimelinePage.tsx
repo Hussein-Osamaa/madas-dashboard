@@ -106,7 +106,7 @@ export default function SKUTimelinePage() {
   const chronological = items;
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-6">
         <Clock className="w-6 h-6 text-amber-500 dark:text-amber-400" />
         SKU Timeline

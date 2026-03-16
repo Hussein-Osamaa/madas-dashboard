@@ -1,5 +1,7 @@
 import express, { Express } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
@@ -25,18 +27,26 @@ export function createApp(): Express {
   const envOrigins = (config.cors.origin || '')
     .split(',')
     .map((s: string) => s.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((o: string) => o !== '*'); // never allow wildcard in CORS list
   const allowedOrigins = [...new Set([...KNOWN_ORIGINS, ...envOrigins])];
 
+  // 1. Security headers (helmet sets X-Content-Type-Options, X-Frame-Options,
+  //    Strict-Transport-Security, X-XSS-Protection, and more in one call)
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow static file CDN serving
+      contentSecurityPolicy: false, // CSP managed at hosting layer (Firebase/Vercel)
+    })
+  );
+
+  // 2. CORS — strict origin allowlist; credentials only for matched origins
   app.use(
     cors({
       origin: (incoming, callback) => {
+        // Server-to-server requests (no Origin header) — block, don't open to all
         if (!incoming) {
-          callback(null, '*');
-          return;
-        }
-        if (allowedOrigins.includes('*')) {
-          callback(null, incoming);
+          callback(null, false);
           return;
         }
         if (allowedOrigins.includes(incoming)) {
@@ -44,8 +54,10 @@ export function createApp(): Express {
           return;
         }
         // Allow any Vercel preview/production deployment under the xdigix team
-        if (/^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming) ||
-            /^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming.replace(/\/$/, ''))) {
+        if (
+          /^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming) ||
+          /^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming.replace(/\/$/, ''))
+        ) {
           callback(null, incoming);
           return;
         }
@@ -65,15 +77,25 @@ export function createApp(): Express {
       credentials: true,
     })
   );
-  // Capture raw body for external webhook signature verification (must run before json parser)
-  app.use(rawBodyWebhookMiddleware);
-  app.use(express.json({ limit: '10mb' }));
+
+  // 3. Rate limiting BEFORE body parsing — prevents large-payload DoS before parsing cost
   app.use(
     rateLimit({
       windowMs: config.rateLimit.windowMs,
       max: config.rateLimit.max,
+      standardHeaders: true,
+      legacyHeaders: false,
     })
   );
+
+  // 4. Capture raw body for external webhook signature verification (must run before json parser)
+  app.use(rawBodyWebhookMiddleware);
+
+  // 5. Body parsing
+  app.use(express.json({ limit: '10mb' }));
+
+  // 6. Gzip/brotli compression for all responses
+  app.use(compression());
 
   app.use('/api', routes);
 

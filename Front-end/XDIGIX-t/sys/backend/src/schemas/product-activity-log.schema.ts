@@ -9,6 +9,7 @@ export interface IProductActivityLog extends Document {
   action: ProductActivityAction;
   performedByUserId: string;
   performedByEmail: string;
+  details?: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -20,11 +21,15 @@ const ProductActivityLogSchema = new Schema<IProductActivityLog>(
     action: { type: String, enum: ['created', 'updated', 'deleted'], required: true },
     performedByUserId: { type: String, required: true },
     performedByEmail: { type: String, required: true },
+    details: { type: Schema.Types.Mixed },
   },
   { timestamps: true }
 );
 
 ProductActivityLogSchema.index({ clientId: 1, createdAt: -1 });
+ProductActivityLogSchema.index({ productId: 1, createdAt: -1 });
+ProductActivityLogSchema.index({ action: 1, createdAt: -1 });
+ProductActivityLogSchema.index({ performedByUserId: 1, createdAt: -1 });
 
 export const ProductActivityLog: Model<IProductActivityLog> = mongoose.model<IProductActivityLog>(
   'ProductActivityLog',
