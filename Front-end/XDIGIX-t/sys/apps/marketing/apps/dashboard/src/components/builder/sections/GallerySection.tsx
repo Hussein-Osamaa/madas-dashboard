@@ -13,7 +13,7 @@ const GallerySection = ({ data, style }: Props) => {
     layout = 'grid',
     columns = 4,
     images = [] 
-  } = data;
+  } = data ?? {};
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedCaption, setSelectedCaption] = useState<string>('');
 

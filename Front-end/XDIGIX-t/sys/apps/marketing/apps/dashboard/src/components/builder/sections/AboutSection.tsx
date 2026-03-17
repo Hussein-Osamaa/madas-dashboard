@@ -7,7 +7,7 @@ type Props = {
 };
 
 const AboutSection = ({ data, style }: Props) => {
-  const { title = 'About Us', content = 'Your story here...', image } = data;
+  const { title = 'About Us', content = 'Your story here...', image } = data ?? {};
 
   return (
     <section 

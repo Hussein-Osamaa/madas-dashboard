@@ -30,9 +30,9 @@ const defaultCardStyle: ProductCardStyle = {
 const ProductsSection = ({ data, style }: Props) => {
   const { formatCurrency } = useCurrency();
   
-  const { 
-    title = 'Featured Products', 
-    subtitle = 'Check out our best sellers', 
+  const {
+    title = 'Featured Products',
+    subtitle = 'Check out our best sellers',
     layout = 'grid',
     columns = 4,
     selectedProducts = [],
@@ -41,7 +41,7 @@ const ProductsSection = ({ data, style }: Props) => {
     cardStyle = defaultCardStyle,
     titleStyle = {},
     subtitleStyle = {}
-  } = data;
+  } = data ?? {};
 
   // Merge with defaults for any missing card style properties
   const cs: ProductCardStyle = { ...defaultCardStyle, ...cardStyle };

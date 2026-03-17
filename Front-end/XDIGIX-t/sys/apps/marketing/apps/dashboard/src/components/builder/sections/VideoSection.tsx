@@ -15,7 +15,7 @@ const VideoSection = ({ data, style }: Props) => {
     thumbnailUrl,
     autoplay = false,
     showControls = true
-  } = data;
+  } = data ?? {};
 
   const [isPlaying, setIsPlaying] = useState(autoplay);
 

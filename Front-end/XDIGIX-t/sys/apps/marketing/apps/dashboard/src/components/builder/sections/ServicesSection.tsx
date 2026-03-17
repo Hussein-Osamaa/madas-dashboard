@@ -12,7 +12,7 @@ const ServicesSection = ({ data, style }: Props) => {
     subtitle = 'What we offer',
     services = [],
     layout = 'grid'
-  } = data;
+  } = data ?? {};
 
   const defaultServices: Array<{ icon: string; title: string; description: string; price?: string; link?: string }> = [
     { icon: '🚀', title: 'Fast Delivery', description: 'Get your products delivered within 24-48 hours', price: 'Free' },

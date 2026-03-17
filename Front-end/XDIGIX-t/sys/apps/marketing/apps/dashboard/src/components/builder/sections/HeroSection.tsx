@@ -15,7 +15,7 @@ const HEIGHT_CLASS: Record<string, string> = {
 };
 
 const HeroSection = ({ data, style }: Props) => {
-  const d = data as Record<string, any>;
+  const d = (data ?? {}) as Record<string, any>;
   const layout            = (d.layout          ?? 'default') as string;
   const isCarousel        = d.isCarousel        ?? false;
   const slides            = d.slides            ?? [];

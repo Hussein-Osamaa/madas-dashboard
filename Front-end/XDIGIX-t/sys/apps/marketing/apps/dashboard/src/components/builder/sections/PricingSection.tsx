@@ -13,7 +13,7 @@ const PricingSection = ({ data, style }: Props) => {
     plans = [],
     currency = '$',
     billingPeriod = '/month'
-  } = data;
+  } = data ?? {};
 
   return (
     <section 

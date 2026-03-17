@@ -7,7 +7,7 @@ type Props = {
 };
 
 const TestimonialsSection = ({ data, style }: Props) => {
-  const { title = 'What Our Customers Say', items = [] } = data;
+  const { title = 'What Our Customers Say', items = [] } = data ?? {};
 
   return (
     <section 

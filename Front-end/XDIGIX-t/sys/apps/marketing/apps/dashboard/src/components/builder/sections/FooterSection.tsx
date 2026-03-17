@@ -25,18 +25,19 @@ const FooterSection = ({ data, style }: Props) => {
   };
 
   // Get colors directly from data with fallbacks
-  const layout = data.layout || 'classic';
+  const safeData = data ?? {} as FooterSectionData;
+  const layout = safeData.layout || 'classic';
   const isMinimal = layout === 'minimal';
-  
+
   // Colors - read directly from data first, then style, then defaults
-  const backgroundColor = data.backgroundColor || style?.backgroundColor || (isMinimal ? '#ffffff' : '#1f2937');
-  const textColor = data.textColor || style?.color || (isMinimal ? '#1f2937' : '#ffffff');
-  const borderColor = data.borderColor || (isMinimal ? '#e5e7eb' : 'rgba(255,255,255,0.2)');
-  
+  const backgroundColor = safeData.backgroundColor || style?.backgroundColor || (isMinimal ? '#ffffff' : '#1f2937');
+  const textColor = safeData.textColor || style?.color || (isMinimal ? '#1f2937' : '#ffffff');
+  const borderColor = safeData.borderColor || (isMinimal ? '#e5e7eb' : 'rgba(255,255,255,0.2)');
+
   // Content
-  const logoText = data.logoText || 'BRAND';
-  const tagline = data.tagline || 'Sign up for exclusive offers and be the first to know about new arrivals.';
-  const copyrightText = data.copyrightText || '© 2024 Brand. All rights reserved.';
+  const logoText = safeData.logoText || 'BRAND';
+  const tagline = safeData.tagline || 'Sign up for exclusive offers and be the first to know about new arrivals.';
+  const copyrightText = safeData.copyrightText || '© 2024 Brand. All rights reserved.';
   
   // Computed colors
   const mutedColor = isMinimal ? 'rgba(31,41,55,0.6)' : 'rgba(255,255,255,0.6)';

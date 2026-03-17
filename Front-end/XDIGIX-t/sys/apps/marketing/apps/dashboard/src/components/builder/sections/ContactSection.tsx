@@ -13,7 +13,7 @@ const ContactSection = ({ data, style }: Props) => {
     email = 'contact@example.com',
     phone = '+1 (555) 123-4567',
     address = '123 Main St, City, State 12345'
-  } = data;
+  } = data ?? {};
 
   return (
     <section 

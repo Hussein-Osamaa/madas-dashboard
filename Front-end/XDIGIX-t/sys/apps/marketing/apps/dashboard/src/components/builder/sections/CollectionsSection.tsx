@@ -41,7 +41,7 @@ const CollectionsSection = ({ data, style }: Props) => {
     cardStyle = defaultCardStyle,
     titleStyle = {},
     subtitleStyle = {}
-  } = data;
+  } = data ?? {};
 
   // Merge with defaults
   const cs = { ...defaultCardStyle, ...cardStyle };

@@ -13,7 +13,7 @@ const PartnersSection = ({ data, style }: Props) => {
     partners = [],
     grayscale = true,
     autoScroll = false
-  } = data;
+  } = data ?? {};
 
   const defaultPartners: Array<{ name: string; logo: string; link?: string }> = [
     { name: 'Company 1', logo: '' },

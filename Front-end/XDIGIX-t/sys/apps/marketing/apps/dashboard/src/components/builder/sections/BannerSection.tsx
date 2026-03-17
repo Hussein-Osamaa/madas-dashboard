@@ -17,7 +17,7 @@ const BannerSection = ({ data, style }: Props) => {
     dismissible = false,
     enableMarquee = false,
     marqueeSpeed = 20
-  } = data;
+  } = data ?? {};
 
   const [isDismissed, setIsDismissed] = useState(false);
 

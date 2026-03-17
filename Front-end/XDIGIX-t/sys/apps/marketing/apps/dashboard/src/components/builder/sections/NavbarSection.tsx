@@ -37,7 +37,7 @@ const NavbarSection = ({ data, style, siteId: propSiteId }: Props) => {
     hoverBackgroundColor = 'rgba(0,0,0,0.05)',
     hoverColor = '',
     hoverEffect = 'underline'
-  } = data;
+  } = data ?? {};
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

@@ -14,7 +14,7 @@ const NewsletterSection = ({ data, style }: Props) => {
     buttonText = 'Subscribe',
     backgroundColor = '#f9fafb',
     successMessage = 'Thank you for subscribing!'
-  } = data;
+  } = data ?? {};
 
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);

@@ -18,7 +18,7 @@ const ImageComparisonSection = ({ data, style }: Props) => {
     sliderColor = '#FFFFFF',
     showLabels = true,
     orientation = 'horizontal'
-  } = data;
+  } = data ?? {};
 
   const [position, setPosition] = useState(sliderPosition);
   const [isDragging, setIsDragging] = useState(false);

@@ -7,7 +7,7 @@ type Props = {
 };
 
 const FeaturesSection = ({ data, style }: Props) => {
-  const { title = 'Our Features', subtitle = 'What makes us special', items = [] } = data;
+  const { title = 'Our Features', subtitle = 'What makes us special', items = [] } = data ?? {};
 
   return (
     <section 

@@ -7,7 +7,7 @@ type Props = {
 };
 
 const FAQSection = ({ data, style }: Props) => {
-  const { title = 'Frequently Asked Questions', items = [] } = data;
+  const { title = 'Frequently Asked Questions', items = [] } = data ?? {};
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (

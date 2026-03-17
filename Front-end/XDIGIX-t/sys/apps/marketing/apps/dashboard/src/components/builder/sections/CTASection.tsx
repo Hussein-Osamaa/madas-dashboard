@@ -15,7 +15,7 @@ const CTASection = ({ data, style }: Props) => {
     backgroundColor = '#27491F',
     buttonBackgroundColor = '#ffffff',
     buttonTextColor
-  } = data;
+  } = data ?? {};
 
   // Default button text color to background color if not specified
   const resolvedButtonTextColor = buttonTextColor || backgroundColor;

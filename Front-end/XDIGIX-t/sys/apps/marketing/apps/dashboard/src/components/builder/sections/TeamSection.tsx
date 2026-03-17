@@ -12,7 +12,7 @@ const TeamSection = ({ data, style }: Props) => {
     subtitle = 'The people behind our success',
     members = [],
     layout = 'grid'
-  } = data;
+  } = data ?? {};
 
   type TeamMember = {
     name: string;

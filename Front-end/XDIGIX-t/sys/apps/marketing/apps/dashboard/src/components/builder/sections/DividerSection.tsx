@@ -13,7 +13,7 @@ const DividerSection = ({ data, style }: Props) => {
     height = 1,
     width = '100%',
     spacing = 40
-  } = data;
+  } = data ?? {};
 
   const getDividerElement = () => {
     switch (dividerStyle) {
