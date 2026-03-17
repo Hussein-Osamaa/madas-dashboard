@@ -14,6 +14,8 @@ import { getDefaultData } from '../../registry/sectionRegistry';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 import { useUndoRedo } from '../../hooks/useUndoRedo';
 import { useAutosave, AutosaveStatus } from '../../hooks/useAutosave';
+import { ThemeProvider, useTheme, SiteTheme, DEFAULT_THEME } from '../../contexts/ThemeContext';
+import ThemePanel from '../../components/builder/ThemePanel';
 
 /* ── Backend API helper ─────────────────────────────────────────── */
 const API_BASE = (import.meta.env.VITE_API_BACKEND_URL as string | undefined)
@@ -47,6 +49,8 @@ const BuilderPage = () => {
   const [saving, setSaving] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [showTheme, setShowTheme] = useState(false);
+  const [initialTheme, setInitialTheme] = useState<Partial<SiteTheme>>({});
   const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [showSidebar, setShowSidebar] = useState(true);
@@ -94,6 +98,9 @@ const BuilderPage = () => {
         console.log('[BuilderPage] Loaded section types:', loadedSections.map((s: any) => s.type));
         setSiteName(data.name || 'Untitled Site');
         setCurrentStatus((data.status as 'draft' | 'published') || 'draft');
+        if (data.settings?.theme) {
+          setInitialTheme(data.settings.theme as Partial<SiteTheme>);
+        }
 
         if (loadedSections.length === 0) {
           const defaultSections: Section[] = [
@@ -157,6 +164,16 @@ const BuilderPage = () => {
     apiBase: `${API_BASE}/api`,
     getToken,
   });
+
+  /** Save theme token changes to the backend */
+  const handleThemeSave = useCallback(async (theme: SiteTheme) => {
+    if (!siteId) return;
+    try {
+      await sitesApi('PATCH', `/${siteId}`, { settings: { theme } });
+    } catch (err) {
+      console.error('[BuilderPage] Theme save failed:', err);
+    }
+  }, [siteId]);
 
   const handleAddSection = useCallback((type: SectionType, initialData?: Record<string, any>) => {
     const defaultData = getDefaultSectionData(type);
@@ -329,6 +346,7 @@ const BuilderPage = () => {
   }
 
   return (
+    <ThemeProvider initialTheme={initialTheme}>
     <div className="h-screen flex flex-col bg-base overflow-hidden">
       {/* Top Toolbar */}
       <BuilderToolbar
@@ -340,6 +358,8 @@ const BuilderPage = () => {
         autosaveStatus={autosaveStatus}
         onToggleSidebar={() => setShowSidebar((prev) => !prev)}
         showSidebar={showSidebar}
+        showTheme={showTheme}
+        onToggleTheme={() => setShowTheme((prev) => !prev)}
         onBack={() => navigate('/ecommerce/website-builder')}
         onSettings={() => navigate(`/ecommerce/website-settings?siteId=${siteId}`)}
         sections={sections}
@@ -465,6 +485,16 @@ const BuilderPage = () => {
             )}
           </div>
         )}
+
+        {/* Theme Panel — slides in from the right when showTheme is true */}
+        {showTheme && (
+          <div className="w-72 border-l border-gray-200 bg-white flex flex-col overflow-hidden flex-shrink-0">
+            <ThemePanel
+              onClose={() => setShowTheme(false)}
+              onSave={handleThemeSave}
+            />
+          </div>
+        )}
       </div>
 
       {/* Toast Notification */}
@@ -515,6 +545,7 @@ const BuilderPage = () => {
         </div>
       )}
     </div>
+    </ThemeProvider>
   );
 };
 

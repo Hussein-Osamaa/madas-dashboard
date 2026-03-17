@@ -19,6 +19,7 @@ import { SelectedElement, ElementType } from '../../types/elementEditor';
 import { getElementTypeFromRegistry } from '../../registry/sectionRegistry';
 import SectionRenderer from './SectionRenderer';
 import SortableSection from './SortableSection';
+import { useTheme, buildThemeCssVars, FONT_OPTIONS } from '../../contexts/ThemeContext';
 
 type Props = {
   sections: Section[];
@@ -265,7 +266,29 @@ const BuilderCanvas = ({
   siteId
 }: Props) => {
   const previewWrapperRef = useRef<HTMLDivElement>(null);
-  
+
+  /* ── Theme CSS vars ─────────────────────────────────────────────────── */
+  const { theme } = useTheme();
+  const themeCssVars = useMemo(() => buildThemeCssVars(theme), [theme]);
+
+  // Dynamically inject Google Font <link> tags for non-Inter fonts
+  useMemo(() => {
+    const fonts = [...new Set([theme.fontHeading, theme.fontBody])].filter(
+      (f) => (FONT_OPTIONS as readonly string[]).includes(f) && f !== 'Inter'
+    );
+    fonts.forEach((font) => {
+      const id = `gfont-${font.replace(/\s+/g, '-')}`;
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:wght@300;400;500;600;700&display=swap`;
+        document.head.appendChild(link);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme.fontHeading, theme.fontBody]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -463,7 +486,7 @@ const BuilderCanvas = ({
         
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={sortedSections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-            <div 
+            <div
               className="bg-white min-h-screen"
               style={{
                 width: previewMode === 'mobile' ? '375px' : previewMode === 'tablet' ? '768px' : '100%',
@@ -471,6 +494,8 @@ const BuilderCanvas = ({
                 overflowX: 'hidden'
               }}
             >
+              {/* Theme CSS custom properties — updates in real-time as merchant edits the Theme Panel */}
+              <style dangerouslySetInnerHTML={{ __html: themeCssVars }} />
               {sortedSections.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                   <span className="material-icons text-6xl text-madas-text/30 mb-4">add_circle_outline</span>

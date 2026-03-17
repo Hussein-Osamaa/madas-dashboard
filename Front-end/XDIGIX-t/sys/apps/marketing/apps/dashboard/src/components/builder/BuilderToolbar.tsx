@@ -15,6 +15,8 @@ type Props = {
   autosaveStatus?: AutosaveStatus;
   onToggleSidebar: () => void;
   showSidebar: boolean;
+  showTheme?: boolean;
+  onToggleTheme?: () => void;
   onBack: () => void;
   onSettings: () => void;
   sections: Section[];
@@ -36,6 +38,8 @@ const BuilderToolbar = ({
   autosaveStatus = 'idle',
   onToggleSidebar,
   showSidebar,
+  showTheme = false,
+  onToggleTheme,
   onBack,
   onSettings,
   sections,
@@ -161,6 +165,20 @@ const BuilderToolbar = ({
         >
           <span className={`material-icons text-base ${showSidebar ? 'text-primary' : 'text-gray-600'}`}>view_sidebar</span>
         </button>
+
+        {/* Theme Panel Toggle */}
+        {onToggleTheme && (
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            className={`p-2 rounded transition-colors ${
+              showTheme ? 'bg-base text-primary' : 'text-madas-text/60 hover:text-primary'
+            }`}
+            title="Global Theme"
+          >
+            <span className={`material-icons text-base ${showTheme ? 'text-primary' : 'text-gray-600'}`}>palette</span>
+          </button>
+        )}
 
         {/* Preview Button */}
         <button
