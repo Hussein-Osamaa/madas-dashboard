@@ -1,4 +1,4 @@
-import express, { Express } from 'express';
+import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -11,6 +11,8 @@ import { errorMiddleware } from './middleware/error.middleware';
 import { rawBodyWebhookMiddleware } from './middleware/raw-body-webhook.middleware';
 import './types/external-api.types'; // Express Request augmentation for external API
 import './services/orderInventoryIntegration'; // Registers order->inventory event handlers
+import { renderSite } from './modules/sites/services/site-renderer.service';
+import { Site } from './schemas/site.schema';
 
 /**
  * Create the Express app (no HTTP listen, no Socket.io, no cron).
@@ -115,6 +117,43 @@ export function createApp(): Express {
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true, timestamp: new Date().toISOString() });
+  });
+
+  // Storefront: serve published site by ID at /site/:id
+  // Also supports slug-based URLs: /:slug (matched after all /api routes)
+  app.get('/site/:id', async (req: Request, res: Response) => {
+    try {
+      const site = await Site.findOne({ _id: req.params.id }).lean();
+      if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
+      const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
+      const etag = `"${(site as any).updatedAt?.getTime?.().toString(36) ?? 'x'}"`;
+      if (req.headers['if-none-match'] === etag) { res.status(304).end(); return; }
+      const html = renderSite(site as any, pageSlug);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('ETag', etag);
+      res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+      res.send(html);
+    } catch (err) {
+      res.status(500).send('<h1>Error rendering site</h1>');
+    }
+  });
+
+  // Slug-based storefront URLs: /:slug
+  app.get('/:slug([a-z0-9-]+)', async (req: Request, res: Response) => {
+    try {
+      const site = await Site.findOne({ slug: req.params.slug, status: 'published' }).lean();
+      if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
+      const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
+      const etag = `"${(site as any).updatedAt?.getTime?.().toString(36) ?? 'x'}"`;
+      if (req.headers['if-none-match'] === etag) { res.status(304).end(); return; }
+      const html = renderSite(site as any, pageSlug);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('ETag', etag);
+      res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+      res.send(html);
+    } catch (err) {
+      res.status(404).send('<h1>404 — Not found</h1>');
+    }
   });
 
   app.use(errorMiddleware);
