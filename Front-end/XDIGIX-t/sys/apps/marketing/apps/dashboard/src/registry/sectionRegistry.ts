@@ -14,7 +14,7 @@
  */
 import { lazy } from 'react';
 import type { SectionType } from '../types/builder';
-import type { SectionRegistryEntry } from './types';
+import type { SectionRegistryEntry, ApiBinding, AnalyticsEvents } from './types';
 
 // Lazy-load all editors for code splitting
 const HeroEditor        = lazy(() => import('../components/builder/editors/HeroEditor'));
@@ -72,6 +72,11 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       showUserIcon: true,
       backgroundColor: '#FFFFFF', textColor: '#27491F', sticky: false,
     },
+    apiBinding: {
+      endpoint: '/api/public/{tenantId}/cart',
+      method: 'GET',
+      cacheTtlMs: 0,  // always live — cart must be fresh
+    } as ApiBinding,
     Editor: NavbarEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
@@ -101,6 +106,10 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       { variantId: 'minimal', label: 'Minimal Hero',  initialData: { layout: 'minimal', buttonText: 'Explore' } },
       { variantId: 'carousel',label: 'Hero Carousel', initialData: { isCarousel: true, slides: [] } },
     ],
+    analyticsEvents: {
+      onSectionView: 'section_view',
+      onCtaClick:    'cta_click',
+    } as AnalyticsEvents,
     Editor: HeroEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
@@ -161,6 +170,13 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       subtitle: "We'd love to hear from you",
       email: '', phone: '', address: '',
     },
+    apiBinding: {
+      endpoint: '/api/public/{tenantId}/contact',
+      method:   'POST',
+    } as ApiBinding,
+    analyticsEvents: {
+      onFormSubmit: 'contact_submit',
+    } as AnalyticsEvents,
     Editor: ContactEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
@@ -311,6 +327,18 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         showBorder: true, borderColor: '#e5e7eb',
       },
     },
+    apiBinding: {
+      endpoint:       '/api/public/{tenantId}/products',
+      paramsFromData: ['collection', 'limit', 'sort'],
+      cacheTtlMs:     60_000,
+      paginates:      true,
+    } as ApiBinding,
+    analyticsEvents: {
+      onSectionView: 'section_view',
+      onItemView:    'product_view',
+      onItemClick:   'product_click',
+      onCtaClick:    'add_to_cart',
+    } as AnalyticsEvents,
     Editor: ProductsEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
@@ -337,6 +365,18 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         buttonBackgroundColor: '#F0CAE1', buttonTextColor: '#27491F', buttonBorderRadius: 6,
       },
     },
+    apiBinding: {
+      endpoint:       '/api/public/{tenantId}/products',
+      paramsFromData: ['limit'],
+      cacheTtlMs:     60_000,
+      paginates:      true,
+    } as ApiBinding,
+    analyticsEvents: {
+      onSectionView: 'section_view',
+      onItemView:    'product_view',
+      onItemClick:   'product_click',
+      onCtaClick:    'add_to_cart',
+    } as AnalyticsEvents,
     Editor: DealsEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
@@ -369,6 +409,15 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         buttonHoverEffect: 'none',
       },
     },
+    apiBinding: {
+      endpoint:   '/api/public/{tenantId}/collections',
+      cacheTtlMs: 120_000,
+    } as ApiBinding,
+    analyticsEvents: {
+      onSectionView: 'section_view',
+      onItemView:    'collection_view',
+      onItemClick:   'collection_click',
+    } as AnalyticsEvents,
     Editor: CollectionsEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
@@ -411,6 +460,10 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       backgroundColor: '#27491F',
       buttonBackgroundColor: '#ffffff', buttonTextColor: '#27491F',
     },
+    analyticsEvents: {
+      onSectionView: 'section_view',
+      onCtaClick:    'cta_click',
+    } as AnalyticsEvents,
     Editor: CTAEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
@@ -473,6 +526,13 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       backgroundColor: '#f9fafb',
       successMessage: 'Thank you for subscribing!',
     },
+    apiBinding: {
+      endpoint: '/api/public/{tenantId}/newsletter/subscribe',
+      method:   'POST',
+    } as ApiBinding,
+    analyticsEvents: {
+      onFormSubmit: 'newsletter_subscribe',
+    } as AnalyticsEvents,
     Editor: NewsletterEditor as React.ComponentType<import('./types').EditorProps>,
   },
 

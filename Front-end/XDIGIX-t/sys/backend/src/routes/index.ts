@@ -12,6 +12,8 @@ import externalRoutes from './external.routes';
 import bostaRoutes from './bosta.routes';
 import shippingRoutes from './shipping/index';
 import sitesRoutes from './sites.routes';
+import publicRoutes from './public.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -34,6 +36,12 @@ router.use('/domains', domainsRoutes);
 router.use('/bosta', bostaRoutes);
 router.use('/shipping', shippingRoutes);
 router.use('/sites', sitesRoutes);
+
+// Public storefront API — no auth required, cors(*), rate-limited
+router.use('/public', publicRoutes);
+
+// AI Theme API — auth required, rate-limited to 10 req/min
+router.use('/ai', aiRoutes);
 
 // Cloud Functions compatibility: /addDomain, /verifyDomain, etc. (base URL replacement only)
 const qs = (req: { url?: string }) => (req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');

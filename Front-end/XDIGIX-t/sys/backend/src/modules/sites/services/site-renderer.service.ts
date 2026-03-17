@@ -1,4 +1,6 @@
 import type { ISite, ISection, ISiteSettings } from '../../../schemas/site.schema';
+import { STOREFRONT_RUNTIME_JS } from '../storefront-runtime';
+import { buildSectionManifestEntry } from '../../../registry/serverSectionRegistry';
 
 /* ─────────────────────────────────────────────────────────────────────
    UTILITY HELPERS
@@ -388,149 +390,10 @@ ul,ol{list-style:none}
 `;
 
 /* ─────────────────────────────────────────────────────────────────────
-   RUNTIME JS  — all DOM manipulation uses safe methods (no innerHTML)
+   RUNTIME JS — imported from storefront-runtime.ts
+   (live data hydration, analytics auto-wiring, cart management)
 ───────────────────────────────────────────────────────────────────── */
-const RUNTIME_JS = `(function(){
-"use strict";
-
-/* Announce bar dismiss */
-document.querySelectorAll('.xd-announce-close').forEach(function(btn){
-  btn.addEventListener('click',function(){
-    var bar=btn.closest('.xd-announce');
-    if(bar)bar.style.display='none';
-  });
-});
-
-/* Mobile nav */
-var mToggle=document.querySelector('.xd-mobile-toggle');
-var mMenu=document.getElementById('xd-mobile-menu');
-var mClose=document.querySelector('.xd-mobile-menu-close');
-function openMenu(){if(mMenu){mMenu.style.display='flex';document.body.style.overflow='hidden';}}
-function closeMenu(){if(mMenu){mMenu.style.display='none';document.body.style.overflow='';}}
-if(mToggle)mToggle.addEventListener('click',openMenu);
-if(mClose)mClose.addEventListener('click',closeMenu);
-if(mMenu)mMenu.addEventListener('click',function(e){if(e.target===mMenu)closeMenu();});
-
-/* Video thumbnail — replace thumb with iframe using safe DOM methods */
-document.querySelectorAll('.xd-video-thumb').forEach(function(thumb){
-  thumb.addEventListener('click',function(){
-    var wrap=thumb.closest('.xd-video-wrap');
-    if(!wrap)return;
-    var src=thumb.getAttribute('data-src');
-    if(!src)return;
-    /* Remove existing children safely */
-    while(wrap.firstChild)wrap.removeChild(wrap.firstChild);
-    var iframe=document.createElement('iframe');
-    iframe.setAttribute('src',src+'&autoplay=1');
-    iframe.setAttribute('allow','autoplay;fullscreen');
-    iframe.setAttribute('allowfullscreen','');
-    iframe.setAttribute('loading','lazy');
-    iframe.setAttribute('title','Video');
-    wrap.appendChild(iframe);
-  });
-});
-
-/* Gallery lightbox — use .src assignment (safe) */
-var lb=document.getElementById('xd-lightbox');
-var lbImg=lb?lb.querySelector('img'):null;
-if(lb&&lbImg){
-  document.querySelectorAll('.xd-gallery-item').forEach(function(item){
-    item.addEventListener('click',function(){
-      var img=item.querySelector('img');
-      if(img){lbImg.src=img.src;lbImg.alt=img.alt||'';}
-      lb.classList.add('xd-open');
-    });
-  });
-  lb.addEventListener('click',function(e){
-    if(e.target===lb||e.target.classList.contains('xd-lightbox-close'))lb.classList.remove('xd-open');
-  });
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')lb.classList.remove('xd-open');});
-}
-
-/* Countdown timers */
-document.querySelectorAll('[data-xd-countdown]').forEach(function(el){
-  var target=new Date(el.getAttribute('data-xd-countdown')).getTime();
-  var expired=el.getAttribute('data-xd-expired')||'';
-  function tick(){
-    var diff=target-Date.now();
-    function set(id,v){var x=document.getElementById(id);if(x)x.textContent=String(v).padStart(2,'0');}
-    if(diff<0){
-      var wrap=el.closest('.xd-countdown-wrap');
-      if(wrap){
-        var msg=document.createElement('p');
-        msg.textContent=expired;
-        wrap.appendChild(msg);
-      }
-      clearInterval(timer);return;
-    }
-    set(el.id+'-d',Math.floor(diff/86400000));
-    set(el.id+'-h',Math.floor(diff%86400000/3600000));
-    set(el.id+'-m',Math.floor(diff%3600000/60000));
-    set(el.id+'-s',Math.floor(diff%60000/1000));
-  }
-  tick();var timer=setInterval(tick,1000);
-});
-
-/* Image comparison slider */
-document.querySelectorAll('.xd-comparison').forEach(function(el){
-  var clip=el.querySelector('.xd-comparison-clip');
-  var handle=el.querySelector('.xd-comparison-handle');
-  if(!clip||!handle)return;
-  var dragging=false;
-  function setPos(x){
-    var rect=el.getBoundingClientRect();
-    var pct=Math.min(100,Math.max(0,(x-rect.left)/rect.width*100));
-    clip.style.width=pct+'%';
-    handle.style.left=pct+'%';
-  }
-  el.addEventListener('mousedown',function(e){dragging=true;setPos(e.clientX);});
-  window.addEventListener('mousemove',function(e){if(dragging)setPos(e.clientX);});
-  window.addEventListener('mouseup',function(){dragging=false;});
-  el.addEventListener('touchstart',function(e){dragging=true;setPos(e.touches[0].clientX);},{passive:true});
-  window.addEventListener('touchmove',function(e){if(dragging)setPos(e.touches[0].clientX);},{passive:true});
-  window.addEventListener('touchend',function(){dragging=false;});
-});
-
-/* Contact / newsletter forms — success via class toggle, no innerHTML */
-document.querySelectorAll('.xd-contact-form,.xd-newsletter-form').forEach(function(form){
-  form.addEventListener('submit',function(e){
-    e.preventDefault();
-    var successEl=form.nextElementSibling;
-    if(successEl&&successEl.classList.contains('xd-form-success')){
-      form.style.display='none';
-      successEl.classList.add('xd-show');
-    }
-  });
-});
-
-/* Scroll-reveal */
-if('IntersectionObserver' in window){
-  var ro=new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if(entry.isIntersecting){entry.target.classList.add('xd-visible');ro.unobserve(entry.target);}
-    });
-  },{threshold:0.08});
-  document.querySelectorAll('.xd-reveal').forEach(function(el){ro.observe(el);});
-}
-
-/* Analytics helper */
-window.xdTrack=function(event,params){
-  params=params||{};
-  if(typeof gtag!=='undefined')gtag('event',event,params);
-  if(typeof fbq!=='undefined'){
-    var m={view_item:['ViewContent',{content_ids:[params.item_id||''],value:params.value||0,currency:params.currency||'SAR'}],add_to_cart:['AddToCart',{content_ids:[params.item_id||''],value:params.value||0,currency:params.currency||'SAR'}],purchase:['Purchase',{value:params.value||0,currency:params.currency||'SAR'}]};
-    if(m[event])fbq('track',m[event][0],m[event][1]);
-  }
-  if(typeof ttq!=='undefined'){var t={view_item:'ViewContent',add_to_cart:'AddToCart',purchase:'CompletePayment'};if(t[event])ttq.track(t[event]);}
-};
-
-/* Add-to-cart delegate */
-document.addEventListener('click',function(e){
-  var btn=e.target.closest('[data-xd-atc]');
-  if(!btn)return;
-  window.xdTrack('add_to_cart',{item_id:btn.getAttribute('data-xd-product-id')||'',item_name:btn.getAttribute('data-xd-product-name')||'',value:parseFloat(btn.getAttribute('data-xd-price')||'0'),currency:'SAR'});
-});
-})();`;
+// STOREFRONT_RUNTIME_JS is imported at the top of this file
 
 /* ─────────────────────────────────────────────────────────────────────
    SECTION RENDERERS
@@ -669,12 +532,12 @@ function renderProducts(c: Record<string, unknown>): string {
     <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Products')}</h2>
     ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
   </div>
-  <div class="${colsCls}">
+  <div class="${colsCls}" data-xd-grid>
     ${prods.map(p => {
       const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
       const display = p.sellingPrice || p.salePrice || p.price;
       return `
-    <div class="xd-product-card xd-reveal">
+    <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
       <div class="xd-product-img-wrap">
         <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
         ${onSale ? '<span class="xd-product-badge">Sale</span>' : ''}
@@ -705,9 +568,9 @@ function renderDeals(c: Record<string, unknown>): string {
     <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Hot Deals')}</h2>
     ${c.viewMoreText ? `<a href="${attr(c.viewMoreLink as string, '#')}" class="xd-btn xd-btn-secondary xd-btn-sm">${txt(c.viewMoreText as string)}</a>` : ''}
   </div>
-  <div class="${colsCls}">
+  <div class="${colsCls}" data-xd-grid>
     ${prods.map(p => `
-    <div class="xd-product-card xd-reveal">
+    <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
       <div class="xd-product-img-wrap">
         <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Deal')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
         <span class="xd-product-badge">Sale</span>
@@ -718,7 +581,10 @@ function renderDeals(c: Record<string, unknown>): string {
           <span class="xd-product-price">${txt(p.salePrice || p.sellingPrice || p.price)} SAR</span>
           ${p.compareAtPrice || (p.salePrice && p.price) ? `<span class="xd-product-compare">${txt(p.compareAtPrice || p.price)} SAR</span>` : ''}
         </div>
-        <a href="#" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full">Shop Now</a>
+        <a href="#" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
+           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
+           data-xd-product-name="${attr(p.name as string)}"
+           data-xd-price="${attr(String(p.salePrice || p.price || 0))}">Shop Now</a>
       </div>
     </div>`).join('')}
   </div>
@@ -737,9 +603,9 @@ function renderCollections(c: Record<string, unknown>): string {
     <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Collections')}</h2>
     ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
   </div>
-  <div class="${colsCls}">
+  <div class="${colsCls}" data-xd-grid>
     ${cols.map(col => `
-    <a href="#" class="xd-reveal" style="display:block;text-decoration:none;color:inherit">
+    <a href="${attr(col.url as string || col.link as string || '#')}" class="xd-reveal" data-item-id="${attr(col.id as string || col.slug as string)}" style="display:block;text-decoration:none;color:inherit">
       <div style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:var(--br);background:#f5f5f5">
         <img src="${attr(col.image as string, 'https://placehold.co/400/27491F/fff?text=Collection')}" alt="${attr(col.name as string)}"
              loading="lazy" decoding="async" width="400" height="400"
@@ -1147,39 +1013,52 @@ function renderFooter(c: Record<string, unknown>, siteName: string): string {
 /* ─────────────────────────────────────────────────────────────────────
    SECTION DISPATCH
 ───────────────────────────────────────────────────────────────────── */
+
+/**
+ * Inject data-xd-section-id and data-xd-type into the first HTML tag of
+ * a rendered section so the storefront runtime can target it by ID.
+ */
+function addSectionAttrs(html: string, secId: string, secType: string): string {
+  const id   = attr(secId);
+  const type = attr(secType);
+  return html.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9]*)/, `$1 data-xd-section-id="${id}" data-xd-type="${type}"`);
+}
+
 function renderSection(sec: ISection, siteName: string): string {
   const c = getSectionData(sec);
 
+  let html: string;
   switch (sec.type) {
     case 'banner':
-    case 'announcement': return renderBanner(c);
-    case 'navbar':       return renderNavbar(c);
-    case 'hero':         return renderHero(c);
-    case 'features':     return renderFeatures(c);
-    case 'products':     return renderProducts(c);
-    case 'deals':        return renderDeals(c);
-    case 'collections':  return renderCollections(c);
-    case 'testimonials': return renderTestimonials(c);
-    case 'cta':          return renderCTA(c);
+    case 'announcement': html = renderBanner(c);       break;
+    case 'navbar':       html = renderNavbar(c);       break;
+    case 'hero':         html = renderHero(c);         break;
+    case 'features':     html = renderFeatures(c);     break;
+    case 'products':     html = renderProducts(c);     break;
+    case 'deals':        html = renderDeals(c);        break;
+    case 'collections':  html = renderCollections(c);  break;
+    case 'testimonials': html = renderTestimonials(c); break;
+    case 'cta':          html = renderCTA(c);          break;
     case 'about':
-    case 'split_media':  return renderAbout(c);
-    case 'contact':      return renderContact(c);
-    case 'gallery':      return renderGallery(c);
-    case 'pricing':      return renderPricing(c);
-    case 'faq':          return renderFAQ(c);
-    case 'stats':        return renderStats(c);
-    case 'team':         return renderTeam(c);
-    case 'services':     return renderServices(c);
+    case 'split_media':  html = renderAbout(c);        break;
+    case 'contact':      html = renderContact(c);      break;
+    case 'gallery':      html = renderGallery(c);      break;
+    case 'pricing':      html = renderPricing(c);      break;
+    case 'faq':          html = renderFAQ(c);          break;
+    case 'stats':        html = renderStats(c);        break;
+    case 'team':         html = renderTeam(c);         break;
+    case 'services':     html = renderServices(c);     break;
     case 'video':
-    case 'video_hero':   return renderVideo(c);
-    case 'countdown':    return renderCountdown(c, sec.id);
-    case 'partners':     return renderPartners(c);
-    case 'newsletter':   return renderNewsletter(c);
-    case 'divider':      return renderDivider(c);
-    case 'imageComparison': return renderImageComparison(c);
-    case 'footer':       return renderFooter(c, siteName);
+    case 'video_hero':   html = renderVideo(c);        break;
+    case 'countdown':    html = renderCountdown(c, sec.id); break;
+    case 'partners':     html = renderPartners(c);     break;
+    case 'newsletter':   html = renderNewsletter(c);   break;
+    case 'divider':      html = renderDivider(c);      break;
+    case 'imageComparison': html = renderImageComparison(c); break;
+    case 'footer':       html = renderFooter(c, siteName); break;
     default:             return `<!-- section "${attr(sec.type)}" not rendered -->`;
   }
+  return addSectionAttrs(html, sec.id, sec.type);
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -1240,11 +1119,29 @@ export function renderSite(site: ISite, pageSlug?: string): string {
 <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></noscript>`;
 
   // ── Sections ─────────────────────────────────────────────────────
-  const bodySections = [...activeSections]
+  const sortedSections = [...activeSections]
     .filter(s => !s.hidden)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const bodySections = sortedSections
     .map(s => renderSection(s, txt(name)))
     .join('\n');
+
+  // ── xd-manifest (storefront runtime reads this for live hydration) ──
+  const apiBase = (process.env.PUBLIC_API_BASE ?? '/api/public').replace(/\/$/, '');
+  const manifestSections = sortedSections.flatMap(s => {
+    const entry = buildSectionManifestEntry(s.id, s.type);
+    if (!entry) return [];
+    // attach section's own data so runtime can forward params to API
+    const secData = getSectionData(s);
+    return [{ ...entry, sectionData: secData }];
+  });
+  const xdManifest = JSON.stringify({
+    tenantId: site.tenantId ?? '',
+    apiBase,
+    currency,
+    sections: manifestSections,
+  });
 
   // ── Analytics ───────────────────────────────────────────────────
   const analyticsHead = buildAnalyticsHead(analytics);
@@ -1280,6 +1177,7 @@ ${seo.ogImage ? `<meta property="og:image" content="${attr(seo.ogImage)}"><meta 
 <meta name="twitter:description" content="${attr(seo.description)}">
 ${seo.ogImage ? `<meta name="twitter:image" content="${attr(seo.ogImage)}">` : ''}
 <script type="application/ld+json">${jsonLd}</script>
+<script id="xd-manifest" type="application/json">${xdManifest}</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 ${fontLink}
 ${materialIconsLink}
@@ -1288,7 +1186,87 @@ ${analyticsHead}
 </head>
 <body>
 ${bodySections}
-<script defer>${RUNTIME_JS}</script>
+<script defer>${STOREFRONT_RUNTIME_JS}</script>
 </body>
 </html>`;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   AI LAYOUT RENDERER
+   Converts a validated AiLayout object into a full ISite and renders it.
+   Used by POST /api/ai/render-preview and POST /api/sites/:id/apply-ai
+───────────────────────────────────────────────────────────────────── */
+import type { AiLayout } from '../../../schemas/ai-layout.schema';
+
+/**
+ * Strip any HTML tags from AI-supplied string values to prevent XSS.
+ * Only applied to string leaves; arrays and objects are recursed.
+ */
+function stripHtml(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return value.replace(/<[^>]*>/g, '');
+  }
+  if (Array.isArray(value)) {
+    return value.map(stripHtml);
+  }
+  if (value !== null && typeof value === 'object') {
+    const cleaned: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      cleaned[k] = stripHtml(v);
+    }
+    return cleaned;
+  }
+  return value;
+}
+
+/**
+ * Render a preview HTML page from an AI-generated layout.
+ *
+ * @param layout   Validated AiLayout (from AiLayoutSchema.parse)
+ * @param tenantId Merchant's tenantId (for manifest injection)
+ * @param siteName Display name shown in title / footer
+ */
+export function renderFromLayout(
+  layout:   AiLayout,
+  tenantId: string,
+  siteName  = 'Preview',
+): string {
+  /* Build a minimal ISite-like object to reuse renderSite() */
+  const sections: ISection[] = layout.sections.map((s, i) => ({
+    id:      `ai-${i}-${s.type}`,
+    type:    s.type,
+    data:    (stripHtml(s.data ?? {}) as Record<string, unknown>),
+    content: {},
+    style:   {},
+    hidden:  s.hidden ?? false,
+    order:   s.order ?? i,
+  }));
+
+  const theme = layout.theme ?? {};
+
+  const fakeSite: Partial<ISite> & { tenantId: string; name: string; sections: ISection[]; pages: []; settings: ISiteSettings } = {
+    tenantId,
+    businessId: tenantId,
+    name:       layout.name ?? siteName,
+    sections,
+    pages:      [],
+    settings: {
+      theme: {
+        primaryColor:    (theme.primaryColor    ?? '#27491F') as string,
+        secondaryColor:  (theme.secondaryColor  ?? '#F0CAE1') as string,
+        accentColor:     (theme.accentColor     ?? '#FFD300') as string,
+        backgroundColor: (theme.backgroundColor ?? '#ffffff') as string,
+        textColor:       (theme.textColor       ?? '#171817') as string,
+        fontFamily:      (theme.fontFamily      ?? 'Inter')   as string,
+        borderRadius:    (theme.borderRadius    ?? 'rounded') as 'sharp' | 'rounded' | 'pill',
+      },
+      seo: {
+        title:       (layout.seo?.title       ?? siteName),
+        description: (layout.seo?.description ?? ''),
+        keywords:    (layout.seo?.keywords    ?? []),
+      },
+    } as ISiteSettings,
+  };
+
+  return renderSite(fakeSite as ISite);
 }

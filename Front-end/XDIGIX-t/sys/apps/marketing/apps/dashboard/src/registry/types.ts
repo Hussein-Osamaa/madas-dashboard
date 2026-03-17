@@ -35,6 +35,37 @@ export interface SectionVariant {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+   API Binding — describes how the storefront runtime fetches live data
+────────────────────────────────────────────────────────────────────────── */
+export interface ApiBinding {
+  /** e.g. '/api/public/{tenantId}/products' */
+  endpoint: string;
+  method?: 'GET' | 'POST';
+  /** Section data keys forwarded as query params when fetching */
+  paramsFromData?: string[];
+  /** Browser-side cache TTL in ms (0 = always live) */
+  cacheTtlMs?: number;
+  /** True when endpoint supports ?page=&limit= pagination */
+  paginates?: boolean;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Analytics Events — auto-wired by storefront runtime via IntersectionObserver
+────────────────────────────────────────────────────────────────────────── */
+export interface AnalyticsEvents {
+  /** Fired when the section enters viewport */
+  onSectionView?: string;
+  /** Fired per card element with [data-item-id] in viewport */
+  onItemView?: string;
+  /** Fired when a card element with [data-item-id] is clicked */
+  onItemClick?: string;
+  /** Fired when a [data-cta] button is clicked */
+  onCtaClick?: string;
+  /** Fired on successful form submission */
+  onFormSubmit?: string;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
    SectionRegistryEntry — one entry per SectionType
 ────────────────────────────────────────────────────────────────────────── */
 export interface SectionRegistryEntry {
@@ -60,4 +91,16 @@ export interface SectionRegistryEntry {
 
   /** Optional layout variants shown as sub-options in the section library */
   variants?: SectionVariant[];
+
+  /**
+   * Describes how the storefront runtime fetches live data for this section.
+   * Undefined for purely static sections.
+   */
+  apiBinding?: ApiBinding;
+
+  /**
+   * Analytics events auto-wired by IntersectionObserver in the storefront runtime.
+   * Keys map to GA4 / Meta Pixel event names.
+   */
+  analyticsEvents?: AnalyticsEvents;
 }
