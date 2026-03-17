@@ -99,10 +99,19 @@ export function createApp(): Express {
 
   app.use('/api', routes);
 
+  // Serve locally-uploaded files (development fallback when S3 is not configured).
+  // Creates the directory on first request if absent so the route is always mounted.
   const uploadDir = path.join(process.cwd(), 'uploads');
-  if (fs.existsSync(uploadDir)) {
-    app.use('/storage/files', express.static(uploadDir));
-  }
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  app.use(
+    '/storage/files',
+    express.static(uploadDir, {
+      maxAge: '1y',
+      immutable: true,
+      // Security: never serve index listings
+      index: false,
+    })
+  );
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true, timestamp: new Date().toISOString() });
