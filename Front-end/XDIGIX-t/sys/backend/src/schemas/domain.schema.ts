@@ -50,7 +50,11 @@ const DomainSchema = new Schema<IDomain>(
   { timestamps: true, _id: true }
 );
 
-DomainSchema.index({ domain: 1 }, { unique: true });
+// Composite unique index: same domain can exist for different tenants (multi-tenant)
+// IMPORTANT: if upgrading an existing deployment, run:
+//   db.domains.dropIndex({ domain: 1 })
+//   then restart the app to recreate the new composite index
+DomainSchema.index({ domain: 1, tenantId: 1 }, { unique: true });
 DomainSchema.index({ tenantId: 1 });
 
 export const Domain: Model<IDomain> = mongoose.model<IDomain>('Domain', DomainSchema);

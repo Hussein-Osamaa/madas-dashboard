@@ -128,6 +128,24 @@ footer a:hover{color:#fff}
 `;
 
 /* ── Section renderers ─────────────────────────────────────────── */
+/* ── Custom CSS sanitizer ──────────────────────────────────────────────
+   Strips dangerous CSS constructs without requiring an external parser.
+   Dangerous patterns removed:
+     - expression(...)  → IE-era remote code execution
+     - javascript: URLs → XSS via url()
+     - @import          → cross-origin CSS injection
+     - behavior:        → IE-era HTC attachment
+   If input is empty or non-string, returns ''.
+───────────────────────────────────────────────────────────────────── */
+function sanitizeCss(raw: unknown): string {
+  if (!raw || typeof raw !== 'string') return '';
+  return raw
+    .replace(/expression\s*\([^)]*\)/gi, '/* removed */')
+    .replace(/javascript\s*:/gi, '/* removed */')
+    .replace(/@import\b[^;]*/gi, '/* removed */')
+    .replace(/behavior\s*:/gi, '/* removed: behavior */');
+}
+
 function attr(value: unknown, fallback = ''): string {
   if (value == null || value === '') return fallback;
   return String(value).replace(/"/g, '&quot;');
@@ -143,60 +161,65 @@ function buildAnalyticsHead(analytics: ISiteSettings['analytics']): string {
   const parts: string[] = [];
 
   // ── Google Analytics 4 ─────────────────────────────────────────
+  // Use JSON.stringify for IDs injected into JS string context to prevent
+  // XSS via crafted values like  ');alert(1);//
   if (analytics.ga4MeasurementId) {
-    const gid = attr(analytics.ga4MeasurementId);
+    const gid    = JSON.stringify(String(analytics.ga4MeasurementId));
+    const gidUrl = attr(analytics.ga4MeasurementId); // for URL attribute
     parts.push(`<!-- Google Analytics 4 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=${gid}"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=${gidUrl}"></script>
 <script>
 window.dataLayer=window.dataLayer||[];
 function gtag(){dataLayer.push(arguments)}
 gtag('js',new Date());
-gtag('config','${gid}',{anonymize_ip:true,cookie_flags:'SameSite=None;Secure'});
+gtag('config',${gid},{anonymize_ip:true,cookie_flags:'SameSite=None;Secure'});
 </script>`);
   }
 
   // ── Google Ads conversion ───────────────────────────────────────
   if (analytics.googleAdsId && !analytics.ga4MeasurementId) {
-    const aid = attr(analytics.googleAdsId);
-    parts.push(`<script async src="https://www.googletagmanager.com/gtag/js?id=${aid}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${aid}');</script>`);
+    const aid    = JSON.stringify(String(analytics.googleAdsId));
+    const aidUrl = attr(analytics.googleAdsId);
+    parts.push(`<script async src="https://www.googletagmanager.com/gtag/js?id=${aidUrl}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config',${aid});</script>`);
   }
 
   // ── Meta (Facebook) Pixel ──────────────────────────────────────
   if (analytics.metaPixelId) {
-    const pid = attr(analytics.metaPixelId);
+    const pid    = JSON.stringify(String(analytics.metaPixelId));
+    const pidRaw = attr(analytics.metaPixelId);
     parts.push(`<!-- Meta Pixel -->
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
 if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
 (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-fbq('init','${pid}');
+fbq('init',${pid});
 fbq('track','PageView');
 </script>
-<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pid}&ev=PageView&noscript=1"/></noscript>`);
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pidRaw}&ev=PageView&noscript=1"/></noscript>`);
   }
 
   // ── Snapchat Pixel ─────────────────────────────────────────────
   if (analytics.snapchatPixelId) {
-    const spid = attr(analytics.snapchatPixelId);
+    const spid = JSON.stringify(String(analytics.snapchatPixelId));
     parts.push(`<!-- Snapchat Pixel -->
 <script>
 (function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function(){a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};
 a.queue=[];var s='script';r=t.createElement(s);r.async=!0;r.src=n;var u=t.getElementsByTagName(s)[0];
 u.parentNode.insertBefore(r,u);})(window,document,'https://sc-static.net/scevent.min.js');
-snaptr('init','${spid}');
+snaptr('init',${spid});
 snaptr('track','PAGE_VIEW');
 </script>`);
   }
 
   // ── TikTok Pixel ───────────────────────────────────────────────
   if (analytics.tiktokPixelId) {
-    const ttid = attr(analytics.tiktokPixelId);
+    const ttid = JSON.stringify(String(analytics.tiktokPixelId));
     parts.push(`<!-- TikTok Pixel -->
 <script>
 !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement('script');o.type='text/javascript',o.async=!0,o.src=i+'?sdkid='+e+'&lib='+t;var a=document.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};
-ttq.load('${ttid}');ttq.page();}(window,document,'ttq');
+ttq.load(${ttid});ttq.page();}(window,document,'ttq');
 </script>`);
   }
 
@@ -540,8 +563,11 @@ export function renderSite(site: ISite, pageSlug?: string): string {
   const theme     = settings?.theme     || {};
   const analytics = settings?.analytics;
   const settingsAny = settings as unknown as Record<string, unknown>;
-  const customCss   = settingsAny?.customCss as string || '';
-  const customJs    = settingsAny?.customJs  as string || '';
+  const customCss   = sanitizeCss(settingsAny?.customCss);
+  // customJs is intentionally NOT rendered — XSS risk; merchant JS is
+  // sanitised and stored but served only via a Content Security Policy
+  // compliant mechanism in a future phase.
+  const customJs    = '';
   const currency  = 'SAR'; // TODO: pull from business settings
 
   // ── Resolve which page to render ────────────────────────────────

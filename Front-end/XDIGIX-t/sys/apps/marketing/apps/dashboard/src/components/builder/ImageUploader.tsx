@@ -1,6 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { storage, ref, uploadBytes, getDownloadURL } from '../../lib/firebase';
+
+/* ── Backend storage API ────────────────────────────────────────────────
+   Replaces Firebase Storage — images go through POST /api/storage/upload
+   which returns { url, storagePath }.  Falls back gracefully if env var
+   is not set (dev environments that haven't configured the backend).
+───────────────────────────────────────────────────────────────────────── */
+const API_BASE = (import.meta.env.VITE_API_BACKEND_URL as string | undefined)
+  ?.replace(/\/api\/?$/, '') ?? '';
+
+function getToken(): string {
+  return localStorage.getItem('backend_access_token')
+    || localStorage.getItem('warehouse_access_token') || '';
+}
 
 type Props = {
   currentUrl?: string;
@@ -21,7 +33,7 @@ const ImageUploader = ({ currentUrl, onUpload, value, onChange, label = 'Image',
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(imageUrl || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { businessId } = useBusiness();
+  useBusiness(); // context available if needed later
 
   // Sync preview with prop changes
   useEffect(() => {
@@ -30,7 +42,7 @@ const ImageUploader = ({ currentUrl, onUpload, value, onChange, label = 'Image',
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !businessId) return;
+    if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -46,26 +58,31 @@ const ImageUploader = ({ currentUrl, onUpload, value, onChange, label = 'Image',
 
     setUploading(true);
     try {
-      // Create preview
+      // Show local preview immediately while uploading
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreview(e.target?.result as string);
-      };
+      reader.onload = (e) => { setPreview(e.target?.result as string); };
       reader.readAsDataURL(file);
 
-      // Upload to Firebase Storage
-      const timestamp = Date.now();
-      const fileName = `${timestamp}-${file.name}`;
-      const storageRef = ref(storage, `businesses/${businessId}/website-images/${fileName}`);
-      
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      if (handleUpload) {
-        handleUpload(downloadURL);
+      // Upload to backend storage endpoint
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`${API_BASE}/api/storage/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const msg = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(msg.error || `Upload failed (${res.status})`);
       }
+
+      const { url } = await res.json() as { url: string };
+      setPreview(url);
+      handleUpload?.(url);
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('[ImageUploader] Upload error:', error);
       alert('Failed to upload image. Please try again.');
       setPreview(imageUrl || null);
     } finally {

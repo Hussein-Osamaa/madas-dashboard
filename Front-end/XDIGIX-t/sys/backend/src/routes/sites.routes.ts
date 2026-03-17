@@ -1,10 +1,66 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { centralJwtMiddleware } from '../middleware/central-jwt.middleware';
 import { tenantMiddleware } from '../middleware/tenant.middleware';
 import { Site } from '../schemas/site.schema';
 import { Domain } from '../schemas/domain.schema';
 import { SiteVersion } from '../schemas/site-version.schema';
 import { renderSite } from '../modules/sites/services/site-renderer.service';
+
+/* ── Zod schema for PATCH /sites/:id ─────────────────────────── */
+const SectionSchemaZ = z.object({
+  id:      z.string(),
+  type:    z.string(),
+  order:   z.number().optional(),
+  data:    z.record(z.unknown()).optional(),
+  content: z.record(z.unknown()).optional(),
+  style:   z.record(z.unknown()).optional(),
+  hidden:  z.boolean().optional(),
+}).passthrough();
+
+const PageSeoSchemaZ = z.object({
+  title:       z.string().max(80).optional(),
+  description: z.string().max(200).optional(),
+  ogImage:     z.string().max(500).optional(),
+  canonical:   z.string().max(500).optional(),
+}).optional();
+
+const PageSchemaZ = z.object({
+  id:       z.string(),
+  slug:     z.string(),
+  name:     z.string().max(200),
+  sections: z.array(SectionSchemaZ).optional(),
+  order:    z.number().optional(),
+  seo:      PageSeoSchemaZ,
+}).passthrough();
+
+const PatchSiteSchema = z.object({
+  name:         z.string().min(1).max(200).optional(),
+  description:  z.string().max(1000).optional(),
+  sections:     z.array(SectionSchemaZ).optional(),
+  pages:        z.array(PageSchemaZ).optional(),
+  settings: z.object({
+    theme:    z.record(z.string()).optional(),
+    seo: z.object({
+      title:       z.string().max(80).optional(),
+      description: z.string().max(200).optional(),
+      keywords:    z.array(z.string()).optional(),
+      ogImage:     z.string().max(500).optional(),
+    }).optional(),
+    analytics:     z.record(z.string()).optional(),
+    customCss:     z.string().max(100_000).optional(),
+    customJs:      z.never({ invalid_type_error: 'customJs is rejected for security reasons' }).optional(),
+    announcements: z.object({
+      enabled:     z.boolean().optional(),
+      text:        z.string().max(500).optional(),
+      link:        z.string().max(500).optional(),
+      dismissible: z.boolean().optional(),
+    }).optional(),
+    favicon:      z.string().max(500).optional(),
+    customDomain: z.string().max(253).optional(),
+  }).passthrough().optional(),
+  customDomain: z.string().max(253).optional(),
+});
 
 const router = Router();
 
@@ -68,10 +124,20 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 /* ── Update site (sections / settings / pages / name) ─────────── */
 router.patch('/:id', async (req: Request, res: Response) => {
+  // Validate request body with Zod
+  const parsed = PatchSiteSchema.safeParse(req.body);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ');
+    res.status(422).json({ error: `Validation failed — ${issues}` });
+    return;
+  }
+
   const allowed = ['name', 'description', 'sections', 'pages', 'settings', 'customDomain'] as const;
   const update: Record<string, unknown> = { updatedAt: new Date() };
   for (const key of allowed) {
-    if (req.body[key] !== undefined) update[key] = req.body[key];
+    if ((parsed.data as Record<string, unknown>)[key] !== undefined) {
+      update[key] = (parsed.data as Record<string, unknown>)[key];
+    }
   }
   try {
     const site = await Site.findOneAndUpdate(
