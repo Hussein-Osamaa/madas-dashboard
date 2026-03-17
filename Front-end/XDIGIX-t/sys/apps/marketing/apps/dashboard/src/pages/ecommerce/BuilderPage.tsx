@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { doc, db, getDoc, updateDoc, collection, getDocs, query, where, writeBatch } from '../../lib/firebase';
 import { addDomain, isValidDomain } from '../../services/domainService';
 import BuilderCanvas from '../../components/builder/BuilderCanvas';
 import BuilderSidebar from '../../components/builder/BuilderSidebar';
@@ -14,32 +12,33 @@ import { Section, SectionType } from '../../types/builder';
 import { SelectedElement } from '../../types/elementEditor';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 import { useUndoRedo } from '../../hooks/useUndoRedo';
-import { getDefaultPublishedSiteUrl, slugifyBrandName } from '../../utils/siteUrls';
 
-// Helper to remove undefined values from objects (Firestore doesn't accept undefined)
-const removeUndefined = (obj: any): any => {
-  if (obj === null || obj === undefined) return null;
-  if (Array.isArray(obj)) {
-    return obj.map(item => removeUndefined(item));
+/* ── Backend API helper ─────────────────────────────────────────── */
+const API_BASE = (import.meta.env.VITE_API_BACKEND_URL as string | undefined)
+  ?.replace(/\/api\/?$/, '') ?? '';
+
+function getToken() {
+  return localStorage.getItem('backend_access_token')
+    || localStorage.getItem('warehouse_access_token') || '';
+}
+
+async function sitesApi<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}/api/sites${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || `HTTP ${res.status}`);
   }
-  if (typeof obj === 'object') {
-    const cleaned: any = {};
-    for (const key of Object.keys(obj)) {
-      const value = obj[key];
-      if (value !== undefined) {
-        cleaned[key] = removeUndefined(value);
-      }
-    }
-    return cleaned;
-  }
-  return obj;
-};
+  return res.json() as Promise<T>;
+}
 
 const BuilderPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { businessId } = useBusiness();
-  const { user } = useAuth();
   const siteId = searchParams.get('siteId');
   
   const [loading, setLoading] = useState(true);
@@ -80,88 +79,70 @@ const BuilderPage = () => {
 
   useEffect(() => {
     const loadSite = async () => {
-      if (!businessId || !siteId) {
+      if (!siteId) {
         setLoading(false);
         return;
       }
 
       try {
-        const siteRef = doc(db, 'businesses', businessId, 'published_sites', siteId);
-        const siteSnap = await getDoc(siteRef);
+        const data = await sitesApi<Record<string, any>>('GET', `/${siteId}`);
+        const loadedSections = data.sections || [];
+        console.log('[BuilderPage] Loaded sections from API:', loadedSections.length, 'sections');
+        console.log('[BuilderPage] Loaded section types:', loadedSections.map((s: any) => s.type));
+        setSiteName(data.name || 'Untitled Site');
+        setCurrentStatus((data.status as 'draft' | 'published') || 'draft');
 
-        if (siteSnap.exists()) {
-          const data = siteSnap.data();
-          const loadedSections = data.sections || [];
-          console.log('[BuilderPage] Loaded sections from Firestore:', loadedSections.length, 'sections');
-          console.log('[BuilderPage] Loaded section types:', loadedSections.map((s: any) => s.type));
-          console.log('[BuilderPage] Full sections data:', JSON.stringify(loadedSections, null, 2));
-          setSiteName(data.name || 'Untitled Site');
-          setCurrentStatus((data.status as 'draft' | 'published') || 'draft');
-          
-          // If no sections, add a default hero section
-          if (loadedSections.length === 0) {
-            const defaultSections: Section[] = [
-              {
-                id: 'hero-1',
-                type: 'hero',
-                order: 0,
-                data: {
-                  title: 'Welcome to Our Store',
-                  subtitle: 'Discover amazing products',
-                  buttonText: 'Shop Now',
-                  buttonLink: '#',
-                  backgroundImage: '',
-                  backgroundColor: 'linear-gradient(135deg, #27491F 0%, #F0CAE1 100%)',
-                  textColor: '#FFFFFF'
-                }
-              }
-            ];
-            setInitialSections(defaultSections);
-          } else {
-            setInitialSections(loadedSections);
-          }
+        if (loadedSections.length === 0) {
+          const defaultSections: Section[] = [
+            {
+              id: 'hero-1',
+              type: 'hero',
+              order: 0,
+              data: {
+                title: 'Welcome to Our Store',
+                subtitle: 'Discover amazing products',
+                buttonText: 'Shop Now',
+                buttonLink: '#',
+                backgroundImage: '',
+                backgroundColor: 'linear-gradient(135deg, #27491F 0%, #F0CAE1 100%)',
+                textColor: '#FFFFFF',
+              },
+            },
+          ];
+          setInitialSections(defaultSections);
+        } else {
+          setInitialSections(loadedSections);
         }
       } catch (error) {
-        console.error('Failed to load site:', error);
+        console.error('[BuilderPage] Failed to load site:', error);
       } finally {
         setLoading(false);
       }
     };
 
     void loadSite();
-  }, [businessId, siteId]);
+  }, [siteId]);
 
   const handleSave = useCallback(async () => {
-    if (!businessId || !siteId) return;
+    if (!siteId) return;
 
     setSaving(true);
     try {
-      // Always use the latest sections from the ref
       const currentSections = sectionsRef.current;
-      // Clean undefined values before saving to Firestore
-      const cleanedSections = removeUndefined(currentSections);
-      
-      console.log('[BuilderPage] Saving sections:', cleanedSections.length, 'sections');
-      console.log('[BuilderPage] Section types being saved:', cleanedSections.map((s: any) => s.type));
-      
-      const siteRef = doc(db, 'businesses', businessId, 'published_sites', siteId);
-      await updateDoc(siteRef, {
-        sections: cleanedSections,
-        updatedAt: new Date(),
-        lastEditedBy: user?.uid
-      });
-      
-      console.log('[BuilderPage] Save successful to Firestore');
-      
-      // Show success toast
+      console.log('[BuilderPage] Saving sections:', currentSections.length, 'sections');
+      console.log('[BuilderPage] Section types being saved:', currentSections.map((s: any) => s.type));
+
+      await sitesApi('PATCH', `/${siteId}`, { sections: currentSections });
+
+      console.log('[BuilderPage] Save successful via /api/sites');
       showToast('success', '✓ Changes Saved', 'Your website changes have been saved.');
     } catch (error) {
-      console.error('Failed to save:', error);
+      console.error('[BuilderPage] Failed to save:', error);
       showToast('error', 'Save Failed', 'Failed to save changes. Please try again.');
     } finally {
       setSaving(false);
     }
-  }, [businessId, siteId, user?.uid, showToast]);
+  }, [siteId, showToast]);
 
   // Auto-save completely removed to prevent data conflicts
 
@@ -232,62 +213,16 @@ const BuilderPage = () => {
   }, [sections, updateSections]);
 
   const handlePublish = useCallback(async (options: { status: 'draft' | 'published'; customDomain?: string }) => {
-    if (!businessId || !siteId) return;
+    if (!siteId) return;
 
     try {
-      // Always use the latest sections from the ref
       const currentSections = sectionsRef.current;
       console.log('[BuilderPage] Publishing with sections:', currentSections.length, 'sections');
-      console.log('[BuilderPage] Section types:', currentSections.map(s => s.type).join(', '));
-      
-      // When publishing, first unpublish all other sites for this business
-      // This ensures only ONE site is live at a time
-      if (options.status === 'published') {
-        const sitesRef = collection(db, 'businesses', businessId, 'published_sites');
-        const publishedSitesQuery = query(sitesRef, where('status', '==', 'published'));
-        const publishedSitesSnapshot = await getDocs(publishedSitesQuery);
-        
-        if (!publishedSitesSnapshot.empty) {
-          const batch = writeBatch(db);
-          publishedSitesSnapshot.docs.forEach((siteDoc) => {
-            // Don't unpublish the current site we're about to publish
-            if (siteDoc.id !== siteId) {
-              batch.update(siteDoc.ref, { 
-                status: 'draft',
-                unpublishedAt: new Date(),
-                unpublishedReason: 'auto_unpublished_new_site'
-              });
-              console.log(`[BuilderPage] Auto-unpublishing site ${siteDoc.id}`);
-            }
-          });
-          await batch.commit();
-        }
 
-        // Update the custom domain to point to this new site (if business has a domain)
-        const domainsRef = collection(db, 'customDomains');
-        const domainQuery = query(domainsRef, where('tenantId', '==', businessId));
-        const domainsSnapshot = await getDocs(domainQuery);
-        
-        if (!domainsSnapshot.empty) {
-          const domainBatch = writeBatch(db);
-          domainsSnapshot.docs.forEach((domainDoc) => {
-            // Update domain to point to the new site
-            if (domainDoc.data().siteId !== siteId) {
-              domainBatch.update(domainDoc.ref, { 
-                siteId: siteId,
-                updatedAt: new Date()
-              });
-              console.log(`[BuilderPage] Updating domain ${domainDoc.data().domain} to point to site ${siteId}`);
-            }
-          });
-          await domainBatch.commit();
-        }
-      }
-
-      // Optional: connect a NEW custom domain (so publish doesn't overwrite domain fields)
+      // Optional: connect a NEW custom domain
       const rawDomain = options.customDomain?.trim();
       const shouldConnectDomain = options.status === 'published' && !!rawDomain;
-      if (shouldConnectDomain && rawDomain) {
+      if (shouldConnectDomain && rawDomain && businessId) {
         const cleanDomain = rawDomain
           .toLowerCase()
           .replace(/^https?:\/\//, '')
@@ -304,53 +239,35 @@ const BuilderPage = () => {
         }
       }
 
-      const siteRef = doc(db, 'businesses', businessId, 'published_sites', siteId);
-      // Clean undefined values before saving to Firestore
-      const cleanedSections = removeUndefined(currentSections);
-      const updateData: any = {
-        status: options.status,
-        sections: cleanedSections,
-        updatedAt: new Date(),
-        lastEditedBy: user?.uid
-      };
-
-      if (options.status === 'published') {
-        updateData.publishedAt = new Date();
-        updateData.isActive = true; // Mark as the active site
-        // Default URL: https://xdigix.com/[brand name]. Compute slug from site name and ensure uniqueness.
-        const rawName = (siteName && typeof siteName === 'string' && siteName.trim()) ? siteName.trim() : 'My Store';
-        let slug = slugifyBrandName(rawName) || 'store';
-        const slugCheckQuery = query(collection(db, 'businesses', businessId, 'published_sites'), where('slug', '==', slug));
-        const slugSnap = await getDocs(slugCheckQuery);
-        const takenByOther = slugSnap.docs.some(d => d.id !== siteId);
-        if (takenByOther) slug = `${slug}-${siteId.slice(0, 6)}`;
-        updateData.slug = slug;
-        const defaultUrl = getDefaultPublishedSiteUrl(siteId, slug);
-        updateData.url = defaultUrl;
-        updateData.publicUrl = defaultUrl;
-      } else {
-        updateData.isActive = false;
+      // Save latest sections + optional customDomain, then publish/unpublish atomically
+      const patchBody: Record<string, unknown> = { sections: currentSections };
+      if (shouldConnectDomain && rawDomain) {
+        patchBody.customDomain = rawDomain
+          .toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/^www\./, '');
       }
+      await sitesApi('PATCH', `/${siteId}`, patchBody);
 
-      await updateDoc(siteRef, updateData);
-      setCurrentStatus(options.status);
-      
       if (options.status === 'published') {
+        // Atomic: unpublish all others + publish this one server-side
+        await sitesApi('POST', `/${siteId}/publish`);
+        setCurrentStatus('published');
         showToast(
-          'success', 
-          '🎉 Website Published!', 
-          shouldConnectDomain 
-            ? 'Your website is now live! Domain connected — finish DNS setup in E-commerce → Custom Domains.' 
-            : 'Your website is now live! Changes are visible to your visitors.'
+          'success',
+          '🎉 Website Published!',
+          shouldConnectDomain
+            ? 'Your website is now live! Domain connected — finish DNS setup in E-commerce → Custom Domains.'
+            : 'Your website is now live! Changes are visible to your visitors.',
         );
       } else {
-        showToast('info', 'Draft Saved', 'Website saved as draft. Publish when you\'re ready to go live.');
+        await sitesApi('POST', `/${siteId}/unpublish`);
+        setCurrentStatus('draft');
+        showToast('info', 'Draft Saved', "Website saved as draft. Publish when you're ready to go live.");
       }
     } catch (error) {
-      console.error('Failed to publish:', error);
+      console.error('[BuilderPage] Failed to publish:', error);
       throw error instanceof Error ? error : new Error('Failed to publish website. Please try again.');
     }
-  }, [businessId, siteId, siteName, user?.uid, showToast]);
+  }, [businessId, siteId, showToast]);
 
   // Keyboard shortcuts
   useEffect(() => {

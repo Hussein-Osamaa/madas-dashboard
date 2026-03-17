@@ -154,7 +154,7 @@ function showConfirm(message: string, confirmLabel = 'Confirm', danger = true, i
 /* ──────────────────────────────────────────────────────────────
    Gradient thumbnails
 ────────────────────────────────────────────────────────────── */
-const GRADIENTS = [
+const GRADIENTS: [string, string][] = [
   ['#667eea','#764ba2'], ['#f093fb','#f5576c'], ['#4facfe','#00f2fe'],
   ['#43e97b','#38f9d7'], ['#fa709a','#fee140'], ['#a18cd1','#fbc2eb'],
   ['#ffecd2','#fcb69f'], ['#ff9a9e','#fecfef'], ['#a1c4fd','#c2e9fb'],
