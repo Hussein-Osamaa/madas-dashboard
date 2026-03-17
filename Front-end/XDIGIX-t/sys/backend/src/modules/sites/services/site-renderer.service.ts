@@ -1,171 +1,84 @@
 import type { ISite, ISection, ISiteSettings } from '../../../schemas/site.schema';
 
-/* ──────────────────────────────────────────────────────────────────
-   Minimal inline CSS (no CDN, no Tailwind build step needed)
-   ~3 KB — covers layout primitives and the 20 section types
-────────────────────────────────────────────────────────────────── */
-const BASE_CSS = `
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --c-primary:#27491F;--c-secondary:#F0CAE1;--c-accent:#f59e0b;
-  --c-bg:#ffffff;--c-text:#171817;
-  --ff:Inter,system-ui,sans-serif;--br:8px;
-}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{font-family:var(--ff);background:var(--c-bg);color:var(--c-text);line-height:1.6}
-img{max-width:100%;height:auto;display:block}
-a{color:var(--c-primary);text-decoration:none}
-a:hover{text-decoration:underline}
-.container{max-width:1200px;margin:0 auto;padding:0 1.25rem}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
-  padding:.75rem 1.75rem;border-radius:var(--br);font-weight:600;cursor:pointer;
-  border:2px solid transparent;transition:opacity .2s,transform .1s}
-.btn:active{transform:scale(.98)}
-.btn-primary{background:var(--c-primary);color:#fff}
-.btn-primary:hover{opacity:.88}
-.btn-secondary{background:transparent;border-color:var(--c-primary);color:var(--c-primary)}
-.btn-secondary:hover{background:var(--c-primary);color:#fff}
-.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:2rem}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
-@media(max-width:768px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
-section{padding:5rem 0}
-/* announcement bar */
-.announce-bar{background:var(--c-primary);color:#fff;text-align:center;padding:.6rem 1rem;font-size:.9rem;position:relative}
-.announce-bar a{color:#fff;text-decoration:underline}
-.announce-bar .close{position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;line-height:1}
-/* hero */
-.hero{min-height:92vh;display:flex;align-items:center;position:relative;overflow:hidden}
-.hero-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:1}
-.hero-bg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;z-index:0}
-.hero-content{position:relative;z-index:2;color:#fff;text-align:center;padding:2rem 1rem}
-.hero-content h1{font-size:clamp(2rem,5vw,4rem);font-weight:800;line-height:1.15;margin-bottom:1rem}
-.hero-content p{font-size:1.2rem;max-width:600px;margin:0 auto 2rem}
-/* video hero */
-.video-hero{position:relative;min-height:92vh;overflow:hidden;display:flex;align-items:center}
-.video-hero iframe,.video-hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:0}
-.video-hero .video-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:1}
-.video-hero .video-content{position:relative;z-index:2;color:#fff;text-align:center;padding:2rem 1rem}
-.video-hero .video-content h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;margin-bottom:1rem}
-/* about / split */
-.split{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
-.split.reverse{direction:rtl}.split.reverse>*{direction:ltr}
-@media(max-width:768px){.split{grid-template-columns:1fr}}
-.split img{border-radius:var(--br);width:100%;aspect-ratio:4/3;object-fit:cover}
-.split-text h2{font-size:2rem;font-weight:700;margin-bottom:1rem;color:var(--c-primary)}
-.split-text p{margin-bottom:1.5rem;opacity:.8}
-/* services / features */
-.card{background:#f9f9f9;border-radius:var(--br);padding:2rem;text-align:center}
-.card h3{font-size:1.2rem;font-weight:700;margin-bottom:.75rem;color:var(--c-primary)}
-.card .icon{font-size:2.5rem;margin-bottom:1rem}
-/* gallery */
-.gallery-grid{columns:3;gap:1rem}
-.gallery-grid img{width:100%;margin-bottom:1rem;border-radius:var(--br);break-inside:avoid}
-@media(max-width:768px){.gallery-grid{columns:1}}
-/* testimonials */
-.testimonial-card{background:#f9f9f9;border-radius:var(--br);padding:2rem}
-.testimonial-card blockquote{font-style:italic;margin-bottom:1rem;opacity:.8}
-.testimonial-card .author{font-weight:700;color:var(--c-primary)}
-.stars{color:#f59e0b;letter-spacing:.1rem;margin-bottom:.5rem}
-/* pricing */
-.pricing-card{border:2px solid #e5e7eb;border-radius:var(--br);padding:2.5rem;text-align:center;transition:border-color .2s}
-.pricing-card.featured{border-color:var(--c-primary)}
-.pricing-card .price{font-size:3rem;font-weight:800;color:var(--c-primary)}
-.pricing-card .price span{font-size:1rem;font-weight:400;opacity:.6}
-.pricing-card ul{list-style:none;margin:1.5rem 0;text-align:left}
-.pricing-card ul li::before{content:"✓ ";color:var(--c-primary);font-weight:700}
-/* FAQ */
-details.faq-item{border-bottom:1px solid #e5e7eb;padding:1rem 0}
-details.faq-item summary{font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
-details.faq-item summary::after{content:"+";font-size:1.5rem;color:var(--c-primary)}
-details.faq-item[open] summary::after{content:"−"}
-details.faq-item p{margin-top:1rem;opacity:.8}
-/* contact */
-.contact-form{max-width:640px;margin:0 auto}
-.contact-form input,.contact-form textarea{width:100%;padding:.875rem 1rem;border:1.5px solid #d1d5db;border-radius:var(--br);font-family:inherit;font-size:1rem;margin-bottom:1rem;transition:border-color .2s}
-.contact-form input:focus,.contact-form textarea:focus{outline:none;border-color:var(--c-primary)}
-.contact-form textarea{min-height:140px;resize:vertical}
-/* countdown */
-.countdown{display:flex;justify-content:center;gap:1.5rem;text-align:center}
-.countdown-block{background:var(--c-primary);color:#fff;border-radius:var(--br);padding:1.5rem 2rem;min-width:100px}
-.countdown-block .num{font-size:3rem;font-weight:800;line-height:1}
-.countdown-block .lbl{font-size:.8rem;opacity:.7;text-transform:uppercase;letter-spacing:.1em}
-/* newsletter */
-.newsletter-form{display:flex;gap:.75rem;max-width:480px;margin:1.5rem auto 0}
-.newsletter-form input{flex:1;padding:.875rem 1rem;border:1.5px solid #d1d5db;border-radius:var(--br);font-size:1rem}
-@media(max-width:480px){.newsletter-form{flex-direction:column}}
-/* social links */
-.social-links{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
-.social-link{display:flex;align-items:center;gap:.5rem;padding:.6rem 1.2rem;border-radius:2rem;font-weight:600;font-size:.9rem;transition:opacity .2s;color:#fff}
-.social-link:hover{opacity:.85;text-decoration:none}
-.social-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}
-.social-tt{background:#000}
-.social-fb{background:#1877f2}
-.social-x{background:#000}
-.social-wa{background:#25d366}
-/* map */
-.map-embed iframe{width:100%;height:420px;border:0;border-radius:var(--br)}
-/* section headings */
-.section-header{text-align:center;margin-bottom:3rem}
-.section-header h2{font-size:2.25rem;font-weight:800;color:var(--c-primary);margin-bottom:.75rem}
-.section-header p{opacity:.7;max-width:580px;margin:0 auto}
-/* team */
-.team-card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:50%;margin-bottom:1rem}
-.team-card{text-align:center}
-.team-card h3{font-weight:700;margin-bottom:.25rem}
-.team-card .role{opacity:.6;font-size:.9rem}
-/* products */
-.product-card{border:1px solid #e5e7eb;border-radius:var(--br);overflow:hidden;transition:box-shadow .2s}
-.product-card:hover{box-shadow:0 4px 24px rgba(0,0,0,.1)}
-.product-card img{width:100%;aspect-ratio:4/3;object-fit:cover}
-.product-card-body{padding:1rem}
-.product-card-body h3{font-weight:700;margin-bottom:.25rem}
-.product-card-body .price{color:var(--c-primary);font-weight:800;font-size:1.1rem}
-/* footer */
-footer{background:var(--c-primary);color:#fff;padding:3rem 0 1.5rem}
-footer a{color:rgba(255,255,255,.7)}
-footer a:hover{color:#fff}
-`;
-
-/* ── Section renderers ─────────────────────────────────────────── */
-/* ── Custom CSS sanitizer ──────────────────────────────────────────────
-   Strips dangerous CSS constructs without requiring an external parser.
-   Dangerous patterns removed:
-     - expression(...)  → IE-era remote code execution
-     - javascript: URLs → XSS via url()
-     - @import          → cross-origin CSS injection
-     - behavior:        → IE-era HTC attachment
-   If input is empty or non-string, returns ''.
+/* ─────────────────────────────────────────────────────────────────────
+   UTILITY HELPERS
 ───────────────────────────────────────────────────────────────────── */
+
+/** Escape a value for use inside an HTML attribute. */
+function attr(value: unknown, fallback = ''): string {
+  if (value == null || value === '') return fallback;
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/** Escape a value for safe HTML text content. */
+function txt(value: unknown, fallback = ''): string {
+  if (value == null || value === '') return fallback;
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/** Sanitize merchant-supplied CSS — strips known XSS vectors. */
 function sanitizeCss(raw: unknown): string {
   if (!raw || typeof raw !== 'string') return '';
   return raw
     .replace(/expression\s*\([^)]*\)/gi, '/* removed */')
-    .replace(/javascript\s*:/gi, '/* removed */')
-    .replace(/@import\b[^;]*/gi, '/* removed */')
-    .replace(/behavior\s*:/gi, '/* removed: behavior */');
+    .replace(/javascript\s*:/gi,          '/* removed */')
+    .replace(/@import\b[^;]*/gi,          '/* removed */')
+    .replace(/behavior\s*:/gi,            '/* removed: behavior */');
 }
 
-function attr(value: unknown, fallback = ''): string {
-  if (value == null || value === '') return fallback;
-  return String(value).replace(/"/g, '&quot;');
-}
-function txt(value: unknown, fallback = ''): string {
-  if (value == null || value === '') return fallback;
-  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/**
+ * Resolve section payload.
+ * Prefers the new `data` field (written by the React builder),
+ * falls back to the legacy `content` field.
+ */
+function getSectionData(sec: ISection): Record<string, unknown> {
+  const d = sec.data as Record<string, unknown> | undefined | null;
+  if (d && typeof d === 'object' && Object.keys(d).length > 0) return d;
+  const c = (sec as Record<string, unknown>).content as Record<string, unknown> | undefined | null;
+  if (c && typeof c === 'object') return c;
+  return {};
 }
 
-/* ── Analytics script generator ───────────────────────────────── */
+/** Build star SVGs for ratings (1–5). */
+function stars(count: number): string {
+  const n = Math.min(5, Math.max(0, Math.round(count)));
+  return Array.from({ length: 5 }, (_, i) =>
+    `<svg class="star${i < n ? ' star--filled' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`
+  ).join('');
+}
+
+/** Convert a YouTube / Vimeo URL to a privacy-enhanced embed URL. */
+function buildEmbedUrl(url: string, autoplay = false): string {
+  if (!url) return '';
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  if (ytMatch) {
+    return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0${autoplay ? '&autoplay=1&mute=1' : ''}`;
+  }
+  const vmMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vmMatch) {
+    return `https://player.vimeo.com/video/${vmMatch[1]}?dnt=1${autoplay ? '&autoplay=1&muted=1' : ''}`;
+  }
+  return url;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   ANALYTICS SNIPPETS
+───────────────────────────────────────────────────────────────────── */
 function buildAnalyticsHead(analytics: ISiteSettings['analytics']): string {
   if (!analytics) return '';
   const parts: string[] = [];
 
-  // ── Google Analytics 4 ─────────────────────────────────────────
-  // Use JSON.stringify for IDs injected into JS string context to prevent
-  // XSS via crafted values like  ');alert(1);//
   if (analytics.ga4MeasurementId) {
     const gid    = JSON.stringify(String(analytics.ga4MeasurementId));
-    const gidUrl = attr(analytics.ga4MeasurementId); // for URL attribute
+    const gidUrl = attr(analytics.ga4MeasurementId);
     parts.push(`<!-- Google Analytics 4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=${gidUrl}"></script>
 <script>
@@ -176,7 +89,6 @@ gtag('config',${gid},{anonymize_ip:true,cookie_flags:'SameSite=None;Secure'});
 </script>`);
   }
 
-  // ── Google Ads conversion ───────────────────────────────────────
   if (analytics.googleAdsId && !analytics.ga4MeasurementId) {
     const aid    = JSON.stringify(String(analytics.googleAdsId));
     const aidUrl = attr(analytics.googleAdsId);
@@ -184,7 +96,6 @@ gtag('config',${gid},{anonymize_ip:true,cookie_flags:'SameSite=None;Secure'});
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config',${aid});</script>`);
   }
 
-  // ── Meta (Facebook) Pixel ──────────────────────────────────────
   if (analytics.metaPixelId) {
     const pid    = JSON.stringify(String(analytics.metaPixelId));
     const pidRaw = attr(analytics.metaPixelId);
@@ -194,13 +105,12 @@ gtag('config',${gid},{anonymize_ip:true,cookie_flags:'SameSite=None;Secure'});
 if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
 (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-fbq('init',${pid});
-fbq('track','PageView');
+fbq('init',${pid});fbq('track','PageView');
 </script>
-<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pidRaw}&ev=PageView&noscript=1"/></noscript>`);
+<noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=${pidRaw}&ev=PageView&noscript=1"/></noscript>`);
   }
 
-  // ── Snapchat Pixel ─────────────────────────────────────────────
   if (analytics.snapchatPixelId) {
     const spid = JSON.stringify(String(analytics.snapchatPixelId));
     parts.push(`<!-- Snapchat Pixel -->
@@ -208,17 +118,20 @@ fbq('track','PageView');
 (function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function(){a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};
 a.queue=[];var s='script';r=t.createElement(s);r.async=!0;r.src=n;var u=t.getElementsByTagName(s)[0];
 u.parentNode.insertBefore(r,u);})(window,document,'https://sc-static.net/scevent.min.js');
-snaptr('init',${spid});
-snaptr('track','PAGE_VIEW');
+snaptr('init',${spid});snaptr('track','PAGE_VIEW');
 </script>`);
   }
 
-  // ── TikTok Pixel ───────────────────────────────────────────────
   if (analytics.tiktokPixelId) {
     const ttid = JSON.stringify(String(analytics.tiktokPixelId));
     parts.push(`<!-- TikTok Pixel -->
 <script>
-!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement('script');o.type='text/javascript',o.async=!0,o.src=i+'?sdkid='+e+'&lib='+t;var a=document.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};
+!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'];
+ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+ttq.load=function(e){var i='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{},ttq._i[e]=[],ttq._t=ttq._t||{},ttq._t[e]=+new Date;
+var o=document.createElement('script');o.async=!0;o.src=i+'?sdkid='+e+'&lib='+t;var a=document.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};
 ttq.load(${ttid});ttq.page();}(window,document,'ttq');
 </script>`);
   }
@@ -226,416 +139,1124 @@ ttq.load(${ttid});ttq.page();}(window,document,'ttq');
   return parts.join('\n');
 }
 
-/* ── Storefront interaction tracker (inline, <4 KB) ─────────────────── */
-const STOREFRONT_TRACKER_JS = `
-(function(){
-  /* ── Unified xdTrack helper ────────────────────────────────── */
-  window.xdTrack = function(event, params) {
-    params = params || {};
-    /* GA4 */
-    if (typeof gtag !== 'undefined') {
-      gtag('event', event, params);
-    }
-    /* Meta Pixel mapping */
-    if (typeof fbq !== 'undefined') {
-      var pixelMap = {
-        'view_item':      ['ViewContent', {content_ids:[params.item_id||''],content_type:'product',value:params.value||0,currency:params.currency||'SAR'}],
-        'add_to_cart':    ['AddToCart',   {content_ids:[params.item_id||''],value:params.value||0,currency:params.currency||'SAR'}],
-        'begin_checkout': ['InitiateCheckout', {value:params.value||0,currency:params.currency||'SAR'}],
-        'purchase':       ['Purchase',    {value:params.value||0,currency:params.currency||'SAR'}],
-        'search':         ['Search',      {search_string:params.search_term||''}]
-      };
-      if (pixelMap[event]) fbq('track', pixelMap[event][0], pixelMap[event][1]);
-    }
-    /* Snapchat */
-    if (typeof snaptr !== 'undefined') {
-      var snapMap = {'view_item':'VIEW_CONTENT','add_to_cart':'ADD_CART','begin_checkout':'START_CHECKOUT','purchase':'PURCHASE'};
-      if (snapMap[event]) snaptr('track', snapMap[event]);
-    }
-    /* TikTok */
-    if (typeof ttq !== 'undefined') {
-      var ttMap = {'view_item':'ViewContent','add_to_cart':'AddToCart','begin_checkout':'InitiateCheckout','purchase':'CompletePayment'};
-      if (ttMap[event]) ttq.track(ttMap[event]);
-    }
-  };
-
-  /* ── Auto product impression via IntersectionObserver ─────── */
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e) {
-        if (e.isIntersecting) {
-          var el = e.target;
-          window.xdTrack('view_item_list', {
-            item_list_name: el.dataset.xdSection || 'section',
-            currency: document.documentElement.dataset.xdCurrency || 'SAR'
-          });
-          io.unobserve(el);
-        }
-      });
-    }, {threshold: 0.3});
-    document.querySelectorAll('[data-xd-track="impression"]').forEach(function(el){io.observe(el);});
-  }
-
-  /* ── Add-to-cart button clicks ─────────────────────────────── */
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-xd-atc]');
-    if (!btn) return;
-    window.xdTrack('add_to_cart', {
-      item_id: btn.dataset.xdProductId || '',
-      item_name: btn.dataset.xdProductName || '',
-      value: parseFloat(btn.dataset.xdPrice || '0'),
-      currency: document.documentElement.dataset.xdCurrency || 'SAR'
-    });
-  });
-
-  /* ── Announcement bar dismiss ──────────────────────────────── */
-  document.querySelectorAll('.announce-bar .close').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var bar = btn.closest('.announce-bar');
-      if (bar) { bar.style.display = 'none'; }
-    });
-  });
-
-  /* ── Mobile menu toggle ────────────────────────────────────── */
-  var mobileToggle = document.querySelector('.xd-mobile-menu-toggle');
-  var mobileMenu   = document.querySelector('.xd-mobile-menu');
-  if (mobileToggle && mobileMenu) {
-    mobileToggle.addEventListener('click', function() {
-      var open = mobileMenu.getAttribute('aria-hidden') !== 'false';
-      mobileMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
-      mobileMenu.style.display = open ? 'block' : 'none';
-      mobileToggle.setAttribute('aria-expanded', String(open));
-    });
-  }
-})();
+/* ─────────────────────────────────────────────────────────────────────
+   BASE CSS  — mobile-first, zero external dependencies, ~5 KB inline
+───────────────────────────────────────────────────────────────────── */
+const BASE_CSS = `
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-family:var(--ff);background:var(--c-bg);color:var(--c-text);line-height:1.65;-webkit-font-smoothing:antialiased}
+img,video{max-width:100%;height:auto;display:block}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+ul,ol{list-style:none}
+:focus-visible{outline:3px solid var(--c-primary);outline-offset:3px}
+.xd-container{max-width:1200px;margin-inline:auto;padding-inline:clamp(1rem,4vw,2rem)}
+.xd-section{padding-block:clamp(3rem,7vw,6rem)}
+.xd-grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:2rem}
+.xd-grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:2rem}
+.xd-grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:1.5rem}
+.xd-flex{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+.xd-flex-center{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;justify-content:center}
+.xd-h1{font-size:clamp(2rem,5vw,3.75rem);font-weight:800;line-height:1.15;letter-spacing:-.02em}
+.xd-h2{font-size:clamp(1.6rem,3.5vw,2.5rem);font-weight:700;line-height:1.2;color:var(--c-primary)}
+.xd-h3{font-size:clamp(1.1rem,2vw,1.4rem);font-weight:700;line-height:1.3}
+.xd-lead{font-size:clamp(1rem,2vw,1.2rem);opacity:.8;max-width:620px}
+.xd-section-head{text-align:center;margin-bottom:clamp(2rem,5vw,4rem)}
+.xd-section-head .xd-h2{margin-bottom:.75rem}
+.xd-section-head .xd-lead{margin-inline:auto}
+.xd-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  padding:.75rem 1.75rem;border-radius:var(--br);font-weight:600;font-size:1rem;
+  border:2px solid transparent;transition:all .25s;text-decoration:none;white-space:nowrap;cursor:pointer}
+.xd-btn:active{transform:scale(.97)}
+.xd-btn-primary{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.xd-btn-primary:hover{filter:brightness(1.12)}
+.xd-btn-secondary{background:transparent;border-color:var(--c-primary);color:var(--c-primary)}
+.xd-btn-secondary:hover{background:var(--c-primary);color:#fff}
+.xd-btn-white{background:#fff;color:var(--c-primary)}
+.xd-btn-white:hover{background:rgba(255,255,255,.88)}
+.xd-btn-outline-white{background:transparent;color:#fff;border-color:rgba(255,255,255,.7)}
+.xd-btn-outline-white:hover{background:#fff;color:var(--c-primary)}
+.xd-btn-sm{padding:.5rem 1.25rem;font-size:.875rem}
+.xd-btn-full{width:100%;display:flex}
+.xd-announce{background:var(--c-primary);color:#fff;text-align:center;
+  padding:.6rem 3rem;font-size:.9rem;font-weight:500;position:relative;z-index:100}
+.xd-announce a{color:#fff;text-decoration:underline}
+.xd-announce-close{position:absolute;right:1rem;top:50%;translate:0 -50%;
+  background:none;border:none;color:#fff;font-size:1.4rem;line-height:1;padding:.25rem .5rem}
+.xd-nav{position:relative;z-index:90;display:flex;align-items:center;
+  justify-content:space-between;gap:1rem;padding:.875rem clamp(1rem,4vw,2rem)}
+.xd-nav-sticky{position:sticky;top:0;backdrop-filter:blur(12px)}
+.xd-nav-logo{font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+.xd-nav-logo img{height:40px;width:auto;object-fit:contain}
+.xd-nav-menu{display:flex;align-items:center;gap:.25rem}
+.xd-nav-menu a{padding:.5rem .875rem;border-radius:6px;font-size:.95rem;font-weight:500;
+  transition:background .2s;display:block;white-space:nowrap}
+.xd-nav-menu a:hover{background:rgba(0,0,0,.07)}
+.xd-nav-actions{display:flex;align-items:center;gap:.5rem}
+.xd-nav-icon{background:none;border:none;padding:.5rem;border-radius:6px;
+  display:flex;align-items:center;gap:.375rem;font-size:.875rem;font-weight:600;
+  transition:background .2s;position:relative;text-decoration:none}
+.xd-nav-icon:hover{background:rgba(0,0,0,.07)}
+.xd-nav-badge{position:absolute;top:2px;right:2px;min-width:18px;height:18px;
+  border-radius:9px;background:var(--c-primary);color:#fff;font-size:.7rem;
+  font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.xd-mobile-toggle{display:none;background:none;border:none;padding:.5rem;font-size:1.5rem}
+.xd-mobile-menu{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
+.xd-mobile-menu-inner{position:absolute;right:0;top:0;bottom:0;width:min(320px,85vw);
+  background:#fff;overflow-y:auto;padding:1.5rem}
+.xd-mobile-menu-close{float:right;background:none;border:none;font-size:1.75rem;line-height:1}
+.xd-mobile-nav-links{margin-top:2.5rem;display:flex;flex-direction:column}
+.xd-mobile-nav-links a{display:block;padding:.875rem 0;border-bottom:1px solid #f0f0f0;
+  font-size:1.05rem;font-weight:500;color:#171817}
+@media(max-width:768px){.xd-nav-menu{display:none}.xd-mobile-toggle{display:flex}}
+.xd-hero{position:relative;overflow:hidden;display:flex;align-items:center}
+.xd-hero-full{min-height:100svh}
+.xd-hero-large{min-height:min(92vh,780px)}
+.xd-hero-medium{min-height:min(70vh,560px)}
+.xd-hero-compact{min-height:min(48vh,380px)}
+.xd-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.xd-hero-overlay{position:absolute;inset:0;z-index:1}
+.xd-hero-content{position:relative;z-index:2;width:100%;padding:clamp(2rem,6vw,5rem) 0}
+.xd-hero-inner{max-width:700px}
+.xd-hero-center .xd-hero-inner{margin-inline:auto;text-align:center}
+.xd-hero-inner .xd-h1{margin-bottom:1.25rem}
+.xd-hero-inner .xd-lead{margin-bottom:2rem}
+.xd-hero-split{display:grid;grid-template-columns:1fr 1fr;align-items:center}
+.xd-hero-split-text{padding:clamp(2rem,6vw,5rem) clamp(1rem,4vw,2rem)}
+.xd-hero-split-img{overflow:hidden;height:100%;min-height:min(80vh,680px)}
+.xd-hero-split-img img{width:100%;height:100%;object-fit:cover}
+@media(max-width:768px){.xd-hero-split{grid-template-columns:1fr}.xd-hero-split-img{aspect-ratio:16/9;min-height:unset}}
+.xd-feature-card{background:#fff;border-radius:var(--br);border:1px solid #e5e7eb;
+  padding:2rem;text-align:center;transition:box-shadow .25s,translate .25s}
+.xd-feature-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08);translate:0 -2px}
+.xd-feature-icon{width:56px;height:56px;border-radius:12px;
+  background:color-mix(in srgb,var(--c-primary) 12%,transparent);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:1.75rem}
+.xd-feature-icon .material-icons{font-size:1.75rem;color:var(--c-primary)}
+.xd-feature-card h3{font-size:1.1rem;font-weight:700;color:var(--c-primary);margin-bottom:.5rem}
+.xd-feature-card p{font-size:.95rem;opacity:.75;line-height:1.6}
+.xd-product-card{background:#fff;border-radius:var(--br);border:1px solid #e5e7eb;overflow:hidden;
+  display:flex;flex-direction:column;transition:box-shadow .25s,translate .25s}
+.xd-product-card:hover{box-shadow:0 12px 32px rgba(0,0,0,.1);translate:0 -3px}
+.xd-product-img-wrap{position:relative;overflow:hidden;background:#f9f9f9}
+.xd-product-img-wrap img{width:100%;aspect-ratio:1;object-fit:cover;transition:scale .4s}
+.xd-product-card:hover .xd-product-img-wrap img{scale:1.05}
+.xd-product-badge{position:absolute;top:.75rem;left:.75rem;background:#ef4444;color:#fff;
+  font-size:.75rem;font-weight:700;padding:.25rem .625rem;border-radius:999px}
+.xd-product-body{padding:1rem;flex:1;display:flex;flex-direction:column;gap:.5rem}
+.xd-product-name{font-weight:600;font-size:.95rem;line-height:1.4;flex:1}
+.xd-product-price{font-weight:800;color:var(--c-primary);font-size:1.1rem}
+.xd-product-compare{text-decoration:line-through;opacity:.5;font-size:.875rem;margin-left:.5rem}
+.xd-product-btn{margin-top:.5rem;padding:.625rem;font-size:.875rem;border-radius:8px}
+.xd-testimonial-card{background:#fff;border-radius:var(--br);border:1px solid #e5e7eb;
+  padding:1.75rem;display:flex;flex-direction:column;gap:1rem}
+.xd-stars{display:flex;gap:2px}
+.star{width:18px;height:18px;fill:none;stroke:#d1d5db;stroke-width:1.5}
+.star--filled{fill:#f59e0b;stroke:#f59e0b}
+.xd-testimonial-text{font-style:italic;opacity:.8;flex:1;line-height:1.7}
+.xd-testimonial-author{display:flex;align-items:center;gap:.75rem}
+.xd-testimonial-author img{width:44px;height:44px;border-radius:50%;object-fit:cover}
+.xd-testimonial-author-info strong{display:block;font-weight:700;font-size:.95rem}
+.xd-testimonial-author-info span{font-size:.8rem;opacity:.6}
+.xd-gallery-grid{columns:3 240px;gap:1rem}
+.xd-gallery-item{break-inside:avoid;margin-bottom:1rem;border-radius:var(--br);overflow:hidden;cursor:pointer}
+.xd-gallery-item img{width:100%;display:block;transition:scale .4s}
+.xd-gallery-item:hover img{scale:1.04}
+.xd-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;
+  align-items:center;justify-content:center;padding:1rem}
+.xd-lightbox.xd-open{display:flex}
+.xd-lightbox img{max-width:90vw;max-height:90vh;border-radius:var(--br);object-fit:contain}
+.xd-lightbox-close{position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.15);
+  border:none;color:#fff;font-size:2rem;width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center}
+.xd-pricing-card{border:2px solid #e5e7eb;border-radius:var(--br);padding:2.25rem;
+  text-align:center;display:flex;flex-direction:column;gap:1rem;
+  transition:border-color .25s,box-shadow .25s}
+.xd-pricing-card.featured{border-color:var(--c-primary);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--c-primary) 10%,transparent)}
+.xd-pricing-badge{background:var(--c-primary);color:#fff;font-size:.75rem;font-weight:700;
+  padding:.25rem .875rem;border-radius:999px;display:inline-block;margin-bottom:.5rem}
+.xd-pricing-price{font-size:3rem;font-weight:800;color:var(--c-primary);line-height:1}
+.xd-pricing-period{font-size:.95rem;opacity:.6;font-weight:400}
+.xd-pricing-features{list-style:none;text-align:left;display:flex;flex-direction:column;gap:.625rem;flex:1}
+.xd-pricing-features li{display:flex;align-items:flex-start;gap:.5rem;font-size:.95rem;line-height:1.4}
+.xd-pricing-features li::before{content:"\u2713";color:var(--c-primary);font-weight:800;flex-shrink:0;margin-top:.1em}
+.xd-faq-item{border-bottom:1px solid #e5e7eb}
+.xd-faq-item summary{list-style:none;display:flex;justify-content:space-between;align-items:center;
+  padding:1.25rem 0;font-weight:600;cursor:pointer;gap:1rem;font-size:1rem}
+.xd-faq-item summary::-webkit-details-marker{display:none}
+.xd-faq-chevron{flex-shrink:0;width:24px;height:24px;border-radius:50%;
+  background:color-mix(in srgb,var(--c-primary) 10%,transparent);
+  display:flex;align-items:center;justify-content:center;transition:rotate .3s}
+.xd-faq-item[open] .xd-faq-chevron{rotate:180deg;background:var(--c-primary)}
+.xd-faq-item[open] .xd-faq-chevron svg{stroke:#fff}
+.xd-faq-answer{padding-bottom:1.25rem;opacity:.8;line-height:1.7;font-size:.97rem}
+.xd-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2rem}
+.xd-stat-card{text-align:center;padding:1.75rem 1rem}
+.xd-stat-icon .material-icons{font-size:2rem;color:var(--c-primary);margin-bottom:.75rem;display:block}
+.xd-stat-value{font-size:clamp(2rem,4vw,3rem);font-weight:800;color:var(--c-primary);line-height:1}
+.xd-stat-label{font-size:.9rem;opacity:.7;margin-top:.375rem}
+.xd-team-card{text-align:center}
+.xd-team-img{width:130px;height:130px;border-radius:50%;object-fit:cover;
+  margin:0 auto 1.25rem;border:4px solid color-mix(in srgb,var(--c-primary) 15%,transparent)}
+.xd-service-card{display:flex;gap:1.25rem;align-items:flex-start;padding:1.5rem;
+  border-radius:var(--br);border:1px solid #e5e7eb;transition:box-shadow .25s}
+.xd-service-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.xd-service-icon{width:48px;height:48px;border-radius:10px;flex-shrink:0;
+  background:color-mix(in srgb,var(--c-primary) 12%,transparent);
+  display:flex;align-items:center;justify-content:center}
+.xd-service-icon .material-icons{font-size:1.5rem;color:var(--c-primary)}
+.xd-service-body h3{font-weight:700;margin-bottom:.375rem}
+.xd-service-body p{font-size:.9rem;opacity:.75}
+.xd-video-wrap{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;
+  border-radius:var(--br);background:#000}
+.xd-video-wrap iframe,.xd-video-wrap video{position:absolute;inset:0;width:100%;height:100%;border:0}
+.xd-video-thumb{position:absolute;inset:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.xd-video-thumb img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.xd-video-play-btn{position:relative;z-index:1;width:72px;height:72px;border-radius:50%;
+  background:rgba(255,255,255,.92);border:none;display:flex;align-items:center;
+  justify-content:center;transition:scale .2s,background .2s}
+.xd-video-play-btn:hover{scale:1.1;background:#fff}
+.xd-video-play-btn svg{fill:var(--c-primary);margin-left:4px}
+.xd-countdown{display:flex;gap:clamp(.75rem,2vw,1.5rem);justify-content:center;flex-wrap:wrap}
+.xd-countdown-block{background:rgba(255,255,255,.12);border-radius:var(--br);
+  padding:clamp(1rem,3vw,1.75rem) clamp(1.25rem,4vw,2.5rem);text-align:center;min-width:90px}
+.xd-countdown-num{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1;display:block}
+.xd-countdown-lbl{font-size:.75rem;opacity:.7;text-transform:uppercase;letter-spacing:.08em;margin-top:.375rem;display:block}
+.xd-newsletter-form{display:flex;gap:.75rem;max-width:480px;margin:2rem auto 0;flex-wrap:wrap}
+.xd-newsletter-input{flex:1 1 200px;padding:.875rem 1rem;border:none;border-radius:var(--br);
+  font-size:1rem;font-family:inherit;min-width:0}
+.xd-newsletter-input:focus{outline:3px solid rgba(255,255,255,.5)}
+.xd-newsletter-success{font-weight:600;font-size:1.1rem;margin-top:1.5rem}
+.xd-partners-wrap{display:flex;flex-wrap:wrap;gap:3rem;align-items:center;justify-content:center}
+.xd-partner-logo{max-height:50px;max-width:140px;object-fit:contain;
+  opacity:.6;filter:grayscale(100%);transition:opacity .2s,filter .2s}
+.xd-partner-logo:hover{opacity:1;filter:none}
+.xd-input{padding:.875rem 1rem;border:1.5px solid #d1d5db;border-radius:var(--br);
+  font-size:1rem;font-family:inherit;width:100%;transition:border-color .2s;background:#fff}
+.xd-input:focus{outline:none;border-color:var(--c-primary)}
+.xd-textarea{min-height:140px;resize:vertical}
+.xd-contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+@media(max-width:768px){.xd-contact-grid{grid-template-columns:1fr}}
+.xd-contact-info{display:flex;flex-direction:column;gap:1.25rem}
+.xd-contact-info-item{display:flex;gap:.875rem;align-items:flex-start}
+.xd-contact-info-icon{width:40px;height:40px;border-radius:8px;flex-shrink:0;
+  background:color-mix(in srgb,var(--c-primary) 10%,transparent);
+  display:flex;align-items:center;justify-content:center}
+.xd-contact-info-icon .material-icons{font-size:1.2rem;color:var(--c-primary)}
+.xd-form-success{color:var(--c-primary);font-weight:600;font-size:1.05rem;display:none}
+.xd-form-success.xd-show{display:block}
+.xd-comparison{position:relative;overflow:hidden;border-radius:var(--br);cursor:ew-resize;user-select:none}
+.xd-comparison-before,.xd-comparison-clip{position:absolute;inset:0}
+.xd-comparison-before img,.xd-comparison-clip img{width:100%;height:100%;object-fit:cover}
+.xd-comparison-clip{overflow:hidden}
+.xd-comparison-handle{position:absolute;top:0;bottom:0;width:3px;background:#fff;
+  cursor:ew-resize;z-index:10;translate:-50% 0}
+.xd-comparison-handle::after{content:'';position:absolute;top:50%;left:50%;
+  translate:-50% -50%;width:36px;height:36px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.xd-comparison-label{position:absolute;top:.75rem;padding:.25rem .75rem;
+  border-radius:999px;font-size:.8rem;font-weight:700;background:rgba(0,0,0,.55);color:#fff;z-index:5}
+.xd-cta{padding:clamp(3rem,7vw,5rem) 0;text-align:center}
+.xd-cta .xd-h2{margin-bottom:.75rem}
+.xd-split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,6vw,5rem);align-items:center}
+.xd-split.reverse{direction:rtl}.xd-split.reverse>*{direction:ltr}
+@media(max-width:768px){.xd-split{grid-template-columns:1fr}}
+.xd-split-img{border-radius:var(--br);width:100%;aspect-ratio:4/3;object-fit:cover}
+.xd-footer{padding:clamp(2.5rem,6vw,5rem) 0 1.5rem}
+.xd-footer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2.5rem;
+  margin-bottom:clamp(2rem,4vw,3rem)}
+.xd-footer-col-title{font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem;opacity:.45}
+.xd-footer-links{display:flex;flex-direction:column;gap:.625rem}
+.xd-footer-links a{font-size:.9rem;opacity:.7;transition:opacity .2s}
+.xd-footer-links a:hover{opacity:1}
+.xd-footer-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:1.5rem;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.xd-footer-social{display:flex;gap:.625rem}
+.xd-footer-social-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;transition:opacity .2s;opacity:.75;font-size:.75rem;font-weight:700;text-decoration:none}
+.xd-footer-social-btn:hover{opacity:1}
+.xd-footer-minimal{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.5rem;padding:1.5rem 0}
+.xd-footer-policy{display:flex;flex-wrap:wrap;gap:1.25rem}
+.xd-footer-policy a{font-size:.875rem;opacity:.7;transition:opacity .2s}
+.xd-footer-policy a:hover{opacity:1}
+@media(prefers-reduced-motion:no-preference){
+  .xd-reveal{opacity:0;translate:0 24px;transition:opacity .6s ease,translate .6s ease}
+  .xd-reveal.xd-visible{opacity:1;translate:0 0}
+}
 `;
 
-function renderSection(sec: ISection): string {
-  const c = sec.content as Record<string, unknown>;
-  const bg = (sec.style as Record<string, unknown>).backgroundColor as string || '';
-  const styleAttr = bg ? ` style="background:${attr(bg)}"` : '';
+/* ─────────────────────────────────────────────────────────────────────
+   RUNTIME JS  — all DOM manipulation uses safe methods (no innerHTML)
+───────────────────────────────────────────────────────────────────── */
+const RUNTIME_JS = `(function(){
+"use strict";
 
-  switch (sec.type) {
-    case 'announcement': {
-      if (!(c.enabled as boolean)) return '';
-      const link = c.link as string;
-      return `
-<div class="announce-bar" id="announce-bar">
-  ${link ? `<a href="${attr(link)}" target="_blank" rel="noopener">` : ''}${txt(c.text, 'Welcome to our store!')}${link ? '</a>' : ''}
-  ${c.dismissible !== false ? '<button class="close" onclick="this.parentElement.remove()" aria-label="Close">×</button>' : ''}
-</div>`;
+/* Announce bar dismiss */
+document.querySelectorAll('.xd-announce-close').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var bar=btn.closest('.xd-announce');
+    if(bar)bar.style.display='none';
+  });
+});
+
+/* Mobile nav */
+var mToggle=document.querySelector('.xd-mobile-toggle');
+var mMenu=document.getElementById('xd-mobile-menu');
+var mClose=document.querySelector('.xd-mobile-menu-close');
+function openMenu(){if(mMenu){mMenu.style.display='flex';document.body.style.overflow='hidden';}}
+function closeMenu(){if(mMenu){mMenu.style.display='none';document.body.style.overflow='';}}
+if(mToggle)mToggle.addEventListener('click',openMenu);
+if(mClose)mClose.addEventListener('click',closeMenu);
+if(mMenu)mMenu.addEventListener('click',function(e){if(e.target===mMenu)closeMenu();});
+
+/* Video thumbnail — replace thumb with iframe using safe DOM methods */
+document.querySelectorAll('.xd-video-thumb').forEach(function(thumb){
+  thumb.addEventListener('click',function(){
+    var wrap=thumb.closest('.xd-video-wrap');
+    if(!wrap)return;
+    var src=thumb.getAttribute('data-src');
+    if(!src)return;
+    /* Remove existing children safely */
+    while(wrap.firstChild)wrap.removeChild(wrap.firstChild);
+    var iframe=document.createElement('iframe');
+    iframe.setAttribute('src',src+'&autoplay=1');
+    iframe.setAttribute('allow','autoplay;fullscreen');
+    iframe.setAttribute('allowfullscreen','');
+    iframe.setAttribute('loading','lazy');
+    iframe.setAttribute('title','Video');
+    wrap.appendChild(iframe);
+  });
+});
+
+/* Gallery lightbox — use .src assignment (safe) */
+var lb=document.getElementById('xd-lightbox');
+var lbImg=lb?lb.querySelector('img'):null;
+if(lb&&lbImg){
+  document.querySelectorAll('.xd-gallery-item').forEach(function(item){
+    item.addEventListener('click',function(){
+      var img=item.querySelector('img');
+      if(img){lbImg.src=img.src;lbImg.alt=img.alt||'';}
+      lb.classList.add('xd-open');
+    });
+  });
+  lb.addEventListener('click',function(e){
+    if(e.target===lb||e.target.classList.contains('xd-lightbox-close'))lb.classList.remove('xd-open');
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')lb.classList.remove('xd-open');});
+}
+
+/* Countdown timers */
+document.querySelectorAll('[data-xd-countdown]').forEach(function(el){
+  var target=new Date(el.getAttribute('data-xd-countdown')).getTime();
+  var expired=el.getAttribute('data-xd-expired')||'';
+  function tick(){
+    var diff=target-Date.now();
+    function set(id,v){var x=document.getElementById(id);if(x)x.textContent=String(v).padStart(2,'0');}
+    if(diff<0){
+      var wrap=el.closest('.xd-countdown-wrap');
+      if(wrap){
+        var msg=document.createElement('p');
+        msg.textContent=expired;
+        wrap.appendChild(msg);
+      }
+      clearInterval(timer);return;
     }
+    set(el.id+'-d',Math.floor(diff/86400000));
+    set(el.id+'-h',Math.floor(diff%86400000/3600000));
+    set(el.id+'-m',Math.floor(diff%3600000/60000));
+    set(el.id+'-s',Math.floor(diff%60000/1000));
+  }
+  tick();var timer=setInterval(tick,1000);
+});
 
-    case 'hero': return `
-<section class="hero"${styleAttr}>
-  ${c.backgroundImage ? `<img class="hero-bg" src="${attr(c.backgroundImage)}" alt="" loading="eager" decoding="async">` : ''}
-  <div class="hero-overlay"></div>
-  <div class="hero-content container">
-    <h1>${txt(c.headline, 'Welcome to Our Store')}</h1>
-    <p>${txt(c.subheadline, 'Discover amazing products crafted for you.')}</p>
-    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
-      ${c.buttonText ? `<a class="btn btn-primary" href="${attr(c.buttonLink, '#')}">${txt(c.buttonText)}</a>` : ''}
-      ${c.secondaryButtonText ? `<a class="btn btn-secondary" style="border-color:#fff;color:#fff" href="${attr(c.secondaryButtonLink, '#')}">${txt(c.secondaryButtonText)}</a>` : ''}
+/* Image comparison slider */
+document.querySelectorAll('.xd-comparison').forEach(function(el){
+  var clip=el.querySelector('.xd-comparison-clip');
+  var handle=el.querySelector('.xd-comparison-handle');
+  if(!clip||!handle)return;
+  var dragging=false;
+  function setPos(x){
+    var rect=el.getBoundingClientRect();
+    var pct=Math.min(100,Math.max(0,(x-rect.left)/rect.width*100));
+    clip.style.width=pct+'%';
+    handle.style.left=pct+'%';
+  }
+  el.addEventListener('mousedown',function(e){dragging=true;setPos(e.clientX);});
+  window.addEventListener('mousemove',function(e){if(dragging)setPos(e.clientX);});
+  window.addEventListener('mouseup',function(){dragging=false;});
+  el.addEventListener('touchstart',function(e){dragging=true;setPos(e.touches[0].clientX);},{passive:true});
+  window.addEventListener('touchmove',function(e){if(dragging)setPos(e.touches[0].clientX);},{passive:true});
+  window.addEventListener('touchend',function(){dragging=false;});
+});
+
+/* Contact / newsletter forms — success via class toggle, no innerHTML */
+document.querySelectorAll('.xd-contact-form,.xd-newsletter-form').forEach(function(form){
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var successEl=form.nextElementSibling;
+    if(successEl&&successEl.classList.contains('xd-form-success')){
+      form.style.display='none';
+      successEl.classList.add('xd-show');
+    }
+  });
+});
+
+/* Scroll-reveal */
+if('IntersectionObserver' in window){
+  var ro=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){entry.target.classList.add('xd-visible');ro.unobserve(entry.target);}
+    });
+  },{threshold:0.08});
+  document.querySelectorAll('.xd-reveal').forEach(function(el){ro.observe(el);});
+}
+
+/* Analytics helper */
+window.xdTrack=function(event,params){
+  params=params||{};
+  if(typeof gtag!=='undefined')gtag('event',event,params);
+  if(typeof fbq!=='undefined'){
+    var m={view_item:['ViewContent',{content_ids:[params.item_id||''],value:params.value||0,currency:params.currency||'SAR'}],add_to_cart:['AddToCart',{content_ids:[params.item_id||''],value:params.value||0,currency:params.currency||'SAR'}],purchase:['Purchase',{value:params.value||0,currency:params.currency||'SAR'}]};
+    if(m[event])fbq('track',m[event][0],m[event][1]);
+  }
+  if(typeof ttq!=='undefined'){var t={view_item:'ViewContent',add_to_cart:'AddToCart',purchase:'CompletePayment'};if(t[event])ttq.track(t[event]);}
+};
+
+/* Add-to-cart delegate */
+document.addEventListener('click',function(e){
+  var btn=e.target.closest('[data-xd-atc]');
+  if(!btn)return;
+  window.xdTrack('add_to_cart',{item_id:btn.getAttribute('data-xd-product-id')||'',item_name:btn.getAttribute('data-xd-product-name')||'',value:parseFloat(btn.getAttribute('data-xd-price')||'0'),currency:'SAR'});
+});
+})();`;
+
+/* ─────────────────────────────────────────────────────────────────────
+   SECTION RENDERERS
+───────────────────────────────────────────────────────────────────── */
+
+function renderBanner(c: Record<string, unknown>): string {
+  if (!c.text) return '';
+  const link = c.link as string;
+  return `
+<div class="xd-announce" role="alert">
+  ${link
+    ? `<a href="${attr(link)}">${txt(c.text as string)}${c.linkText ? ` &nbsp;→&nbsp; ${txt(c.linkText as string)}` : ''}</a>`
+    : txt(c.text as string)}
+  ${c.dismissible !== false ? `<button class="xd-announce-close" aria-label="Dismiss">×</button>` : ''}
+</div>`;
+}
+
+function renderNavbar(c: Record<string, unknown>): string {
+  const menuItems = (c.menuItems as Array<Record<string, unknown>>) || [];
+  const bgColor   = attr(c.backgroundColor as string || '#ffffff');
+  const txtColor  = attr(c.textColor        as string || '#171817');
+  const sticky    = c.sticky !== false;
+
+  const menuHtml = menuItems.map(item =>
+    `<li><a href="${attr(item.link as string || '#')}" style="color:${txtColor}">${txt(item.label as string)}${item.badge ? ` <span style="background:var(--c-primary);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:999px">${txt(item.badge as string)}</span>` : ''}</a></li>`
+  ).join('');
+
+  const mobileHtml = menuItems.map(item =>
+    `<a href="${attr(item.link as string || '#')}">${txt(item.label as string)}</a>`
+  ).join('');
+
+  return `
+<header style="background:${bgColor}">
+<nav class="xd-nav${sticky ? ' xd-nav-sticky' : ''}" style="background:${bgColor}">
+  <a href="/" class="xd-nav-logo" style="color:${txtColor}">
+    ${c.logo ? `<img src="${attr(c.logo as string)}" alt="${attr(c.logoText as string || 'Logo')}" loading="eager" height="40">` : ''}
+    <span>${txt(c.logoText as string || 'Store')}</span>
+  </a>
+  <ul class="xd-nav-menu" role="list">${menuHtml}</ul>
+  <div class="xd-nav-actions">
+    ${c.showSearch ? `<button class="xd-nav-icon" aria-label="Search" style="color:${txtColor}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>` : ''}
+    ${c.showCart !== false ? `<a href="${attr(c.cartUrl as string || '#')}" class="xd-nav-icon" aria-label="Cart (${attr(c.cartCount as string || '0')} items)" style="color:${txtColor}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>${c.cartCount ? `<span class="xd-nav-badge">${txt(c.cartCount)}</span>` : ''}</a>` : ''}
+    <button class="xd-mobile-toggle" aria-label="Open menu" style="color:${txtColor}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  </div>
+</nav>
+<div id="xd-mobile-menu" class="xd-mobile-menu" role="dialog" aria-modal="true" aria-label="Navigation menu">
+  <div class="xd-mobile-menu-inner">
+    <button class="xd-mobile-menu-close" aria-label="Close menu">×</button>
+    <nav class="xd-mobile-nav-links">${mobileHtml}</nav>
+  </div>
+</div>
+</header>`;
+}
+
+function renderHero(c: Record<string, unknown>): string {
+  const layout    = (c.layout as string)   || 'default';
+  const height    = (c.height  as string)  || 'large';
+  const heightCls = height === 'full' ? 'xd-hero-full' : height === 'medium' ? 'xd-hero-medium' : height === 'compact' ? 'xd-hero-compact' : 'xd-hero-large';
+  const bgImg     = c.backgroundImage  as string || '';
+  const bgColor   = c.backgroundColor  as string || 'linear-gradient(135deg,#27491F,#3a6b2e)';
+  const txtColor  = c.textColor         as string || '#ffffff';
+  const title     = c.title     as string || 'Welcome to Our Store';
+  const subtitle  = c.subtitle  as string || '';
+  const btn1Text  = c.buttonText as string || '';
+  const btn1Link  = c.buttonLink as string || '#';
+  const btn2Text  = c.secondaryButtonText as string || '';
+  const btn2Link  = c.secondaryButtonLink as string || '#';
+  const bgStyle   = bgImg ? `background:url('${attr(bgImg)}') center/cover no-repeat` : `background:${attr(bgColor)}`;
+
+  if (layout === 'split') {
+    const imgUrl = (c.imageUrl as string) || bgImg;
+    const rev    = (c.imagePosition as string) === 'left' ? ' style="direction:rtl"' : '';
+    return `
+<section class="xd-hero-split"${rev}>
+  <div class="xd-hero-split-text" style="color:${attr(txtColor)};background:${bgImg ? '' : attr(bgColor)};direction:ltr">
+    <h1 class="xd-h1 xd-reveal">${txt(title)}</h1>
+    ${subtitle ? `<p class="xd-lead xd-reveal" style="margin-top:1rem;margin-bottom:1.75rem">${txt(subtitle)}</p>` : ''}
+    <div class="xd-flex xd-reveal">
+      ${btn1Text ? `<a href="${attr(btn1Link)}" class="xd-btn xd-btn-primary">${txt(btn1Text)}</a>` : ''}
+      ${btn2Text ? `<a href="${attr(btn2Link)}" class="xd-btn xd-btn-outline-white">${txt(btn2Text)}</a>` : ''}
+    </div>
+  </div>
+  <div class="xd-hero-split-img">
+    ${imgUrl ? `<img src="${attr(imgUrl)}" alt="${attr(title)}" loading="eager" fetchpriority="high" decoding="async">` : `<div style="height:100%;background:${attr(bgColor)}"></div>`}
+  </div>
+</section>`;
+  }
+
+  return `
+<section class="xd-hero ${heightCls}" style="${bgStyle};color:${attr(txtColor)}">
+  ${bgImg ? `<img class="xd-hero-bg" src="${attr(bgImg)}" alt="" loading="eager" fetchpriority="high" decoding="async">` : ''}
+  ${c.overlayEnabled ? `<div class="xd-hero-overlay" style="background:${attr(c.overlayColor as string || 'rgba(0,0,0,0.4)')}"></div>` : ''}
+  <div class="xd-hero-content xd-container">
+    <div class="xd-hero-inner xd-hero-center">
+      <h1 class="xd-h1 xd-reveal">${txt(title)}</h1>
+      ${subtitle ? `<p class="xd-lead xd-reveal" style="margin-inline:auto;margin-bottom:2rem">${txt(subtitle)}</p>` : ''}
+      <div class="xd-flex-center xd-reveal">
+        ${btn1Text ? `<a href="${attr(btn1Link)}" class="xd-btn xd-btn-white">${txt(btn1Text)}</a>` : ''}
+        ${btn2Text ? `<a href="${attr(btn2Link)}" class="xd-btn xd-btn-outline-white">${txt(btn2Text)}</a>` : ''}
+      </div>
     </div>
   </div>
 </section>`;
+}
 
-    case 'video_hero': {
-      const url = c.videoUrl as string || '';
-      const embed = url.includes('youtube') || url.includes('youtu.be')
-        ? `<iframe src="${url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}?autoplay=1&mute=1&loop=1&playlist=${url.split('v=')[1]}" frameborder="0" allow="autoplay" allowfullscreen loading="lazy"></iframe>`
-        : url ? `<video autoplay muted loop playsinline src="${attr(url)}"></video>` : '';
-      return `
-<section class="video-hero"${styleAttr}>
-  ${embed}
-  <div class="video-overlay"></div>
-  <div class="video-content container">
-    <h1>${txt(c.headline, 'Experience the Difference')}</h1>
-    <p>${txt(c.subheadline, '')}</p>
-    ${c.buttonText ? `<a class="btn btn-primary" href="${attr(c.buttonLink, '#')}">${txt(c.buttonText)}</a>` : ''}
+function renderFeatures(c: Record<string, unknown>): string {
+  const items   = (c.items as Array<Record<string, unknown>>) || [];
+  const colsCls = items.length <= 2 ? 'xd-grid-2' : items.length === 4 ? 'xd-grid-4' : 'xd-grid-3';
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Features')}</h2>
+    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
   </div>
-</section>`;
-    }
-
-    case 'about':
-    case 'split_media': {
-      const reverse = c.imagePosition === 'right' ? ' reverse' : '';
-      return `
-<section${styleAttr}><div class="container"><div class="split${reverse}">
-  <img src="${attr(c.image, 'https://placehold.co/600x450/27491F/fff?text=Image')}" alt="${attr(c.imageAlt, '')}" loading="lazy" decoding="async">
-  <div class="split-text">
-    <h2>${txt(c.headline, 'Our Story')}</h2>
-    <p>${txt(c.body, 'Tell your story here.')}</p>
-    ${c.buttonText ? `<a class="btn btn-primary" href="${attr(c.buttonLink, '#')}">${txt(c.buttonText)}</a>` : ''}
-  </div>
-</div></div></section>`;
-    }
-
-    case 'services':
-    case 'features': {
-      const items = (c.items as Array<Record<string,string>> || []);
-      return `
-<section${styleAttr}><div class="container">
-  <div class="section-header"><h2>${txt(c.headline, 'Our Services')}</h2><p>${txt(c.subheadline, '')}</p></div>
-  <div class="grid${items.length <= 2 ? '2' : items.length === 4 ? '4' : '3'}">
+  <div class="${colsCls}">
     ${items.map(item => `
-    <div class="card">
-      ${item.icon ? `<div class="icon">${txt(item.icon)}</div>` : ''}
-      <h3>${txt(item.title, 'Service')}</h3>
-      <p>${txt(item.description, '')}</p>
+    <div class="xd-feature-card xd-reveal">
+      <div class="xd-feature-icon">${item.icon ? `<span class="material-icons" aria-hidden="true">${txt(item.icon as string)}</span>` : ''}</div>
+      <h3>${txt(item.title as string)}</h3>
+      <p>${txt(item.description as string)}</p>
     </div>`).join('')}
   </div>
-</div></section>`;
-    }
-
-    case 'gallery': {
-      const images = (c.images as string[] || []);
-      return `
-<section${styleAttr}><div class="container">
-  <div class="section-header"><h2>${txt(c.headline, 'Gallery')}</h2></div>
-  <div class="gallery-grid">
-    ${images.map(img => `<img src="${attr(img)}" alt="" loading="lazy" decoding="async">`).join('')}
-  </div>
-</div></section>`;
-    }
-
-    case 'testimonials': {
-      const items = (c.items as Array<Record<string,unknown>> || []);
-      return `
-<section${styleAttr}><div class="container">
-  <div class="section-header"><h2>${txt(c.headline, 'What Our Customers Say')}</h2></div>
-  <div class="grid${items.length >= 3 ? '3' : '2'}">
-    ${items.map(t => `
-    <div class="testimonial-card">
-      <div class="stars">${'★'.repeat(Number(t.rating) || 5)}</div>
-      <blockquote>"${txt(t.text)}"</blockquote>
-      <p class="author">— ${txt(t.name)}</p>
-    </div>`).join('')}
-  </div>
-</div></section>`;
-    }
-
-    case 'pricing': {
-      const plans = (c.plans as Array<Record<string,unknown>> || []);
-      return `
-<section${styleAttr}><div class="container">
-  <div class="section-header"><h2>${txt(c.headline, 'Pricing')}</h2><p>${txt(c.subheadline, '')}</p></div>
-  <div class="grid${plans.length === 2 ? '2' : '3'}" style="align-items:start">
-    ${plans.map(p => `
-    <div class="pricing-card${p.featured ? ' featured' : ''}">
-      <h3>${txt(p.name, 'Plan')}</h3>
-      <div class="price">${txt(p.price, '0')}<span>/${txt(p.period, 'mo')}</span></div>
-      <p style="margin:1rem 0;opacity:.7">${txt(p.description, '')}</p>
-      <ul>${(p.features as string[] || []).map(f => `<li>${txt(f)}</li>`).join('')}</ul>
-      <a class="btn btn-primary" style="width:100%;margin-top:1.5rem" href="${attr(p.link, '#')}">${txt(p.cta, 'Get Started')}</a>
-    </div>`).join('')}
-  </div>
-</div></section>`;
-    }
-
-    case 'team': {
-      const members = (c.members as Array<Record<string,string>> || []);
-      return `
-<section${styleAttr}><div class="container">
-  <div class="section-header"><h2>${txt(c.headline, 'Meet the Team')}</h2></div>
-  <div class="grid${members.length <= 2 ? '2' : members.length === 4 ? '4' : '3'}">
-    ${members.map(m => `
-    <div class="team-card">
-      <img src="${attr(m.photo, 'https://placehold.co/200/27491F/fff?text=Photo')}" alt="${attr(m.name)}" loading="lazy">
-      <h3>${txt(m.name)}</h3>
-      <p class="role">${txt(m.role)}</p>
-    </div>`).join('')}
-  </div>
-</div></section>`;
-    }
-
-    case 'faq': {
-      const items = (c.items as Array<Record<string,string>> || []);
-      return `
-<section${styleAttr}><div class="container" style="max-width:720px">
-  <div class="section-header"><h2>${txt(c.headline, 'Frequently Asked Questions')}</h2></div>
-  ${items.map((q, i) => `
-  <details class="faq-item"${i === 0 ? ' open' : ''}>
-    <summary>${txt(q.question)}</summary>
-    <p>${txt(q.answer)}</p>
-  </details>`).join('')}
-</div></section>`;
-    }
-
-    case 'contact': return `
-<section${styleAttr}><div class="container">
-  <div class="section-header"><h2>${txt(c.headline, 'Get in Touch')}</h2><p>${txt(c.subheadline, '')}</p></div>
-  <form class="contact-form" onsubmit="return false">
-    <input type="text" name="name" placeholder="Your Name" required>
-    <input type="email" name="email" placeholder="Email Address" required>
-    ${c.showPhone ? `<input type="tel" name="phone" placeholder="Phone Number">` : ''}
-    <textarea name="message" placeholder="${attr(c.placeholder, 'How can we help you?')}"></textarea>
-    <button class="btn btn-primary" type="submit" style="width:100%">${txt(c.buttonText, 'Send Message')}</button>
-  </form>
-</div></section>`;
-
-    case 'newsletter': return `
-<section style="background:var(--c-primary);color:#fff${styleAttr ? ';' + styleAttr.slice(8,-1) : ''}">
-  <div class="container" style="text-align:center">
-    <h2 style="font-size:2rem;margin-bottom:.75rem">${txt(c.headline, 'Stay in the Loop')}</h2>
-    <p style="opacity:.8;margin-bottom:1.5rem">${txt(c.subheadline, 'Subscribe for updates and exclusive offers.')}</p>
-    <form class="newsletter-form" onsubmit="return false" style="margin:0 auto">
-      <input type="email" placeholder="${attr(c.placeholder, 'Enter your email')}" required style="border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff">
-      <button class="btn" style="background:#fff;color:var(--c-primary)">${txt(c.buttonText, 'Subscribe')}</button>
-    </form>
-  </div>
+</div>
 </section>`;
+}
 
-    case 'countdown': {
-      const target = c.targetDate as string || new Date(Date.now() + 7 * 86400000).toISOString();
-      return `
-<section${styleAttr}><div class="container" style="text-align:center">
-  <div class="section-header"><h2>${txt(c.headline, 'Coming Soon')}</h2><p>${txt(c.subheadline, '')}</p></div>
-  <div class="countdown" id="cd-${sec.id}">
-    <div class="countdown-block"><div class="num" id="cd-days-${sec.id}">00</div><div class="lbl">Days</div></div>
-    <div class="countdown-block"><div class="num" id="cd-hours-${sec.id}">00</div><div class="lbl">Hours</div></div>
-    <div class="countdown-block"><div class="num" id="cd-mins-${sec.id}">00</div><div class="lbl">Minutes</div></div>
-    <div class="countdown-block"><div class="num" id="cd-secs-${sec.id}">00</div><div class="lbl">Seconds</div></div>
+function renderProducts(c: Record<string, unknown>): string {
+  const prods   = (c.selectedProducts as Array<Record<string, unknown>>) || [];
+  const colsN   = Number(c.columns) || 3;
+  const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Products')}</h2>
+    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
   </div>
-  <script>
-  (function(){var t=new Date("${attr(target)}").getTime();function u(){var n=t-Date.now(),d=Math.floor(n/86400000),h=Math.floor(n%86400000/3600000),m=Math.floor(n%3600000/60000),s=Math.floor(n%60000/1000);if(n<0){clearInterval(i);return;}document.getElementById("cd-days-${sec.id}").textContent=String(d).padStart(2,"0");document.getElementById("cd-hours-${sec.id}").textContent=String(h).padStart(2,"0");document.getElementById("cd-mins-${sec.id}").textContent=String(m).padStart(2,"0");document.getElementById("cd-secs-${sec.id}").textContent=String(s).padStart(2,"0");}u();var i=setInterval(u,1000);}())
-  </script>
-</div></section>`;
-    }
-
-    case 'map': {
-      const embed = c.embedUrl as string || '';
-      const address = c.address as string || '';
-      const mapSrc = embed || `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+  <div class="${colsCls}">
+    ${prods.map(p => {
+      const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
+      const display = p.sellingPrice || p.salePrice || p.price;
       return `
-<section${styleAttr}><div class="container">
-  ${c.headline ? `<div class="section-header"><h2>${txt(c.headline)}</h2></div>` : ''}
-  <div class="map-embed"><iframe src="${attr(mapSrc)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Location map"></iframe></div>
-</div></section>`;
-    }
-
-    case 'social_links': {
-      const links = c.links as Array<{platform:string;url:string}> || [];
-      const icons: Record<string,string> = {instagram:'📷',tiktok:'🎵',facebook:'👥',x:'✕',twitter:'✕',whatsapp:'💬',youtube:'▶️',linkedin:'💼'};
-      const classes: Record<string,string> = {instagram:'social-ig',tiktok:'social-tt',facebook:'social-fb',x:'social-x',twitter:'social-x',whatsapp:'social-wa'};
-      return `
-<section${styleAttr}><div class="container" style="text-align:center">
-  ${c.headline ? `<div class="section-header"><h2>${txt(c.headline)}</h2></div>` : ''}
-  <div class="social-links">
-    ${links.map(l => `<a class="social-link ${classes[l.platform.toLowerCase()] || ''}" href="${attr(l.url)}" target="_blank" rel="noopener noreferrer">${icons[l.platform.toLowerCase()] || '🔗'} ${l.platform}</a>`).join('')}
+    <div class="xd-product-card xd-reveal">
+      <div class="xd-product-img-wrap">
+        <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
+        ${onSale ? '<span class="xd-product-badge">Sale</span>' : ''}
+      </div>
+      <div class="xd-product-body">
+        <p class="xd-product-name">${txt(p.name as string)}</p>
+        ${display ? `<div><span class="xd-product-price">${txt(display)} SAR</span>${onSale ? `<span class="xd-product-compare">${txt(p.price)} SAR</span>` : ''}</div>` : ''}
+        <a href="${attr(p.link as string, '#')}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
+           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
+           data-xd-product-name="${attr(p.name as string)}"
+           data-xd-price="${attr(String(p.price || 0))}">Add to Cart</a>
+      </div>
+    </div>`;
+    }).join('')}
   </div>
-</div></section>`;
-    }
+</div>
+</section>`;
+}
 
-    case 'products': {
-      const prods = (c.products as Array<Record<string,unknown>> || []);
-      return `
-<section${styleAttr}><div class="container">
-  <div class="section-header"><h2>${txt(c.headline, 'Featured Products')}</h2></div>
-  <div class="grid${prods.length <= 2 ? '2' : '3'}">
+function renderDeals(c: Record<string, unknown>): string {
+  const prods   = (c.selectedProducts as Array<Record<string, unknown>>) || [];
+  const colsN   = Number(c.columns) || 3;
+  const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Hot Deals')}</h2>
+    ${c.viewMoreText ? `<a href="${attr(c.viewMoreLink as string, '#')}" class="xd-btn xd-btn-secondary xd-btn-sm">${txt(c.viewMoreText as string)}</a>` : ''}
+  </div>
+  <div class="${colsCls}">
     ${prods.map(p => `
-    <div class="product-card">
-      <img src="${attr(p.image as string, 'https://placehold.co/400x300/f0f0f0/888?text=Product')}" alt="${attr(p.name as string)}" loading="lazy">
-      <div class="product-card-body">
-        <h3>${txt(p.name)}</h3>
-        <p style="opacity:.7;font-size:.9rem;margin-bottom:.5rem">${txt(p.description)}</p>
-        <div class="price">${txt(p.price)}</div>
-        ${p.link ? `<a class="btn btn-primary" href="${attr(p.link as string)}" style="margin-top:1rem;width:100%">${txt(p.buttonText as string, 'Buy Now')}</a>` : ''}
+    <div class="xd-product-card xd-reveal">
+      <div class="xd-product-img-wrap">
+        <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Deal')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
+        <span class="xd-product-badge">Sale</span>
+      </div>
+      <div class="xd-product-body">
+        <p class="xd-product-name">${txt(p.name as string)}</p>
+        <div>
+          <span class="xd-product-price">${txt(p.salePrice || p.sellingPrice || p.price)} SAR</span>
+          ${p.compareAtPrice || (p.salePrice && p.price) ? `<span class="xd-product-compare">${txt(p.compareAtPrice || p.price)} SAR</span>` : ''}
+        </div>
+        <a href="#" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full">Shop Now</a>
       </div>
     </div>`).join('')}
   </div>
-</div></section>`;
-    }
+</div>
+</section>`;
+}
 
-    default: return `<!-- section type "${txt(sec.type)}" not renderable -->`;
+function renderCollections(c: Record<string, unknown>): string {
+  const cols    = (c.selectedCollections as Array<Record<string, unknown>>) || [];
+  const colsN   = Number(c.columns) || 3;
+  const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Collections')}</h2>
+    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
+  </div>
+  <div class="${colsCls}">
+    ${cols.map(col => `
+    <a href="#" class="xd-reveal" style="display:block;text-decoration:none;color:inherit">
+      <div style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:var(--br);background:#f5f5f5">
+        <img src="${attr(col.image as string, 'https://placehold.co/400/27491F/fff?text=Collection')}" alt="${attr(col.name as string)}"
+             loading="lazy" decoding="async" width="400" height="400"
+             style="width:100%;height:100%;object-fit:cover;transition:scale .4s">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:1rem">
+          <strong style="font-size:1.2rem;font-weight:700">${txt(col.name as string)}</strong>
+          ${col.productCount ? `<span style="font-size:.85rem;opacity:.85;margin-top:.25rem">${txt(col.productCount)} items</span>` : ''}
+        </div>
+      </div>
+    </a>`).join('')}
+  </div>
+</div>
+</section>`;
+}
+
+function renderTestimonials(c: Record<string, unknown>): string {
+  const items   = (c.items as Array<Record<string, unknown>>) || [];
+  const colsCls = items.length <= 2 ? 'xd-grid-2' : 'xd-grid-3';
+  return `
+<section class="xd-section" style="background:#f9fafb">
+<div class="xd-container">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'What Customers Say')}</h2>
+  </div>
+  <div class="${colsCls}">
+    ${items.map(t => `
+    <div class="xd-testimonial-card xd-reveal">
+      <div class="xd-stars" role="img" aria-label="${Number(t.rating) || 5} out of 5 stars">${stars(Number(t.rating) || 5)}</div>
+      <p class="xd-testimonial-text">"${txt(t.text as string)}"</p>
+      <div class="xd-testimonial-author">
+        ${t.image ? `<img src="${attr(t.image as string)}" alt="${attr(t.name as string)}" loading="lazy" width="44" height="44">` : ''}
+        <div class="xd-testimonial-author-info"><strong>${txt(t.name as string)}</strong><span>${txt(t.role as string)}</span></div>
+      </div>
+    </div>`).join('')}
+  </div>
+</div>
+</section>`;
+}
+
+function renderCTA(c: Record<string, unknown>): string {
+  const bg  = attr(c.backgroundColor as string || '#27491F');
+  const clr = attr(c.textColor        as string || '#ffffff');
+  return `
+<section class="xd-cta" style="background:${bg};color:${clr}">
+<div class="xd-container">
+  <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(c.title as string || 'Ready to Get Started?')}</h2>
+  ${c.subtitle ? `<p class="xd-lead xd-reveal" style="opacity:.9;margin-inline:auto;margin-bottom:2rem">${txt(c.subtitle as string)}</p>` : ''}
+  <div class="xd-flex-center xd-reveal">
+    ${c.buttonText ? `<a href="${attr(c.buttonLink as string, '#')}" class="xd-btn xd-btn-white">${txt(c.buttonText as string)}</a>` : ''}
+    ${c.secondaryButtonText ? `<a href="${attr(c.secondaryButtonLink as string, '#')}" class="xd-btn xd-btn-outline-white">${txt(c.secondaryButtonText as string)}</a>` : ''}
+  </div>
+</div>
+</section>`;
+}
+
+function renderAbout(c: Record<string, unknown>): string {
+  const rev = (c.imagePosition as string) === 'left' ? ' reverse' : '';
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div class="xd-split${rev}">
+    ${c.image ? `<img class="xd-split-img xd-reveal" src="${attr(c.image as string)}" alt="${attr(c.imageAlt as string || c.title as string || '')}" loading="lazy" decoding="async">` : ''}
+    <div class="xd-reveal">
+      <h2 class="xd-h2" style="margin-bottom:1rem">${txt(c.title as string || 'About Us')}</h2>
+      <p style="opacity:.8;line-height:1.8;margin-bottom:1.5rem">${txt(c.content as string)}</p>
+      ${c.buttonText ? `<a href="${attr(c.buttonLink as string, '#')}" class="xd-btn xd-btn-primary">${txt(c.buttonText as string)}</a>` : ''}
+    </div>
+  </div>
+</div>
+</section>`;
+}
+
+function renderContact(c: Record<string, unknown>): string {
+  const hasInfo = c.email || c.phone || c.address;
+  const successMsg = txt(c.successMessage as string || "Thank you! We'll be in touch soon.");
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Contact Us')}</h2>
+    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
+  </div>
+  <div class="${hasInfo ? 'xd-contact-grid' : ''}">
+    <div>
+      <form class="xd-contact-form xd-reveal" novalidate>
+        <input class="xd-input" type="text"  name="name"    placeholder="Your Name"     required autocomplete="name">
+        <input class="xd-input" type="email" name="email"   placeholder="Email Address" required autocomplete="email">
+        ${c.showPhone !== false ? `<input class="xd-input" type="tel" name="phone" placeholder="Phone Number" autocomplete="tel">` : ''}
+        <textarea class="xd-input xd-textarea" name="message" placeholder="${attr(c.placeholder as string || 'How can we help you?')}" required></textarea>
+        <button class="xd-btn xd-btn-primary xd-btn-full" type="submit">${txt(c.buttonText as string || 'Send Message')}</button>
+      </form>
+      <p class="xd-form-success">${successMsg}</p>
+    </div>
+    ${hasInfo ? `
+    <div class="xd-contact-info xd-reveal">
+      ${c.email ? `<div class="xd-contact-info-item"><div class="xd-contact-info-icon"><span class="material-icons" aria-hidden="true">email</span></div><div><strong>Email</strong><br><a href="mailto:${attr(c.email as string)}">${txt(c.email as string)}</a></div></div>` : ''}
+      ${c.phone ? `<div class="xd-contact-info-item"><div class="xd-contact-info-icon"><span class="material-icons" aria-hidden="true">phone</span></div><div><strong>Phone</strong><br><a href="tel:${attr(c.phone as string)}">${txt(c.phone as string)}</a></div></div>` : ''}
+      ${c.address ? `<div class="xd-contact-info-item"><div class="xd-contact-info-icon"><span class="material-icons" aria-hidden="true">location_on</span></div><div><strong>Address</strong><br>${txt(c.address as string)}</div></div>` : ''}
+    </div>` : ''}
+  </div>
+</div>
+</section>`;
+}
+
+function renderGallery(c: Record<string, unknown>): string {
+  const images = (c.images as Array<Record<string, unknown>>) || [];
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  ${c.title ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string)}</h2>${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}</div>` : ''}
+  <div class="xd-gallery-grid">
+    ${images.map(img => `
+    <div class="xd-gallery-item xd-reveal">
+      <img src="${attr(img.url as string)}" alt="${attr(img.alt as string || img.caption as string || '')}" loading="lazy" decoding="async">
+    </div>`).join('')}
+  </div>
+</div>
+</section>
+<div id="xd-lightbox" class="xd-lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+  <img src="" alt="">
+  <button class="xd-lightbox-close" aria-label="Close lightbox">×</button>
+</div>`;
+}
+
+function renderPricing(c: Record<string, unknown>): string {
+  const plans   = (c.plans as Array<Record<string, unknown>>) || [];
+  const colsCls = plans.length <= 2 ? 'xd-grid-2' : 'xd-grid-3';
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Pricing')}</h2>
+    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
+  </div>
+  <div class="${colsCls}">
+    ${plans.map(p => `
+    <div class="xd-pricing-card${p.highlighted ? ' featured' : ''} xd-reveal">
+      ${p.highlighted ? '<div class="xd-pricing-badge">Most Popular</div>' : ''}
+      <h3 class="xd-h3">${txt(p.name as string)}</h3>
+      <div><span class="xd-pricing-price">${txt(c.currency as string)}${txt(p.price as string)}</span><span class="xd-pricing-period">/${txt(c.billingPeriod as string || 'month')}</span></div>
+      <ul class="xd-pricing-features">
+        ${((p.features as string[]) || []).map(f => `<li>${txt(f)}</li>`).join('')}
+      </ul>
+      <a href="#" class="xd-btn ${p.highlighted ? 'xd-btn-primary' : 'xd-btn-secondary'} xd-btn-full">${txt(p.buttonText as string || 'Get Started')}</a>
+    </div>`).join('')}
+  </div>
+</div>
+</section>`;
+}
+
+function renderFAQ(c: Record<string, unknown>): string {
+  const items = (c.items as Array<Record<string, unknown>>) || [];
+  return `
+<section class="xd-section">
+<div class="xd-container" style="max-width:780px">
+  <div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'FAQ')}</h2></div>
+  ${items.map((q, i) => `
+  <details class="xd-faq-item xd-reveal"${i === 0 ? ' open' : ''}>
+    <summary>${txt(q.question as string)}<span class="xd-faq-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></summary>
+    <p class="xd-faq-answer">${txt(q.answer as string)}</p>
+  </details>`).join('')}
+</div>
+</section>`;
+}
+
+function renderStats(c: Record<string, unknown>): string {
+  const statItems = (c.stats as Array<Record<string, unknown>>) || [];
+  return `
+<section class="xd-section" style="background:#f9fafb">
+<div class="xd-container">
+  ${c.title ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string)}</h2></div>` : ''}
+  <div class="xd-stats-grid">
+    ${statItems.map(s => `
+    <div class="xd-stat-card xd-reveal">
+      ${s.icon ? `<div><span class="material-icons xd-stat-icon" aria-hidden="true">${txt(s.icon as string)}</span></div>` : ''}
+      <div class="xd-stat-value">${txt(s.prefix as string)}${txt(s.value as string)}${txt(s.suffix as string)}</div>
+      <div class="xd-stat-label">${txt(s.label as string)}</div>
+    </div>`).join('')}
+  </div>
+</div>
+</section>`;
+}
+
+function renderTeam(c: Record<string, unknown>): string {
+  const members = (c.members as Array<Record<string, unknown>>) || [];
+  const colsCls = members.length >= 4 ? 'xd-grid-4' : members.length <= 2 ? 'xd-grid-2' : 'xd-grid-3';
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Our Team')}</h2>
+    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
+  </div>
+  <div class="${colsCls}">
+    ${members.map(m => `
+    <div class="xd-team-card xd-reveal">
+      <img class="xd-team-img" src="${attr(m.image as string, 'https://placehold.co/200/27491F/fff?text=Photo')}" alt="${attr(m.name as string)}" loading="lazy" width="130" height="130">
+      <div style="font-weight:700;font-size:1.05rem">${txt(m.name as string)}</div>
+      <div style="font-size:.875rem;opacity:.6;margin-top:.25rem">${txt(m.role as string)}</div>
+      ${m.bio ? `<p style="font-size:.875rem;opacity:.7;margin-top:.625rem">${txt(m.bio as string)}</p>` : ''}
+    </div>`).join('')}
+  </div>
+</div>
+</section>`;
+}
+
+function renderServices(c: Record<string, unknown>): string {
+  const services = (c.services as Array<Record<string, unknown>>) || [];
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Our Services')}</h2>
+    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
+  </div>
+  <div class="xd-grid-3">
+    ${services.map(s => `
+    <div class="xd-service-card xd-reveal">
+      <div class="xd-service-icon">${s.icon ? `<span class="material-icons" aria-hidden="true">${txt(s.icon as string)}</span>` : ''}</div>
+      <div class="xd-service-body">
+        <h3>${txt(s.title as string)}</h3>
+        <p>${txt(s.description as string)}</p>
+        ${s.link ? `<a href="${attr(s.link as string)}" style="font-weight:600;color:var(--c-primary);margin-top:.5rem;display:inline-block">Learn more →</a>` : ''}
+      </div>
+    </div>`).join('')}
+  </div>
+</div>
+</section>`;
+}
+
+function renderVideo(c: Record<string, unknown>): string {
+  const url      = c.videoUrl     as string || '';
+  const thumb    = c.thumbnailUrl as string || '';
+  const autoplay = !!c.autoplay;
+  const embedUrl = buildEmbedUrl(url, autoplay);
+  const showThumb = thumb && !autoplay;
+
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  ${c.title ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string)}</h2>${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}</div>` : ''}
+  <div class="xd-video-wrap xd-reveal">
+    ${showThumb
+      ? `<div class="xd-video-thumb" data-src="${attr(embedUrl)}" role="button" tabindex="0" aria-label="Play video">
+        <img src="${attr(thumb)}" alt="Video thumbnail" loading="lazy" decoding="async">
+        <button class="xd-video-play-btn" aria-label="Play video">
+          <svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>`
+      : embedUrl
+        ? `<iframe src="${attr(embedUrl)}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy" title="${attr(c.title as string || 'Video')}"></iframe>`
+        : ''}
+  </div>
+</div>
+</section>`;
+}
+
+function renderCountdown(c: Record<string, unknown>, sectionId: string): string {
+  const bg    = attr(c.backgroundColor as string || '#27491F');
+  const clr   = attr(c.textColor        as string || '#ffffff');
+  const cdId  = `xd-cd-${sectionId}`;
+  return `
+<section class="xd-section" style="background:${bg};color:${clr};text-align:center">
+<div class="xd-container xd-countdown-wrap">
+  <div class="xd-section-head">
+    <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(c.title as string || 'Sale Ends In')}</h2>
+    ${c.subtitle ? `<p class="xd-lead xd-reveal" style="opacity:.85">${txt(c.subtitle as string)}</p>` : ''}
+  </div>
+  <div class="xd-countdown xd-reveal" id="${cdId}"
+       data-xd-countdown="${attr(c.targetDate as string)}"
+       data-xd-expired="${attr(c.expiredMessage as string || 'Sale has ended.')}">
+    ${c.showDays !== false ? `<div class="xd-countdown-block"><span class="xd-countdown-num" id="${cdId}-d">00</span><span class="xd-countdown-lbl">Days</span></div>` : ''}
+    ${c.showHours !== false ? `<div class="xd-countdown-block"><span class="xd-countdown-num" id="${cdId}-h">00</span><span class="xd-countdown-lbl">Hours</span></div>` : ''}
+    ${c.showMinutes !== false ? `<div class="xd-countdown-block"><span class="xd-countdown-num" id="${cdId}-m">00</span><span class="xd-countdown-lbl">Minutes</span></div>` : ''}
+    ${c.showSeconds !== false ? `<div class="xd-countdown-block"><span class="xd-countdown-num" id="${cdId}-s">00</span><span class="xd-countdown-lbl">Seconds</span></div>` : ''}
+  </div>
+</div>
+</section>`;
+}
+
+function renderPartners(c: Record<string, unknown>): string {
+  const partners = (c.partners as Array<Record<string, unknown>>) || [];
+  return `
+<section class="xd-section" style="padding-block:clamp(2rem,4vw,3rem)">
+<div class="xd-container">
+  ${c.title ? `<div class="xd-section-head" style="margin-bottom:2rem"><p class="xd-reveal" style="font-weight:600;font-size:.9rem;text-transform:uppercase;letter-spacing:.08em;opacity:.5">${txt(c.title as string)}</p></div>` : ''}
+  <div class="xd-partners-wrap">
+    ${partners.map(p => `${p.link ? `<a href="${attr(p.link as string)}" target="_blank" rel="noopener noreferrer">` : ''}<img class="xd-partner-logo" src="${attr(p.logo as string)}" alt="${attr(p.name as string)}" loading="lazy" decoding="async">${p.link ? '</a>' : ''}`).join('')}
+  </div>
+</div>
+</section>`;
+}
+
+function renderNewsletter(c: Record<string, unknown>): string {
+  const bg  = attr(c.backgroundColor as string || '#27491F');
+  const clr = attr(c.textColor        as string || '#ffffff');
+  const successMsg = txt(c.successMessage as string || "You're subscribed! 🎉");
+  return `
+<section class="xd-section" style="background:${bg};color:${clr};text-align:center">
+<div class="xd-container">
+  <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(c.title as string || 'Stay in the Loop')}</h2>
+  ${c.subtitle ? `<p class="xd-lead xd-reveal" style="opacity:.85;margin-inline:auto">${txt(c.subtitle as string)}</p>` : ''}
+  <form class="xd-newsletter-form xd-reveal" novalidate>
+    <input class="xd-newsletter-input" type="email" placeholder="${attr(c.placeholder as string || 'Enter your email')}" required autocomplete="email">
+    <button class="xd-btn xd-btn-white" type="submit">${txt(c.buttonText as string || 'Subscribe')}</button>
+  </form>
+  <p class="xd-form-success" style="color:${clr}">${successMsg}</p>
+</div>
+</section>`;
+}
+
+function renderDivider(c: Record<string, unknown>): string {
+  const spacing     = Number(c.spacing) || 48;
+  const h           = Number(c.height)  || 1;
+  const color       = attr(c.color as string || '#e5e7eb');
+  const divStyle    = c.style as string || 'line';
+  if (divStyle === 'gradient') {
+    return `<div style="padding-top:${spacing}px"><div style="height:${h}px;background:linear-gradient(90deg,transparent,var(--c-primary),transparent)"></div></div>`;
+  }
+  const bStyle = divStyle === 'dotted' ? 'dotted' : divStyle === 'dashed' ? 'dashed' : 'solid';
+  return `<div style="padding-top:${spacing}px"><hr style="border:none;border-top:${h}px ${bStyle} ${color};margin:0"></div>`;
+}
+
+function renderImageComparison(c: Record<string, unknown>): string {
+  const pos = Number(c.sliderPosition) || 50;
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  ${c.title ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string)}</h2>${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}</div>` : ''}
+  <div class="xd-comparison xd-reveal" style="aspect-ratio:16/7" role="img" aria-label="Before and after comparison">
+    <div class="xd-comparison-before">
+      <img src="${attr(c.beforeImage as string)}" alt="${attr(c.beforeLabel as string || 'Before')}" loading="lazy" draggable="false">
+    </div>
+    <div class="xd-comparison-clip" style="width:${pos}%">
+      <img src="${attr(c.afterImage as string)}" alt="${attr(c.afterLabel as string || 'After')}" loading="lazy" draggable="false" style="min-width:100vw">
+    </div>
+    <div class="xd-comparison-handle" style="left:${pos}%"></div>
+    ${c.showLabels !== false ? `
+    <span class="xd-comparison-label" style="left:.75rem">${txt(c.beforeLabel as string || 'Before')}</span>
+    <span class="xd-comparison-label" style="right:.75rem">${txt(c.afterLabel as string || 'After')}</span>` : ''}
+  </div>
+</div>
+</section>`;
+}
+
+function renderFooter(c: Record<string, unknown>, siteName: string): string {
+  const bg      = attr(c.backgroundColor as string || '#1a1a1a');
+  const clr     = attr(c.textColor        as string || '#ffffff');
+  const layout  = c.layout   as string || 'classic';
+  const columns = (c.columns as Array<Record<string, unknown>>) || [];
+  const social  = (c.socialLinks as Array<Record<string, unknown>>) || [];
+  const copyright = txt(c.copyrightText as string || `\u00A9 ${new Date().getFullYear()} ${siteName}`);
+
+  const socialBg: Record<string, string> = {
+    instagram:'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
+    tiktok:'#000',facebook:'#1877f2',x:'#000',twitter:'#000',
+    whatsapp:'#25d366',youtube:'#ff0000',linkedin:'#0a66c2',
+  };
+  const socialLbl: Record<string, string> = {
+    instagram:'IG',tiktok:'TT',facebook:'f',x:'X',twitter:'X',whatsapp:'W',youtube:'YT',linkedin:'in',
+  };
+  const socialHtml = social.map(s => {
+    const p = String(s.platform || '').toLowerCase();
+    return `<a href="${attr(s.link as string)}" class="xd-footer-social-btn" target="_blank" rel="noopener noreferrer" aria-label="${attr(s.platform as string)}" style="background:${attr(socialBg[p] || '#333')};color:#fff">${socialLbl[p] || '🔗'}</a>`;
+  }).join('');
+
+  if (layout === 'minimal') {
+    const policyLinks = (c.policyLinks as Array<Record<string, unknown>>) || [];
+    return `
+<footer style="background:${bg};color:${clr}">
+<div class="xd-container xd-footer-minimal">
+  <strong style="font-size:1.1rem">${txt(c.logoText as string || siteName)}</strong>
+  <nav class="xd-footer-policy">${policyLinks.map(l => `<a href="${attr(l.link as string, '#')}">${txt(l.label as string)}</a>`).join('')}</nav>
+  <div class="xd-footer-social">${socialHtml}</div>
+  <span style="font-size:.8rem;opacity:.45">${copyright}</span>
+</div>
+</footer>`;
+  }
+
+  return `
+<footer style="background:${bg};color:${clr}">
+<div class="xd-container xd-footer">
+  <div class="xd-footer-grid" style="border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:2.5rem;margin-bottom:2rem">
+    <div>
+      ${c.logo ? `<img src="${attr(c.logo as string)}" alt="${attr(c.logoText as string || siteName)}" style="max-height:48px;max-width:160px;object-fit:contain;margin-bottom:.75rem" loading="lazy">` : ''}
+      <strong style="font-size:1.2rem;display:block;margin-bottom:.5rem">${txt(c.logoText as string || siteName)}</strong>
+      ${c.tagline ? `<p style="opacity:.6;font-size:.9rem;line-height:1.6;max-width:280px">${txt(c.tagline as string)}</p>` : ''}
+    </div>
+    ${columns.map(col => `
+    <div>
+      <p class="xd-footer-col-title">${txt(col.title as string)}</p>
+      <nav class="xd-footer-links">
+        ${((col.links as Array<Record<string, unknown>>) || []).map(l => `<a href="${attr(l.link as string, '#')}">${txt(l.label as string)}</a>`).join('')}
+      </nav>
+    </div>`).join('')}
+  </div>
+  <div class="xd-footer-bottom">
+    <span style="font-size:.85rem;opacity:.45">${copyright}</span>
+    <div class="xd-footer-social">${socialHtml}</div>
+  </div>
+</div>
+</footer>`;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SECTION DISPATCH
+───────────────────────────────────────────────────────────────────── */
+function renderSection(sec: ISection, siteName: string): string {
+  const c = getSectionData(sec);
+
+  switch (sec.type) {
+    case 'banner':
+    case 'announcement': return renderBanner(c);
+    case 'navbar':       return renderNavbar(c);
+    case 'hero':         return renderHero(c);
+    case 'features':     return renderFeatures(c);
+    case 'products':     return renderProducts(c);
+    case 'deals':        return renderDeals(c);
+    case 'collections':  return renderCollections(c);
+    case 'testimonials': return renderTestimonials(c);
+    case 'cta':          return renderCTA(c);
+    case 'about':
+    case 'split_media':  return renderAbout(c);
+    case 'contact':      return renderContact(c);
+    case 'gallery':      return renderGallery(c);
+    case 'pricing':      return renderPricing(c);
+    case 'faq':          return renderFAQ(c);
+    case 'stats':        return renderStats(c);
+    case 'team':         return renderTeam(c);
+    case 'services':     return renderServices(c);
+    case 'video':
+    case 'video_hero':   return renderVideo(c);
+    case 'countdown':    return renderCountdown(c, sec.id);
+    case 'partners':     return renderPartners(c);
+    case 'newsletter':   return renderNewsletter(c);
+    case 'divider':      return renderDivider(c);
+    case 'imageComparison': return renderImageComparison(c);
+    case 'footer':       return renderFooter(c, siteName);
+    default:             return `<!-- section "${attr(sec.type)}" not rendered -->`;
   }
 }
 
-/* ── Announcement section helper ─────────────────────────────── */
-function findAnnouncement(sections: ISection[]): ISection | undefined {
-  return sections.find(s => s.type === 'announcement');
-}
-
-/* ── Main render function ─────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   MAIN RENDER FUNCTION
+───────────────────────────────────────────────────────────────────── */
 export function renderSite(site: ISite, pageSlug?: string): string {
   const { settings, name } = site;
-  const globalSeo = settings?.seo || {};
-  const theme     = settings?.theme     || {};
-  const analytics = settings?.analytics;
+  const globalSeo   = (settings?.seo as Record<string, unknown>) || {};
+  const theme       = (settings?.theme as Record<string, unknown>) || {};
+  const analytics   = settings?.analytics;
   const settingsAny = settings as unknown as Record<string, unknown>;
   const customCss   = sanitizeCss(settingsAny?.customCss);
-  // customJs is intentionally NOT rendered — XSS risk; merchant JS is
-  // sanitised and stored but served only via a Content Security Policy
-  // compliant mechanism in a future phase.
-  const customJs    = '';
-  const currency  = 'SAR'; // TODO: pull from business settings
+  const currency    = 'SAR';
 
-  // ── Resolve which page to render ────────────────────────────────
-  // pageSlug === undefined or 'home' → use flat site.sections (legacy + default)
-  // pageSlug === something → look up site.pages by slug
+  // ── Resolve page ────────────────────────────────────────────────
   let activeSections = site.sections || [];
-  let pageSeo: Record<string, string> = {};
+  let pageSeo: Record<string, unknown> = {};
 
   if (pageSlug && pageSlug !== 'home' && site.pages?.length) {
     const page = site.pages.find(p => p.slug === pageSlug);
     if (page) {
       activeSections = page.sections?.length ? page.sections : site.sections;
-      pageSeo = (page.seo || {}) as Record<string, string>;
+      pageSeo = (page.seo || {}) as Record<string, unknown>;
     }
   }
 
-  // Merge SEO: page-level takes priority over site-level
   const seo = {
-    title:       pageSeo.title       || globalSeo.title       || '',
-    description: pageSeo.description || globalSeo.description || '',
-    ogImage:     pageSeo.ogImage     || globalSeo.ogImage     || '',
-    keywords:    globalSeo.keywords  || [],
-    canonical:   pageSeo.canonical   || '',
+    title:       (pageSeo.title       || globalSeo.title       || '') as string,
+    description: (pageSeo.description || globalSeo.description || '') as string,
+    ogImage:     (pageSeo.ogImage     || globalSeo.ogImage     || '') as string,
+    keywords:    (globalSeo.keywords  || []) as string[],
+    canonical:   (pageSeo.canonical   || '') as string,
   };
 
-  // ── CSS variables per merchant theme ────────────────────────────
-  const themeVars = `
-:root{
-  --c-primary:${attr(theme.primaryColor, '#27491F')};
-  --c-secondary:${attr(theme.secondaryColor, '#F0CAE1')};
-  --c-accent:${attr(theme.accentColor, '#f59e0b')};
-  --c-bg:${attr(theme.backgroundColor, '#ffffff')};
-  --c-text:${attr(theme.textColor, '#171817')};
-  --ff:${attr(theme.fontFamily, 'Inter')},system-ui,sans-serif;
+  // ── CSS variables from theme ─────────────────────────────────────
+  // Support both the old key names (theme.*Color) and new ThemeContext names (theme.color*)
+  const themeVars = `:root{
+  --c-primary:${attr((theme.primaryColor   || theme.colorPrimary   || '#27491F') as string)};
+  --c-secondary:${attr((theme.secondaryColor || theme.colorSecondary || '#F0CAE1') as string)};
+  --c-accent:${attr((theme.accentColor    || theme.colorAccent    || '#FFD300') as string)};
+  --c-bg:${attr((theme.backgroundColor   || theme.colorBg        || '#ffffff') as string)};
+  --c-text:${attr((theme.textColor        || theme.colorText      || '#171817') as string)};
+  --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
   --br:${theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px'};
 }`;
 
-  // ── Google Fonts ─────────────────────────────────────────────────
-  const fontFamily = (theme.fontFamily || 'Inter').replace(/ /g, '+');
-  const fontLink = fontFamily !== 'Inter'
+  // ── Font loading ─────────────────────────────────────────────────
+  const fontFamily  = ((theme.fontFamily || theme.fontHeading || 'Inter') as string).replace(/ /g, '+');
+  const fontLink    = fontFamily !== 'Inter'
     ? `<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=${fontFamily}:wght@400;500;600;700;800&display=swap" onload="this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=${fontFamily}:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>`
     : '';
 
+  // Material Icons — loaded async so it never blocks render
+  const materialIconsLink = `<link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></noscript>`;
+
   // ── Sections ─────────────────────────────────────────────────────
-  const annSec         = findAnnouncement(activeSections);
-  const hasAnnouncement = annSec && (annSec.content as Record<string,unknown>).enabled;
-  const bodySections    = activeSections
-    .filter(s => !s.hidden && s.type !== 'announcement')
+  const bodySections = [...activeSections]
+    .filter(s => !s.hidden)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map(renderSection)
+    .map(s => renderSection(s, txt(name)))
     .join('\n');
 
   // ── Analytics ───────────────────────────────────────────────────
   const analyticsHead = buildAnalyticsHead(analytics);
 
-  // ── SEO / meta ──────────────────────────────────────────────────
-  const ogImage  = seo.ogImage || '';
+  // ── JSON-LD ─────────────────────────────────────────────────────
   const pageTitle = txt(seo.title || name);
-  const siteName  = txt(name);
-
-  // ── JSON-LD structured data ─────────────────────────────────────
-  const jsonLd = JSON.stringify({
-    '@context':   'https://schema.org',
-    '@type':      'WebSite',
-    name:         siteName,
-    description:  txt(seo.description || ''),
+  const siteName2 = txt(name);
+  const jsonLd    = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type':    'WebSite',
+    name:       siteName2,
+    description: txt(seo.description),
     ...(seo.keywords?.length ? { keywords: seo.keywords.join(', ') } : {}),
   });
 
@@ -645,39 +1266,29 @@ export function renderSite(site: ISite, pageSlug?: string): string {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="index,follow">
-<title>${pageTitle} | ${siteName}</title>
-<meta name="description" content="${attr(seo.description || '')}">
+<title>${pageTitle}${pageTitle !== siteName2 ? ` | ${siteName2}` : ''}</title>
+<meta name="description" content="${attr(seo.description)}">
 ${seo.keywords?.length ? `<meta name="keywords" content="${attr(seo.keywords.join(', '))}">` : ''}
 <link rel="canonical" href="${attr(seo.canonical || site.publicUrl || site.url || '')}">
-<!-- Open Graph -->
 <meta property="og:type"        content="website">
 <meta property="og:site_name"   content="${attr(name)}">
 <meta property="og:title"       content="${attr(seo.title || name)}">
-<meta property="og:description" content="${attr(seo.description || '')}">
-${ogImage ? `<meta property="og:image" content="${attr(ogImage)}">
-<meta property="og:image:width"  content="1200">
-<meta property="og:image:height" content="630">` : ''}
-<!-- Twitter Card -->
-<meta name="twitter:card"        content="${ogImage ? 'summary_large_image' : 'summary'}">
+<meta property="og:description" content="${attr(seo.description)}">
+${seo.ogImage ? `<meta property="og:image" content="${attr(seo.ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">` : ''}
+<meta name="twitter:card"        content="${seo.ogImage ? 'summary_large_image' : 'summary'}">
 <meta name="twitter:title"       content="${attr(seo.title || name)}">
-<meta name="twitter:description" content="${attr(seo.description || '')}">
-${ogImage ? `<meta name="twitter:image" content="${attr(ogImage)}">` : ''}
-<!-- Structured Data -->
+<meta name="twitter:description" content="${attr(seo.description)}">
+${seo.ogImage ? `<meta name="twitter:image" content="${attr(seo.ogImage)}">` : ''}
 <script type="application/ld+json">${jsonLd}</script>
-<!-- Performance hints -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 ${fontLink}
-<!-- Analytics (head) -->
+${materialIconsLink}
 ${analyticsHead}
-<!-- Theme + Base Styles -->
-<style>${themeVars}${BASE_CSS}${customCss ? '\n/* Merchant custom CSS */\n' + customCss : ''}</style>
+<style>${themeVars}${BASE_CSS}${customCss ? '\n/* Custom CSS */\n' + customCss : ''}</style>
 </head>
 <body>
-${hasAnnouncement ? renderSection(annSec!) : ''}
 ${bodySections}
-<!-- Storefront Interaction Tracker -->
-<script>${STOREFRONT_TRACKER_JS}</script>
-${customJs ? `<!-- Merchant custom JS -->\n<script>${customJs}</script>` : ''}
+<script defer>${RUNTIME_JS}</script>
 </body>
 </html>`;
 }

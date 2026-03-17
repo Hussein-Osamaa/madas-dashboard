@@ -6,25 +6,41 @@ type Props = {
   style?: React.CSSProperties;
 };
 
+// Height class map — shared across layouts
+const HEIGHT_CLASS: Record<string, string> = {
+  compact: 'min-h-[280px]',
+  medium:  'min-h-[420px]',
+  large:   'min-h-[560px]',
+  full:    'min-h-screen',
+};
+
 const HeroSection = ({ data, style }: Props) => {
-  const {
-    layout = 'default',
-    isCarousel = false,
-    slides = [],
-    title = 'Welcome to Our Store',
-    subtitle = 'Discover amazing products',
-    buttonText = 'Shop Now',
-    buttonLink = '#',
-    backgroundImage = '',
-    backgroundColor = 'linear-gradient(135deg, #27491F 0%, #F0CAE1 100%)',
-    textColor = '#FFFFFF',
-    autoplay = false,
-    autoplayInterval = 5000,
-    showNavigation = true,
-    showIndicators = true
-  } = data as any;
+  const d = data as Record<string, any>;
+  const layout            = (d.layout          ?? 'default') as string;
+  const isCarousel        = d.isCarousel        ?? false;
+  const slides            = d.slides            ?? [];
+  const title             = d.title             ?? 'Welcome to Our Store';
+  const subtitle          = d.subtitle          ?? 'Discover amazing products';
+  const buttonText        = d.buttonText        ?? 'Shop Now';
+  const buttonLink        = d.buttonLink        ?? '#';
+  const secondaryButtonText  = (d.secondaryButtonText  ?? '') as string;
+  const secondaryButtonLink  = (d.secondaryButtonLink  ?? '#') as string;
+  const backgroundImage   = d.backgroundImage   ?? '';
+  const backgroundColor   = d.backgroundColor   ?? 'linear-gradient(135deg, #27491F 0%, #3a6b2e 100%)';
+  const textColor         = d.textColor         ?? '#FFFFFF';
+  const overlayEnabled    = d.overlayEnabled     ?? false;
+  const overlayColor      = d.overlayColor       ?? 'rgba(0,0,0,0.35)';
+  const autoplay          = d.autoplay          ?? false;
+  const autoplayInterval  = d.autoplayInterval  ?? 5000;
+  const showNavigation    = d.showNavigation    ?? true;
+  const showIndicators    = d.showIndicators    ?? true;
+  const imageUrl          = (d.imageUrl         ?? '') as string;
+  const imagePosition     = (d.imagePosition    ?? 'right') as string;
+  const height            = (d.height           ?? 'large') as string;
 
   const isMinimal = layout === 'minimal';
+  const isSplit   = layout === 'split';
+  const isCompact = layout === 'compact';
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
@@ -34,15 +50,7 @@ const HeroSection = ({ data, style }: Props) => {
   // Prepare slides array
   const heroSlides = isCarousel && slides && slides.length > 0
     ? slides
-    : [{
-        title,
-        subtitle,
-        buttonText,
-        buttonLink,
-        backgroundImage,
-        backgroundColor,
-        textColor
-      }];
+    : [{ title, subtitle, buttonText, buttonLink, backgroundImage, backgroundColor, textColor }];
 
   const totalSlides = heroSlides.length;
   const maxSlideIndex = totalSlides - 1;
@@ -105,27 +113,27 @@ const HeroSection = ({ data, style }: Props) => {
   };
 
   const currentSlideData = heroSlides[currentSlide] || heroSlides[0];
-  
+
   // Get text styles - prefer slide-specific styles, fall back to global styles
-  const textStyle = currentSlideData.textStyle || data.textStyle || {};
+  const textStyle = currentSlideData.textStyle || (data as any).textStyle || {};
   // Note: textColor is now handled via HTML spans in the title/subtitle content
   // We only use it as a fallback base color if no spans are present
   const baseTextColor = currentSlideData.textColor || '#FFFFFF';
   const titleHasHTML = currentSlideData.title && /<[^>]+>/.test(currentSlideData.title);
   const subtitleHasHTML = currentSlideData.subtitle && /<[^>]+>/.test(currentSlideData.subtitle);
   
-  const titleStyle = {
-    fontSize: textStyle.titleFontSize ? `${textStyle.titleFontSize}px` : undefined,
+  const titleStyle: React.CSSProperties = {
+    fontSize:   textStyle.titleFontSize   ? `${textStyle.titleFontSize}px`   : undefined,
     fontWeight: textStyle.titleFontWeight || undefined,
-    textAlign: textStyle.titleAlignment || 'center' as const,
-    color: titleHasHTML ? undefined : baseTextColor // Only set base color if no HTML spans
+    textAlign:  (textStyle.titleAlignment ?? (isSplit ? 'left' : 'center')) as React.CSSProperties['textAlign'],
+    color:      titleHasHTML ? undefined : baseTextColor,
   };
-  const subtitleStyle = {
-    fontSize: textStyle.subtitleFontSize ? `${textStyle.subtitleFontSize}px` : undefined,
+  const subtitleStyle: React.CSSProperties = {
+    fontSize:   textStyle.subtitleFontSize   ? `${textStyle.subtitleFontSize}px`   : undefined,
     fontWeight: textStyle.subtitleFontWeight || undefined,
-    textAlign: textStyle.subtitleAlignment || 'center' as const,
-    color: subtitleHasHTML ? undefined : baseTextColor, // Only set base color if no HTML spans
-    opacity: subtitleHasHTML ? undefined : 0.9 // Remove opacity when HTML is used (let spans control it)
+    textAlign:  (textStyle.subtitleAlignment ?? (isSplit ? 'left' : 'center')) as React.CSSProperties['textAlign'],
+    color:      subtitleHasHTML ? undefined : baseTextColor,
+    opacity:    subtitleHasHTML ? undefined : 0.9,
   };
   const buttonStyle = textStyle.buttonStyle || {};
 
@@ -194,13 +202,165 @@ const HeroSection = ({ data, style }: Props) => {
   const buttonHoverBgColor = buttonStyle.hoverBackgroundColor || buttonTextColor;
   const buttonHoverTextColor = buttonStyle.hoverTextColor || (isMinimal ? '#1a1a1a' : currentSlideData.backgroundColor || '#000');
 
+  // Secondary button styles (outlined variant using text colour)
+  const getSecondaryButtonStyles = (): React.CSSProperties => ({
+    borderRadius: buttonStyle.borderRadius ? `${buttonStyle.borderRadius}px` : '0',
+    fontSize:     buttonStyle.fontSize ? `${buttonStyle.fontSize}px` : 'inherit',
+    fontWeight:   buttonStyle.fontWeight || '500',
+    padding:      buttonStyle.padding || '1rem 2.5rem',
+    transition:   'all 0.3s ease',
+    display:      'inline-block',
+    backgroundColor: 'transparent',
+    color:           buttonStyle.textColor || baseTextColor,
+    border:          `2px solid ${buttonStyle.textColor || baseTextColor}`,
+    textDecoration:  'none',
+  });
+
+  // Height class for default/minimal layout
+  const heightCls = HEIGHT_CLASS[isMinimal ? 'full' : height] ?? HEIGHT_CLASS.large;
+
+  // ─── SPLIT layout ────────────────────────────────────────────────────────────
+  if (isSplit) {
+    const imgOnLeft = imagePosition === 'left';
+    const splitBg: React.CSSProperties = currentSlideData.backgroundImage
+      ? {}
+      : { background: currentSlideData.backgroundColor || backgroundColor };
+
+    return (
+      <section
+        className="hero-section relative w-full overflow-hidden"
+        style={{ ...splitBg, ...style }}
+        data-edit-type="background"
+      >
+        <div className={`flex flex-col ${imgOnLeft ? 'md:flex-row-reverse' : 'md:flex-row'} min-h-[480px]`}>
+          {/* Text panel */}
+          <div className="flex-1 flex items-center justify-center px-8 sm:px-12 py-16 md:py-20">
+            <div className="max-w-lg w-full">
+              <h1
+                className={`hero-title mb-5 leading-tight cursor-pointer hover:opacity-80 transition-opacity ${
+                  !textStyle.titleFontSize ? 'text-3xl sm:text-4xl md:text-5xl' : ''
+                } ${!textStyle.titleFontWeight ? 'font-bold' : ''}`}
+                style={titleStyle}
+                data-edit-type="title"
+                dangerouslySetInnerHTML={{ __html: currentSlideData.title || 'Welcome to Our Store' }}
+              />
+              <p
+                className={`hero-subtitle mb-8 leading-relaxed cursor-pointer hover:opacity-80 transition-opacity ${
+                  !textStyle.subtitleFontSize ? 'text-base sm:text-lg' : ''
+                }`}
+                style={subtitleStyle}
+                data-edit-type="subtitle"
+                dangerouslySetInnerHTML={{ __html: currentSlideData.subtitle || '' }}
+              />
+              <div className="flex flex-wrap gap-3">
+                {currentSlideData.buttonText && (
+                  <a
+                    href={currentSlideData.buttonLink || '#'}
+                    className="hero-button hero-button-filled inline-block"
+                    style={getButtonStyles()}
+                    data-edit-type="button"
+                  >
+                    {currentSlideData.buttonText}
+                  </a>
+                )}
+                {secondaryButtonText && (
+                  <a
+                    href={secondaryButtonLink}
+                    className="hero-button hero-button-outlined inline-block"
+                    style={getSecondaryButtonStyles()}
+                    data-edit-type="button"
+                  >
+                    {secondaryButtonText}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Image panel */}
+          <div className="flex-1 relative min-h-[280px] md:min-h-0 overflow-hidden">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={currentSlideData.title ?? ''}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.08)' }}
+              >
+                <span className="material-icons text-white/30 text-7xl">image</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // ─── COMPACT layout — short banner ───────────────────────────────────────────
+  if (isCompact) {
+    return (
+      <section
+        className="hero-section relative w-full overflow-hidden"
+        style={style}
+        data-edit-type="background"
+      >
+        <div className="absolute inset-0 z-0" style={backgroundStyle} />
+        {(currentSlideData.backgroundImage || overlayEnabled) && (
+          <div className="absolute inset-0 z-0" style={{ background: overlayColor || 'rgba(0,0,0,0.4)' }} />
+        )}
+        <div className={`relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 max-w-6xl mx-auto px-6 sm:px-10 py-10 sm:py-12 ${HEIGHT_CLASS.compact}`}>
+          <div className="flex-1 text-center sm:text-left">
+            <h2
+              className={`hero-title font-bold leading-tight cursor-pointer hover:opacity-80 transition-opacity mb-2 ${
+                !textStyle.titleFontSize ? 'text-xl sm:text-2xl md:text-3xl' : ''
+              }`}
+              style={titleStyle}
+              data-edit-type="title"
+              dangerouslySetInnerHTML={{ __html: currentSlideData.title || 'Limited Time Offer' }}
+            />
+            <p
+              className={`hero-subtitle cursor-pointer hover:opacity-80 transition-opacity ${
+                !textStyle.subtitleFontSize ? 'text-sm sm:text-base' : ''
+              }`}
+              style={subtitleStyle}
+              data-edit-type="subtitle"
+              dangerouslySetInnerHTML={{ __html: currentSlideData.subtitle || '' }}
+            />
+          </div>
+          {currentSlideData.buttonText && (
+            <div className="shrink-0 flex flex-wrap gap-3">
+              <a
+                href={currentSlideData.buttonLink || '#'}
+                className="hero-button hero-button-filled whitespace-nowrap"
+                style={getButtonStyles()}
+                data-edit-type="button"
+              >
+                {currentSlideData.buttonText}
+              </a>
+              {secondaryButtonText && (
+                <a
+                  href={secondaryButtonLink}
+                  className="hero-button hero-button-outlined whitespace-nowrap"
+                  style={getSecondaryButtonStyles()}
+                  data-edit-type="button"
+                >
+                  {secondaryButtonText}
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
-      className={`hero-section relative w-full text-center overflow-hidden ${
-        isMinimal 
-          ? 'min-h-[100vh] flex items-center justify-center' 
-          : 'py-12 sm:py-16 md:py-20 lg:py-32'
-      } px-4 sm:px-6`}
+      className={`hero-section relative w-full text-center overflow-hidden flex items-center justify-center ${heightCls} px-4 sm:px-6`}
       style={style}
       onTouchStart={isCarousel ? handleTouchStart : undefined}
       onTouchMove={isCarousel ? handleTouchMove : undefined}
@@ -337,19 +497,31 @@ const HeroSection = ({ data, style }: Props) => {
             />
           )}
           
-          {/* Button */}
-          {currentSlideData.buttonText && (
-            <a
-              href={currentSlideData.buttonLink || '#'}
-              className={`hero-button hero-button-${buttonVariant} inline-block transition-all duration-300 ${
-                isMinimal ? 'text-sm sm:text-base tracking-wider uppercase' : ''
-              }`}
-              style={getButtonStyles()}
-              data-edit-type="button"
-            >
-              {currentSlideData.buttonText}
-            </a>
-          )}
+          {/* Buttons */}
+          <div className="flex flex-wrap justify-center gap-3">
+            {currentSlideData.buttonText && (
+              <a
+                href={currentSlideData.buttonLink || '#'}
+                className={`hero-button hero-button-${buttonVariant} inline-block transition-all duration-300 ${
+                  isMinimal ? 'text-sm sm:text-base tracking-wider uppercase' : ''
+                }`}
+                style={getButtonStyles()}
+                data-edit-type="button"
+              >
+                {currentSlideData.buttonText}
+              </a>
+            )}
+            {secondaryButtonText && (
+              <a
+                href={secondaryButtonLink}
+                className="hero-button hero-button-outlined inline-block transition-all duration-300"
+                style={getSecondaryButtonStyles()}
+                data-edit-type="button"
+              >
+                {secondaryButtonText}
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
