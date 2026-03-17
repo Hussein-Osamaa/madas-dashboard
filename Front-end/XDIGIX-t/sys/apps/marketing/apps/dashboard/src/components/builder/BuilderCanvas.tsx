@@ -14,8 +14,9 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
-import { Section } from '../../types/builder';
+import { Section, SectionType } from '../../types/builder';
 import { SelectedElement, ElementType } from '../../types/elementEditor';
+import { getElementTypeFromRegistry } from '../../registry/sectionRegistry';
 import SectionRenderer from './SectionRenderer';
 import SortableSection from './SortableSection';
 
@@ -33,15 +34,34 @@ type Props = {
   siteId?: string;
 };
 
-// Helper to detect element type from clicked target
-const getElementTypeFromTarget = (element: HTMLElement): { type: ElementType; index?: number } | null => {
-  // Check data attributes first (most reliable)
-  const dataType = element.dataset.editType as ElementType;
-  if (dataType) {
+/* ─────────────────────────────────────────────────────────────────────────
+   Registry-aware element detection.
+
+   Priority order:
+   1. data-edit-type DOM attribute → look up via registry (most reliable)
+   2. Legacy class-name scanning (backward compat for sections not yet
+      migrated to data-edit-type attributes)
+───────────────────────────────────────────────────────────────────────── */
+const getElementTypeFromTarget = (
+  element: HTMLElement,
+  sectionType?: SectionType
+): { type: ElementType; index?: number } | null => {
+  // ── 1. Registry path via data-edit-type attribute ──────────────────────
+  const dataEditType = element.dataset.editType;
+  if (dataEditType) {
     const index = element.dataset.editIndex ? parseInt(element.dataset.editIndex) : undefined;
-    return { type: dataType, index };
+
+    // If we know the section type, verify through registry first
+    if (sectionType) {
+      const registryType = getElementTypeFromRegistry(sectionType, dataEditType);
+      if (registryType) return { type: registryType, index };
+    }
+
+    // Fall back: treat the attribute value as a direct ElementType cast
+    return { type: dataEditType as ElementType, index };
   }
 
+  // ── 2. Legacy class-name scanner (kept for backward compatibility) ─────
   const tagName = element.tagName.toLowerCase();
   const classList = Array.from(element.classList);
   const classString = classList.join(' ');
@@ -213,17 +233,21 @@ const getElementTypeFromTarget = (element: HTMLElement): { type: ElementType; in
 };
 
 // Walk up the DOM tree to find an editable element
-const findEditableElement = (target: HTMLElement, sectionContainer: HTMLElement): { type: ElementType; index?: number } | null => {
+const findEditableElement = (
+  target: HTMLElement,
+  sectionContainer: HTMLElement,
+  sectionType?: SectionType
+): { type: ElementType; index?: number } | null => {
   let current: HTMLElement | null = target;
-  
+
   while (current && current !== sectionContainer && current !== document.body) {
-    const result = getElementTypeFromTarget(current);
+    const result = getElementTypeFromTarget(current, sectionType);
     if (result) {
       return result;
     }
     current = current.parentElement;
   }
-  
+
   return null;
 };
 
@@ -257,13 +281,16 @@ const BuilderCanvas = ({
     }
 
     e.stopPropagation();
-    
+
     const target = e.target as HTMLElement;
     const sectionContainer = (e.currentTarget as HTMLElement).querySelector('[data-section-content]') || e.currentTarget;
-    
-    // Find the editable element
-    const editableElement = findEditableElement(target, sectionContainer as HTMLElement);
-    
+
+    // Resolve the section type for registry-aware detection
+    const sectionType = sections.find(s => s.id === sectionId)?.type;
+
+    // Find the editable element (registry path first, legacy fallback inside)
+    const editableElement = findEditableElement(target, sectionContainer as HTMLElement, sectionType);
+
     if (editableElement) {
       onSelectElement({
         type: editableElement.type,
@@ -277,7 +304,7 @@ const BuilderCanvas = ({
         sectionId
       });
     }
-  }, [selectedSection, onSelectElement]);
+  }, [selectedSection, sections, onSelectElement]);
 
   // Prevent all link navigation in the builder (links, buttons, icons, etc.)
   useEffect(() => {

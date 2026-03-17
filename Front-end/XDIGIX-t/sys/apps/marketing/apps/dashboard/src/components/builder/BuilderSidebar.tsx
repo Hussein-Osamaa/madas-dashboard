@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Section, SectionType } from '../../types/builder';
+import { getRegistryByCategory, CATEGORY_ORDER, SECTION_REGISTRY } from '../../registry/sectionRegistry';
 
 type Props = {
   onAddSection: (type: SectionType, initialData?: Record<string, any>) => void;
@@ -8,51 +9,47 @@ type Props = {
   selectedSection: string | null;
 };
 
-// Section type definitions with preview info
-const sectionTypes: Array<{ 
-  type: SectionType; 
-  label: string; 
-  icon: string; 
-  description: string; 
+/* ── Registry-driven section catalog ─────────────────────────────────────
+   Grouped by category from the section registry.  The hero section gets
+   two entries (default + minimal) to preserve the original variant UX.
+───────────────────────────────────────────────────────────────────────── */
+const registryByCategory = getRegistryByCategory();
+
+// Build the flat list the sidebar needs, expanding variant entries
+type SidebarEntry = {
+  type: SectionType;
+  label: string;
+  icon: string;
+  description: string;
   category: string;
   variant?: string;
   initialData?: Record<string, any>;
-}> = [
-  // Layout sections
-  { type: 'navbar', label: 'Navigation Bar', icon: 'menu', description: 'Header navigation menu', category: 'Layout' },
-  { type: 'banner', label: 'Banner', icon: 'notifications', description: 'Announcement banner', category: 'Layout' },
-  { type: 'hero', label: 'Hero - Default', icon: 'image', description: 'With title & subtitle', category: 'Layout', variant: 'default', initialData: { layout: 'default' } },
-  { type: 'hero', label: 'Hero - Minimal', icon: 'fullscreen', description: 'Full image + button only', category: 'Layout', variant: 'minimal', initialData: { layout: 'minimal', buttonText: 'Explore Collection' } },
-  { type: 'divider', label: 'Divider', icon: 'horizontal_rule', description: 'Section separator', category: 'Layout' },
-  { type: 'footer', label: 'Footer', icon: 'view_agenda', description: 'Site footer with links', category: 'Layout' },
-  
-  // Content sections
-  { type: 'features', label: 'Features', icon: 'star', description: 'Feature highlights', category: 'Content' },
-  { type: 'about', label: 'About', icon: 'info', description: 'About us section', category: 'Content' },
-  { type: 'services', label: 'Services', icon: 'build', description: 'Services you offer', category: 'Content' },
-  { type: 'team', label: 'Team', icon: 'groups', description: 'Team members', category: 'Content' },
-  { type: 'gallery', label: 'Gallery', icon: 'photo_library', description: 'Image gallery', category: 'Content' },
-  { type: 'imageComparison', label: 'Image Comparison', icon: 'compare', description: 'Before/after slider', category: 'Content' },
-  { type: 'video', label: 'Video', icon: 'play_circle', description: 'Embedded video', category: 'Content' },
-  { type: 'faq', label: 'FAQ', icon: 'help_outline', description: 'Frequently asked questions', category: 'Content' },
-  
-  // E-commerce sections
-  { type: 'products', label: 'Products', icon: 'inventory_2', description: 'Product showcase', category: 'E-commerce' },
-  { type: 'collections', label: 'Collections', icon: 'collections', description: 'Shop by collection', category: 'E-commerce' },
-  { type: 'deals', label: 'Deals', icon: 'local_offer', description: 'Deal of the day', category: 'E-commerce' },
-  { type: 'pricing', label: 'Pricing', icon: 'attach_money', description: 'Pricing plans', category: 'E-commerce' },
-  { type: 'testimonials', label: 'Testimonials', icon: 'format_quote', description: 'Customer reviews', category: 'E-commerce' },
-  
-  // Engagement sections
-  { type: 'cta', label: 'Call to Action', icon: 'campaign', description: 'Action button section', category: 'Engagement' },
-  { type: 'contact', label: 'Contact', icon: 'contact_mail', description: 'Contact information', category: 'Engagement' },
-  { type: 'newsletter', label: 'Newsletter', icon: 'mail', description: 'Email signup form', category: 'Engagement' },
-  { type: 'countdown', label: 'Countdown', icon: 'timer', description: 'Countdown timer', category: 'Engagement' },
-  
-  // Social Proof sections
-  { type: 'stats', label: 'Statistics', icon: 'bar_chart', description: 'Numbers & metrics', category: 'Social Proof' },
-  { type: 'partners', label: 'Partners', icon: 'handshake', description: 'Partner logos', category: 'Social Proof' }
-];
+};
+
+const sectionTypes: SidebarEntry[] = CATEGORY_ORDER.flatMap(category => {
+  const entries = registryByCategory[category] ?? [];
+  return entries.flatMap(entry => {
+    // Expand variants if defined (e.g. Hero default + minimal)
+    if (entry.variants && entry.variants.length > 0) {
+      return entry.variants.map(v => ({
+        type: entry.type,
+        label: `${entry.label} - ${v.label}`,
+        icon: entry.icon,
+        description: v.label,
+        category,
+        variant: v.variantId,
+        initialData: v.initialData as Record<string, any>,
+      }));
+    }
+    return [{
+      type: entry.type,
+      label: entry.label,
+      icon: entry.icon,
+      description: entry.description,
+      category,
+    }];
+  });
+});
 
 // Category icons and colors
 const categoryConfig: Record<string, { icon: string; color: string; bgColor: string }> = {
@@ -511,6 +508,7 @@ const BuilderSidebar = ({ onAddSection, sections, onSelectSection, selectedSecti
       <div className="p-4 pb-3 flex-shrink-0 border-b border-gray-100">
         <h2 className="text-base font-semibold text-gray-800">Add Section</h2>
         <p className="text-xs text-gray-500 mt-0.5">Choose from {sectionTypes.length} section types</p>
+
       </div>
       
       {/* Category Tabs - Accordion Style */}
@@ -643,7 +641,9 @@ const BuilderSidebar = ({ onAddSection, sections, onSelectSection, selectedSecti
               .sort((a, b) => a.order - b.order)
               .map((section) => {
                 const sectionType = sectionTypes.find((st) => st.type === section.type);
-                  const config = sectionType ? categoryConfig[sectionType.category] : null;
+                const registryEntry = SECTION_REGISTRY[section.type];
+                const sectionCategory = sectionType?.category ?? registryEntry?.category ?? '';
+                const config = categoryConfig[sectionCategory] ?? null;
                   
                 return (
                   <button
@@ -666,8 +666,8 @@ const BuilderSidebar = ({ onAddSection, sections, onSelectSection, selectedSecti
                       
                       <div className="flex-1 min-w-0">
                         <span className="text-xs font-medium text-gray-700 truncate block">
-                          {sectionType?.label || section.type}
-                      </span>
+                          {sectionType?.label || registryEntry?.label || section.type}
+                        </span>
                       </div>
                       
                       <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
