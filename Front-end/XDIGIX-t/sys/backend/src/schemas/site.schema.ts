@@ -3,6 +3,9 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface ISection {
   id: string;
   type: string;
+  /** Frontend builder stores section payload in `data` (preferred) */
+  data?: Record<string, unknown>;
+  /** Legacy alias — renderer and old saves use `content`; normalise to `data` on read */
   content: Record<string, unknown>;
   style: Record<string, unknown>;
   hidden?: boolean;
@@ -84,6 +87,9 @@ const SectionSchema = new Schema<ISection>(
   {
     id:      { type: String, required: true },
     type:    { type: String, required: true },
+    // `data` is the canonical field used by the React builder
+    data:    { type: Schema.Types.Mixed, default: {} },
+    // `content` kept for backward compat with legacy builder / renderer
     content: { type: Schema.Types.Mixed, default: {} },
     style:   { type: Schema.Types.Mixed, default: {} },
     hidden:  { type: Boolean, default: false },

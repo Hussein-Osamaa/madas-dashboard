@@ -33,6 +33,13 @@ type Props = {
 };
 
 const SectionRenderer = ({ section, isSelected, onSelect, siteId }: Props) => {
+  // Defensive normalisation: some saved sections store payload in `content`
+  // (legacy format) rather than `data`.  Always expose a non-undefined object.
+  const sectionData: Record<string, any> =
+    (section.data && Object.keys(section.data).length > 0)
+      ? section.data as Record<string, any>
+      : (((section as any).content as Record<string, any>) ?? {});
+
   const style = section.style || {};
   const padding = style.padding || {};
   const margin = style.margin || {};
@@ -91,53 +98,53 @@ const SectionRenderer = ({ section, isSelected, onSelect, siteId }: Props) => {
   const renderSection = () => {
     switch (section.type) {
       case 'navbar':
-        return <NavbarSection data={section.data as any} style={sectionStyle} siteId={siteId} />;
+        return <NavbarSection data={sectionData as any} style={sectionStyle} siteId={siteId} />;
       case 'hero':
-        return <HeroSection data={section.data as any} style={sectionStyle} />;
+        return <HeroSection data={sectionData as any} style={sectionStyle} />;
       case 'features':
-        return <FeaturesSection data={section.data as any} style={sectionStyle} />;
+        return <FeaturesSection data={sectionData as any} style={sectionStyle} />;
       case 'products':
-        return <ProductsSection data={section.data as any} style={sectionStyle} />;
+        return <ProductsSection data={sectionData as any} style={sectionStyle} />;
       case 'deals':
-        return <DealsSection data={section.data as any} style={sectionStyle} />;
+        return <DealsSection data={sectionData as any} style={sectionStyle} />;
       case 'collections':
-        return <CollectionsSection data={section.data as any} style={sectionStyle} />;
+        return <CollectionsSection data={sectionData as any} style={sectionStyle} />;
       case 'testimonials':
-        return <TestimonialsSection data={section.data as any} style={sectionStyle} />;
+        return <TestimonialsSection data={sectionData as any} style={sectionStyle} />;
       case 'cta':
-        return <CTASection data={section.data as any} style={sectionStyle} />;
+        return <CTASection data={sectionData as any} style={sectionStyle} />;
       case 'about':
-        return <AboutSection data={section.data as any} style={sectionStyle} />;
+        return <AboutSection data={sectionData as any} style={sectionStyle} />;
       case 'contact':
-        return <ContactSection data={section.data as any} style={sectionStyle} />;
+        return <ContactSection data={sectionData as any} style={sectionStyle} />;
       case 'gallery':
-        return <GallerySection data={section.data as any} style={sectionStyle} />;
+        return <GallerySection data={sectionData as any} style={sectionStyle} />;
       case 'pricing':
-        return <PricingSection data={section.data as any} style={sectionStyle} />;
+        return <PricingSection data={sectionData as any} style={sectionStyle} />;
       case 'faq':
-        return <FAQSection data={section.data as any} style={sectionStyle} />;
+        return <FAQSection data={sectionData as any} style={sectionStyle} />;
       case 'footer':
-        return <FooterSection data={section.data as any} style={sectionStyle} siteId={siteId} />;
+        return <FooterSection data={sectionData as any} style={sectionStyle} siteId={siteId} />;
       case 'stats':
-        return <StatsSection data={section.data as any} style={sectionStyle} />;
+        return <StatsSection data={sectionData as any} style={sectionStyle} />;
       case 'team':
-        return <TeamSection data={section.data as any} style={sectionStyle} />;
+        return <TeamSection data={sectionData as any} style={sectionStyle} />;
       case 'services':
-        return <ServicesSection data={section.data as any} style={sectionStyle} />;
+        return <ServicesSection data={sectionData as any} style={sectionStyle} />;
       case 'video':
-        return <VideoSection data={section.data as any} style={sectionStyle} />;
+        return <VideoSection data={sectionData as any} style={sectionStyle} />;
       case 'countdown':
-        return <CountdownSection data={section.data as any} style={sectionStyle} />;
+        return <CountdownSection data={sectionData as any} style={sectionStyle} />;
       case 'banner':
-        return <BannerSection data={section.data as any} style={sectionStyle} />;
+        return <BannerSection data={sectionData as any} style={sectionStyle} />;
       case 'partners':
-        return <PartnersSection data={section.data as any} style={sectionStyle} />;
+        return <PartnersSection data={sectionData as any} style={sectionStyle} />;
       case 'newsletter':
-        return <NewsletterSection data={section.data as any} style={sectionStyle} />;
+        return <NewsletterSection data={sectionData as any} style={sectionStyle} />;
       case 'divider':
-        return <DividerSection data={section.data as any} style={sectionStyle} />;
+        return <DividerSection data={sectionData as any} style={sectionStyle} />;
       case 'imageComparison':
-        return <ImageComparisonSection data={section.data as any} style={sectionStyle} />;
+        return <ImageComparisonSection data={sectionData as any} style={sectionStyle} />;
       default:
         return <div className="p-8 text-center text-madas-text/60">Unknown section type</div>;
     }

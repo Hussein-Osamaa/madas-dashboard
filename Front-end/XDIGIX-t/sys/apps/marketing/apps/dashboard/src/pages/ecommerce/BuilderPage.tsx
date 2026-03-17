@@ -101,7 +101,12 @@ const BuilderPage = () => {
 
       try {
         const data = await sitesApi<Record<string, any>>('GET', `/${siteId}`);
-        const loadedSections = data.sections || [];
+        // Normalise sections: backend may store payload in `data` (new builder)
+        // or `content` (legacy builder / old saves).  Always expose as `data`.
+        const loadedSections = (data.sections || []).map((s: any) => ({
+          ...s,
+          data: s.data && Object.keys(s.data).length > 0 ? s.data : (s.content ?? {}),
+        }));
         console.log('[BuilderPage] Loaded sections from API:', loadedSections.length, 'sections');
         console.log('[BuilderPage] Loaded section types:', loadedSections.map((s: any) => s.type));
         setSiteName(data.name || 'Untitled Site');
