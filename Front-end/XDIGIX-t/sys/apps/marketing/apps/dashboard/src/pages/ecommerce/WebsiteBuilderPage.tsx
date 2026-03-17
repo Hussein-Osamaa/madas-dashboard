@@ -385,6 +385,14 @@ const WebsiteBuilderPage = () => {
   const [publishing,  setPublishing]    = useState<string | null>(null);
   const [unpublishing,setUnpublishing]  = useState<string | null>(null);
   const [search, setSearch]             = useState('');
+  const [showLegacyBanner, setShowLegacyBanner] = useState(
+    () => localStorage.getItem('xdigix_legacy_builder_dismissed') !== '1'
+  );
+
+  const dismissLegacyBanner = () => {
+    localStorage.setItem('xdigix_legacy_builder_dismissed', '1');
+    setShowLegacyBanner(false);
+  };
 
   useEffect(() => {
     if (!document.getElementById('wb-spin-style')) {
@@ -490,6 +498,41 @@ const WebsiteBuilderPage = () => {
           </button>
         </div>
       </div>
+
+      {/* ── Legacy builder retirement notice (dismissable, one-time) ───── */}
+      {showLegacyBanner && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 14,
+          background: isDark ? 'rgba(99,102,241,.12)' : '#eef2ff',
+          border: `1.5px solid ${isDark ? 'rgba(99,102,241,.3)' : '#c7d2fe'}`,
+          borderRadius: 12, padding: '14px 18px', marginBottom: 24,
+        }}>
+          <span className="material-icons" style={{ color: '#6366f1', fontSize: 20, marginTop: 2, flexShrink: 0 }}>
+            new_releases
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: isDark ? '#a5b4fc' : '#3730a3', margin: 0 }}>
+              Legacy HTML Builder Retired
+            </p>
+            <p style={{ fontSize: 13, color: isDark ? '#818cf8' : '#4338ca', margin: '4px 0 0', lineHeight: 1.55 }}>
+              The old site builder has been replaced by this React-powered builder — now with multi-page support,
+              a global theme system, per-page SEO, autosave, and a CDN image pipeline.
+              All new sites are created and edited here.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={dismissLegacyBanner}
+            title="Dismiss"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+              color: isDark ? '#818cf8' : '#6366f1', flexShrink: 0, lineHeight: 1,
+            }}
+          >
+            <span className="material-icons" style={{ fontSize: 18 }}>close</span>
+          </button>
+        </div>
+      )}
 
       {/* Multi-publish warning */}
       {!loading && publishedCount > 1 && (

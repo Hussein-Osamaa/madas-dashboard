@@ -182,13 +182,13 @@ const VisitStorePage = () => {
           </button>
           <button
             type="button"
-            onClick={() => window.open('/pages/Web-builder/website-settings.html', '_blank')}
+            onClick={() => navigate('/ecommerce/website-builder')}
             className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:bg-base transition-colors text-left"
           >
             <span className="material-icons text-primary">settings</span>
             <div>
-              <p className="text-sm font-medium text-primary">Store Settings</p>
-              <p className="text-xs text-madas-text/60">Configure your store</p>
+              <p className="text-sm font-medium text-primary">Site Settings</p>
+              <p className="text-xs text-madas-text/60">Manage &amp; configure your sites</p>
             </div>
           </button>
         </div>
