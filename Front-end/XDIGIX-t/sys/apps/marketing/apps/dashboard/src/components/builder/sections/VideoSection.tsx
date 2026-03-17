@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo} from 'react';
 import { VideoSectionData } from '../../../types/builder';
 
 type Props = {
@@ -116,5 +116,5 @@ const VideoSection = ({ data, style }: Props) => {
   );
 };
 
-export default VideoSection;
+export default memo(VideoSection);
 

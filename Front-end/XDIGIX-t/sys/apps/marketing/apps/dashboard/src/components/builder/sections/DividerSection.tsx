@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { DividerSectionData } from '../../../types/builder';
 
 type Props = {
@@ -115,5 +116,5 @@ const DividerSection = ({ data, style }: Props) => {
   );
 };
 
-export default DividerSection;
+export default memo(DividerSection);
 

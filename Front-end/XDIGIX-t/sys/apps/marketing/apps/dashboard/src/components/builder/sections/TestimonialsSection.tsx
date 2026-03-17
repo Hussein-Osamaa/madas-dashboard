@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { TestimonialsSectionData } from '../../../types/builder';
 
 type Props = {
@@ -75,5 +76,5 @@ const TestimonialsSection = ({ data, style }: Props) => {
   );
 };
 
-export default TestimonialsSection;
+export default memo(TestimonialsSection);
 

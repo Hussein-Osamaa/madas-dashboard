@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { CTASectionData } from '../../../types/builder';
 
 type Props = {
@@ -42,5 +43,5 @@ const CTASection = ({ data, style }: Props) => {
   );
 };
 
-export default CTASection;
+export default memo(CTASection);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo} from 'react';
 import { CountdownSectionData } from '../../../types/builder';
 
 type Props = {
@@ -146,5 +146,5 @@ const CountdownSection = ({ data, style }: Props) => {
   );
 };
 
-export default CountdownSection;
+export default memo(CountdownSection);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo} from 'react';
 import { DealsSectionData, SelectedProduct } from '../../../types/builder';
 import { useCurrency } from '../../../hooks/useCurrency';
 
@@ -379,4 +379,4 @@ const DealsSection = ({ data, style }: Props) => {
   );
 };
 
-export default DealsSection;
+export default memo(DealsSection);

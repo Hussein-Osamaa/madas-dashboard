@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo} from 'react';
 import { NewsletterSectionData } from '../../../types/builder';
 
 type Props = {
@@ -87,5 +87,5 @@ const NewsletterSection = ({ data, style }: Props) => {
   );
 };
 
-export default NewsletterSection;
+export default memo(NewsletterSection);
 

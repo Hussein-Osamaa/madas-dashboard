@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import React, { useState, useEffect } from 'react';
 import { FooterSectionData } from '../../../types/builder';
 
@@ -225,4 +226,4 @@ const FooterSection = ({ data, style }: Props) => {
   );
 };
 
-export default FooterSection;
+export default memo(FooterSection);

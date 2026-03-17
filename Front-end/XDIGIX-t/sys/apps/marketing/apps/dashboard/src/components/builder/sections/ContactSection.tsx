@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ContactSectionData } from '../../../types/builder';
 
 type Props = {
@@ -46,5 +47,5 @@ const ContactSection = ({ data, style }: Props) => {
   );
 };
 
-export default ContactSection;
+export default memo(ContactSection);
 

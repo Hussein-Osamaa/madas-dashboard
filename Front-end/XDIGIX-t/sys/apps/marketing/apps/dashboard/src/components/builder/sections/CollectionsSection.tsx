@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo} from 'react';
 import { CollectionsSectionData, SelectedCollection } from '../../../types/builder';
 
 type Props = {
@@ -623,4 +623,4 @@ const CollectionsSection = ({ data, style }: Props) => {
   );
 };
 
-export default CollectionsSection;
+export default memo(CollectionsSection);

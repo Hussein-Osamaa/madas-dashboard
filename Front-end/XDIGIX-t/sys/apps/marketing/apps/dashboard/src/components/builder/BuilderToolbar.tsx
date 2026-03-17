@@ -4,6 +4,7 @@ import PreviewModal from './PreviewModal';
 import PublishModal from './PublishModal';
 import { exportWebsiteToHTML } from '../../utils/exportWebsite';
 import { useDarkMode } from '../../contexts/DarkModeContext';
+import type { AutosaveStatus } from '../../hooks/useAutosave';
 
 type Props = {
   siteId: string;
@@ -11,6 +12,7 @@ type Props = {
   onPreviewModeChange: (mode: 'desktop' | 'tablet' | 'mobile') => void;
   onSave: () => void;
   saving: boolean;
+  autosaveStatus?: AutosaveStatus;
   onToggleSidebar: () => void;
   showSidebar: boolean;
   onBack: () => void;
@@ -31,6 +33,7 @@ const BuilderToolbar = ({
   onPreviewModeChange,
   onSave,
   saving,
+  autosaveStatus = 'idle',
   onToggleSidebar,
   showSidebar,
   onBack,
@@ -211,6 +214,25 @@ const BuilderToolbar = ({
         >
           <span className="material-icons text-base text-gray-700">settings</span>
         </button>
+
+        {/* Autosave Status Indicator */}
+        {autosaveStatus !== 'idle' && (
+          <span className={`flex items-center gap-1.5 text-xs font-medium transition-all ${
+            autosaveStatus === 'saving'  ? 'text-blue-500' :
+            autosaveStatus === 'pending' ? 'text-gray-400' :
+            autosaveStatus === 'saved'   ? 'text-green-600' :
+            autosaveStatus === 'error'   ? 'text-red-500'  : 'text-gray-400'
+          }`}>
+            {autosaveStatus === 'saving'  && <span className="material-icons text-sm animate-spin">progress_activity</span>}
+            {autosaveStatus === 'pending' && <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />}
+            {autosaveStatus === 'saved'   && <span className="material-icons text-sm">check_circle</span>}
+            {autosaveStatus === 'error'   && <span className="material-icons text-sm">warning</span>}
+            {autosaveStatus === 'saving'  && 'Saving…'}
+            {autosaveStatus === 'pending' && 'Unsaved'}
+            {autosaveStatus === 'saved'   && 'Saved'}
+            {autosaveStatus === 'error'   && 'Save failed'}
+          </span>
+        )}
 
         {/* Save Button */}
         <button

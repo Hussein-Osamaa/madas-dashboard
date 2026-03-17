@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ServicesSectionData } from '../../../types/builder';
 
 type Props = {
@@ -177,5 +178,5 @@ const ServicesSection = ({ data, style }: Props) => {
   );
 };
 
-export default ServicesSection;
+export default memo(ServicesSection);
 

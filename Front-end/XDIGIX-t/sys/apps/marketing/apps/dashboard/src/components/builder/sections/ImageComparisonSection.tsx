@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, memo} from 'react';
 import { ImageComparisonSectionData } from '../../../types/builder';
 
 type Props = {
@@ -243,4 +243,4 @@ const ImageComparisonSection = ({ data, style }: Props) => {
   );
 };
 
-export default ImageComparisonSection;
+export default memo(ImageComparisonSection);

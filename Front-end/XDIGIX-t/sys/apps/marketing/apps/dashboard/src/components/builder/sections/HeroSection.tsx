@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo} from 'react';
 import { HeroSectionData } from '../../../types/builder';
 
 type Props = {
@@ -380,5 +380,5 @@ const HeroSection = ({ data, style }: Props) => {
   );
 };
 
-export default HeroSection;
+export default memo(HeroSection);
 

@@ -13,6 +13,7 @@ import { SelectedElement } from '../../types/elementEditor';
 import { getDefaultData } from '../../registry/sectionRegistry';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 import { useUndoRedo } from '../../hooks/useUndoRedo';
+import { useAutosave, AutosaveStatus } from '../../hooks/useAutosave';
 
 /* ── Backend API helper ─────────────────────────────────────────── */
 const API_BASE = (import.meta.env.VITE_API_BACKEND_URL as string | undefined)
@@ -44,6 +45,7 @@ const BuilderPage = () => {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
@@ -136,16 +138,25 @@ const BuilderPage = () => {
       await sitesApi('PATCH', `/${siteId}`, { sections: currentSections });
 
       console.log('[BuilderPage] Save successful via /api/sites');
+      setAutosaveStatus('saved');
       showToast('success', '✓ Changes Saved', 'Your website changes have been saved.');
+      setTimeout(() => setAutosaveStatus('idle'), 3000);
     } catch (error) {
       console.error('[BuilderPage] Failed to save:', error);
+      setAutosaveStatus('error');
       showToast('error', 'Save Failed', 'Failed to save changes. Please try again.');
     } finally {
       setSaving(false);
     }
   }, [siteId, showToast]);
 
-  // Auto-save completely removed to prevent data conflicts
+  // Autosave — fires 3 s after every real edit (sections reference change)
+  const { triggerSave } = useAutosave(siteId, sections, {
+    onStatusChange: setAutosaveStatus,
+    onError: (err) => showToast('error', '⚠ Auto-save Failed', err.message),
+    apiBase: `${API_BASE}/api`,
+    getToken,
+  });
 
   const handleAddSection = useCallback((type: SectionType, initialData?: Record<string, any>) => {
     const defaultData = getDefaultSectionData(type);
@@ -326,6 +337,7 @@ const BuilderPage = () => {
         onPreviewModeChange={setPreviewMode}
         onSave={handleSave}
         saving={saving}
+        autosaveStatus={autosaveStatus}
         onToggleSidebar={() => setShowSidebar((prev) => !prev)}
         showSidebar={showSidebar}
         onBack={() => navigate('/ecommerce/website-builder')}

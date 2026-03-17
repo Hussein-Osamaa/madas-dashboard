@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -415,7 +415,10 @@ const BuilderCanvas = ({
     }
   };
 
-  const sortedSections = [...sections].sort((a, b) => a.order - b.order);
+  const sortedSections = useMemo(
+    () => [...sections].sort((a, b) => a.order - b.order),
+    [sections]
+  );
 
   const getPreviewContainerStyle = () => {
     if (previewMode === 'mobile') {

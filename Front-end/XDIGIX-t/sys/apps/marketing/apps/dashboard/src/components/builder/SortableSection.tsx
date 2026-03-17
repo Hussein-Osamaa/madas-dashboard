@@ -1,6 +1,6 @@
+import { memo, ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ReactNode } from 'react';
 import { Section } from '../../types/builder';
 
 type Props = {
@@ -79,5 +79,13 @@ const SortableSection = ({ section, isSelected, onSelect, onDelete, onDuplicate,
   );
 };
 
-export default SortableSection;
+// Re-render only when section data, selection state, or handlers change
+export default memo(SortableSection, (prev, next) =>
+  prev.section === next.section &&
+  prev.isSelected === next.isSelected &&
+  prev.onSelect === next.onSelect &&
+  prev.onDelete === next.onDelete &&
+  prev.onDuplicate === next.onDuplicate &&
+  prev.children === next.children
+);
 

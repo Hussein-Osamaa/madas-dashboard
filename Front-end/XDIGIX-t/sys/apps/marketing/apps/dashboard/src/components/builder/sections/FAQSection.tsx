@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo} from 'react';
 import { FAQSectionData } from '../../../types/builder';
 
 type Props = {
@@ -70,5 +70,5 @@ const FAQSection = ({ data, style }: Props) => {
   );
 };
 
-export default FAQSection;
+export default memo(FAQSection);
 

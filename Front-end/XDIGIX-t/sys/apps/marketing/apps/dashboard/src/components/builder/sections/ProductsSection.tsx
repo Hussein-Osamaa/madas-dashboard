@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo} from 'react';
 import { ProductsSectionData, SelectedProduct, ProductCardStyle } from '../../../types/builder';
 import { useCurrency } from '../../../hooks/useCurrency';
 
@@ -448,4 +448,4 @@ const ProductsSection = ({ data, style }: Props) => {
   );
 };
 
-export default ProductsSection;
+export default memo(ProductsSection);

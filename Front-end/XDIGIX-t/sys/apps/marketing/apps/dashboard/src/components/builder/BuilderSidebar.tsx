@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Section, SectionType } from '../../types/builder';
 import { getRegistryByCategory, CATEGORY_ORDER, SECTION_REGISTRY } from '../../registry/sectionRegistry';
 
@@ -494,9 +494,12 @@ const SectionPreview = ({ type, variant }: { type: SectionType; variant?: string
 
 const BuilderSidebar = ({ onAddSection, sections, onSelectSection, selectedSection }: Props) => {
   const [openCategory, setOpenCategory] = useState<string | null>('Layout');
-  
-  // Group sections by category
-  const categories = Array.from(new Set(sectionTypes.map(s => s.category)));
+
+  // Stable category list — memoized so it never triggers child re-renders
+  const categories = useMemo(
+    () => Array.from(new Set(sectionTypes.map(s => s.category))),
+    [] // sectionTypes is module-level constant; deps are empty intentionally
+  );
   
   const handleCategoryClick = (category: string) => {
     setOpenCategory(openCategory === category ? null : category);

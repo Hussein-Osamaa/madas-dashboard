@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo} from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { NavbarSectionData, NavbarMenuItem } from '../../../types/builder';
 
@@ -471,4 +471,4 @@ const NavbarSection = ({ data, style, siteId: propSiteId }: Props) => {
   );
 };
 
-export default NavbarSection;
+export default memo(NavbarSection);

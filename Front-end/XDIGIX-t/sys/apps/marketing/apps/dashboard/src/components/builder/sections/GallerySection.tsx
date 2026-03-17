@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo} from 'react';
 import { GallerySectionData } from '../../../types/builder';
 
 type Props = {
@@ -105,5 +105,5 @@ const GallerySection = ({ data, style }: Props) => {
   );
 };
 
-export default GallerySection;
+export default memo(GallerySection);
 

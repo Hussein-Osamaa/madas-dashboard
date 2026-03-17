@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo} from 'react';
 import { BannerSectionData } from '../../../types/builder';
 
 type Props = {
@@ -110,5 +110,5 @@ const BannerSection = ({ data, style }: Props) => {
   );
 };
 
-export default BannerSection;
+export default memo(BannerSection);
 
