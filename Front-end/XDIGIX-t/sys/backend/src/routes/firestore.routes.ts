@@ -181,4 +181,33 @@ router.delete('/documents/*', async (req: Request, res: Response) => {
   }
 });
 
+/* ── Batch write ── */
+router.post('/batch', async (req: Request, res: Response) => {
+  type BatchOp =
+    | { type: 'set';    path: string; data: Record<string, unknown>; merge?: boolean }
+    | { type: 'update'; path: string; data: Record<string, unknown> }
+    | { type: 'delete'; path: string };
+
+  const { ops } = req.body as { ops: BatchOp[] };
+  if (!Array.isArray(ops) || ops.length === 0) {
+    res.status(400).json({ error: 'ops array required', code: 'firestore/invalid-argument' });
+    return;
+  }
+  if (!req.tenantId) {
+    res.status(400).json({ error: 'Tenant required', code: 'firestore/invalid-argument' });
+    return;
+  }
+  try {
+    for (const op of ops) {
+      if (!op.path) continue;
+      if (op.type === 'set')    await setDocument(op.path, op.data, req.tenantId, op.merge ?? false);
+      if (op.type === 'update') await updateDocument(op.path, op.data, req.tenantId, false);
+      if (op.type === 'delete') await deleteDocument(op.path, req.tenantId);
+    }
+    res.json({ success: true, count: ops.length });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message, code: 'firestore/internal' });
+  }
+});
+
 export default router;

@@ -1,45 +1,71 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBusiness } from '../../contexts/BusinessContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { collection, db, getDocs, getDoc, query, where, addDoc, updateDoc, doc, deleteDoc, writeBatch } from '../../lib/firebase';
 import CreateSiteModal from '../../components/ecommerce/CreateSiteModal';
-import { getDefaultPublishedSiteUrl } from '../../utils/siteUrls';
 
+/* ──────────────────────────────────────────────────────────────
+   Sites API helper — calls /api/sites/* with JWT token.
+   Falls back to localStorage token keys used by backend-adapter.
+────────────────────────────────────────────────────────────── */
+const API_BASE = (import.meta.env.VITE_API_BACKEND_URL as string | undefined)?.replace(/\/api\/?$/, '') ?? '';
+
+function getToken(): string {
+  return (
+    localStorage.getItem('backend_access_token') ||
+    localStorage.getItem('warehouse_access_token') ||
+    ''
+  );
+}
+
+async function sitesApi<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}/api/sites${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Types
+────────────────────────────────────────────────────────────── */
 type Site = {
   id: string;
   name: string;
   description?: string;
   status: 'draft' | 'published';
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
   url?: string;
   customDomain?: string;
 };
 
-/* ─── tiny toast ─────────────────────────────────────────────────── */
+type SiteListResponse = { sites: (Site & { _id?: string })[] };
+
+/* ──────────────────────────────────────────────────────────────
+   Toast + Confirm helpers
+────────────────────────────────────────────────────────────── */
 type ToastKind = 'success' | 'error' | 'info';
 function showToast(message: string, kind: ToastKind = 'info') {
-  const colors: Record<ToastKind, string> = {
-    success: '#15803d',
-    error:   '#dc2626',
-    info:    '#1d4ed8',
-  };
+  const colors: Record<ToastKind, string> = { success: '#15803d', error: '#dc2626', info: '#1d4ed8' };
   const el = document.createElement('div');
   el.textContent = message;
   Object.assign(el.style, {
     position: 'fixed', bottom: '24px', right: '24px', zIndex: '9999',
-    background: colors[kind], color: '#fff',
-    padding: '12px 20px', borderRadius: '10px',
-    fontSize: '14px', fontWeight: '500',
-    boxShadow: '0 4px 20px rgba(0,0,0,.18)',
-    transition: 'opacity .3s',
+    background: colors[kind], color: '#fff', padding: '12px 20px',
+    borderRadius: '10px', fontSize: '14px', fontWeight: '500',
+    boxShadow: '0 4px 20px rgba(0,0,0,.18)', transition: 'opacity .3s',
   });
   document.body.appendChild(el);
   setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
 }
 
-/* ─── confirm dialog (non-blocking) ─────────────────────────────── */
 function showConfirm(message: string): Promise<boolean> {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
@@ -62,92 +88,57 @@ function showConfirm(message: string): Promise<boolean> {
   });
 }
 
-/* ─── helpers ────────────────────────────────────────────────────── */
-function parseSite(docSnap: { id: string; data: () => Record<string, unknown> }): Site {
-  const data = docSnap.data() as Record<string, any>;
-  return {
-    id:          docSnap.id,
-    name:        (data.name as string) || 'Untitled Site',
-    description: data.description as string | undefined,
-    status:      ((data.status as string) === 'published' ? 'published' : 'draft'),
-    createdAt:   data.createdAt?.toDate?.() ?? data.createdAt,
-    updatedAt:   data.updatedAt?.toDate?.() ?? data.updatedAt,
-    url:         (data.url as string) || (data.previewUrl as string),
-    customDomain: data.customDomain as string | undefined,
-  };
-}
-
-function sortByUpdated(sites: Site[]) {
-  return [...sites].sort((a, b) => {
-    const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-    const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-    return dateB - dateA;
-  });
-}
-
-/* ─── component ──────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────
+   Component
+────────────────────────────────────────────────────────────── */
 const WebsiteBuilderPage = () => {
   const navigate = useNavigate();
-  const { businessId } = useBusiness();
-  const { user } = useAuth();
-  const [sites, setSites] = useState<Site[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [deleting,    setDeleting]    = useState<string | null>(null);
-  const [publishing,  setPublishing]  = useState<string | null>(null);
-  const [unpublishing,setUnpublishing]= useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [sites, setSites]               = useState<Site[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [showCreateModal, setShowCreate]= useState(false);
+  const [deleting,    setDeleting]      = useState<string | null>(null);
+  const [publishing,  setPublishing]    = useState<string | null>(null);
+  const [unpublishing,setUnpublishing]  = useState<string | null>(null);
+  const [search, setSearch]             = useState('');
 
-  /* ── load sites (single source of truth) ─── */
+  /* ── load ── */
   const loadSites = useCallback(async () => {
-    if (!businessId) return;
     try {
-      const snapshot = await getDocs(collection(db, 'businesses', businessId, 'published_sites'));
-      setSites(sortByUpdated(snapshot.docs.map(parseSite)));
+      const data = await sitesApi<SiteListResponse>('GET', '');
+      setSites(
+        data.sites.map(s => ({ ...s, id: s.id || String(s._id) }))
+      );
     } catch {
       showToast('Failed to load sites', 'error');
     }
-  }, [businessId]);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
     void loadSites().finally(() => setLoading(false));
   }, [loadSites]);
 
-  /* ── create ─── */
+  /* ── create ── */
   const handleCreateSite = async (siteData: { name: string; description?: string }) => {
-    if (!businessId || !user?.uid) return;
     try {
-      const sitesRef = collection(db, 'businesses', businessId, 'published_sites');
-      const docRef = await addDoc(sitesRef, {
+      const res = await sitesApi<{ id: string }>('POST', '', {
         name: siteData.name,
         description: siteData.description || '',
-        status: 'draft',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        sections: [],
-        settings: {
-          theme: { primaryColor: '#27491F', secondaryColor: '#F0CAE1', backgroundColor: '#FFFFFF', textColor: '#171817' },
-          seo:   { title: siteData.name, description: siteData.description || '', keywords: [] },
-        },
-        pages: ['home'],
-        createdBy: user.uid,
       });
-      setShowCreateModal(false);
-      navigate(`/ecommerce/builder?siteId=${docRef.id}`);
+      setShowCreate(false);
+      navigate(`/ecommerce/builder?siteId=${res.id}`);
     } catch {
-      showToast('Failed to create site. Please try again.', 'error');
+      showToast('Failed to create site', 'error');
     }
   };
 
-  /* ── delete ─── */
+  /* ── delete ── */
   const handleDeleteSite = async (siteId: string) => {
     if (!await showConfirm('Delete this site? This cannot be undone.')) return;
-    if (!businessId) return;
     setDeleting(siteId);
     try {
-      await deleteDoc(doc(db, 'businesses', businessId, 'published_sites', siteId));
-      setSites((prev) => prev.filter((s) => s.id !== siteId));
+      await sitesApi('DELETE', `/${siteId}`);
+      setSites(prev => prev.filter(s => s.id !== siteId));
       showToast('Site deleted', 'success');
     } catch {
       showToast('Failed to delete site', 'error');
@@ -156,46 +147,17 @@ const WebsiteBuilderPage = () => {
     }
   };
 
-  /* ── publish ─── */
+  /* ── publish ── */
   const handlePublishSite = async (siteId: string) => {
-    if (!businessId) return;
     setPublishing(siteId);
     try {
-      const sitesRef = collection(db, 'businesses', businessId, 'published_sites');
-
-      // Unpublish all other sites
-      const publishedSnap = await getDocs(query(sitesRef, where('status', '==', 'published')));
-      if (!publishedSnap.empty) {
-        const batch = writeBatch(db);
-        publishedSnap.docs.forEach((d) => {
-          if (d.id !== siteId) batch.update(d.ref, { status: 'draft', unpublishedAt: new Date(), unpublishedReason: 'auto_unpublished_new_site' });
-        });
-        await batch.commit();
-      }
-
-      // Reroute custom domains
-      const domainsSnap = await getDocs(query(collection(db, 'customDomains'), where('tenantId', '==', businessId)));
-      if (!domainsSnap.empty) {
-        const domBatch = writeBatch(db);
-        domainsSnap.docs.forEach((d) => { if (d.data().siteId !== siteId) domBatch.update(d.ref, { siteId, updatedAt: new Date() }); });
-        await domBatch.commit();
-      }
-
-      // Publish selected site
-      const siteUrl = getDefaultPublishedSiteUrl(siteId);
-      await updateDoc(doc(db, 'businesses', businessId, 'published_sites', siteId), {
-        status: 'published', publishedAt: new Date(), isActive: true,
-        url: siteUrl, publicUrl: siteUrl, updatedAt: new Date(),
-      });
-
-      setSites((prev) =>
-        sortByUpdated(prev.map((s) =>
-          s.id === siteId
-            ? { ...s, status: 'published' as const, url: siteUrl, updatedAt: new Date() }
-            : { ...s, status: 'draft'     as const, updatedAt: new Date() }
-        ))
-      );
-      showToast('Site published successfully!', 'success');
+      const updated = await sitesApi<Site>('POST', `/${siteId}/publish`);
+      setSites(prev => prev.map(s =>
+        s.id === siteId
+          ? { ...s, status: 'published' as const, url: updated.url, updatedAt: updated.updatedAt }
+          : { ...s, status: 'draft' as const }
+      ));
+      showToast('Site published!', 'success');
     } catch {
       showToast('Failed to publish site', 'error');
     } finally {
@@ -203,14 +165,13 @@ const WebsiteBuilderPage = () => {
     }
   };
 
-  /* ── unpublish ─── */
+  /* ── unpublish ── */
   const handleUnpublishSite = async (siteId: string) => {
     if (!await showConfirm('Unpublish this site? It will no longer be publicly accessible.')) return;
-    if (!businessId) return;
     setUnpublishing(siteId);
     try {
-      await updateDoc(doc(db, 'businesses', businessId, 'published_sites', siteId), { status: 'draft', updatedAt: new Date() });
-      setSites((prev) => prev.map((s) => s.id === siteId ? { ...s, status: 'draft' as const, updatedAt: new Date() } : s));
+      await sitesApi('POST', `/${siteId}/unpublish`);
+      setSites(prev => prev.map(s => s.id === siteId ? { ...s, status: 'draft' as const } : s));
       showToast('Site unpublished', 'info');
     } catch {
       showToast('Failed to unpublish site', 'error');
@@ -219,27 +180,10 @@ const WebsiteBuilderPage = () => {
     }
   };
 
-  /* ── duplicate ─── */
+  /* ── duplicate ── */
   const handleDuplicateSite = async (site: Site) => {
-    if (!businessId || !user?.uid) return;
     try {
-      const sitesRef = collection(db, 'businesses', businessId, 'published_sites');
-      const siteSnap = await getDoc(doc(db, 'businesses', businessId, 'published_sites', site.id));
-      const src = siteSnap.data() as Record<string, any> | undefined;
-      await addDoc(sitesRef, {
-        name: `${site.name} (Copy)`,
-        description: site.description,
-        status: 'draft',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        sections: src?.sections || [],
-        settings: {
-          ...(src?.settings || {}),
-          seo: { ...(src?.settings?.seo || {}), title: `${site.name} (Copy)`, description: site.description || '' },
-        },
-        pages: src?.pages || ['home'],
-        createdBy: user.uid,
-      });
+      await sitesApi('POST', `/${site.id}/duplicate`);
       await loadSites();
       showToast('Site duplicated', 'success');
     } catch {
@@ -247,14 +191,14 @@ const WebsiteBuilderPage = () => {
     }
   };
 
-  /* ── derived ─── */
-  const publishedCount = sites.filter((s) => s.status === 'published').length;
-  const publishedSite  = sites.find((s) => s.status === 'published');
+  /* ── derived ── */
+  const publishedCount = sites.filter(s => s.status === 'published').length;
+  const publishedSite  = sites.find(s => s.status === 'published');
   const filtered = search.trim()
-    ? sites.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()))
+    ? sites.filter(s => s.name.toLowerCase().includes(search.toLowerCase()))
     : sites;
 
-  /* ─────────────────────────────────────────────────────────────── */
+  /* ── render ── */
   return (
     <div className="space-y-6 px-6 py-8">
 
@@ -272,13 +216,13 @@ const WebsiteBuilderPage = () => {
               type="search"
               placeholder="Search sites…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={e => setSearch(e.target.value)}
               className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-madas-text focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           )}
           <button
             type="button"
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => setShowCreate(true)}
             className="rounded-lg bg-primary text-white px-5 py-2.5 text-sm font-semibold hover:bg-[#1f3c19] transition-colors shadow-md flex items-center gap-2 whitespace-nowrap"
           >
             <span className="material-icons text-base">add</span>
@@ -294,8 +238,7 @@ const WebsiteBuilderPage = () => {
           <div>
             <p className="text-sm font-medium text-amber-800">Multiple Sites Published</p>
             <p className="text-sm text-amber-700 mt-1">
-              {publishedCount} published sites — only one can be live on your custom domain.
-              Click <strong>Publish</strong> on the one you want active; the rest will be unpublished automatically.
+              {publishedCount} published sites — only one can be live. Click <strong>Publish</strong> on the one you want; others will be unpublished automatically.
             </p>
           </div>
         </div>
@@ -310,12 +253,10 @@ const WebsiteBuilderPage = () => {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <span className="material-icons text-7xl text-madas-text/20 mb-4">web</span>
           <p className="text-xl font-semibold text-madas-text/60 mb-2">No websites yet</p>
-          <p className="text-sm text-madas-text/50 mb-6 max-w-xs">
-            Create your first site and customise it with our drag-and-drop builder.
-          </p>
+          <p className="text-sm text-madas-text/50 mb-6 max-w-xs">Create your first site and customise it with our drag-and-drop builder.</p>
           <button
             type="button"
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => setShowCreate(true)}
             className="rounded-lg bg-primary text-white px-6 py-3 text-sm font-semibold hover:bg-[#1f3c19] transition-colors shadow-md"
           >
             Create Your First Site
@@ -325,7 +266,7 @@ const WebsiteBuilderPage = () => {
         <p className="text-center text-sm text-madas-text/50 py-10">No sites match "{search}"</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((site) => (
+          {filtered.map(site => (
             <article
               key={site.id}
               className="card-hover rounded-xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-all flex flex-col"
@@ -361,7 +302,7 @@ const WebsiteBuilderPage = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="truncate hover:text-primary hover:underline"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                     >
                       {site.url}
                     </a>
@@ -371,7 +312,6 @@ const WebsiteBuilderPage = () => {
 
               {/* Actions */}
               <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-                {/* Edit — primary */}
                 <button
                   type="button"
                   onClick={() => navigate(`/ecommerce/builder?siteId=${site.id}`)}
@@ -381,7 +321,18 @@ const WebsiteBuilderPage = () => {
                   Edit
                 </button>
 
-                {/* View live (only when published) */}
+                {/* Preview rendered site */}
+                <a
+                  href={`${API_BASE}/api/sites/${site.id}/public`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 hover:bg-blue-100 transition-colors"
+                  title="Preview rendered site"
+                >
+                  <span className="material-icons text-base">preview</span>
+                </a>
+
+                {/* View live (published only) */}
                 {site.status === 'published' && site.url && (
                   <a
                     href={site.url}
@@ -471,9 +422,7 @@ const WebsiteBuilderPage = () => {
               <p className="text-xs text-madas-text/60">Start with a template</p>
             </div>
           </div>
-          <p className="text-sm text-madas-text/60 mb-4">
-            Choose from professional templates designed for e-commerce stores.
-          </p>
+          <p className="text-sm text-madas-text/60 mb-4">Choose from professional templates designed for e-commerce stores.</p>
           <button
             type="button"
             onClick={() => navigate('/ecommerce/templates')}
@@ -493,13 +442,11 @@ const WebsiteBuilderPage = () => {
               <p className="text-xs text-madas-text/60">Configure your sites</p>
             </div>
           </div>
-          <p className="text-sm text-madas-text/60 mb-4">
-            Manage SEO, analytics, and other website settings.
-          </p>
+          <p className="text-sm text-madas-text/60 mb-4">Manage SEO, analytics, and other website settings.</p>
           <button
             type="button"
             disabled={sites.length === 0}
-            onClick={() => navigate(`/ecommerce/website-settings?siteId=${(publishedSite ?? sites[0]).id}`)}
+            onClick={() => navigate(`/ecommerce/website-settings?siteId=${(publishedSite ?? sites[0])?.id}`)}
             className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-madas-text/70 hover:bg-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {sites.length === 0 ? 'No sites yet' : 'Open Settings'}
@@ -516,9 +463,7 @@ const WebsiteBuilderPage = () => {
               <p className="text-xs text-madas-text/60">View published sites</p>
             </div>
           </div>
-          <p className="text-sm text-madas-text/60 mb-4">
-            View and manage your published websites.
-          </p>
+          <p className="text-sm text-madas-text/60 mb-4">View and manage your published websites.</p>
           {publishedSite?.url ? (
             <a
               href={publishedSite.url}
@@ -544,7 +489,7 @@ const WebsiteBuilderPage = () => {
       {showCreateModal && (
         <CreateSiteModal
           open={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => setShowCreate(false)}
           onCreate={handleCreateSite}
         />
       )}

@@ -11,6 +11,7 @@ import staffRoutes from './staff.routes';
 import externalRoutes from './external.routes';
 import bostaRoutes from './bosta.routes';
 import shippingRoutes from './shipping/index';
+import sitesRoutes from './sites.routes';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.use('/storage', storageRoutes);
 router.use('/domains', domainsRoutes);
 router.use('/bosta', bostaRoutes);
 router.use('/shipping', shippingRoutes);
+router.use('/sites', sitesRoutes);
 
 // Cloud Functions compatibility: /addDomain, /verifyDomain, etc. (base URL replacement only)
 const qs = (req: { url?: string }) => (req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');

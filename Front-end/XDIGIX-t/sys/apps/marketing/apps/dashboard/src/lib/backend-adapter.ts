@@ -548,12 +548,30 @@ export function arrayRemove(...elements: unknown[]) {
   return elements;
 }
 
+type BatchOp =
+  | { type: 'set';    path: string; data: Record<string, unknown>; merge?: boolean }
+  | { type: 'update'; path: string; data: Record<string, unknown> }
+  | { type: 'delete'; path: string };
+
 export function writeBatch(_db: unknown) {
+  const ops: BatchOp[] = [];
   return {
-    set: () => {},
-    update: () => {},
-    delete: () => {},
-    commit: async () => {}
+    set(ref: { path?: string }, data: Record<string, unknown>, opts?: { merge?: boolean }) {
+      ops.push({ type: 'set', path: ref.path || '', data, merge: opts?.merge });
+    },
+    update(ref: { path?: string }, data: Record<string, unknown>) {
+      ops.push({ type: 'update', path: ref.path || '', data });
+    },
+    delete(ref: { path?: string }) {
+      ops.push({ type: 'delete', path: ref.path || '' });
+    },
+    async commit() {
+      if (ops.length === 0) return;
+      await fetchApi('/firestore/batch', {
+        method: 'POST',
+        body: JSON.stringify({ ops })
+      });
+    }
   };
 }
 
