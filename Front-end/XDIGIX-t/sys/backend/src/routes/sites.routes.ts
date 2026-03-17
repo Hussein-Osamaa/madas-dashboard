@@ -46,7 +46,7 @@ router.post('/', async (req: Request, res: Response) => {
       sections: [],
       pages: [{ id: 'home', slug: 'home', name: 'Home', sections: [], order: 0 }],
       settings: settings || {},
-      createdBy: req.accountPayload?.userId || req.user?.id || 'unknown',
+      createdBy: req.accountPayload?.userId || req.user?.uid || 'unknown',
     });
     res.status(201).json({ id: String(site._id), site });
   } catch (err) {
@@ -156,7 +156,7 @@ router.post('/:id/duplicate', async (req: Request, res: Response) => {
       isActive: false,
       url: undefined,
       publicUrl: undefined,
-      createdBy: req.accountPayload?.userId || req.user?.id || 'unknown',
+      createdBy: req.accountPayload?.userId || req.user?.uid || 'unknown',
     });
     res.status(201).json({ id: String(copy._id), site: copy });
   } catch (err) {
@@ -169,7 +169,7 @@ router.get('/:id/render', async (req: Request, res: Response) => {
   try {
     const site = await Site.findOne({ _id: req.params.id, tenantId: req.tenantId }).lean();
     if (!site) { res.status(404).send('<h1>Site not found</h1>'); return; }
-    const html = renderSite(site as Parameters<typeof renderSite>[0]);
+    const html = renderSite(site as unknown as Parameters<typeof renderSite>[0]);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     res.send(html);
@@ -183,7 +183,7 @@ router.get('/:id/public', async (req: Request, res: Response) => {
   try {
     const site = await Site.findOne({ _id: req.params.id }).lean();
     if (!site) { res.status(404).send('<h1>Site not found</h1>'); return; }
-    const html = renderSite(site as Parameters<typeof renderSite>[0]);
+    const html = renderSite(site as unknown as Parameters<typeof renderSite>[0]);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     res.send(html);
