@@ -35,6 +35,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 
+    <!-- DOMPurify — XSS sanitiser (must load before builder JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+
     <!-- Production Configuration -->
     <script src="config.js"></script>
 
@@ -3118,6 +3121,22 @@
                 <span id="storage-usage">0%</span>
             </div>
 
+            <!-- Undo / Redo controls -->
+            <div class="undo-redo-btns" style="display:flex;gap:4px;align-items:center;margin-right:8px;">
+                <button id="undo-btn" title="Undo (Ctrl+Z)" disabled
+                    style="background:none;border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;color:#64748b;transition:all .2s;font-size:13px;"
+                    onmouseover="if(!this.disabled)this.style.background='#f1f5f9'"
+                    onmouseout="this.style.background='none'">
+                    <span class="material-icons" style="font-size:16px;">undo</span>
+                </button>
+                <button id="redo-btn" title="Redo (Ctrl+Y)" disabled
+                    style="background:none;border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;color:#64748b;transition:all .2s;font-size:13px;"
+                    onmouseover="if(!this.disabled)this.style.background='#f1f5f9'"
+                    onmouseout="this.style.background='none'">
+                    <span class="material-icons" style="font-size:16px;">redo</span>
+                </button>
+                <span id="history-count" style="font-size:11px;color:#94a3b8;padding:0 4px;"></span>
+            </div>
             <div class="action-buttons">
                 <button class="btn btn-secondary" id="save-btn">Save</button>
                 <button class="btn btn-info" id="preview-btn">Preview</button>
@@ -3154,6 +3173,12 @@
             </div>
             <div class="sidebar-icon" data-tool="assets" title="Assets">
                 <span class="material-icons">photo_library</span>
+            </div>
+            <div class="sidebar-icon" data-tool="history" title="Version History">
+                <span class="material-icons">history</span>
+            </div>
+            <div class="sidebar-icon" data-tool="siteSettings" title="Site Settings & Analytics">
+                <span class="material-icons">settings</span>
             </div>
         </div>
 
@@ -19070,5 +19095,601 @@
         setTimeout(patchBuilder, 1000);
     });
 })();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SITE SETTINGS MODAL (Analytics, SEO, Custom Code)
+═══════════════════════════════════════════════════════════════ -->
+<div id="site-settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99998;overflow-y:auto;">
+  <div style="background:#fff;width:min(640px,96vw);margin:40px auto;border-radius:16px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.2);">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1e293b,#334155);padding:24px 28px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h2 style="color:#fff;font-size:20px;font-weight:700;margin:0;">Site Settings</h2>
+        <p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Analytics, SEO, and custom code</p>
+      </div>
+      <button id="close-site-settings" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;line-height:1;">×</button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:2px solid #f1f5f9;background:#f8fafc;">
+      <button class="ss-tab ss-tab-active" data-ss-tab="analytics" style="padding:14px 20px;border:none;background:none;font-weight:600;font-size:14px;cursor:pointer;color:#2563eb;border-bottom:2px solid #2563eb;margin-bottom:-2px;">
+        📊 Analytics
+      </button>
+      <button class="ss-tab" data-ss-tab="seo" style="padding:14px 20px;border:none;background:none;font-weight:600;font-size:14px;cursor:pointer;color:#64748b;">
+        🔍 SEO
+      </button>
+      <button class="ss-tab" data-ss-tab="customcode" style="padding:14px 20px;border:none;background:none;font-weight:600;font-size:14px;cursor:pointer;color:#64748b;">
+        &lt;/&gt; Custom Code
+      </button>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div id="ss-pane-analytics" class="ss-pane" style="padding:28px;">
+      <p style="font-size:13px;color:#64748b;margin:0 0 24px;line-height:1.6;">
+        Paste your tracking IDs below. They will be automatically injected into every published page — no code required.
+      </p>
+      <div style="display:grid;gap:18px;">
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#ea4335"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+            Google Analytics 4 (GA4) Measurement ID
+          </span>
+          <input id="ss-ga4" type="text" placeholder="G-XXXXXXXXXX" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:monospace;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </label>
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877f2"><circle cx="12" cy="12" r="10"/></svg>
+            Meta (Facebook) Pixel ID
+          </span>
+          <input id="ss-pixel" type="text" placeholder="123456789012345" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:monospace;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </label>
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFC00" stroke="#000" stroke-width="1"><circle cx="12" cy="12" r="10"/></svg>
+            Snapchat Pixel ID
+          </span>
+          <input id="ss-snap" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:monospace;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </label>
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.73z"/></svg>
+            TikTok Pixel ID
+          </span>
+          <input id="ss-tiktok" type="text" placeholder="XXXXXXXXXXXXXXXXXX" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:monospace;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </label>
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#4285f4"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+            Google Ads Conversion ID
+          </span>
+          <input id="ss-gads" type="text" placeholder="AW-XXXXXXXXXX" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:monospace;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </label>
+      </div>
+    </div>
+
+    <!-- SEO Tab -->
+    <div id="ss-pane-seo" class="ss-pane" style="padding:28px;display:none;">
+      <div style="display:grid;gap:18px;">
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block;">Page Title</span>
+          <input id="ss-seo-title" type="text" placeholder="Your Store Name — Best Products in Town" maxlength="70" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+          <span id="ss-title-chars" style="font-size:11px;color:#94a3b8;">0 / 70 characters</span>
+        </label>
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block;">Meta Description</span>
+          <textarea id="ss-seo-desc" maxlength="160" rows="3" placeholder="Describe your store in 1-2 sentences for search engines…" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;resize:vertical;font-family:inherit;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+          <span id="ss-desc-chars" style="font-size:11px;color:#94a3b8;">0 / 160 characters</span>
+        </label>
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block;">Keywords <span style="font-weight:400;color:#94a3b8;">(comma-separated)</span></span>
+          <input id="ss-seo-keywords" type="text" placeholder="fashion, abayas, modest wear, Saudi Arabia" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </label>
+        <label style="display:block;">
+          <span style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block;">OG / Social Share Image URL</span>
+          <input id="ss-og-image" type="url" placeholder="https://cdn.example.com/og-image.jpg (1200×630px)" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+          <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">Shown when sharing your site on WhatsApp, Twitter, Facebook</p>
+        </label>
+        <!-- Live preview of Google Search Result -->
+        <div style="background:#f8fafc;border-radius:10px;padding:16px;">
+          <p style="font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;margin:0 0 10px;letter-spacing:.05em;">Google Search Preview</p>
+          <div id="ss-google-preview">
+            <div style="font-size:18px;color:#1a0dab;font-family:arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="ss-preview-title">Your Store Name</div>
+            <div style="font-size:13px;color:#006621;font-family:arial,sans-serif;">https://yourstore.xdigix.com</div>
+            <div style="font-size:13px;color:#545454;font-family:arial,sans-serif;margin-top:2px;line-height:1.5;" id="ss-preview-desc">Your store description appears here…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Code Tab -->
+    <div id="ss-pane-customcode" class="ss-pane" style="padding:28px;display:none;">
+      <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#92400e;">
+        ⚠️ Custom code is injected directly into your published site. Only add code you trust.
+      </div>
+      <label style="display:block;margin-bottom:18px;">
+        <span style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block;">Custom CSS <span style="font-weight:400;color:#94a3b8;">(injected into &lt;style&gt; tag)</span></span>
+        <textarea id="ss-custom-css" rows="8" placeholder="/* Add your custom styles here */&#10;.my-class { color: red; }" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:'Courier New',monospace;resize:vertical;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+      </label>
+      <label style="display:block;">
+        <span style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block;">Custom JavaScript <span style="font-weight:400;color:#94a3b8;">(injected before &lt;/body&gt;)</span></span>
+        <textarea id="ss-custom-js" rows="8" placeholder="// Add your custom scripts here&#10;console.log('Hello!');" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:'Courier New',monospace;resize:vertical;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+      </label>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:20px 28px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <span id="ss-save-status" style="font-size:13px;color:#64748b;"></span>
+      <div style="display:flex;gap:10px;">
+        <button id="ss-cancel-btn" style="padding:10px 20px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+        <button id="ss-save-btn" style="padding:10px 24px;border:none;border-radius:8px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     VERSION HISTORY MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div id="version-history-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99998;overflow-y:auto;">
+  <div style="background:#fff;width:min(560px,96vw);margin:40px auto;border-radius:16px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.2);">
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:24px 28px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h2 style="color:#fff;font-size:20px;font-weight:700;margin:0;">Version History</h2>
+        <p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Restore to any previous publish</p>
+      </div>
+      <button id="close-version-modal" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;line-height:1;">×</button>
+    </div>
+    <div id="version-list" style="padding:20px 28px;min-height:120px;">
+      <div style="text-align:center;color:#94a3b8;padding:32px 0;font-size:14px;">Loading versions…</div>
+    </div>
+    <div style="padding:16px 28px;border-top:1px solid #f1f5f9;font-size:12px;color:#94a3b8;">
+      ⓘ Restoring a version creates a draft. You'll need to republish to make it live.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 0 ENHANCEMENT SCRIPT
+     — DOMPurify wrapper
+     — Undo / Redo system (command pattern)
+     — Site Settings panel (analytics, SEO, custom code)
+     — Version History panel
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+'use strict';
+
+/* ── 0. DOMPurify safety wrapper ─────────────────────────────────── */
+window.safeHtml = function(html) {
+  if (typeof DOMPurify !== 'undefined') {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p','br','strong','b','em','i','u','s','ul','ol','li',
+                     'h1','h2','h3','h4','h5','h6','a','span','div','img',
+                     'blockquote','code','pre','table','thead','tbody','tr','th','td'],
+      ALLOWED_ATTR: ['href','src','alt','class','style','target','rel','width','height'],
+      ALLOW_DATA_ATTR: false,
+      FORCE_HTTPS: true,
+    });
+  }
+  // Fallback: escape all HTML entities
+  return String(html)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+};
+
+/* ── 1. Undo / Redo Manager ──────────────────────────────────────── */
+class UndoRedoManager {
+  constructor(maxHistory = 50) {
+    this.past    = [];
+    this.future  = [];
+    this.maxHistory = maxHistory;
+    this._ignoreNext = false;
+  }
+
+  /* Capture a snapshot of the entire canvas state */
+  snapshot(label = 'action') {
+    if (this._ignoreNext) { this._ignoreNext = false; return; }
+    const canvas = document.getElementById('canvas');
+    if (!canvas) return;
+    this.past.push({ label, html: canvas.innerHTML });
+    if (this.past.length > this.maxHistory) this.past.shift();
+    this.future = [];   // Clear redo stack on new action
+    this._updateUI();
+  }
+
+  undo() {
+    if (!this.past.length) return;
+    const canvas = document.getElementById('canvas');
+    if (!canvas) return;
+    this.future.push({ label: 'redo', html: canvas.innerHTML });
+    const state = this.past.pop();
+    this._ignoreNext = true;
+    canvas.innerHTML = state.html;
+    this._reattachListeners();
+    this._updateUI();
+    this._toast(`Undid: ${state.label}`);
+  }
+
+  redo() {
+    if (!this.future.length) return;
+    const canvas = document.getElementById('canvas');
+    if (!canvas) return;
+    this.past.push({ label: 'undo', html: canvas.innerHTML });
+    const state = this.future.pop();
+    this._ignoreNext = true;
+    canvas.innerHTML = state.html;
+    this._reattachListeners();
+    this._updateUI();
+    this._toast(`Redid: ${state.label}`);
+  }
+
+  _reattachListeners() {
+    // Trigger the builder to re-attach section click / drag listeners
+    if (window.builderInstance && typeof window.builderInstance.setupSectionControls === 'function') {
+      try { window.builderInstance.setupSectionControls(); } catch(e) {}
+    }
+    if (window.builderInstance && typeof window.builderInstance.setupDragAndDrop === 'function') {
+      try { window.builderInstance.setupDragAndDrop(); } catch(e) {}
+    }
+  }
+
+  _updateUI() {
+    const undoBtn   = document.getElementById('undo-btn');
+    const redoBtn   = document.getElementById('redo-btn');
+    const countEl   = document.getElementById('history-count');
+    if (undoBtn) { undoBtn.disabled = !this.past.length; undoBtn.style.color = this.past.length ? '#1e293b' : '#cbd5e1'; }
+    if (redoBtn) { redoBtn.disabled = !this.future.length; redoBtn.style.color = this.future.length ? '#1e293b' : '#cbd5e1'; }
+    if (countEl) { countEl.textContent = this.past.length > 0 ? `${this.past.length} step${this.past.length > 1 ? 's' : ''}` : ''; }
+  }
+
+  _toast(msg) {
+    if (window.BuilderToast && typeof window.BuilderToast.show === 'function') {
+      window.BuilderToast.show(msg, 'info', 1500);
+    }
+  }
+}
+
+/* Instantiate and expose globally */
+window.undoRedo = new UndoRedoManager(50);
+
+/* Wire toolbar buttons */
+document.addEventListener('DOMContentLoaded', function() {
+  const undoBtn = document.getElementById('undo-btn');
+  const redoBtn = document.getElementById('redo-btn');
+  if (undoBtn) undoBtn.addEventListener('click', () => window.undoRedo.undo());
+  if (redoBtn) redoBtn.addEventListener('click', () => window.undoRedo.redo());
+});
+
+/* Keyboard shortcuts */
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
+    e.preventDefault(); window.undoRedo.undo();
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+    e.preventDefault(); window.undoRedo.redo();
+  }
+});
+
+/* Auto-snapshot before destructive builder actions — patch after builder loads */
+function patchBuilderForUndoRedo() {
+  const b = window.builderInstance;
+  if (!b) return;
+
+  /* Patch addSection */
+  if (b.addSection && !b._undoPatchedAdd) {
+    const orig = b.addSection.bind(b);
+    b.addSection = function(type) {
+      window.undoRedo.snapshot('Add ' + type + ' section');
+      return orig(type);
+    };
+    b._undoPatchedAdd = true;
+  }
+
+  /* Patch deleteSection / removeSection */
+  ['deleteSection','removeSection','deleteSectionById'].forEach(fn => {
+    if (b[fn] && !b['_undoPatched_' + fn]) {
+      const orig = b[fn].bind(b);
+      b[fn] = function(...args) {
+        window.undoRedo.snapshot('Delete section');
+        return orig(...args);
+      };
+      b['_undoPatched_' + fn] = true;
+    }
+  });
+
+  /* Patch drag-drop reorder — snapshot on dragend */
+  const canvas = document.getElementById('canvas');
+  if (canvas && !canvas._undoDragPatch) {
+    canvas.addEventListener('dragend', function() {
+      window.undoRedo.snapshot('Move section');
+    }, true);
+    canvas._undoDragPatch = true;
+  }
+}
+
+/* Try patching immediately and after builder init */
+setTimeout(patchBuilderForUndoRedo, 1500);
+setTimeout(patchBuilderForUndoRedo, 3000);
+document.addEventListener('builderReady', patchBuilderForUndoRedo);
+
+
+/* ── 2. Site Settings Panel ──────────────────────────────────────── */
+const API_BASE_SETTINGS = (function() {
+  const env = (typeof window !== 'undefined' && window.location.hostname !== 'localhost')
+    ? 'https://xdigix-os-production.up.railway.app'
+    : 'http://localhost:4000';
+  return env;
+})();
+
+function getSettingsToken() {
+  return localStorage.getItem('backend_access_token') ||
+         localStorage.getItem('warehouse_access_token') ||
+         localStorage.getItem('access_token') || '';
+}
+
+function getSiteIdForSettings() {
+  return localStorage.getItem('currentSiteId') ||
+         new URLSearchParams(window.location.search).get('siteId') ||
+         (window.builderInstance && window.builderInstance.currentSiteId) || '';
+}
+
+/* Load existing settings into modal */
+async function loadSiteSettings() {
+  const siteId = getSiteIdForSettings();
+  if (!siteId) return;
+  try {
+    const r = await fetch(`${API_BASE_SETTINGS}/api/sites/${siteId}`, {
+      headers: { 'Authorization': 'Bearer ' + getSettingsToken() }
+    });
+    if (!r.ok) return;
+    const data = await r.json();
+    const settings = data.settings || {};
+    const analytics = settings.analytics || {};
+    const seo = settings.seo || {};
+    const el = id => document.getElementById(id);
+
+    /* Analytics */
+    if (el('ss-ga4'))    el('ss-ga4').value    = analytics.ga4MeasurementId || '';
+    if (el('ss-pixel'))  el('ss-pixel').value  = analytics.metaPixelId || '';
+    if (el('ss-snap'))   el('ss-snap').value   = analytics.snapchatPixelId || '';
+    if (el('ss-tiktok')) el('ss-tiktok').value = analytics.tiktokPixelId || '';
+    if (el('ss-gads'))   el('ss-gads').value   = analytics.googleAdsId || '';
+
+    /* SEO */
+    if (el('ss-seo-title'))    el('ss-seo-title').value    = seo.title || '';
+    if (el('ss-seo-desc'))     el('ss-seo-desc').value     = seo.description || '';
+    if (el('ss-seo-keywords')) el('ss-seo-keywords').value = (seo.keywords || []).join(', ');
+    if (el('ss-og-image'))     el('ss-og-image').value     = seo.ogImage || '';
+
+    /* Custom Code */
+    if (el('ss-custom-css')) el('ss-custom-css').value = settings.customCss || '';
+    if (el('ss-custom-js'))  el('ss-custom-js').value  = settings.customJs  || '';
+
+    updateSeoPreview();
+  } catch(e) { console.warn('Settings load error:', e); }
+}
+
+/* Save settings to backend */
+async function saveSiteSettings() {
+  const siteId = getSiteIdForSettings();
+  if (!siteId) { alert('No site selected. Open a site first.'); return; }
+
+  const el = id => document.getElementById(id);
+  const payload = {
+    settings: {
+      analytics: {
+        ga4MeasurementId: el('ss-ga4')?.value?.trim() || '',
+        metaPixelId:      el('ss-pixel')?.value?.trim() || '',
+        snapchatPixelId:  el('ss-snap')?.value?.trim() || '',
+        tiktokPixelId:    el('ss-tiktok')?.value?.trim() || '',
+        googleAdsId:      el('ss-gads')?.value?.trim() || '',
+      },
+      seo: {
+        title:       el('ss-seo-title')?.value?.trim() || '',
+        description: el('ss-seo-desc')?.value?.trim() || '',
+        keywords:    (el('ss-seo-keywords')?.value || '').split(',').map(k => k.trim()).filter(Boolean),
+        ogImage:     el('ss-og-image')?.value?.trim() || '',
+      },
+      customCss: el('ss-custom-css')?.value || '',
+      customJs:  el('ss-custom-js')?.value  || '',
+    }
+  };
+
+  const statusEl = el('ss-save-status');
+  if (statusEl) statusEl.textContent = 'Saving…';
+
+  try {
+    const r = await fetch(`${API_BASE_SETTINGS}/api/sites/${siteId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + getSettingsToken(),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (r.ok) {
+      if (statusEl) { statusEl.textContent = '✓ Saved'; statusEl.style.color = '#22c55e'; }
+      setTimeout(() => { if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; } }, 2000);
+    } else {
+      if (statusEl) { statusEl.textContent = '✗ Save failed'; statusEl.style.color = '#ef4444'; }
+    }
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = '✗ Network error'; statusEl.style.color = '#ef4444'; }
+  }
+}
+
+/* Live SEO preview update */
+function updateSeoPreview() {
+  const title   = document.getElementById('ss-seo-title');
+  const desc    = document.getElementById('ss-seo-desc');
+  const pvTitle = document.getElementById('ss-preview-title');
+  const pvDesc  = document.getElementById('ss-preview-desc');
+  const titleChars = document.getElementById('ss-title-chars');
+  const descChars  = document.getElementById('ss-desc-chars');
+
+  if (title && pvTitle) {
+    const v = title.value || 'Your Store Name';
+    pvTitle.textContent = v.length > 60 ? v.substring(0,60) + '…' : v;
+    if (titleChars) titleChars.textContent = `${title.value.length} / 70 characters`;
+    titleChars && (titleChars.style.color = title.value.length > 60 ? '#ef4444' : '#94a3b8');
+  }
+  if (desc && pvDesc) {
+    const v = desc.value || 'Your store description appears here…';
+    pvDesc.textContent = v.length > 155 ? v.substring(0,155) + '…' : v;
+    if (descChars) descChars.textContent = `${desc.value.length} / 160 characters`;
+    descChars && (descChars.style.color = desc.value.length > 155 ? '#ef4444' : '#94a3b8');
+  }
+}
+
+/* Modal open/close */
+function openSiteSettings() {
+  document.getElementById('site-settings-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  loadSiteSettings();
+}
+
+function closeSiteSettings() {
+  document.getElementById('site-settings-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+/* Tab switching */
+function switchSettingsTab(tabName) {
+  document.querySelectorAll('.ss-tab').forEach(t => {
+    const active = t.dataset.ssTab === tabName;
+    t.style.color         = active ? '#2563eb' : '#64748b';
+    t.style.borderBottom  = active ? '2px solid #2563eb' : 'none';
+  });
+  document.querySelectorAll('.ss-pane').forEach(p => {
+    p.style.display = p.id === 'ss-pane-' + tabName ? 'block' : 'none';
+  });
+}
+
+/* Wire up after DOM ready */
+document.addEventListener('DOMContentLoaded', function() {
+  const id = s => document.getElementById(s);
+
+  id('close-site-settings')?.addEventListener('click', closeSiteSettings);
+  id('ss-cancel-btn')?.addEventListener('click', closeSiteSettings);
+  id('ss-save-btn')?.addEventListener('click', saveSiteSettings);
+
+  document.querySelectorAll('.ss-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchSettingsTab(tab.dataset.ssTab));
+  });
+
+  id('ss-seo-title')?.addEventListener('input', updateSeoPreview);
+  id('ss-seo-desc')?.addEventListener('input', updateSeoPreview);
+
+  /* Close on backdrop click */
+  id('site-settings-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeSiteSettings();
+  });
+
+  /* Expose so left sidebar handler can call it */
+  window.openSiteSettings = openSiteSettings;
+});
+
+
+/* ── 3. Version History Panel ────────────────────────────────────── */
+async function openVersionHistory() {
+  document.getElementById('version-history-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+
+  const siteId = getSiteIdForSettings();
+  const listEl = document.getElementById('version-list');
+
+  if (!siteId) {
+    listEl.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:32px 0;">No site selected.</p>';
+    return;
+  }
+
+  try {
+    const r = await fetch(`${API_BASE_SETTINGS}/api/sites/${siteId}/versions`, {
+      headers: { 'Authorization': 'Bearer ' + getSettingsToken() }
+    });
+    const data = await r.json();
+    const versions = data.versions || [];
+
+    if (!versions.length) {
+      listEl.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:32px 0;font-size:14px;">No published versions yet. Publish your site to create a version snapshot.</p>';
+      return;
+    }
+
+    listEl.innerHTML = versions.map((v, i) => {
+      const date = new Date(v.createdAt).toLocaleString('en-GB', {
+        day:'2-digit', month:'short', year:'numeric',
+        hour:'2-digit', minute:'2-digit'
+      });
+      return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f1f5f9;gap:12px;">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1e293b;">
+            ${i === 0 ? '<span style="background:#dcfce7;color:#166534;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-right:8px;">LATEST</span>' : ''}
+            Version ${versions.length - i}
+          </div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">${date} · by ${v.publishedBy || 'unknown'}</div>
+        </div>
+        <button onclick="restoreVersion('${siteId}','${v.id}')"
+          style="padding:8px 16px;border:1.5px solid #2563eb;border-radius:8px;background:#fff;color:#2563eb;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;"
+          onmouseover="this.style.background='#2563eb';this.style.color='#fff'"
+          onmouseout="this.style.background='#fff';this.style.color='#2563eb'">
+          Restore
+        </button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = `<p style="color:#ef4444;text-align:center;padding:32px 0;font-size:14px;">Failed to load versions: ${e.message}</p>`;
+  }
+}
+
+async function restoreVersion(siteId, versionId) {
+  if (!confirm('Restore this version? The current draft will be replaced. You can republish to make it live.')) return;
+  try {
+    const r = await fetch(`${API_BASE_SETTINGS}/api/sites/${siteId}/versions/${versionId}/restore`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getSettingsToken() }
+    });
+    if (r.ok) {
+      alert('✓ Version restored as draft! Reload the builder to see the changes.');
+      closeVersionHistory();
+      window.location.reload();
+    } else {
+      alert('✗ Restore failed. Please try again.');
+    }
+  } catch(e) { alert('Network error: ' + e.message); }
+}
+window.restoreVersion = restoreVersion;
+
+function closeVersionHistory() {
+  document.getElementById('version-history-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('close-version-modal')?.addEventListener('click', closeVersionHistory);
+  document.getElementById('version-history-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeVersionHistory();
+  });
+  window.openVersionHistory = openVersionHistory;
+});
+
+
+/* ── 4. Wire new sidebar tools ───────────────────────────────────── */
+function wireNewSidebarTools() {
+  document.querySelectorAll('.sidebar-icon[data-tool]').forEach(icon => {
+    icon.addEventListener('click', function() {
+      const tool = this.dataset.tool;
+      if (tool === 'siteSettings') { openSiteSettings && openSiteSettings(); return; }
+      if (tool === 'history')      { openVersionHistory && openVersionHistory(); return; }
+    });
+  });
+}
+setTimeout(wireNewSidebarTools, 500);
+document.addEventListener('DOMContentLoaded', wireNewSidebarTools);
+
+})(); // end IIFE
 </script>
 </html>

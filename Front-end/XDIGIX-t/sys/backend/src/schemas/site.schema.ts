@@ -39,6 +39,17 @@ export interface ISiteSettings {
     link?: string;
     dismissible?: boolean;
   };
+  analytics?: {
+    ga4MeasurementId?: string;   // G-XXXXXXXXXX
+    metaPixelId?: string;         // numeric string
+    snapchatPixelId?: string;
+    tiktokPixelId?: string;
+    googleAdsId?: string;         // AW-XXXXXXXXXX
+  };
+  customDomain?: string;
+  favicon?: string;
+  customCss?: string;              // Merchant-added CSS (sanitised server-side)
+  customJs?: string;               // Merchant-added JS  (sanitised server-side)
 }
 
 export interface ISite extends Document {
@@ -115,6 +126,16 @@ const SiteSchema = new Schema<ISite>(
         link:        { type: String, default: '' },
         dismissible: { type: Boolean, default: true },
       },
+      analytics: {
+        ga4MeasurementId: { type: String, default: '' },
+        metaPixelId:      { type: String, default: '' },
+        snapchatPixelId:  { type: String, default: '' },
+        tiktokPixelId:    { type: String, default: '' },
+        googleAdsId:      { type: String, default: '' },
+      },
+      favicon:   { type: String, default: '' },
+      customCss: { type: String, default: '' },
+      customJs:  { type: String, default: '' },
     },
     url:           { type: String },
     publicUrl:     { type: String },

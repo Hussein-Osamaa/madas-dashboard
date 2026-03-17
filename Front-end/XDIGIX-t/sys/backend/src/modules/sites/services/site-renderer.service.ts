@@ -1,4 +1,4 @@
-import type { ISite, ISection } from '../../../schemas/site.schema';
+import type { ISite, ISection, ISiteSettings } from '../../../schemas/site.schema';
 
 /* ──────────────────────────────────────────────────────────────────
    Minimal inline CSS (no CDN, no Tailwind build step needed)
@@ -136,6 +136,156 @@ function txt(value: unknown, fallback = ''): string {
   if (value == null || value === '') return fallback;
   return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+/* ── Analytics script generator ───────────────────────────────── */
+function buildAnalyticsHead(analytics: ISiteSettings['analytics']): string {
+  if (!analytics) return '';
+  const parts: string[] = [];
+
+  // ── Google Analytics 4 ─────────────────────────────────────────
+  if (analytics.ga4MeasurementId) {
+    const gid = attr(analytics.ga4MeasurementId);
+    parts.push(`<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=${gid}"></script>
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments)}
+gtag('js',new Date());
+gtag('config','${gid}',{anonymize_ip:true,cookie_flags:'SameSite=None;Secure'});
+</script>`);
+  }
+
+  // ── Google Ads conversion ───────────────────────────────────────
+  if (analytics.googleAdsId && !analytics.ga4MeasurementId) {
+    const aid = attr(analytics.googleAdsId);
+    parts.push(`<script async src="https://www.googletagmanager.com/gtag/js?id=${aid}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${aid}');</script>`);
+  }
+
+  // ── Meta (Facebook) Pixel ──────────────────────────────────────
+  if (analytics.metaPixelId) {
+    const pid = attr(analytics.metaPixelId);
+    parts.push(`<!-- Meta Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','${pid}');
+fbq('track','PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pid}&ev=PageView&noscript=1"/></noscript>`);
+  }
+
+  // ── Snapchat Pixel ─────────────────────────────────────────────
+  if (analytics.snapchatPixelId) {
+    const spid = attr(analytics.snapchatPixelId);
+    parts.push(`<!-- Snapchat Pixel -->
+<script>
+(function(e,t,n){if(e.snaptr)return;var a=e.snaptr=function(){a.handleRequest?a.handleRequest.apply(a,arguments):a.queue.push(arguments)};
+a.queue=[];var s='script';r=t.createElement(s);r.async=!0;r.src=n;var u=t.getElementsByTagName(s)[0];
+u.parentNode.insertBefore(r,u);})(window,document,'https://sc-static.net/scevent.min.js');
+snaptr('init','${spid}');
+snaptr('track','PAGE_VIEW');
+</script>`);
+  }
+
+  // ── TikTok Pixel ───────────────────────────────────────────────
+  if (analytics.tiktokPixelId) {
+    const ttid = attr(analytics.tiktokPixelId);
+    parts.push(`<!-- TikTok Pixel -->
+<script>
+!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement('script');o.type='text/javascript',o.async=!0,o.src=i+'?sdkid='+e+'&lib='+t;var a=document.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};
+ttq.load('${ttid}');ttq.page();}(window,document,'ttq');
+</script>`);
+  }
+
+  return parts.join('\n');
+}
+
+/* ── Storefront interaction tracker (inline, <4 KB) ─────────────────── */
+const STOREFRONT_TRACKER_JS = `
+(function(){
+  /* ── Unified xdTrack helper ────────────────────────────────── */
+  window.xdTrack = function(event, params) {
+    params = params || {};
+    /* GA4 */
+    if (typeof gtag !== 'undefined') {
+      gtag('event', event, params);
+    }
+    /* Meta Pixel mapping */
+    if (typeof fbq !== 'undefined') {
+      var pixelMap = {
+        'view_item':      ['ViewContent', {content_ids:[params.item_id||''],content_type:'product',value:params.value||0,currency:params.currency||'SAR'}],
+        'add_to_cart':    ['AddToCart',   {content_ids:[params.item_id||''],value:params.value||0,currency:params.currency||'SAR'}],
+        'begin_checkout': ['InitiateCheckout', {value:params.value||0,currency:params.currency||'SAR'}],
+        'purchase':       ['Purchase',    {value:params.value||0,currency:params.currency||'SAR'}],
+        'search':         ['Search',      {search_string:params.search_term||''}]
+      };
+      if (pixelMap[event]) fbq('track', pixelMap[event][0], pixelMap[event][1]);
+    }
+    /* Snapchat */
+    if (typeof snaptr !== 'undefined') {
+      var snapMap = {'view_item':'VIEW_CONTENT','add_to_cart':'ADD_CART','begin_checkout':'START_CHECKOUT','purchase':'PURCHASE'};
+      if (snapMap[event]) snaptr('track', snapMap[event]);
+    }
+    /* TikTok */
+    if (typeof ttq !== 'undefined') {
+      var ttMap = {'view_item':'ViewContent','add_to_cart':'AddToCart','begin_checkout':'InitiateCheckout','purchase':'CompletePayment'};
+      if (ttMap[event]) ttq.track(ttMap[event]);
+    }
+  };
+
+  /* ── Auto product impression via IntersectionObserver ─────── */
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) {
+          var el = e.target;
+          window.xdTrack('view_item_list', {
+            item_list_name: el.dataset.xdSection || 'section',
+            currency: document.documentElement.dataset.xdCurrency || 'SAR'
+          });
+          io.unobserve(el);
+        }
+      });
+    }, {threshold: 0.3});
+    document.querySelectorAll('[data-xd-track="impression"]').forEach(function(el){io.observe(el);});
+  }
+
+  /* ── Add-to-cart button clicks ─────────────────────────────── */
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-xd-atc]');
+    if (!btn) return;
+    window.xdTrack('add_to_cart', {
+      item_id: btn.dataset.xdProductId || '',
+      item_name: btn.dataset.xdProductName || '',
+      value: parseFloat(btn.dataset.xdPrice || '0'),
+      currency: document.documentElement.dataset.xdCurrency || 'SAR'
+    });
+  });
+
+  /* ── Announcement bar dismiss ──────────────────────────────── */
+  document.querySelectorAll('.announce-bar .close').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var bar = btn.closest('.announce-bar');
+      if (bar) { bar.style.display = 'none'; }
+    });
+  });
+
+  /* ── Mobile menu toggle ────────────────────────────────────── */
+  var mobileToggle = document.querySelector('.xd-mobile-menu-toggle');
+  var mobileMenu   = document.querySelector('.xd-mobile-menu');
+  if (mobileToggle && mobileMenu) {
+    mobileToggle.addEventListener('click', function() {
+      var open = mobileMenu.getAttribute('aria-hidden') !== 'false';
+      mobileMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
+      mobileMenu.style.display = open ? 'block' : 'none';
+      mobileToggle.setAttribute('aria-expanded', String(open));
+    });
+  }
+})();
+`;
 
 function renderSection(sec: ISection): string {
   const c = sec.content as Record<string, unknown>;
@@ -386,10 +536,15 @@ function findAnnouncement(sections: ISection[]): ISection | undefined {
 /* ── Main render function ─────────────────────────────────────── */
 export function renderSite(site: ISite): string {
   const { settings, name } = site;
-  const seo = settings?.seo || {};
-  const theme = settings?.theme || {};
+  const seo       = settings?.seo       || {};
+  const theme     = settings?.theme     || {};
+  const analytics = settings?.analytics;
+  const settingsAny = settings as unknown as Record<string, unknown>;
+  const customCss   = settingsAny?.customCss as string || '';
+  const customJs    = settingsAny?.customJs  as string || '';
+  const currency  = 'SAR'; // TODO: pull from business settings
 
-  // Override CSS variables per site theme
+  // ── CSS variables per merchant theme ────────────────────────────
   const themeVars = `
 :root{
   --c-primary:${attr(theme.primaryColor, '#27491F')};
@@ -401,53 +556,79 @@ export function renderSite(site: ISite): string {
   --br:${theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px'};
 }`;
 
-  // Google Fonts link if custom font
+  // ── Google Fonts ─────────────────────────────────────────────────
   const fontFamily = (theme.fontFamily || 'Inter').replace(/ /g, '+');
   const fontLink = fontFamily !== 'Inter'
-    ? `<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=${fontFamily}:wght@400;600;700;800&display=swap" rel="stylesheet">`
+    ? `<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=${fontFamily}:wght@400;500;600;700;800&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=${fontFamily}:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>`
     : '';
 
-  // Announcement bar (if any)
-  const annSec = findAnnouncement(site.sections);
+  // ── Sections ─────────────────────────────────────────────────────
+  const annSec         = findAnnouncement(site.sections);
   const hasAnnouncement = annSec && (annSec.content as Record<string,unknown>).enabled;
-
-  // All sections except announcement (rendered separately at top)
-  const bodySections = site.sections
+  const bodySections    = site.sections
     .filter(s => !s.hidden && s.type !== 'announcement')
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map(renderSection)
     .join('\n');
 
-  const ogImage = seo.ogImage || '';
-  const pageTitle = `${txt(seo.title || name)} | ${txt(name)}`;
+  // ── Analytics ───────────────────────────────────────────────────
+  const analyticsHead = buildAnalyticsHead(analytics);
+
+  // ── SEO / meta ──────────────────────────────────────────────────
+  const ogImage  = seo.ogImage || '';
+  const pageTitle = txt(seo.title || name);
+  const siteName  = txt(name);
+
+  // ── JSON-LD structured data ─────────────────────────────────────
+  const jsonLd = JSON.stringify({
+    '@context':   'https://schema.org',
+    '@type':      'WebSite',
+    name:         siteName,
+    description:  txt(seo.description || ''),
+    ...(seo.keywords?.length ? { keywords: seo.keywords.join(', ') } : {}),
+  });
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-xd-currency="${currency}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${pageTitle}</title>
+<meta name="robots" content="index,follow">
+<title>${pageTitle} | ${siteName}</title>
 <meta name="description" content="${attr(seo.description || '')}">
 ${seo.keywords?.length ? `<meta name="keywords" content="${attr(seo.keywords.join(', '))}">` : ''}
+<link rel="canonical" href="${attr(site.publicUrl || site.url || '')}">
 <!-- Open Graph -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="${attr(seo.title || name)}">
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="${attr(name)}">
+<meta property="og:title"       content="${attr(seo.title || name)}">
 <meta property="og:description" content="${attr(seo.description || '')}">
-${ogImage ? `<meta property="og:image" content="${attr(ogImage)}">` : ''}
+${ogImage ? `<meta property="og:image" content="${attr(ogImage)}">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">` : ''}
 <!-- Twitter Card -->
-<meta name="twitter:card" content="${ogImage ? 'summary_large_image' : 'summary'}">
-<meta name="twitter:title" content="${attr(seo.title || name)}">
+<meta name="twitter:card"        content="${ogImage ? 'summary_large_image' : 'summary'}">
+<meta name="twitter:title"       content="${attr(seo.title || name)}">
 <meta name="twitter:description" content="${attr(seo.description || '')}">
 ${ogImage ? `<meta name="twitter:image" content="${attr(ogImage)}">` : ''}
-<!-- JSON-LD -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"${attr(name)}","description":"${attr(seo.description || '')}"}</script>
+<!-- Structured Data -->
+<script type="application/ld+json">${jsonLd}</script>
+<!-- Performance hints -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 ${fontLink}
-<style>${themeVars}${BASE_CSS}</style>
+<!-- Analytics (head) -->
+${analyticsHead}
+<!-- Theme + Base Styles -->
+<style>${themeVars}${BASE_CSS}${customCss ? '\n/* Merchant custom CSS */\n' + customCss : ''}</style>
 </head>
 <body>
 ${hasAnnouncement ? renderSection(annSec!) : ''}
 ${bodySections}
+<!-- Storefront Interaction Tracker -->
+<script>${STOREFRONT_TRACKER_JS}</script>
+${customJs ? `<!-- Merchant custom JS -->\n<script>${customJs}</script>` : ''}
 </body>
 </html>`;
 }

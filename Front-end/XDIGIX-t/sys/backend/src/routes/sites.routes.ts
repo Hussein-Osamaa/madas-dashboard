@@ -3,6 +3,7 @@ import { centralJwtMiddleware } from '../middleware/central-jwt.middleware';
 import { tenantMiddleware } from '../middleware/tenant.middleware';
 import { Site } from '../schemas/site.schema';
 import { Domain } from '../schemas/domain.schema';
+import { SiteVersion } from '../schemas/site-version.schema';
 import { renderSite } from '../modules/sites/services/site-renderer.service';
 
 const router = Router();
@@ -95,14 +96,36 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
-/* ── Publish site (atomic) ────────────────────────────────────── */
+/* ── Publish site (atomic + version snapshot) ─────────────────── */
 router.post('/:id/publish', async (req: Request, res: Response) => {
   const businessId = req.businessId || req.tenantId;
   try {
+    // Snapshot current state before publishing
+    const current = await Site.findOne({ _id: req.params.id, tenantId: req.tenantId }).lean();
+    if (!current) { res.status(404).json({ error: 'Site not found' }); return; }
+
+    // Save version snapshot (keep last 15 per site)
+    const versionCount = await SiteVersion.countDocuments({ siteId: req.params.id });
+    if (versionCount >= 15) {
+      const oldest = await SiteVersion.findOne({ siteId: req.params.id }).sort({ createdAt: 1 }).lean();
+      if (oldest) await SiteVersion.deleteOne({ _id: oldest._id });
+    }
+    await SiteVersion.create({
+      siteId:      req.params.id,
+      tenantId:    req.tenantId,
+      publishedBy: req.accountPayload?.userId || req.user?.uid || 'unknown',
+      snapshot: {
+        sections: current.sections,
+        pages:    current.pages,
+        settings: current.settings,
+        name:     current.name,
+      },
+    });
+
     // Unpublish all other sites for this business
     await Site.updateMany(
       { tenantId: req.tenantId, businessId, _id: { $ne: req.params.id } },
-      { $set: { status: 'draft', isActive: false, unpublishedAt: new Date(), unpublishedReason: 'auto_unpublished_new_site' } }
+      { $set: { status: 'draft', isActive: false, unpublishedAt: new Date() } }
     );
 
     const siteUrl = getDefaultSiteUrl(req.params.id);
@@ -110,10 +133,9 @@ router.post('/:id/publish', async (req: Request, res: Response) => {
     // Publish this site
     const site = await Site.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenantId },
-      { $set: { status: 'published', isActive: true, publishedAt: new Date(), url: siteUrl, publicUrl: siteUrl, updatedAt: new Date() } },
+      { $set: { status: 'published', isActive: true, publishedAt: new Date(), url: siteUrl, publicUrl: siteUrl } },
       { new: true }
     ).lean();
-    if (!site) { res.status(404).json({ error: 'Site not found' }); return; }
 
     // Reroute all custom domains for this business to this site
     await Domain.updateMany(
@@ -121,7 +143,46 @@ router.post('/:id/publish', async (req: Request, res: Response) => {
       { $set: { siteId: req.params.id, updatedAt: new Date() } }
     );
 
-    res.json({ ...site, id: String(site._id) });
+    res.json({ ...site, id: String(site!._id) });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+/* ── Version history ──────────────────────────────────────────── */
+router.get('/:id/versions', async (req: Request, res: Response) => {
+  try {
+    const versions = await SiteVersion.find({ siteId: req.params.id, tenantId: req.tenantId })
+      .sort({ createdAt: -1 })
+      .select('-snapshot')   // omit full snapshot in list view
+      .lean();
+    res.json({ versions: versions.map(v => ({ ...v, id: String(v._id) })) });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+/* ── Rollback to a version ────────────────────────────────────── */
+router.post('/:id/versions/:versionId/restore', async (req: Request, res: Response) => {
+  try {
+    const version = await SiteVersion.findOne({
+      _id: req.params.versionId,
+      siteId: req.params.id,
+      tenantId: req.tenantId,
+    }).lean();
+    if (!version) { res.status(404).json({ error: 'Version not found' }); return; }
+
+    const { sections, pages, settings } = version.snapshot as {
+      sections: unknown; pages: unknown; settings: unknown;
+    };
+
+    const site = await Site.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
+      { $set: { sections, pages, settings, status: 'draft', isActive: false } },
+      { new: true }
+    ).lean();
+
+    res.json({ ...site, id: String(site!._id), restoredFromVersion: req.params.versionId });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }
