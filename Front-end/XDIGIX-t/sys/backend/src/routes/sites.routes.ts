@@ -230,9 +230,14 @@ router.get('/:id/render', async (req: Request, res: Response) => {
   try {
     const site = await Site.findOne({ _id: req.params.id, tenantId: req.tenantId }).lean();
     if (!site) { res.status(404).send('<h1>Site not found</h1>'); return; }
-    const html = renderSite(site as unknown as Parameters<typeof renderSite>[0]);
+    const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
+    // ETag based on updatedAt — allows 304 Not Modified
+    const etag = `"${(site as any).updatedAt?.getTime?.().toString(36) ?? 'x'}"`;
+    if (req.headers['if-none-match'] === etag) { res.status(304).end(); return; }
+    const html = renderSite(site as unknown as Parameters<typeof renderSite>[0], pageSlug);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    res.setHeader('ETag', etag);
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     res.send(html);
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
@@ -244,9 +249,13 @@ router.get('/:id/public', async (req: Request, res: Response) => {
   try {
     const site = await Site.findOne({ _id: req.params.id }).lean();
     if (!site) { res.status(404).send('<h1>Site not found</h1>'); return; }
-    const html = renderSite(site as unknown as Parameters<typeof renderSite>[0]);
+    const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
+    const etag = `"${(site as any).updatedAt?.getTime?.().toString(36) ?? 'x'}"`;
+    if (req.headers['if-none-match'] === etag) { res.status(304).end(); return; }
+    const html = renderSite(site as unknown as Parameters<typeof renderSite>[0], pageSlug);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    res.setHeader('ETag', etag);
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     res.send(html);
   } catch (err) {
     res.status(500).send('<h1>Error rendering site</h1>');

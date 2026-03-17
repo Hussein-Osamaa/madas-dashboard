@@ -9,12 +9,20 @@ export interface ISection {
   order?: number;
 }
 
+export interface ISitePageSeo {
+  title?:       string;
+  description?: string;
+  ogImage?:     string;
+  canonical?:   string;
+}
+
 export interface ISitePage {
   id: string;
   slug: string;
   name: string;
   sections: ISection[];
   order?: number;
+  seo?: ISitePageSeo;
 }
 
 export interface ISiteSettings {
@@ -84,6 +92,16 @@ const SectionSchema = new Schema<ISection>(
   { _id: false }
 );
 
+const SitePageSeoSchema = new Schema<ISitePageSeo>(
+  {
+    title:       { type: String, default: '' },
+    description: { type: String, default: '' },
+    ogImage:     { type: String, default: '' },
+    canonical:   { type: String, default: '' },
+  },
+  { _id: false }
+);
+
 const SitePageSchema = new Schema<ISitePage>(
   {
     id:       { type: String, required: true },
@@ -91,6 +109,7 @@ const SitePageSchema = new Schema<ISitePage>(
     name:     { type: String, required: true },
     sections: { type: [SectionSchema], default: [] },
     order:    { type: Number, default: 0 },
+    seo:      { type: SitePageSeoSchema, default: () => ({}) },
   },
   { _id: false }
 );

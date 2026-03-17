@@ -17,6 +17,10 @@ type Props = {
   showSidebar: boolean;
   showTheme?: boolean;
   onToggleTheme?: () => void;
+  showPages?: boolean;
+  onTogglePages?: () => void;
+  showSEO?: boolean;
+  onToggleSEO?: () => void;
   onBack: () => void;
   onSettings: () => void;
   sections: Section[];
@@ -40,6 +44,10 @@ const BuilderToolbar = ({
   showSidebar,
   showTheme = false,
   onToggleTheme,
+  showPages = false,
+  onTogglePages,
+  showSEO = false,
+  onToggleSEO,
   onBack,
   onSettings,
   sections,
@@ -177,6 +185,34 @@ const BuilderToolbar = ({
             title="Global Theme"
           >
             <span className={`material-icons text-base ${showTheme ? 'text-primary' : 'text-gray-600'}`}>palette</span>
+          </button>
+        )}
+
+        {/* Pages Panel Toggle */}
+        {onTogglePages && (
+          <button
+            type="button"
+            onClick={onTogglePages}
+            className={`p-2 rounded transition-colors ${
+              showPages ? 'bg-base text-primary' : 'text-madas-text/60 hover:text-primary'
+            }`}
+            title="Manage Pages"
+          >
+            <span className={`material-icons text-base ${showPages ? 'text-primary' : 'text-gray-600'}`}>pages</span>
+          </button>
+        )}
+
+        {/* SEO Panel Toggle */}
+        {onToggleSEO && (
+          <button
+            type="button"
+            onClick={onToggleSEO}
+            className={`p-2 rounded transition-colors ${
+              showSEO ? 'bg-base text-primary' : 'text-madas-text/60 hover:text-primary'
+            }`}
+            title="SEO Settings"
+          >
+            <span className={`material-icons text-base ${showSEO ? 'text-primary' : 'text-gray-600'}`}>travel_explore</span>
           </button>
         )}
 

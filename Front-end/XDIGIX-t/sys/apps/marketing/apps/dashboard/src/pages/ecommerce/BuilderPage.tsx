@@ -16,6 +16,8 @@ import { useUndoRedo } from '../../hooks/useUndoRedo';
 import { useAutosave, AutosaveStatus } from '../../hooks/useAutosave';
 import { ThemeProvider, useTheme, SiteTheme, DEFAULT_THEME } from '../../contexts/ThemeContext';
 import ThemePanel from '../../components/builder/ThemePanel';
+import PageManager, { SitePage } from '../../components/builder/PageManager';
+import SEOPanel from '../../components/builder/SEOPanel';
 
 /* ── Backend API helper ─────────────────────────────────────────── */
 const API_BASE = (import.meta.env.VITE_API_BACKEND_URL as string | undefined)
@@ -50,7 +52,13 @@ const BuilderPage = () => {
   const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [showTheme, setShowTheme] = useState(false);
+  const [showSEO, setShowSEO] = useState(false);
+  const [showPages, setShowPages] = useState(false);
   const [initialTheme, setInitialTheme] = useState<Partial<SiteTheme>>({});
+  const [pages, setPages] = useState<SitePage[]>([
+    { id: 'home', slug: 'home', name: 'Home', order: 0 }
+  ]);
+  const [currentPageSlug, setCurrentPageSlug] = useState('home');
   const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [showSidebar, setShowSidebar] = useState(true);
@@ -100,6 +108,9 @@ const BuilderPage = () => {
         setCurrentStatus((data.status as 'draft' | 'published') || 'draft');
         if (data.settings?.theme) {
           setInitialTheme(data.settings.theme as Partial<SiteTheme>);
+        }
+        if (data.pages?.length) {
+          setPages(data.pages as SitePage[]);
         }
 
         if (loadedSections.length === 0) {
@@ -174,6 +185,53 @@ const BuilderPage = () => {
       console.error('[BuilderPage] Theme save failed:', err);
     }
   }, [siteId]);
+
+  /** Save pages array to backend */
+  const savePages = useCallback(async (newPages: SitePage[]) => {
+    if (!siteId) return;
+    try { await sitesApi('PATCH', `/${siteId}`, { pages: newPages }); }
+    catch (err) { console.error('[BuilderPage] Failed to save pages:', err); }
+  }, [siteId]);
+
+  const handleAddPage = useCallback((name: string) => {
+    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'page';
+    const uniqueSlug = pages.some(p => p.slug === slug)
+      ? `${slug}-${Date.now()}`
+      : slug;
+    const newPage: SitePage = { id: `page-${Date.now()}`, slug: uniqueSlug, name, order: pages.length };
+    const updated = [...pages, newPage];
+    setPages(updated);
+    setCurrentPageSlug(uniqueSlug);
+    void savePages(updated);
+  }, [pages, savePages]);
+
+  const handleRenamePage = useCallback((id: string, name: string) => {
+    const updated = pages.map(p => p.id === id ? { ...p, name } : p);
+    setPages(updated);
+    void savePages(updated);
+  }, [pages, savePages]);
+
+  const handleDeletePage = useCallback((id: string) => {
+    const page = pages.find(p => p.id === id);
+    if (!page || page.slug === 'home') return;
+    const updated = pages.filter(p => p.id !== id).map((p, i) => ({ ...p, order: i }));
+    setPages(updated);
+    if (currentPageSlug === page.slug) setCurrentPageSlug('home');
+    void savePages(updated);
+  }, [pages, currentPageSlug, savePages]);
+
+  const handleReorderPages = useCallback((newPages: SitePage[]) => {
+    setPages(newPages);
+    void savePages(newPages);
+  }, [savePages]);
+
+  const handleUpdatePageSeo = useCallback((seo: NonNullable<SitePage['seo']>) => {
+    const updated = pages.map(p => p.slug === currentPageSlug ? { ...p, seo } : p);
+    setPages(updated);
+    void savePages(updated);
+  }, [pages, currentPageSlug, savePages]);
+
+  const currentPage = pages.find(p => p.slug === currentPageSlug) ?? pages[0];
 
   const handleAddSection = useCallback((type: SectionType, initialData?: Record<string, any>) => {
     const defaultData = getDefaultSectionData(type);
@@ -360,6 +418,10 @@ const BuilderPage = () => {
         showSidebar={showSidebar}
         showTheme={showTheme}
         onToggleTheme={() => setShowTheme((prev) => !prev)}
+        showPages={showPages}
+        onTogglePages={() => setShowPages((prev) => !prev)}
+        showSEO={showSEO}
+        onToggleSEO={() => setShowSEO((prev) => !prev)}
         onBack={() => navigate('/ecommerce/website-builder')}
         onSettings={() => navigate(`/ecommerce/website-settings?siteId=${siteId}`)}
         sections={sections}
@@ -373,6 +435,21 @@ const BuilderPage = () => {
       />
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Pages Panel — left side */}
+        {showPages && (
+          <div className="w-64 border-r border-gray-200 bg-white flex flex-col overflow-hidden flex-shrink-0">
+            <PageManager
+              pages={pages}
+              currentSlug={currentPageSlug}
+              onSelectPage={setCurrentPageSlug}
+              onAddPage={handleAddPage}
+              onRenamePage={handleRenamePage}
+              onDeletePage={handleDeletePage}
+              onReorderPages={handleReorderPages}
+            />
+          </div>
+        )}
+
         {/* Main Canvas */}
         <div className="flex-1 overflow-auto">
           <BuilderCanvas
@@ -492,6 +569,18 @@ const BuilderPage = () => {
             <ThemePanel
               onClose={() => setShowTheme(false)}
               onSave={handleThemeSave}
+            />
+          </div>
+        )}
+
+        {/* SEO Panel — per-page SEO settings */}
+        {showSEO && currentPage && (
+          <div className="w-80 border-l border-gray-200 bg-white flex flex-col overflow-hidden flex-shrink-0">
+            <SEOPanel
+              page={currentPage}
+              siteName={siteName}
+              onUpdate={handleUpdatePageSeo}
+              onClose={() => setShowSEO(false)}
             />
           </div>
         )}

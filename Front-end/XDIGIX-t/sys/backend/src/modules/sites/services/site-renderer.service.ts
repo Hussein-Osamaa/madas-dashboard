@@ -534,15 +534,38 @@ function findAnnouncement(sections: ISection[]): ISection | undefined {
 }
 
 /* ── Main render function ─────────────────────────────────────── */
-export function renderSite(site: ISite): string {
+export function renderSite(site: ISite, pageSlug?: string): string {
   const { settings, name } = site;
-  const seo       = settings?.seo       || {};
+  const globalSeo = settings?.seo || {};
   const theme     = settings?.theme     || {};
   const analytics = settings?.analytics;
   const settingsAny = settings as unknown as Record<string, unknown>;
   const customCss   = settingsAny?.customCss as string || '';
   const customJs    = settingsAny?.customJs  as string || '';
   const currency  = 'SAR'; // TODO: pull from business settings
+
+  // ── Resolve which page to render ────────────────────────────────
+  // pageSlug === undefined or 'home' → use flat site.sections (legacy + default)
+  // pageSlug === something → look up site.pages by slug
+  let activeSections = site.sections || [];
+  let pageSeo: Record<string, string> = {};
+
+  if (pageSlug && pageSlug !== 'home' && site.pages?.length) {
+    const page = site.pages.find(p => p.slug === pageSlug);
+    if (page) {
+      activeSections = page.sections?.length ? page.sections : site.sections;
+      pageSeo = (page.seo || {}) as Record<string, string>;
+    }
+  }
+
+  // Merge SEO: page-level takes priority over site-level
+  const seo = {
+    title:       pageSeo.title       || globalSeo.title       || '',
+    description: pageSeo.description || globalSeo.description || '',
+    ogImage:     pageSeo.ogImage     || globalSeo.ogImage     || '',
+    keywords:    globalSeo.keywords  || [],
+    canonical:   pageSeo.canonical   || '',
+  };
 
   // ── CSS variables per merchant theme ────────────────────────────
   const themeVars = `
@@ -565,9 +588,9 @@ export function renderSite(site: ISite): string {
     : '';
 
   // ── Sections ─────────────────────────────────────────────────────
-  const annSec         = findAnnouncement(site.sections);
+  const annSec         = findAnnouncement(activeSections);
   const hasAnnouncement = annSec && (annSec.content as Record<string,unknown>).enabled;
-  const bodySections    = site.sections
+  const bodySections    = activeSections
     .filter(s => !s.hidden && s.type !== 'announcement')
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map(renderSection)
@@ -599,7 +622,7 @@ export function renderSite(site: ISite): string {
 <title>${pageTitle} | ${siteName}</title>
 <meta name="description" content="${attr(seo.description || '')}">
 ${seo.keywords?.length ? `<meta name="keywords" content="${attr(seo.keywords.join(', '))}">` : ''}
-<link rel="canonical" href="${attr(site.publicUrl || site.url || '')}">
+<link rel="canonical" href="${attr(seo.canonical || site.publicUrl || site.url || '')}">
 <!-- Open Graph -->
 <meta property="og:type"        content="website">
 <meta property="og:site_name"   content="${attr(name)}">
