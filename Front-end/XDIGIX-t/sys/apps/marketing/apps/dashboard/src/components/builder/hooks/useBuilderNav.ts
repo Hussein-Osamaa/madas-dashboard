@@ -27,12 +27,16 @@ export function useBuilderNav() {
   const pushBlock = useCallback((blockKey: string, label: string) => {
     setStack((prev) => {
       const base = prev.slice(0, 2);
+      if (base.length < 2) return prev; // called before pushSection — ignore
       return [...base, { view: 'block', label, blockKey }];
     });
   }, []);
 
   const goTo = useCallback((index: number) => {
-    setStack((prev) => prev.slice(0, index + 1));
+    setStack((prev) => {
+      const safeIndex = Math.max(0, Math.min(index, prev.length - 1));
+      return prev.slice(0, safeIndex + 1);
+    });
   }, []);
 
   const reset = useCallback(() => {
