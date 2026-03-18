@@ -1136,7 +1136,11 @@ export function renderSite(site: ISite, pageSlug?: string): string {
     const secData = getSectionData(s);
     return [{ ...entry, sectionData: secData }];
   });
-  const xdManifest = JSON.stringify({
+  // safeJson: escape </script> so the HTML parser never closes the tag early
+  const safeJson = (obj: unknown) =>
+    JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
+
+  const xdManifest = safeJson({
     tenantId: site.tenantId ?? '',
     apiBase,
     currency,
@@ -1149,7 +1153,7 @@ export function renderSite(site: ISite, pageSlug?: string): string {
   // ── JSON-LD ─────────────────────────────────────────────────────
   const pageTitle = txt(seo.title || name);
   const siteName2 = txt(name);
-  const jsonLd    = JSON.stringify({
+  const jsonLd    = safeJson({
     '@context': 'https://schema.org',
     '@type':    'WebSite',
     name:       siteName2,
