@@ -211,6 +211,10 @@ function hydrateSection(entry){
   /* If endpoint is still a relative /api/... path, make absolute using apiBase origin */
   var url=endpoint;
   if(!url)return;
+  /* If section declares specific product IDs, fetch only those */
+  if(entry.selectedProductIds&&entry.selectedProductIds.length>0){
+    url+=(url.indexOf('?')>=0?'&':'?')+'ids='+entry.selectedProductIds.join(',');
+  }
 
   var cacheKey='xd-cache-'+entry.id;
   var ttl=binding.cacheTtlMs||0;

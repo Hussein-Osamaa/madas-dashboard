@@ -94,6 +94,12 @@ router.get('/:tenantId/products', catalogLimiter, async (req: Request, res: Resp
   if (search) {
     filter['data.name'] = { $regex: search, $options: 'i' };
   }
+  // Filter by specific product IDs (used by sections with selectedProducts)
+  const ids = req.query.ids as string | undefined;
+  if (ids) {
+    const idList = ids.split(',').slice(0, 100).map((s: string) => s.trim()).filter(Boolean);
+    if (idList.length > 0) filter['docId'] = { $in: idList };
+  }
 
   const [docs, total] = await Promise.all([
     FirestoreDoc.find(filter)

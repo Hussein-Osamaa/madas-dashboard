@@ -2,6 +2,13 @@ import type { ISite, ISection, ISiteSettings } from '../../../schemas/site.schem
 import { STOREFRONT_RUNTIME_JS } from '../storefront-runtime';
 import { buildSectionManifestEntry } from '../../../registry/serverSectionRegistry';
 
+/**
+ * Set by renderSite before rendering sections — gives sub-functions access to the
+ * storefront base path (e.g. "/my-store" or "/site/abc123") without threading it
+ * through every render-function signature.
+ */
+let _sfBase = '';
+
 /* ─────────────────────────────────────────────────────────────────────
    UTILITY HELPERS
 ───────────────────────────────────────────────────────────────────── */
@@ -251,6 +258,11 @@ ul,ol{list-style:none}
 .xd-product-price{font-weight:800;color:var(--c-primary);font-size:1.1rem}
 .xd-product-compare{text-decoration:line-through;opacity:.5;font-size:.875rem;margin-left:.5rem}
 .xd-product-btn{margin-top:.5rem;padding:.625rem;font-size:.875rem;border-radius:8px}
+@keyframes xd-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.xd-skel{pointer-events:none}
+.xd-skel-img{aspect-ratio:1;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200%;animation:xd-pulse 1.5s ease-in-out infinite}
+.xd-skel-line{height:.85rem;background:#f0f0f0;border-radius:4px;margin-bottom:.5rem;animation:xd-pulse 1.5s ease-in-out infinite}
+.xd-skel-btn{height:2.2rem;background:#f0f0f0;border-radius:8px;margin-top:.5rem;animation:xd-pulse 1.5s ease-in-out infinite}
 .xd-testimonial-card{background:#fff;border-radius:var(--br);border:1px solid #e5e7eb;
   padding:1.75rem;display:flex;flex-direction:column;gap:1rem}
 .xd-stars{display:flex;gap:2px}
@@ -521,10 +533,47 @@ function renderFeatures(c: Record<string, unknown>): string {
 </section>`;
 }
 
+function productCard(p: Record<string, unknown>, ctaLabel: string): string {
+  const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
+  const display = p.sellingPrice || p.salePrice || p.price;
+  const detailHref = `${_sfBase}/products/${attr(p.id as string)}`;
+  return `
+    <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
+      <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
+        <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
+        ${onSale ? '<span class="xd-product-badge">Sale</span>' : ''}
+      </a>
+      <div class="xd-product-body">
+        <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
+        ${display ? `<div><span class="xd-product-price">${txt(display)} SAR</span>${onSale ? `<span class="xd-product-compare">${txt(p.price)} SAR</span>` : ''}</div>` : ''}
+        <a href="${attr(p.link as string, detailHref)}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
+           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
+           data-xd-product-name="${attr(p.name as string)}"
+           data-xd-price="${attr(String(p.price || 0))}">${ctaLabel}</a>
+      </div>
+    </div>`;
+}
+
+function skeletonCard(): string {
+  return `
+    <div class="xd-product-card xd-skel">
+      <div class="xd-product-img-wrap xd-skel-img"></div>
+      <div class="xd-product-body">
+        <div class="xd-skel-line" style="width:80%"></div>
+        <div class="xd-skel-line" style="width:50%"></div>
+        <div class="xd-skel-btn"></div>
+      </div>
+    </div>`;
+}
+
 function renderProducts(c: Record<string, unknown>): string {
   const prods   = (c.selectedProducts as Array<Record<string, unknown>>) || [];
   const colsN   = Number(c.columns) || 3;
   const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
+  // If no products selected, show skeleton cards — runtime will hydrate with live data
+  const cards = prods.length > 0
+    ? prods.map(p => productCard(p, 'Add to Cart')).join('')
+    : Array.from({ length: colsN }, () => skeletonCard()).join('');
   return `
 <section class="xd-section">
 <div class="xd-container">
@@ -532,61 +581,61 @@ function renderProducts(c: Record<string, unknown>): string {
     <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Products')}</h2>
     ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
   </div>
-  <div class="${colsCls}" data-xd-grid>
-    ${prods.map(p => {
-      const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
-      const display = p.sellingPrice || p.salePrice || p.price;
-      return `
-    <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
-      <div class="xd-product-img-wrap">
-        <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
-        ${onSale ? '<span class="xd-product-badge">Sale</span>' : ''}
-      </div>
-      <div class="xd-product-body">
-        <p class="xd-product-name">${txt(p.name as string)}</p>
-        ${display ? `<div><span class="xd-product-price">${txt(display)} SAR</span>${onSale ? `<span class="xd-product-compare">${txt(p.price)} SAR</span>` : ''}</div>` : ''}
-        <a href="${attr(p.link as string, '#')}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
-           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
-           data-xd-product-name="${attr(p.name as string)}"
-           data-xd-price="${attr(String(p.price || 0))}">Add to Cart</a>
-      </div>
-    </div>`;
-    }).join('')}
+  <div class="${colsCls}" data-xd-grid>${cards}
   </div>
 </div>
 </section>`;
 }
 
-function renderDeals(c: Record<string, unknown>): string {
+function renderDeals(c: Record<string, unknown>, sectionId: string): string {
   const prods   = (c.selectedProducts as Array<Record<string, unknown>>) || [];
   const colsN   = Number(c.columns) || 3;
   const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
-  return `
-<section class="xd-section">
-<div class="xd-container">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem">
-    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Hot Deals')}</h2>
-    ${c.viewMoreText ? `<a href="${attr(c.viewMoreLink as string, '#')}" class="xd-btn xd-btn-secondary xd-btn-sm">${txt(c.viewMoreText as string)}</a>` : ''}
-  </div>
-  <div class="${colsCls}" data-xd-grid>
-    ${prods.map(p => `
+  const cdId    = `xd-cd-${sectionId}`;
+  const endDate = attr(c.countdownEndDate as string || c.endDate as string || '');
+  const cards = prods.length > 0
+    ? prods.map(p => {
+        const detailHref = `${_sfBase}/products/${attr(p.id as string)}`;
+        return `
     <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
-      <div class="xd-product-img-wrap">
+      <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
         <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Deal')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
         <span class="xd-product-badge">Sale</span>
-      </div>
+      </a>
       <div class="xd-product-body">
-        <p class="xd-product-name">${txt(p.name as string)}</p>
+        <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
         <div>
           <span class="xd-product-price">${txt(p.salePrice || p.sellingPrice || p.price)} SAR</span>
           ${p.compareAtPrice || (p.salePrice && p.price) ? `<span class="xd-product-compare">${txt(p.compareAtPrice || p.price)} SAR</span>` : ''}
         </div>
-        <a href="#" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
+        <a href="${detailHref}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
            data-xd-atc data-xd-product-id="${attr(p.id as string)}"
            data-xd-product-name="${attr(p.name as string)}"
            data-xd-price="${attr(String(p.salePrice || p.price || 0))}">Shop Now</a>
       </div>
-    </div>`).join('')}
+    </div>`;
+      }).join('')
+    : Array.from({ length: colsN }, () => skeletonCard()).join('');
+
+  const countdown = (c.showCountdown !== false && endDate) ? `
+  <div class="xd-countdown xd-reveal" id="${cdId}"
+       data-xd-countdown="${endDate}"
+       data-xd-expired="${attr(c.countdownExpiredMessage as string || 'Deal has ended.')}">
+    <div class="xd-countdown-block"><span class="xd-countdown-num" id="${cdId}-d">00</span><span class="xd-countdown-lbl">Days</span></div>
+    <div class="xd-countdown-block"><span class="xd-countdown-num" id="${cdId}-h">00</span><span class="xd-countdown-lbl">Hours</span></div>
+    <div class="xd-countdown-block"><span class="xd-countdown-num" id="${cdId}-m">00</span><span class="xd-countdown-lbl">Mins</span></div>
+    <div class="xd-countdown-block"><span class="xd-countdown-num" id="${cdId}-s">00</span><span class="xd-countdown-lbl">Secs</span></div>
+  </div>` : '';
+
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:${countdown ? '1.5rem' : '2rem'}">
+    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Hot Deals')}</h2>
+    ${c.viewMoreText ? `<a href="${attr(c.viewMoreLink as string, _sfBase + '/products')}" class="xd-btn xd-btn-secondary xd-btn-sm">${txt(c.viewMoreText as string)}</a>` : ''}
+  </div>
+  ${countdown}
+  <div class="${colsCls}" style="${countdown ? 'margin-top:2rem' : ''}" data-xd-grid>${cards}
   </div>
 </div>
 </section>`;
@@ -1035,7 +1084,7 @@ function renderSection(sec: ISection, siteName: string): string {
     case 'hero':         html = renderHero(c);         break;
     case 'features':     html = renderFeatures(c);     break;
     case 'products':     html = renderProducts(c);     break;
-    case 'deals':        html = renderDeals(c);        break;
+    case 'deals':        html = renderDeals(c, sec.id); break;
     case 'collections':  html = renderCollections(c);  break;
     case 'testimonials': html = renderTestimonials(c); break;
     case 'cta':          html = renderCTA(c);          break;
@@ -1129,12 +1178,23 @@ export function renderSite(site: ISite, pageSlug?: string): string {
 
   // ── xd-manifest (storefront runtime reads this for live hydration) ──
   const apiBase = (process.env.PUBLIC_API_BASE ?? '/api/public').replace(/\/$/, '');
+  const storefrontBase = (site as unknown as Record<string, unknown>).slug
+    ? `/${(site as unknown as Record<string, unknown>).slug}`
+    : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+  _sfBase = storefrontBase;
+
   const manifestSections = sortedSections.flatMap(s => {
     const entry = buildSectionManifestEntry(s.id, s.type);
     if (!entry) return [];
-    // attach section's own data so runtime can forward params to API
     const secData = getSectionData(s);
-    return [{ ...entry, sectionData: secData }];
+    const mEntry: Record<string, unknown> = { ...entry };
+    // For product-type sections, embed selected IDs so runtime fetches only those
+    if (s.type === 'products' || s.type === 'deals') {
+      const sel = (secData.selectedProducts as Array<Record<string, unknown>> | undefined) ?? [];
+      const selIds = sel.map((p) => String(p.id ?? p.docId ?? '')).filter(Boolean);
+      if (selIds.length > 0) mEntry.selectedProductIds = selIds;
+    }
+    return [mEntry];
   });
   // safeJson: escape </script> so the HTML parser never closes the tag early
   const safeJson = (obj: unknown) =>
@@ -1143,6 +1203,7 @@ export function renderSite(site: ISite, pageSlug?: string): string {
   const xdManifest = safeJson({
     tenantId: site.tenantId ?? '',
     apiBase,
+    storefrontBase,
     currency,
     sections: manifestSections,
   });
@@ -1273,4 +1334,305 @@ export function renderFromLayout(
   };
 
   return renderSite(fakeSite as ISite);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   STOREFRONT EXTRA PAGES
+   All-products listing and single product detail page.
+   Both pages reuse the site's theme, navbar, and footer.
+───────────────────────────────────────────────────────────────────── */
+
+type ProductData = Record<string, unknown>;
+
+/** Extract navbar + footer HTML from a site's sections */
+function extractShell(site: ISite): { navbar: string; footer: string } {
+  const siteName = txt(site.name);
+  let navbar = '';
+  let footer = '';
+  const sections = site.sections || [];
+  for (const s of sections) {
+    if (s.type === 'navbar' || s.type === 'banner') {
+      navbar += addSectionAttrs(renderNavbar(getSectionData(s)), s.id, s.type);
+    }
+    if (s.type === 'footer') {
+      footer += addSectionAttrs(renderFooter(getSectionData(s), siteName), s.id, s.type);
+    }
+  }
+  return { navbar, footer };
+}
+
+/** Shared page shell HTML (head + theme + runtime) */
+function pageShell(
+  site: ISite,
+  title: string,
+  bodyHtml: string,
+  extraMeta = '',
+): string {
+  const { settings, name } = site;
+  const theme   = (settings?.theme as Record<string, unknown>) || {};
+  const themeVars = `:root{
+  --c-primary:${attr((theme.primaryColor   || theme.colorPrimary   || '#27491F') as string)};
+  --c-secondary:${attr((theme.secondaryColor || theme.colorSecondary || '#F0CAE1') as string)};
+  --c-accent:${attr((theme.accentColor    || theme.colorAccent    || '#FFD300') as string)};
+  --c-bg:${attr((theme.backgroundColor   || theme.colorBg        || '#ffffff') as string)};
+  --c-text:${attr((theme.textColor        || theme.colorText      || '#171817') as string)};
+  --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
+  --br:${theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px'};
+}`;
+  const storefrontBase = (site as unknown as Record<string, unknown>).slug
+    ? `/${(site as unknown as Record<string, unknown>).slug}`
+    : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+  _sfBase = storefrontBase;
+  const safeJson  = (obj: unknown) => JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
+  const apiBase   = (process.env.PUBLIC_API_BASE ?? '/api/public').replace(/\/$/, '');
+  const manifest  = safeJson({ tenantId: site.tenantId ?? '', apiBase, storefrontBase, currency: 'SAR', sections: [] });
+  const { navbar, footer } = extractShell(site);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${txt(title)} | ${txt(name)}</title>
+${extraMeta}
+<script id="xd-manifest" type="application/json">${manifest}</script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></noscript>
+<style>${themeVars}${BASE_CSS}
+.xd-page-hero{padding:clamp(2rem,5vw,4rem) 0;text-align:center;background:color-mix(in srgb,var(--c-primary) 6%,transparent)}
+.xd-search-bar{display:flex;gap:.75rem;max-width:560px;margin:1.5rem auto 0;padding:0 1rem}
+.xd-search-input{flex:1;padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br);font-size:1rem;font-family:inherit;outline:none}
+.xd-search-input:focus{border-color:var(--c-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)}
+.xd-breadcrumb{display:flex;align-items:center;gap:.5rem;font-size:.875rem;opacity:.65;margin-bottom:1.5rem;flex-wrap:wrap}
+.xd-breadcrumb a{color:inherit;text-decoration:none}.xd-breadcrumb a:hover{text-decoration:underline}
+.xd-pd-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4rem);align-items:start}
+@media(max-width:768px){.xd-pd-grid{grid-template-columns:1fr}}
+.xd-pd-images{display:flex;flex-direction:column;gap:.75rem}
+.xd-pd-main-img{aspect-ratio:1;width:100%;object-fit:cover;border-radius:var(--br);background:#f9f9f9}
+.xd-pd-thumbs{display:flex;gap:.5rem;flex-wrap:wrap}
+.xd-pd-thumb{width:72px;height:72px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:border-color .2s}
+.xd-pd-thumb:hover,.xd-pd-thumb.active{border-color:var(--c-primary)}
+.xd-pd-info{display:flex;flex-direction:column;gap:1.25rem}
+.xd-pd-name{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;line-height:1.2}
+.xd-pd-price-row{display:flex;align-items:center;gap:.75rem}
+.xd-pd-price{font-size:1.75rem;font-weight:800;color:var(--c-primary)}
+.xd-pd-compare{font-size:1.1rem;text-decoration:line-through;opacity:.45}
+.xd-pd-badge{background:#ef4444;color:#fff;font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:999px}
+.xd-pd-desc{font-size:.975rem;line-height:1.75;opacity:.8}
+.xd-pd-variants{display:flex;flex-direction:column;gap:.75rem}
+.xd-pd-variants-label{font-weight:600;font-size:.9rem}
+.xd-pd-variant-grid{display:flex;gap:.5rem;flex-wrap:wrap}
+.xd-pd-variant{padding:.4rem .9rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem;cursor:pointer;transition:all .2s}
+.xd-pd-variant:hover{border-color:var(--c-primary)}
+.xd-pd-variant.selected{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.xd-pd-variant.oos{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.xd-pd-qty{display:flex;align-items:center;gap:.75rem}
+.xd-pd-qty-btn{width:36px;height:36px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.xd-pd-qty-btn:hover{border-color:var(--c-primary);color:var(--c-primary)}
+.xd-pd-qty-val{font-weight:700;font-size:1.1rem;min-width:1.5rem;text-align:center}
+.xd-pd-atc{width:100%;padding:1rem;font-size:1.05rem;margin-top:.5rem}
+.xd-pd-meta{font-size:.85rem;opacity:.55;display:flex;flex-direction:column;gap:.3rem}
+</style>
+</head>
+<body>
+${navbar}
+${bodyHtml}
+${footer}
+<script defer>${STOREFRONT_RUNTIME_JS}</script>
+</body>
+</html>`;
+}
+
+/**
+ * Render the "All Products" storefront page.
+ * Shows a searchable, filterable grid of products from the tenant's inventory.
+ */
+export function renderAllProductsPage(
+  site: ISite,
+  products: ProductData[],
+  total = 0,
+  page  = 1,
+): string {
+  const sfBase = (site as unknown as Record<string, unknown>).slug
+    ? `/${(site as unknown as Record<string, unknown>).slug}`
+    : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+
+  const cards = products.map(p => {
+    const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
+    const display = p.sellingPrice || p.salePrice || p.price;
+    const detailHref = `${sfBase}/products/${attr(p.id as string)}`;
+    return `
+    <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
+      <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
+        <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
+        ${onSale ? '<span class="xd-product-badge">Sale</span>' : ''}
+      </a>
+      <div class="xd-product-body">
+        <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
+        ${display ? `<div><span class="xd-product-price">${txt(display)} SAR</span>${onSale ? `<span class="xd-product-compare">${txt(p.price)} SAR</span>` : ''}</div>` : ''}
+        <a href="${detailHref}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
+           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
+           data-xd-product-name="${attr(p.name as string)}"
+           data-xd-price="${attr(String(p.price || 0))}">Add to Cart</a>
+      </div>
+    </div>`;
+  }).join('');
+
+  const limit = 20;
+  const totalPages = Math.ceil(total / limit);
+  const paginationLinks = totalPages > 1 ? `
+    <div style="display:flex;justify-content:center;gap:.5rem;margin-top:3rem;flex-wrap:wrap">
+      ${Array.from({ length: totalPages }, (_, i) => {
+        const p2 = i + 1;
+        const active = p2 === page;
+        return `<a href="${sfBase}/products?page=${p2}" class="xd-btn xd-btn-sm ${active ? 'xd-btn-primary' : 'xd-btn-secondary'}">${p2}</a>`;
+      }).join('')}
+    </div>` : '';
+
+  const emptyState = products.length === 0
+    ? `<div style="text-align:center;padding:4rem 0;opacity:.5">
+         <span class="material-icons" style="font-size:4rem;display:block;margin-bottom:1rem">inventory_2</span>
+         <p style="font-size:1.1rem">No products found</p>
+       </div>` : '';
+
+  const body = `
+<div class="xd-page-hero">
+  <div class="xd-container">
+    <h1 class="xd-h2">All Products</h1>
+    <p class="xd-lead" style="opacity:.7;margin-inline:auto">${txt(total)} products available</p>
+    <form class="xd-search-bar" action="${sfBase}/products" method="get">
+      <input class="xd-search-input" type="search" name="search" placeholder="Search products…" autocomplete="off">
+      <button class="xd-btn xd-btn-primary" type="submit">Search</button>
+    </form>
+  </div>
+</div>
+<section class="xd-section">
+<div class="xd-container">
+  <nav class="xd-breadcrumb" aria-label="Breadcrumb">
+    <a href="${sfBase}">Home</a><span>›</span><span>All Products</span>
+  </nav>
+  <div class="xd-grid-3" data-xd-grid>
+    ${cards}
+    ${emptyState}
+  </div>
+  ${paginationLinks}
+</div>
+</section>`;
+
+  return pageShell(site, 'All Products', body);
+}
+
+/**
+ * Render a single product detail page.
+ */
+export function renderProductDetailPage(site: ISite, product: ProductData): string {
+  const sfBase = (site as unknown as Record<string, unknown>).slug
+    ? `/${(site as unknown as Record<string, unknown>).slug}`
+    : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+
+  const name      = txt(product.name as string || 'Product');
+  const price     = product.sellingPrice || product.salePrice || product.price;
+  const compare   = product.compareAtPrice || (product.onSale ? product.price : null);
+  const onSale    = product.onSale || (product.salePrice && Number(product.salePrice) < Number(product.price));
+  const images    = (product.images as string[]) || (product.image ? [product.image as string] : []);
+  const mainImg   = images[0] || 'https://placehold.co/600/f5f5f5/999?text=Product';
+  const stock     = (product.stock as Record<string, number>) || {};
+  const variants  = Object.keys(stock);
+  const desc      = txt(product.description as string || '');
+  const pid       = attr(product.id as string || product.docId as string || '');
+  const sku       = product.sku ? `<span>SKU: ${txt(product.sku as string)}</span>` : '';
+
+  const thumbs = images.length > 1
+    ? `<div class="xd-pd-thumbs">
+        ${images.map((img, i) =>
+          `<img src="${attr(img)}" alt="${name} image ${i + 1}" class="xd-pd-thumb${i === 0 ? ' active' : ''}"
+               loading="lazy" onclick="
+                 document.getElementById('xd-pd-main').src=this.src;
+                 document.querySelectorAll('.xd-pd-thumb').forEach(function(t){t.classList.remove('active')});
+                 this.classList.add('active');">`
+        ).join('')}
+      </div>` : '';
+
+  const variantHtml = variants.length > 0 ? `
+    <div class="xd-pd-variants">
+      <span class="xd-pd-variants-label">Select Size</span>
+      <div class="xd-pd-variant-grid">
+        ${variants.map(v => {
+          const qty = stock[v] || 0;
+          return `<button type="button" class="xd-pd-variant${qty <= 0 ? ' oos' : ''}"
+            onclick="if(!this.classList.contains('oos')){document.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');document.getElementById('xd-pd-atc').setAttribute('data-xd-variant',this.textContent.trim());}"
+            ${qty <= 0 ? 'disabled' : ''}>${txt(v)}${qty <= 0 ? ' (OOS)' : ''}</button>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  const safeJson = (obj: unknown) => JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
+  const ldJson = safeJson({
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: String(product.name || ''),
+    description: String(product.description || ''),
+    image: images,
+    offers: {
+      '@type': 'Offer',
+      price: String(price || 0),
+      priceCurrency: 'SAR',
+      availability: variants.length === 0 || Object.values(stock).some(q => q > 0)
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+    },
+  });
+
+  const body = `
+<script type="application/ld+json">${ldJson}</script>
+<section class="xd-section">
+<div class="xd-container">
+  <nav class="xd-breadcrumb" aria-label="Breadcrumb">
+    <a href="${sfBase}">Home</a><span>›</span>
+    <a href="${sfBase}/products">Products</a><span>›</span>
+    <span>${name}</span>
+  </nav>
+  <div class="xd-pd-grid">
+    <!-- Images -->
+    <div class="xd-pd-images">
+      <img id="xd-pd-main" src="${attr(mainImg)}" alt="${name}" class="xd-pd-main-img" width="600" height="600">
+      ${thumbs}
+    </div>
+    <!-- Info -->
+    <div class="xd-pd-info">
+      <h1 class="xd-pd-name">${name}</h1>
+      <div class="xd-pd-price-row">
+        <span class="xd-pd-price">${txt(price)} SAR</span>
+        ${onSale && compare ? `<span class="xd-pd-compare">${txt(compare)} SAR</span><span class="xd-pd-badge">Sale</span>` : ''}
+      </div>
+      ${desc ? `<p class="xd-pd-desc">${desc}</p>` : ''}
+      ${variantHtml}
+      <div class="xd-pd-qty" id="xd-pd-qty">
+        <button type="button" class="xd-pd-qty-btn" aria-label="Decrease" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=Math.max(1,parseInt(v.textContent)-1)">−</button>
+        <span id="xd-pd-qty-val" class="xd-pd-qty-val">1</span>
+        <button type="button" class="xd-pd-qty-btn" aria-label="Increase" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=parseInt(v.textContent)+1">+</button>
+      </div>
+      <a id="xd-pd-atc" href="#"
+         class="xd-btn xd-btn-primary xd-pd-atc"
+         data-xd-atc
+         data-xd-product-id="${pid}"
+         data-xd-product-name="${attr(product.name as string)}"
+         data-xd-price="${attr(String(price || 0))}">
+        <span class="material-icons" aria-hidden="true" style="font-size:1.2rem">shopping_cart</span>
+        Add to Cart
+      </a>
+      <div class="xd-pd-meta">
+        ${sku}
+        ${product.collectionId ? `<span>Collection: ${txt(product.collectionId as string)}</span>` : ''}
+      </div>
+    </div>
+  </div>
+</div>
+</section>`;
+
+  return pageShell(site, String(product.name || 'Product'), body,
+    `<meta name="description" content="${attr(String(product.description || '').slice(0, 160))}">
+<meta property="og:type" content="product">
+<meta property="og:title" content="${attr(String(product.name || ''))}">
+${mainImg ? `<meta property="og:image" content="${attr(mainImg)}">` : ''}`);
 }
