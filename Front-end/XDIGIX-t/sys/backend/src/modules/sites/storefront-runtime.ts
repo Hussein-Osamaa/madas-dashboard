@@ -88,7 +88,7 @@ function fetchJSON(url,opts,ms){
 
 /* ── 5. Public API helpers ──────────────────────────────────────────── */
 function publicUrl(path){
-  return apiBase.replace(/\/$/,'')+'/'+tenantId+path;
+  return apiBase.replace(/\\/$/,'')+'/'+tenantId+path;
 }
 function cartFetch(method,path,body){
   var token=getToken();
