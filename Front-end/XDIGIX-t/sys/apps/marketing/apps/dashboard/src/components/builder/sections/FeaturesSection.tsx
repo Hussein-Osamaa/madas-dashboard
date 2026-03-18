@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { FeaturesSectionData } from '../../../types/builder';
+import { stripHtml } from './sanitizeHtml';
 
 type Props = {
   data: FeaturesSectionData;
@@ -35,10 +36,9 @@ const FeaturesSection = ({ data, style }: Props) => {
               <div key={index} className="text-center p-4 sm:p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
                 <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">{item.icon}</div>
                 <h3 className="text-lg sm:text-xl font-semibold text-primary mb-2">{item.title}</h3>
-                <div 
-                  className="text-sm sm:text-base text-madas-text/70"
-                  dangerouslySetInnerHTML={{ __html: item.description || 'Description here' }}
-                />
+                <p className="text-sm sm:text-base text-madas-text/70">
+                  {stripHtml(item.description || 'Description here')}
+                </p>
               </div>
             ))
           )}

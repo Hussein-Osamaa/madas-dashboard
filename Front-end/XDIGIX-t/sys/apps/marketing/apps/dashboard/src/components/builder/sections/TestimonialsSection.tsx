@@ -57,10 +57,9 @@ const TestimonialsSection = ({ data, style }: Props) => {
                         <span key={i} className="text-yellow-400 text-sm sm:text-base">⭐</span>
                       ))}
                     </div>
-                    <div 
-                      className="text-sm sm:text-base text-madas-text/80 mb-2 sm:mb-3 italic"
-                      dangerouslySetInnerHTML={{ __html: `"${item.text || 'Great service and amazing products!'}"` }}
-                    />
+                    <p className="text-sm sm:text-base text-madas-text/80 mb-2 sm:mb-3 italic">
+                      &ldquo;{item.text || 'Great service and amazing products!'}&rdquo;
+                    </p>
                     <div>
                       <p className="text-sm sm:text-base font-semibold text-primary">{item.name}</p>
                       <p className="text-xs sm:text-sm text-madas-text/60">{item.role}</p>

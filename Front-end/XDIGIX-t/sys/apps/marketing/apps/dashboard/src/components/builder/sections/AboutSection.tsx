@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { AboutSectionData } from '../../../types/builder';
+import { sanitizeHtml } from './sanitizeHtml';
 
 type Props = {
   data: AboutSectionData;
@@ -20,7 +21,7 @@ const AboutSection = ({ data, style }: Props) => {
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-4 sm:mb-6">{title}</h2>
             <div 
               className="prose max-w-none text-sm sm:text-base text-madas-text/80 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: content || 'Your story here...' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(content || 'Your story here...') }} /* sanitized */
             />
           </div>
           <div className="relative order-1 lg:order-2">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, memo} from 'react';
 import { HeroSectionData } from '../../../types/builder';
+import { sanitizeHtml } from './sanitizeHtml';
 
 type Props = {
   data: HeroSectionData;
@@ -242,7 +243,7 @@ const HeroSection = ({ data, style }: Props) => {
                 } ${!textStyle.titleFontWeight ? 'font-bold' : ''}`}
                 style={titleStyle}
                 data-edit-type="title"
-                dangerouslySetInnerHTML={{ __html: currentSlideData.title || 'Welcome to Our Store' }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.title || 'Welcome to Our Store') }} /* sanitized */
               />
               <p
                 className={`hero-subtitle mb-8 leading-relaxed cursor-pointer hover:opacity-80 transition-opacity ${
@@ -250,7 +251,7 @@ const HeroSection = ({ data, style }: Props) => {
                 }`}
                 style={subtitleStyle}
                 data-edit-type="subtitle"
-                dangerouslySetInnerHTML={{ __html: currentSlideData.subtitle || '' }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.subtitle || '') }} /* sanitized */
               />
               <div className="flex flex-wrap gap-3">
                 {currentSlideData.buttonText && (
@@ -320,7 +321,7 @@ const HeroSection = ({ data, style }: Props) => {
               }`}
               style={titleStyle}
               data-edit-type="title"
-              dangerouslySetInnerHTML={{ __html: currentSlideData.title || 'Limited Time Offer' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.title || 'Limited Time Offer') }} /* sanitized */
             />
             <p
               className={`hero-subtitle cursor-pointer hover:opacity-80 transition-opacity ${
@@ -328,7 +329,7 @@ const HeroSection = ({ data, style }: Props) => {
               }`}
               style={subtitleStyle}
               data-edit-type="subtitle"
-              dangerouslySetInnerHTML={{ __html: currentSlideData.subtitle || '' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.subtitle || '') }} /* sanitized */
             />
           </div>
           {currentSlideData.buttonText && (
@@ -477,23 +478,23 @@ const HeroSection = ({ data, style }: Props) => {
               }`}
               style={titleStyle}
               data-edit-type="title"
-              dangerouslySetInnerHTML={{ __html: currentSlideData.title || 'Welcome to Our Store' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.title || 'Welcome to Our Store') }} /* sanitized */
             />
           )}
-          
+
           {/* Subtitle - Hidden in minimal layout */}
           {!isMinimal && (
-            <p 
+            <p
               className={`hero-subtitle mb-6 sm:mb-8 px-2 cursor-pointer hover:opacity-80 transition-opacity ${
                 !subtitleHasHTML ? 'opacity-90' : ''
               } ${
-                !textStyle.subtitleFontSize 
-                  ? 'text-base sm:text-lg md:text-xl' 
+                !textStyle.subtitleFontSize
+                  ? 'text-base sm:text-lg md:text-xl'
                   : ''
               }`}
               style={subtitleStyle}
               data-edit-type="subtitle"
-              dangerouslySetInnerHTML={{ __html: currentSlideData.subtitle || 'Discover amazing products' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.subtitle || 'Discover amazing products') }} /* sanitized */
             />
           )}
           

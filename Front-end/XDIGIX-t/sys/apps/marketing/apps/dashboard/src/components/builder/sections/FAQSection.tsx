@@ -1,9 +1,39 @@
-import { useState, memo} from 'react';
+import { useState, useMemo, memo} from 'react';
 import { FAQSectionData } from '../../../types/builder';
+import { sanitizeHtml } from './sanitizeHtml';
 
 type Props = {
   data: FAQSectionData;
   style?: React.CSSProperties;
+};
+
+const FAQItem = ({ question, answer, isOpen, onToggle }: {
+  question: string;
+  answer: string;
+  isOpen: boolean;
+  onToggle: () => void;
+}) => {
+  const safeAnswer = useMemo(() => sanitizeHtml(answer), [answer]);
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full p-4 sm:p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+      >
+        <span className="text-sm sm:text-base font-semibold text-primary pr-4">{question}</span>
+        <span className="material-icons text-primary flex-shrink-0">
+          {isOpen ? 'expand_less' : 'expand_more'}
+        </span>
+      </button>
+      {isOpen && (
+        <div
+          className="px-4 sm:px-6 pb-4 sm:pb-6 text-sm sm:text-base text-madas-text/70 prose max-w-none"
+          dangerouslySetInnerHTML={{ __html: safeAnswer }}
+        />
+      )}
+    </div>
+  );
 };
 
 const FAQSection = ({ data, style }: Props) => {
@@ -11,7 +41,7 @@ const FAQSection = ({ data, style }: Props) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section 
+    <section
       className="w-full py-12 sm:py-16 px-4 sm:px-6 bg-white transition-all duration-300"
       style={style}
     >
@@ -44,24 +74,13 @@ const FAQSection = ({ data, style }: Props) => {
             </>
           ) : (
             items.map((item, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                  className="w-full p-4 sm:p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-sm sm:text-base font-semibold text-primary pr-4">{item.question}</span>
-                  <span className="material-icons text-primary flex-shrink-0">
-                    {openIndex === index ? 'expand_less' : 'expand_more'}
-                  </span>
-                </button>
-                {openIndex === index && (
-                  <div 
-                    className="px-4 sm:px-6 pb-4 sm:pb-6 text-sm sm:text-base text-madas-text/70"
-                    dangerouslySetInnerHTML={{ __html: item.answer }}
-                  />
-                )}
-              </div>
+              <FAQItem
+                key={index}
+                question={item.question}
+                answer={item.answer}
+                isOpen={openIndex === index}
+                onToggle={() => setOpenIndex(openIndex === index ? null : index)}
+              />
             ))
           )}
         </div>
@@ -71,4 +90,3 @@ const FAQSection = ({ data, style }: Props) => {
 };
 
 export default memo(FAQSection);
-
