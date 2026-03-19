@@ -98,11 +98,6 @@ export interface SectionRegistryEntry {
   defaultData: Record<string, unknown>;
 
   /**
-   * @deprecated Use SectionEnginePanel instead. Will be removed after engine migration.
-   */
-  Editor: ComponentType<EditorProps>;
-
-  /**
    * Schema-driven settings — rendered by SectionEnginePanel / SchemaForm.
    * Replaces the custom *Editor component for each section.
    */

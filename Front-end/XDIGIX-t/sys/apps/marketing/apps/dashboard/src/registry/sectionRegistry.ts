@@ -12,35 +12,8 @@
  *   3. Add an entry here
  *   4. Add data-edit-type attributes to the section renderer component
  */
-import { lazy } from 'react';
 import type { SectionType } from '../types/builder';
 import type { SectionRegistryEntry, ApiBinding, AnalyticsEvents } from './types';
-
-// Lazy-load all editors for code splitting
-const HeroEditor        = lazy(() => import('../components/builder/editors/HeroEditor'));
-const NavbarEditor      = lazy(() => import('../components/builder/editors/NavbarEditor'));
-const FeaturesEditor    = lazy(() => import('../components/builder/editors/FeaturesEditor'));
-const ProductsEditor    = lazy(() => import('../components/builder/editors/ProductsEditor'));
-const DealsEditor       = lazy(() => import('../components/builder/editors/DealsEditor'));
-const CollectionsEditor = lazy(() => import('../components/builder/editors/CollectionsEditor'));
-const TestimonialsEditor= lazy(() => import('../components/builder/editors/TestimonialsEditor'));
-const CTAEditor         = lazy(() => import('../components/builder/editors/CTAEditor'));
-const AboutEditor       = lazy(() => import('../components/builder/editors/AboutEditor'));
-const ContactEditor     = lazy(() => import('../components/builder/editors/ContactEditor'));
-const GalleryEditor     = lazy(() => import('../components/builder/editors/GalleryEditor'));
-const PricingEditor     = lazy(() => import('../components/builder/editors/PricingEditor'));
-const FAQEditor         = lazy(() => import('../components/builder/editors/FAQEditor'));
-const FooterEditor      = lazy(() => import('../components/builder/editors/FooterEditor'));
-const StatsEditor       = lazy(() => import('../components/builder/editors/StatsEditor'));
-const TeamEditor        = lazy(() => import('../components/builder/editors/TeamEditor'));
-const ServicesEditor    = lazy(() => import('../components/builder/editors/ServicesEditor'));
-const VideoEditor       = lazy(() => import('../components/builder/editors/VideoEditor'));
-const CountdownEditor   = lazy(() => import('../components/builder/editors/CountdownEditor'));
-const BannerEditor      = lazy(() => import('../components/builder/editors/BannerEditor'));
-const PartnersEditor    = lazy(() => import('../components/builder/editors/PartnersEditor'));
-const NewsletterEditor  = lazy(() => import('../components/builder/editors/NewsletterEditor'));
-const DividerEditor     = lazy(() => import('../components/builder/editors/DividerEditor'));
-const ImageComparisonEditor = lazy(() => import('../components/builder/editors/ImageComparisonEditor'));
 
 /* ──────────────────────────────────────────────────────────────────────────
    Master registry
@@ -105,7 +78,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       method: 'GET',
       cacheTtlMs: 0,  // always live — cart must be fresh
     } as ApiBinding,
-    Editor: NavbarEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   hero: {
@@ -208,7 +180,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       onSectionView: 'section_view',
       onCtaClick:    'cta_click',
     } as AnalyticsEvents,
-    Editor: HeroEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   /* ── CONTENT ─────────────────────────────────────────────────────────── */
@@ -263,7 +234,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         maxItems: 12,
       },
     ],
-    Editor: FeaturesEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   about: {
@@ -302,7 +272,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       textColor: { type: 'color', label: 'Text Color', defaultValue: '#1a1a1a' },
     },
     blocks: [],
-    Editor: AboutEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   contact: {
@@ -342,7 +311,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
     analyticsEvents: {
       onFormSubmit: 'contact_submit',
     } as AnalyticsEvents,
-    Editor: ContactEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   gallery: {
@@ -403,7 +371,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         maxItems: 24,
       },
     ],
-    Editor: GalleryEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   video: {
@@ -446,7 +413,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       backgroundColor: { type: 'color', label: 'Background Color', defaultValue: '#000000' },
     },
     blocks: [],
-    Editor: VideoEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   stats: {
@@ -503,7 +469,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         maxItems: 8,
       },
     ],
-    Editor: StatsEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   team: {
@@ -559,7 +524,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         maxItems: 12,
       },
     ],
-    Editor: TeamEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   divider: {
@@ -601,7 +565,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       spacing: { type: 'number', label: 'Vertical Spacing (px)', defaultValue: 40, min: 0, max: 200, unit: 'px' },
     },
     blocks: [],
-    Editor: DividerEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   imageComparison: {
@@ -640,7 +603,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       },
     },
     blocks: [],
-    Editor: ImageComparisonEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   /* ── E-COMMERCE ──────────────────────────────────────────────────────── */
@@ -693,7 +655,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       onItemClick:   'product_click',
       onCtaClick:    'add_to_cart',
     } as AnalyticsEvents,
-    Editor: ProductsEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   deals: {
@@ -742,7 +703,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       onItemClick:   'product_click',
       onCtaClick:    'add_to_cart',
     } as AnalyticsEvents,
-    Editor: DealsEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   collections: {
@@ -792,7 +752,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       onItemView:    'collection_view',
       onItemClick:   'collection_click',
     } as AnalyticsEvents,
-    Editor: CollectionsEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   pricing: {
@@ -835,7 +794,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         maxItems: 5,
       },
     ],
-    Editor: PricingEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   /* ── ENGAGEMENT ──────────────────────────────────────────────────────── */
@@ -875,7 +833,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       onSectionView: 'section_view',
       onCtaClick:    'cta_click',
     } as AnalyticsEvents,
-    Editor: CTAEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   countdown: {
@@ -912,7 +869,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       accentColor: { type: 'color', label: 'Accent / Timer Color', defaultValue: '#27491F' },
     },
     blocks: [],
-    Editor: CountdownEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   banner: {
@@ -943,7 +899,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       marqueeSpeed: { type: 'number', label: 'Marquee Speed (seconds)', min: 5, max: 60, defaultValue: 20, unit: 's', showWhen: { field: 'marquee', equals: true } },
     },
     blocks: [],
-    Editor: BannerEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   newsletter: {
@@ -984,7 +939,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
     analyticsEvents: {
       onFormSubmit: 'newsletter_subscribe',
     } as AnalyticsEvents,
-    Editor: NewsletterEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   services: {
@@ -1028,7 +982,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         maxItems: 12,
       },
     ],
-    Editor: ServicesEditor as React.ComponentType<import('./types').EditorProps>,
   },
 
   /* ── SOCIAL PROOF ────────────────────────────────────────────────────── */
@@ -1049,7 +1002,30 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         { name: 'Ahmed K.',  role: 'Customer',       text: 'Great products, will buy again.', rating: 5 },
       ],
     },
-    Editor: TestimonialsEditor as React.ComponentType<import('./types').EditorProps>,
+    settings: {
+      title: { type: 'text', label: 'Section Title', placeholder: 'What Our Customers Say' },
+      subtitle: { type: 'textarea', label: 'Subtitle', placeholder: 'Real reviews from real customers' },
+      layout: { type: 'select', label: 'Layout', options: [{ value: 'grid', label: 'Grid' }, { value: 'carousel', label: 'Carousel' }, { value: 'list', label: 'List' }], defaultValue: 'grid' },
+      columns: { type: 'select', label: 'Columns (Grid)', options: [{ value: '2', label: '2 Columns' }, { value: '3', label: '3 Columns' }], defaultValue: '3', showWhen: { field: 'layout', equals: 'grid' } },
+      showRating: { type: 'toggle', label: 'Show Star Rating', defaultValue: true },
+      showAvatar: { type: 'toggle', label: 'Show Avatar / Photo', defaultValue: true },
+      backgroundColor: { type: 'color', label: 'Background Color', defaultValue: '#f9fafb' },
+    },
+    blocks: [
+      {
+        type: 'testimonial', label: 'Testimonials', singularLabel: 'Testimonial', icon: 'format_quote', dataKey: 'reviews',
+        fields: {
+          text: { type: 'textarea', label: 'Review Text', placeholder: 'This product changed my life!', required: true },
+          author: { type: 'text', label: 'Customer Name', placeholder: 'Jane Smith' },
+          role: { type: 'text', label: 'Title / Role (optional)', placeholder: 'Verified Buyer' },
+          company: { type: 'text', label: 'Company (optional)', placeholder: 'Acme Corp' },
+          rating: { type: 'range', label: 'Star Rating', min: 1, max: 5, step: 1, defaultValue: 5 },
+          avatar: { type: 'image', label: 'Profile Photo' },
+        },
+        createDefault: () => ({ text: 'Amazing product!', author: 'Customer Name', role: 'Verified Buyer', company: '', rating: 5, avatar: '' }),
+        maxItems: 20,
+      },
+    ],
   },
 
   faq: {
@@ -1069,7 +1045,25 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         { question: 'How long does shipping take?', answer: 'Standard shipping takes 3-5 business days.' },
       ],
     },
-    Editor: FAQEditor as React.ComponentType<import('./types').EditorProps>,
+    settings: {
+      title: { type: 'text', label: 'Section Title', placeholder: 'Frequently Asked Questions' },
+      subtitle: { type: 'textarea', label: 'Subtitle', placeholder: 'Everything you need to know' },
+      layout: { type: 'select', label: 'Layout', options: [{ value: 'accordion', label: 'Accordion (collapsible)' }, { value: 'list', label: 'List (always open)' }], defaultValue: 'accordion' },
+      openFirst: { type: 'toggle', label: 'Open First Item', helpText: 'Expand the first FAQ by default', defaultValue: true },
+      backgroundColor: { type: 'color', label: 'Background Color', defaultValue: '#ffffff' },
+      textColor: { type: 'color', label: 'Text Color', defaultValue: '#1a1a1a' },
+    },
+    blocks: [
+      {
+        type: 'faq_item', label: 'FAQ Items', singularLabel: 'Question', icon: 'help', dataKey: 'faqs',
+        fields: {
+          question: { type: 'text', label: 'Question', placeholder: 'How do I place an order?', required: true },
+          answer: { type: 'richtext', label: 'Answer', placeholder: 'To place an order...', required: true },
+        },
+        createDefault: () => ({ question: 'New Question', answer: 'Answer here' }),
+        maxItems: 30,
+      },
+    ],
   },
 
   partners: {
@@ -1092,7 +1086,25 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       ],
       grayscale: true, autoScroll: false,
     },
-    Editor: PartnersEditor as React.ComponentType<import('./types').EditorProps>,
+    settings: {
+      title: { type: 'text', label: 'Section Title', placeholder: 'Our Partners' },
+      subtitle: { type: 'textarea', label: 'Subtitle', placeholder: 'Trusted by leading brands' },
+      layout: { type: 'select', label: 'Layout', options: [{ value: 'grid', label: 'Grid' }, { value: 'row', label: 'Row' }, { value: 'carousel', label: 'Scrolling Carousel' }], defaultValue: 'row' },
+      grayscale: { type: 'toggle', label: 'Grayscale Logos', helpText: 'Display partner logos in grayscale', defaultValue: true },
+      backgroundColor: { type: 'color', label: 'Background Color', defaultValue: '#ffffff' },
+    },
+    blocks: [
+      {
+        type: 'partner', label: 'Partners', singularLabel: 'Partner', icon: 'business', dataKey: 'partners',
+        fields: {
+          name: { type: 'text', label: 'Partner Name', placeholder: 'Acme Corp' },
+          logo: { type: 'image', label: 'Logo', required: true },
+          url: { type: 'url', label: 'Website URL (optional)', placeholder: 'https://acme.com' },
+        },
+        createDefault: () => ({ name: 'Partner', logo: '', url: '' }),
+        maxItems: 20,
+      },
+    ],
   },
 
   footer: {
@@ -1157,7 +1169,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         maxItems: 20,
       },
     ],
-    Editor: FooterEditor as React.ComponentType<import('./types').EditorProps>,
   },
 };
 
@@ -1165,7 +1176,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
    Helpers — used by BuilderCanvas, BuilderSidebar, BuilderPage
 ────────────────────────────────────────────────────────────────────────── */
 import type { ElementType } from '../types/elementEditor';
-import type React from 'react';
 
 /**
  * Replaces the 200-line getElementTypeFromTarget() DOM class scanner.
