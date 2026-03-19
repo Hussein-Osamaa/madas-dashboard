@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { addDomain, isValidDomain } from '../../services/domainService';
 import BuilderCanvas from '../../components/builder/BuilderCanvas';
-import BuilderSidebar from '../../components/builder/BuilderSidebar';
 import BuilderToolbar from '../../components/builder/BuilderToolbar';
 import { Section, SectionType } from '../../types/builder';
 import { SelectedElement } from '../../types/elementEditor';
@@ -53,6 +52,8 @@ const BuilderPage = () => {
   const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [showTheme, setShowTheme] = useState(false);
+  // TODO: Pages and SEO panels need new trigger UI (toolbar buttons removed in toolbar redesign).
+  // Currently unreachable — wire to BuilderLeftPanel header or a toolbar kebab menu in a follow-up.
   const [showSEO, setShowSEO] = useState(false);
   const [showPages, setShowPages] = useState(false);
   const [initialTheme, setInitialTheme] = useState<Partial<SiteTheme>>({});
@@ -74,6 +75,7 @@ const BuilderPage = () => {
   const handleSelectSection = useCallback((sectionId: string | null) => {
     setSelectedSection(sectionId);
     setSelectedElement(null);
+    setFloatAnchorRect(null);
   }, []);
   
   // Toast notification state

@@ -90,7 +90,7 @@ const BuilderToolbar = ({
           <span className="text-sm font-medium text-[#e8e8e8] max-w-[120px] truncate">{siteName}</span>
         </div>
 
-        {/* TODO: multi-page support — wire to real page state in Task 8 */}
+        {/* TODO: multi-page support — wire to real page selector */}
         <select
           disabled
           className="bg-[#252525] text-[#555] text-xs rounded-md px-2 py-1 border border-[#333] focus:outline-none cursor-not-allowed flex-shrink-0"
