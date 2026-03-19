@@ -9,10 +9,11 @@ type Props = {
   onSelect: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onSettingsClick?: () => void;
   children: ReactNode;
 };
 
-const SortableSection = ({ section, isSelected, onSelect, onDelete, onDuplicate, children }: Props) => {
+const SortableSection = ({ section, isSelected, onSelect, onDelete, onDuplicate, onSettingsClick, children }: Props) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id
   });
@@ -27,48 +28,47 @@ const SortableSection = ({ section, isSelected, onSelect, onDelete, onDuplicate,
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative group ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+      className="relative group"
     >
-      {/* Section Controls */}
+      {/* Hover ring overlay */}
+      <div className="absolute inset-0 ring-2 ring-transparent group-hover:ring-[#27491F]/30 pointer-events-none transition-all z-[5] rounded-[2px]" />
+
+      {/* Section chip label — top left, shows on hover */}
       <div
-        className={`absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ${
-          isSelected ? 'opacity-100' : ''
-        }`}
+        {...attributes}
+        {...listeners}
+        className="absolute top-0 left-0 bg-[#27491F] text-white text-[10px] font-semibold px-2 py-0.5 rounded-br-md opacity-0 group-hover:opacity-100 transition-opacity z-[15] uppercase tracking-[.4px] select-none cursor-grab active:cursor-grabbing flex items-center gap-1"
       >
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          className="p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-base transition-colors cursor-grab active:cursor-grabbing"
-          title="Drag to reorder"
-        >
-          <span className="material-icons text-sm text-madas-text/70">drag_handle</span>
-        </button>
-        <button
-          type="button"
-          onClick={onDuplicate}
-          className="p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-base transition-colors"
-          title="Duplicate section"
-        >
-          <span className="material-icons text-sm text-madas-text/70">content_copy</span>
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="p-2 bg-white rounded-lg shadow-md border border-red-200 hover:bg-red-50 transition-colors"
-          title="Delete section"
-        >
-          <span className="material-icons text-sm text-red-600">delete</span>
-        </button>
+        <span className="material-icons text-[10px]">drag_indicator</span>
+        {section.type}
       </div>
 
-      {/* Section Label */}
-      <div
-        className={`absolute top-2 left-2 z-10 px-2 py-1 bg-primary text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 transition-opacity ${
-          isSelected ? 'opacity-100' : ''
-        }`}
-      >
-        {section.type.charAt(0).toUpperCase() + section.type.slice(1)} Section
+      {/* Action bar — top right, shows on hover */}
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-[15]">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onSettingsClick?.(); }}
+          className="w-7 h-7 rounded-md bg-[#1a1a1a]/90 text-[#ccc] hover:bg-[#27491F] hover:text-white flex items-center justify-center shadow-md transition-colors backdrop-blur-sm"
+          title="Section settings"
+        >
+          <span className="material-icons text-sm">settings</span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+          className="w-7 h-7 rounded-md bg-[#1a1a1a]/90 text-[#ccc] hover:bg-[#27491F] hover:text-white flex items-center justify-center shadow-md transition-colors backdrop-blur-sm"
+          title="Duplicate"
+        >
+          <span className="material-icons text-sm">content_copy</span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="w-7 h-7 rounded-md bg-[#1a1a1a]/90 text-red-400 hover:bg-red-800 hover:text-white flex items-center justify-center shadow-md transition-colors backdrop-blur-sm"
+          title="Delete"
+        >
+          <span className="material-icons text-sm">delete</span>
+        </button>
       </div>
 
       {/* Section Content */}
@@ -86,6 +86,6 @@ export default memo(SortableSection, (prev, next) =>
   prev.onSelect === next.onSelect &&
   prev.onDelete === next.onDelete &&
   prev.onDuplicate === next.onDuplicate &&
+  prev.onSettingsClick === next.onSettingsClick &&
   prev.children === next.children
 );
-

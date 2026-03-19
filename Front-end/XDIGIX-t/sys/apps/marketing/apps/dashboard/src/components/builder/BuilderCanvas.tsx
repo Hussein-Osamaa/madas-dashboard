@@ -33,6 +33,7 @@ type Props = {
   onReorderSections: (sections: Section[]) => void;
   onDuplicateSection: (id: string) => void;
   siteId?: string;
+  onSelectElementWithRect?: (element: SelectedElement, rect: DOMRect) => void;
 };
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -263,7 +264,8 @@ const BuilderCanvas = ({
   onDeleteSection,
   onReorderSections,
   onDuplicateSection,
-  siteId
+  siteId,
+  onSelectElementWithRect
 }: Props) => {
   const previewWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -315,19 +317,16 @@ const BuilderCanvas = ({
     const editableElement = findEditableElement(target, sectionContainer as HTMLElement, sectionType);
 
     if (editableElement) {
-      onSelectElement({
-        type: editableElement.type,
-        sectionId,
-        index: editableElement.index
-      });
+      const element = { type: editableElement.type, sectionId, index: editableElement.index };
+      onSelectElement(element);
+      onSelectElementWithRect?.(element, target.getBoundingClientRect());
     } else {
       // Default to background if clicking on empty space
-      onSelectElement({
-        type: 'background',
-        sectionId
-      });
+      const bgElement = { type: 'background' as const, sectionId };
+      onSelectElement(bgElement);
+      // Don't call onSelectElementWithRect for background clicks (no specific element to anchor to)
     }
-  }, [selectedSection, sections, onSelectElement]);
+  }, [selectedSection, sections, onSelectElement, onSelectElementWithRect]);
 
   // Prevent all link navigation in the builder (links, buttons, icons, etc.)
   useEffect(() => {
@@ -494,6 +493,15 @@ const BuilderCanvas = ({
                 overflowX: 'hidden'
               }}
             >
+              {/* Global editable-element hover outline */}
+              <style>{`
+  [data-edit-type] { position: relative; }
+  [data-edit-type]:hover {
+    outline: 1px dashed rgba(39, 73, 31, 0.5);
+    outline-offset: 2px;
+    cursor: pointer;
+  }
+`}</style>
               {/* Theme CSS custom properties — updates in real-time as merchant edits the Theme Panel */}
               <style dangerouslySetInnerHTML={{ __html: themeCssVars }} />
               {sortedSections.length === 0 ? (
@@ -511,6 +519,7 @@ const BuilderCanvas = ({
                     onSelect={() => onSelectSection(section.id)}
                     onDelete={() => onDeleteSection(section.id)}
                     onDuplicate={() => onDuplicateSection(section.id)}
+                    onSettingsClick={() => onSelectSection(section.id)}
                   >
                     <div 
                       onClick={(e) => handleSectionContentClick(e, section.id)}
