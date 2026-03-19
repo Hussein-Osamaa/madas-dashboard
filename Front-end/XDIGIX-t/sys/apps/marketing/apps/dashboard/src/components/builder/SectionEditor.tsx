@@ -1,4 +1,5 @@
-import React, { Suspense, useState } from 'react';
+import React, { useState } from 'react';
+import SectionEnginePanel from './engine/SectionEnginePanel';
 import type { Section } from '../../types/builder';
 import { SECTION_REGISTRY } from '../../registry/sectionRegistry';
 import type { ApiBinding, AnalyticsEvents } from '../../registry/types';
@@ -20,15 +21,6 @@ type Props = {
 };
 
 type Tab = 'content' | 'analytics';
-
-const EditorLoadingFallback: React.FC = () => (
-  <div className="flex items-center justify-center py-16">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-      <p className="text-xs text-gray-400">Loading editor…</p>
-    </div>
-  </div>
-);
 
 /* ── Analytics Event Row ────────────────────────────────────────────── */
 const EVENT_ICONS: Record<string, string> = {
@@ -276,24 +268,16 @@ const SectionEditor: React.FC<Props> = ({ section, onUpdate, onClose, businessId
             apiBinding={entry?.apiBinding}
             analyticsEvents={entry?.analyticsEvents}
           />
-        ) : entry ? (
-          <Suspense fallback={<EditorLoadingFallback />}>
-            <entry.Editor
-              section={section}
-              onUpdate={onUpdate}
-              onClose={onClose ?? (() => {})}
-              businessId={businessId}
-              siteId={siteId}
-            />
-          </Suspense>
         ) : (
-          <div className="p-6 flex flex-col items-center text-center py-16">
-            <span className="material-icons text-4xl text-gray-200 mb-3">widgets</span>
-            <p className="text-sm text-gray-400">
-              No editor registered for section type{' '}
-              <code className="text-xs bg-gray-100 px-1 rounded">{section.type}</code>
-            </p>
-          </div>
+          <SectionEnginePanel
+            section={section}
+            onUpdate={onUpdate}
+            onClose={onClose}
+            businessId={businessId}
+            siteId={siteId}
+            embedded={embedded}
+            activeTabOverride={activeTabOverride}
+          />
         )}
       </div>
     </div>
