@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { Section, SectionType } from '../types/builder';
 import type { ElementType } from '../types/elementEditor';
+import type { FieldSchema, BlockSchema, SectionRendererProps, Action } from '../types/engine';
 
 /* ──────────────────────────────────────────────────────────────────────────
    EditorProps — standard interface every *Editor component must accept
@@ -86,8 +87,31 @@ export interface SectionRegistryEntry {
   /** Default data for new section instances (replaces getDefaultSectionData switch) */
   defaultData: Record<string, unknown>;
 
-  /** The sidebar editor component rendered when this section is selected */
+  /**
+   * @deprecated Use SectionEnginePanel instead. Will be removed after engine migration.
+   */
   Editor: ComponentType<EditorProps>;
+
+  /**
+   * Schema-driven settings — rendered by SectionEnginePanel / SchemaForm.
+   * Replaces the custom *Editor component for each section.
+   */
+  settings: Record<string, FieldSchema>;
+
+  /**
+   * Repeating content blocks (features[], testimonials[], etc.).
+   * Empty array for sections with no repeating items (hero, video, etc.).
+   */
+  blocks: BlockSchema[];
+
+  /**
+   * Visual renderer component (the *Section.tsx component wrapped for SectionRendererProps).
+   * Registered in src/registry/sectionRenderers.tsx.
+   * Used by SectionRenderer.tsx instead of the manual switch.
+   */
+  Renderer?: ComponentType<SectionRendererProps>;
+
+  actions?: Action[];
 
   /** Optional layout variants shown as sub-options in the section library */
   variants?: SectionVariant[];
