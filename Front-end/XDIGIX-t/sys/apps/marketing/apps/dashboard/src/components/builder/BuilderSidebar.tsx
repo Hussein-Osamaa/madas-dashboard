@@ -1,3 +1,7 @@
+/**
+ * @deprecated Replaced by AddSectionSheet (src/components/builder/AddSectionSheet.tsx).
+ * Kept for reference. TODO: Remove in a future cleanup PR.
+ */
 import { useState, useMemo } from 'react';
 import { Section, SectionType } from '../../types/builder';
 import { getRegistryByCategory, CATEGORY_ORDER, SECTION_REGISTRY } from '../../registry/sectionRegistry';
