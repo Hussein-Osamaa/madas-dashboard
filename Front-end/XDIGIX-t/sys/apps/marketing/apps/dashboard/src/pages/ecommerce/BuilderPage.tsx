@@ -6,18 +6,19 @@ import { addDomain, isValidDomain } from '../../services/domainService';
 import BuilderCanvas from '../../components/builder/BuilderCanvas';
 import BuilderSidebar from '../../components/builder/BuilderSidebar';
 import BuilderToolbar from '../../components/builder/BuilderToolbar';
-import SectionEditor from '../../components/builder/SectionEditor';
-import ContextualEditor from '../../components/builder/ContextualEditor';
 import { Section, SectionType } from '../../types/builder';
 import { SelectedElement } from '../../types/elementEditor';
 import { getDefaultData } from '../../registry/sectionRegistry';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 import { useUndoRedo } from '../../hooks/useUndoRedo';
 import { useAutosave, AutosaveStatus } from '../../hooks/useAutosave';
-import { ThemeProvider, useTheme, SiteTheme, DEFAULT_THEME } from '../../contexts/ThemeContext';
+import { ThemeProvider, SiteTheme } from '../../contexts/ThemeContext';
 import ThemePanel from '../../components/builder/ThemePanel';
 import PageManager, { SitePage } from '../../components/builder/PageManager';
 import SEOPanel from '../../components/builder/SEOPanel';
+import BuilderLeftPanel from '../../components/builder/BuilderLeftPanel';
+import FloatingElementEditor from '../../components/builder/FloatingElementEditor';
+import AddSectionSheet from '../../components/builder/AddSectionSheet';
 
 /* ── Backend API helper ─────────────────────────────────────────── */
 const API_BASE = (import.meta.env.VITE_API_BACKEND_URL as string | undefined)
@@ -61,10 +62,13 @@ const BuilderPage = () => {
   const [currentPageSlug, setCurrentPageSlug] = useState('home');
   const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [showSidebar, setShowSidebar] = useState(true);
   const [siteName, setSiteName] = useState('');
   const [currentStatus, setCurrentStatus] = useState<'draft' | 'published'>('draft');
   const [initialSections, setInitialSections] = useState<Section[]>([]);
+  const [showAddSheet, setShowAddSheet] = useState(false);
+  const [floatAnchorRect, setFloatAnchorRect] = useState<DOMRect | null>(null);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   
   // Clear selected element when changing sections
   const handleSelectSection = useCallback((sectionId: string | null) => {
@@ -291,6 +295,23 @@ const BuilderPage = () => {
     updateSections(newSections.map((section, index) => ({ ...section, order: index })));
   }, [updateSections]);
 
+  const handleSelectElementWithRect = useCallback((element: SelectedElement, rect: DOMRect) => {
+    setSelectedElement(element);
+    setFloatAnchorRect(rect);
+  }, []);
+
+  const handleReorderSectionByDirection = useCallback((id: string, dir: 'up' | 'down') => {
+    const idx = sections.findIndex((s) => s.id === id);
+    if (idx < 0) return;
+    const next = [...sections];
+    if (dir === 'up' && idx > 0) {
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+    } else if (dir === 'down' && idx < next.length - 1) {
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+    } else return;
+    handleReorderSections(next);
+  }, [sections, handleReorderSections]);
+
   const handleDuplicateSection = useCallback((sectionId: string) => {
     const section = sections.find((s) => s.id === sectionId);
     if (section) {
@@ -385,6 +406,12 @@ const BuilderPage = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo, handleSave]);
 
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
   if (loading) {
     return <FullScreenLoader message="Loading website builder..." />;
   }
@@ -419,8 +446,7 @@ const BuilderPage = () => {
         onSave={handleSave}
         saving={saving}
         autosaveStatus={autosaveStatus}
-        onToggleSidebar={() => setShowSidebar((prev) => !prev)}
-        showSidebar={showSidebar}
+        onToggleDrawer={() => setDrawerOpen((prev) => !prev)}
         showTheme={showTheme}
         onToggleTheme={() => setShowTheme((prev) => !prev)}
         showPages={showPages}
@@ -455,6 +481,23 @@ const BuilderPage = () => {
           </div>
         )}
 
+        <BuilderLeftPanel
+          sections={sections}
+          selectedSectionId={selectedSection}
+          onSelectSection={handleSelectSection}
+          onUpdateSection={handleUpdateSection}
+          onDeleteSection={handleDeleteSection}
+          onDuplicateSection={handleDuplicateSection}
+          onReorderSection={handleReorderSectionByDirection}
+          onOpenAddSheet={() => setShowAddSheet(true)}
+          onOpenTheme={() => setShowTheme(true)}
+          businessId={businessId ?? ''}
+          siteId={siteId ?? undefined}
+          isDrawer={isMobile}
+          drawerOpen={drawerOpen}
+          onDrawerClose={() => setDrawerOpen(false)}
+        />
+
         {/* Main Canvas */}
         <div className="flex-1 overflow-auto">
           <BuilderCanvas
@@ -464,6 +507,7 @@ const BuilderPage = () => {
             previewMode={previewMode}
             onSelectSection={handleSelectSection}
             onSelectElement={setSelectedElement}
+            onSelectElementWithRect={handleSelectElementWithRect}
             onUpdateSection={handleUpdateSection}
             onDeleteSection={handleDeleteSection}
             onReorderSections={handleReorderSections}
@@ -471,102 +515,6 @@ const BuilderPage = () => {
             siteId={siteId || undefined}
           />
         </div>
-
-        {/* Right Sidebar - Combined Section Library & Editor */}
-        {showSidebar && (
-          <div className="w-80 border-l border-gray-200 bg-white flex flex-col overflow-hidden">
-            {selectedSection ? (
-              /* Edit Mode - Show contextual editor or section editor based on selected element */
-              selectedElement && sections.find((s) => s.id === selectedSection) ? (
-                /* Contextual Element Editor */
-                <ContextualEditor
-                  selectedElement={selectedElement}
-                  section={sections.find((s) => s.id === selectedSection)!}
-                  onUpdateSection={(updatedSection) => {
-                    handleUpdateSection(updatedSection.id, updatedSection);
-                  }}
-                  onClearSelection={() => setSelectedElement(null)}
-                  businessId={businessId}
-                  siteId={siteId || undefined}
-                />
-              ) : (
-                /* Section Overview & Quick Actions */
-                <div className="flex flex-col h-full">
-                  {/* Section Header */}
-                  <div className="p-4 border-b border-gray-100 bg-gray-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectSection(null)}
-                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary transition-colors"
-                      >
-                        <span className="material-icons text-sm">arrow_back</span>
-                        Back to Sections
-                      </button>
-                    </div>
-                    <h3 className="text-base font-semibold text-gray-800">
-                      {sections.find((s) => s.id === selectedSection)?.type.charAt(0).toUpperCase()}
-                      {sections.find((s) => s.id === selectedSection)?.type.slice(1)} Section
-                    </h3>
-                  </div>
-                  
-                  {/* Click Prompt */}
-                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                      <span className="material-icons text-4xl text-primary">touch_app</span>
-                    </div>
-                    <h4 className="text-sm font-medium text-gray-800 mb-2">Click to Edit</h4>
-                    <p className="text-xs text-gray-500 max-w-[200px] mb-6">
-                      Click on any element in the section preview to start editing it. You can edit:
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 w-full max-w-[240px]">
-                      {['Background', 'Title', 'Text', 'Buttons', 'Cards', 'Images'].map((item) => (
-                        <div key={item} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-                          <span className="material-icons text-xs text-primary">check_circle</span>
-                          <span className="text-xs text-gray-600">{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Quick Actions */}
-                  <div className="p-4 border-t border-gray-100 space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedElement({ type: 'background', sectionId: selectedSection! })}
-                      className="w-full flex items-center gap-3 px-4 py-3 bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors text-left"
-                    >
-                      <span className="material-icons text-primary">format_color_fill</span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">Edit Background</p>
-                        <p className="text-xs text-gray-500">Colors, images, padding</p>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedElement({ type: 'title', sectionId: selectedSection! })}
-                      className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-left"
-                    >
-                      <span className="material-icons text-gray-600">title</span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">Edit Title</p>
-                        <p className="text-xs text-gray-500">Text, font, color, alignment</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )
-            ) : (
-              /* Add Sections Mode */
-              <BuilderSidebar
-                onAddSection={handleAddSection}
-                sections={sections}
-                onSelectSection={handleSelectSection}
-                selectedSection={selectedSection}
-              />
-            )}
-          </div>
-        )}
 
         {/* Theme Panel — slides in from the right when showTheme is true */}
         {showTheme && (
@@ -590,6 +538,22 @@ const BuilderPage = () => {
           </div>
         )}
       </div>
+
+      {/* Floating element editor — portal-rendered, anchored to clicked canvas element */}
+      <FloatingElementEditor
+        element={selectedElement}
+        anchorRect={floatAnchorRect}
+        section={sections.find((s) => s.id === selectedSection) ?? null}
+        onUpdate={(sectionId, data) => handleUpdateSection(sectionId, data as Record<string, unknown>)}
+        onClose={() => { setSelectedElement(null); setFloatAnchorRect(null); }}
+      />
+
+      {/* Add section sheet — slides in from left */}
+      <AddSectionSheet
+        open={showAddSheet}
+        onClose={() => setShowAddSheet(false)}
+        onAddSection={handleAddSection}
+      />
 
       {/* Toast Notification */}
       {showNotification && notification && (
