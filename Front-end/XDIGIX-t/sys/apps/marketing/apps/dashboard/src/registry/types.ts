@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import type { Section, SectionType } from '../types/builder';
 import type { ElementType } from '../types/elementEditor';
-import type { FieldSchema, BlockSchema, SectionRendererProps, Action } from '../types/engine';
+import type { FieldSchema, BlockSchema, SectionRendererProps, Action, SectionLifecycle } from '../types/engine';
 
 /* ──────────────────────────────────────────────────────────────────────────
    EditorProps — standard interface every *Editor component must accept
@@ -52,6 +52,7 @@ export interface ApiBinding {
 
 /* ──────────────────────────────────────────────────────────────────────────
    Analytics Events — auto-wired by storefront runtime via IntersectionObserver
+   Constraint 6: dedup prevents duplicate events per item per session.
 ────────────────────────────────────────────────────────────────────────── */
 export interface AnalyticsEvents {
   /** Fired when the section enters viewport */
@@ -64,6 +65,15 @@ export interface AnalyticsEvents {
   onCtaClick?: string;
   /** Fired on successful form submission */
   onFormSubmit?: string;
+  /** Field in item data used as unique event id (default: 'id') */
+  itemIdField?: string;
+  /**
+   * Constraint 6 — Analytics deduplication.
+   * When true, runtime tracks fired events in sessionStorage and skips
+   * duplicates for the same item within a single session.
+   * @default true
+   */
+  dedup?: boolean;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -125,6 +135,14 @@ export interface SectionRegistryEntry {
   /**
    * Analytics events auto-wired by IntersectionObserver in the storefront runtime.
    * Keys map to GA4 / Meta Pixel event names.
+   * Constraint 6: dedup flag prevents duplicate events per item per session.
    */
   analyticsEvents?: AnalyticsEvents;
+
+  /**
+   * Constraint 7 — Section Lifecycle Hooks.
+   * Runtime invokes these at section mount, viewport entry, and removal.
+   * Values are hook names dispatched to the storefront runtime event bus.
+   */
+  lifecycle?: SectionLifecycle;
 }

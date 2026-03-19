@@ -102,3 +102,112 @@ export interface SectionRendererProps {
   siteId?: string;
   previewMode?: 'desktop' | 'tablet' | 'mobile';
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CONSTRAINT 1 — Strict Manifest Schema
+   Runtime relies ONLY on this manifest, never on DOM guessing.
+   Injected as <script id="xd-manifest" type="application/json"> in published HTML.
+══════════════════════════════════════════════════════════════════════════ */
+
+/** One section entry in the published site manifest */
+export interface ManifestSection {
+  /** Unique section instance id (matches DOM id) */
+  id: string;
+  /** Registered section type — must exist in SECTION_REGISTRY */
+  type: string;
+  /** Data source declaration — runtime fetches from this, never infers */
+  dataSource: DataBinding;
+  /** Analytics events to auto-wire — runtime reads this, not DOM attrs */
+  analytics: ManifestAnalytics | null;
+  /** Snapshot of section data at publish time (graceful fallback) */
+  initialData: Record<string, unknown>;
+}
+
+export interface ManifestAnalytics {
+  onSectionView?: string;
+  onItemView?: string;
+  onItemClick?: string;
+  onCtaClick?: string;
+  onFormSubmit?: string;
+  /** Field name in item data used as unique event identifier */
+  itemIdField?: string;
+  /** Constraint 6 — deduplication: prevent duplicate events per item per session */
+  dedup: boolean;
+}
+
+/** Full site manifest embedded in published HTML */
+export interface SiteManifest {
+  tenantId: string;
+  businessId: string;
+  publicApiBase: string;
+  theme: Record<string, string>;
+  analytics: {
+    ga4MeasurementId?: string;
+    metaPixelId?: string;
+    tiktokPixelId?: string;
+  };
+  /** Constraint 4 — cart session config */
+  cart: {
+    /** Primary: cookie-based session id */
+    sessionStrategy: 'cookie' | 'storage';
+    /** Fallback when cookies blocked */
+    storageFallback: 'sessionStorage' | 'localStorage';
+    sessionTtlMs: number;
+  };
+  sections: ManifestSection[];
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CONSTRAINT 7 — Section Lifecycle Hooks
+   Declared per section type; storefront runtime invokes them.
+══════════════════════════════════════════════════════════════════════════ */
+export interface SectionLifecycle {
+  /** Called when section DOM is first mounted / hydrated */
+  onLoad?: string;
+  /** Called when section enters viewport (IntersectionObserver) */
+  onVisible?: string;
+  /** Called when section leaves DOM (page navigation / removal) */
+  onUnload?: string;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CONSTRAINT 3 — Storefront Runtime Module Interfaces
+   Runtime is split into three independent modules.
+══════════════════════════════════════════════════════════════════════════ */
+export interface RuntimeModuleConfig {
+  /** core-runtime: reads manifest, fetches live data, hydrates sections */
+  core: { enabled: true };
+  /** analytics: auto-wires events from manifest.sections[].analytics */
+  analytics: { enabled: boolean; dedupStrategy: 'session' | 'pageview' };
+  /** cart: manages cart state, session tokens, add-to-cart actions */
+  cart: { enabled: boolean; sessionStrategy: 'cookie' | 'storage' };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CONSTRAINT 5 — AI Validation Types
+   Only registered section types are accepted. Raw HTML is rejected.
+══════════════════════════════════════════════════════════════════════════ */
+export interface AiLayoutSection {
+  /** Must be a registered SectionType — validated at runtime via Zod */
+  type: string;
+  /** Override data merged with SECTION_DEFAULTS — no raw HTML allowed */
+  data?: Record<string, unknown>;
+  /** Style overrides */
+  style?: Record<string, unknown>;
+}
+
+export interface AiLayout {
+  theme?: {
+    colorPrimary?: string;
+    colorSecondary?: string;
+    colorAccent?: string;
+    fontHeading?: string;
+    fontBody?: string;
+    borderRadius?: 'sharp' | 'rounded' | 'pill';
+  };
+  pages: Array<{
+    slug: string;
+    name: string;
+    sections: AiLayoutSection[];
+  }>;
+}
