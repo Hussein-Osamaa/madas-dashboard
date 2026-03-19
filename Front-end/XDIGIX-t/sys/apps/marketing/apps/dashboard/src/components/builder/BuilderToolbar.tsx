@@ -3,7 +3,6 @@ import { Section } from '../../types/builder';
 import PreviewModal from './PreviewModal';
 import PublishModal from './PublishModal';
 import { exportWebsiteToHTML } from '../../utils/exportWebsite';
-import { useDarkMode } from '../../contexts/DarkModeContext';
 import type { AutosaveStatus } from '../../hooks/useAutosave';
 
 type Props = {
@@ -31,6 +30,7 @@ type Props = {
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  onToggleDrawer?: () => void;
 };
 
 const BuilderToolbar = ({
@@ -40,14 +40,14 @@ const BuilderToolbar = ({
   onSave,
   saving,
   autosaveStatus = 'idle',
-  onToggleSidebar,
-  showSidebar,
-  showTheme = false,
-  onToggleTheme,
-  showPages = false,
-  onTogglePages,
-  showSEO = false,
-  onToggleSEO,
+  onToggleSidebar: _onToggleSidebar,
+  showSidebar: _showSidebar,
+  showTheme: _showTheme,
+  onToggleTheme: _onToggleTheme,
+  showPages: _showPages,
+  onTogglePages: _onTogglePages,
+  showSEO: _showSEO,
+  onToggleSEO: _onToggleSEO,
   onBack,
   onSettings,
   sections,
@@ -57,190 +57,121 @@ const BuilderToolbar = ({
   onUndo,
   onRedo,
   canUndo = false,
-  canRedo = false
+  canRedo = false,
+  onToggleDrawer,
 }: Props) => {
   const [showPreview, setShowPreview] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
-  const { isDark, toggle: toggleDarkMode } = useDarkMode();
 
   return (
-    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0 z-50">
-      <div className="flex items-center gap-4">
+    <>
+      <div className="h-12 bg-[#1a1a1a] border-b border-[#2a2a2a] flex items-center px-3 gap-2 z-10 flex-shrink-0">
+        {/* Hamburger — mobile only */}
+        {onToggleDrawer && (
           <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-2 text-sm text-madas-text/70 hover:text-primary transition-colors"
-        >
-          <span className="material-icons text-base text-gray-600">arrow_back</span>
-          Back to Sites
-        </button>
-        <div className="h-6 w-px bg-gray-200" />
-        <h1 className="text-lg font-semibold text-primary">Website Builder</h1>
-        {siteId && (
-          <>
-            <div className="h-6 w-px bg-gray-200" />
-            <span className="text-xs text-madas-text/60">Site ID: {siteId.slice(0, 8)}...</span>
-          </>
+            type="button"
+            onClick={onToggleDrawer}
+            className="md:hidden w-8 h-8 flex items-center justify-center text-[#888] hover:text-[#ccc] rounded"
+            title="Toggle panel"
+          >
+            <span className="material-icons text-base">menu</span>
+          </button>
         )}
-      </div>
 
-      <div className="flex items-center gap-3">
-        {/* Dark Mode Toggle */}
+        {/* Back */}
         <button
           type="button"
-          onClick={toggleDarkMode}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          onClick={onBack}
+          className="flex items-center gap-1 text-xs text-[#888] hover:text-[#ccc] transition-colors flex-shrink-0"
         >
-          {isDark ? (
-            <span className="material-icons text-base text-yellow-400">light_mode</span>
-          ) : (
-            <span className="material-icons text-base text-gray-600">dark_mode</span>
-          )}
+          <span className="material-icons text-sm">arrow_back</span>
+          <span className="hidden sm:inline">Back</span>
         </button>
 
-        <div className="h-6 w-px bg-gray-200" />
+        <div className="h-4 w-px bg-[#333] flex-shrink-0" />
 
-        {/* Preview Mode Toggle */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-          <button
-            type="button"
-            onClick={() => onPreviewModeChange('desktop')}
-            className={`p-2 rounded transition-colors ${
-              previewMode === 'desktop' ? 'bg-white text-primary shadow-sm' : 'text-madas-text/60 hover:text-primary'
-            }`}
-            title="Desktop"
-          >
-            <span className={`material-icons text-base ${previewMode === 'desktop' ? 'text-primary' : 'text-gray-600'}`}>desktop_windows</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onPreviewModeChange('tablet')}
-            className={`p-2 rounded transition-colors ${
-              previewMode === 'tablet' ? 'bg-white text-primary shadow-sm' : 'text-madas-text/60 hover:text-primary'
-            }`}
-            title="Tablet"
-          >
-            <span className={`material-icons text-base ${previewMode === 'tablet' ? 'text-primary' : 'text-gray-600'}`}>tablet</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onPreviewModeChange('mobile')}
-            className={`p-2 rounded transition-colors ${
-              previewMode === 'mobile' ? 'bg-white text-primary shadow-sm' : 'text-madas-text/60 hover:text-primary'
-            }`}
-            title="Mobile"
-          >
-            <span className={`material-icons text-base ${previewMode === 'mobile' ? 'text-primary' : 'text-gray-600'}`}>phone_android</span>
-          </button>
+        {/* Site name with live dot */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {currentStatus === 'published' && (
+            <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+          )}
+          <span className="text-sm font-medium text-[#e8e8e8] max-w-[120px] truncate">{siteName}</span>
         </div>
 
-        <div className="h-6 w-px bg-gray-200" />
+        {/* Page selector */}
+        <select className="bg-[#252525] text-[#ccc] text-xs rounded-md px-2 py-1 border border-[#333] focus:outline-none focus:border-[#27491F] cursor-pointer flex-shrink-0">
+          <option value="home">Home page</option>
+        </select>
 
-        {/* Undo/Redo */}
+        {/* Autosave status */}
+        {autosaveStatus && autosaveStatus !== 'idle' && (
+          <span className={`flex items-center gap-1 text-[10px] font-medium flex-shrink-0 ${
+            autosaveStatus === 'saving'  ? 'text-blue-400' :
+            autosaveStatus === 'pending' ? 'text-[#666]' :
+            autosaveStatus === 'saved'   ? 'text-green-500' :
+            autosaveStatus === 'error'   ? 'text-red-400'  : 'text-[#666]'
+          }`}>
+            {autosaveStatus === 'saving'  && <span className="material-icons text-xs animate-spin">progress_activity</span>}
+            {autosaveStatus === 'saved'   && <span className="material-icons text-xs">check_circle</span>}
+            {autosaveStatus === 'error'   && <span className="material-icons text-xs">warning</span>}
+            {autosaveStatus === 'saving'  && 'Saving…'}
+            {autosaveStatus === 'pending' && '●'}
+            {autosaveStatus === 'saved'   && 'Saved'}
+            {autosaveStatus === 'error'   && 'Failed'}
+          </span>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Preview mode */}
+        <div className="flex items-center bg-[#252525] rounded-md overflow-hidden flex-shrink-0">
+          {(['desktop', 'tablet', 'mobile'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onPreviewModeChange(mode)}
+              title={mode.charAt(0).toUpperCase() + mode.slice(1)}
+              className={`w-8 h-8 flex items-center justify-center transition-colors ${
+                previewMode === mode
+                  ? 'bg-[#333] text-[#e8e8e8]'
+                  : 'text-[#666] hover:text-[#ccc]'
+              }`}
+            >
+              <span className="material-icons text-sm">
+                {mode === 'desktop' ? 'desktop_windows' : mode === 'tablet' ? 'tablet' : 'phone_android'}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="h-4 w-px bg-[#333] flex-shrink-0" />
+
+        {/* Undo / Redo */}
         {onUndo && onRedo && (
           <>
             <button
               type="button"
               onClick={onUndo}
               disabled={!canUndo}
-              className="p-2 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-madas-text/60 hover:text-primary"
               title="Undo (Ctrl+Z)"
+              className="w-8 h-8 flex items-center justify-center text-[#666] hover:text-[#ccc] disabled:opacity-30 rounded transition-colors"
             >
-              <span className="material-icons text-base text-gray-600">undo</span>
+              <span className="material-icons text-base">undo</span>
             </button>
             <button
               type="button"
               onClick={onRedo}
               disabled={!canRedo}
-              className="p-2 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-madas-text/60 hover:text-primary"
               title="Redo (Ctrl+Shift+Z)"
+              className="w-8 h-8 flex items-center justify-center text-[#666] hover:text-[#ccc] disabled:opacity-30 rounded transition-colors"
             >
-              <span className="material-icons text-base text-gray-600">redo</span>
+              <span className="material-icons text-base">redo</span>
             </button>
-            <div className="h-6 w-px bg-gray-200" />
           </>
         )}
 
-        {/* Sidebar Toggle */}
-        <button
-          type="button"
-          onClick={onToggleSidebar}
-          className={`p-2 rounded transition-colors ${
-            showSidebar ? 'bg-base text-primary' : 'text-madas-text/60 hover:text-primary'
-          }`}
-          title={showSidebar ? 'Hide Sidebar' : 'Show Sidebar'}
-        >
-          <span className={`material-icons text-base ${showSidebar ? 'text-primary' : 'text-gray-600'}`}>view_sidebar</span>
-        </button>
-
-        {/* Theme Panel Toggle */}
-        {onToggleTheme && (
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className={`p-2 rounded transition-colors ${
-              showTheme ? 'bg-base text-primary' : 'text-madas-text/60 hover:text-primary'
-            }`}
-            title="Global Theme"
-          >
-            <span className={`material-icons text-base ${showTheme ? 'text-primary' : 'text-gray-600'}`}>palette</span>
-          </button>
-        )}
-
-        {/* Pages Panel Toggle */}
-        {onTogglePages && (
-          <button
-            type="button"
-            onClick={onTogglePages}
-            className={`p-2 rounded transition-colors ${
-              showPages ? 'bg-base text-primary' : 'text-madas-text/60 hover:text-primary'
-            }`}
-            title="Manage Pages"
-          >
-            <span className={`material-icons text-base ${showPages ? 'text-primary' : 'text-gray-600'}`}>pages</span>
-          </button>
-        )}
-
-        {/* SEO Panel Toggle */}
-        {onToggleSEO && (
-          <button
-            type="button"
-            onClick={onToggleSEO}
-            className={`p-2 rounded transition-colors ${
-              showSEO ? 'bg-base text-primary' : 'text-madas-text/60 hover:text-primary'
-            }`}
-            title="SEO Settings"
-          >
-            <span className={`material-icons text-base ${showSEO ? 'text-primary' : 'text-gray-600'}`}>travel_explore</span>
-          </button>
-        )}
-
-        {/* Preview Button */}
-        <button
-          type="button"
-          onClick={() => setShowPreview(true)}
-          className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-madas-text/70 hover:bg-base transition-colors"
-        >
-          <span className="material-icons text-base mr-1 align-middle text-gray-700">preview</span>
-          Preview
-        </button>
-
-        {/* Publish Button */}
-        <button
-          type="button"
-          onClick={() => setShowPublish(true)}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            currentStatus === 'published'
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-primary text-white hover:bg-[#1f3c19]'
-          }`}
-        >
-          <span className="material-icons text-base mr-1 align-middle">publish</span>
-          {currentStatus === 'published' ? 'Published' : 'Publish'}
-        </button>
-
-        {/* Export Button */}
+        {/* Export */}
         <button
           type="button"
           onClick={() => {
@@ -253,67 +184,59 @@ const BuilderToolbar = ({
             a.click();
             URL.revokeObjectURL(url);
           }}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-madas-text/70 hover:bg-base transition-colors"
           title="Export as HTML"
+          className="w-8 h-8 flex items-center justify-center text-[#666] hover:text-[#ccc] rounded transition-colors"
         >
-          <span className="material-icons text-base text-gray-700">download</span>
+          <span className="material-icons text-sm">download</span>
         </button>
 
-        {/* Settings Button */}
+        {/* Settings */}
         <button
           type="button"
           onClick={onSettings}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-madas-text/70 hover:bg-base transition-colors"
           title="Settings"
+          className="w-8 h-8 flex items-center justify-center text-[#666] hover:text-[#ccc] rounded transition-colors"
         >
-          <span className="material-icons text-base text-gray-700">settings</span>
+          <span className="material-icons text-sm">settings</span>
         </button>
 
-        {/* Autosave Status Indicator */}
-        {autosaveStatus !== 'idle' && (
-          <span className={`flex items-center gap-1.5 text-xs font-medium transition-all ${
-            autosaveStatus === 'saving'  ? 'text-blue-500' :
-            autosaveStatus === 'pending' ? 'text-gray-400' :
-            autosaveStatus === 'saved'   ? 'text-green-600' :
-            autosaveStatus === 'error'   ? 'text-red-500'  : 'text-gray-400'
-          }`}>
-            {autosaveStatus === 'saving'  && <span className="material-icons text-sm animate-spin">progress_activity</span>}
-            {autosaveStatus === 'pending' && <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />}
-            {autosaveStatus === 'saved'   && <span className="material-icons text-sm">check_circle</span>}
-            {autosaveStatus === 'error'   && <span className="material-icons text-sm">warning</span>}
-            {autosaveStatus === 'saving'  && 'Saving…'}
-            {autosaveStatus === 'pending' && 'Unsaved'}
-            {autosaveStatus === 'saved'   && 'Saved'}
-            {autosaveStatus === 'error'   && 'Save failed'}
-          </span>
-        )}
-
-        {/* Save Button */}
+        {/* Save */}
         <button
           id="save-btn"
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="rounded-lg bg-primary text-white px-6 py-2 text-sm font-semibold hover:bg-[#1f3c19] transition-colors disabled:opacity-60 shadow-sm"
+          title="Save"
+          className="w-8 h-8 flex items-center justify-center text-[#666] hover:text-[#ccc] disabled:opacity-30 rounded transition-colors"
         >
-          {saving ? (
-            <span className="flex items-center gap-2">
-              <span className="material-icons animate-spin text-base">progress_activity</span>
-              Saving...
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <span className="material-icons text-base">save</span>
-              Save
-            </span>
-          )}
+          <span className="material-icons text-sm">{saving ? 'progress_activity' : 'save'}</span>
+        </button>
+
+        {/* Preview */}
+        <button
+          type="button"
+          onClick={() => setShowPreview(true)}
+          className="flex items-center gap-1 border border-[#333] text-[#ccc] text-xs px-3 py-1.5 rounded-md hover:bg-[#252525] transition-colors flex-shrink-0"
+        >
+          <span className="material-icons text-sm">preview</span>
+          Preview
+        </button>
+
+        {/* Publish */}
+        <button
+          type="button"
+          onClick={() => setShowPublish(true)}
+          className="flex items-center gap-1 bg-[#27491F] text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-[#1f3c19] transition-colors flex-shrink-0"
+        >
+          <span className="material-icons text-sm">publish</span>
+          {currentStatus === 'published' ? 'Update' : 'Publish'}
         </button>
       </div>
 
-      {/* Preview Modal */}
+      {/* PreviewModal */}
       <PreviewModal open={showPreview} onClose={() => setShowPreview(false)} sections={sections} siteId={siteId} />
 
-      {/* Publish Modal */}
+      {/* PublishModal */}
       <PublishModal
         open={showPublish}
         onClose={() => setShowPublish(false)}
@@ -323,9 +246,8 @@ const BuilderToolbar = ({
         currentStatus={currentStatus}
         sections={sections}
       />
-    </div>
+    </>
   );
 };
 
 export default BuilderToolbar;
-
