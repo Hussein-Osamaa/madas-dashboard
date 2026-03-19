@@ -239,13 +239,13 @@ const findEditableElement = (
   target: HTMLElement,
   sectionContainer: HTMLElement,
   sectionType?: SectionType
-): { type: ElementType; index?: number } | null => {
+): { type: ElementType; index?: number; element: HTMLElement } | null => {
   let current: HTMLElement | null = target;
 
   while (current && current !== sectionContainer && current !== document.body) {
     const result = getElementTypeFromTarget(current, sectionType);
     if (result) {
-      return result;
+      return { ...result, element: current };
     }
     current = current.parentElement;
   }
@@ -314,12 +314,12 @@ const BuilderCanvas = ({
     const sectionType = sections.find(s => s.id === sectionId)?.type;
 
     // Find the editable element (registry path first, legacy fallback inside)
-    const editableElement = findEditableElement(target, sectionContainer as HTMLElement, sectionType);
+    const editableResult = findEditableElement(target, sectionContainer as HTMLElement, sectionType);
 
-    if (editableElement) {
-      const element = { type: editableElement.type, sectionId, index: editableElement.index };
+    if (editableResult) {
+      const element = { type: editableResult.type, sectionId, index: editableResult.index };
       onSelectElement(element);
-      onSelectElementWithRect?.(element, target.getBoundingClientRect());
+      onSelectElementWithRect?.(element, editableResult.element.getBoundingClientRect());
     } else {
       // Default to background if clicking on empty space
       const bgElement = { type: 'background' as const, sectionId };
@@ -495,8 +495,8 @@ const BuilderCanvas = ({
             >
               {/* Global editable-element hover outline */}
               <style>{`
-  [data-edit-type] { position: relative; }
-  [data-edit-type]:hover {
+  [data-preview-mode] [data-edit-type] { position: relative; }
+  [data-preview-mode] [data-edit-type]:hover {
     outline: 1px dashed rgba(39, 73, 31, 0.5);
     outline-offset: 2px;
     cursor: pointer;
