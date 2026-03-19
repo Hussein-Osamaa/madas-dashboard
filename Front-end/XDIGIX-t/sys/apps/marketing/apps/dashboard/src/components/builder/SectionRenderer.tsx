@@ -1,29 +1,6 @@
-import { Section } from '../../types/builder';
-import NavbarSection from './sections/NavbarSection';
-import HeroSection from './sections/HeroSection';
-import FeaturesSection from './sections/FeaturesSection';
-import ProductsSection from './sections/ProductsSection';
-import DealsSection from './sections/DealsSection';
-import CollectionsSection from './sections/CollectionsSection';
-import TestimonialsSection from './sections/TestimonialsSection';
-import CTASection from './sections/CTASection';
-import AboutSection from './sections/AboutSection';
-import ContactSection from './sections/ContactSection';
-import GallerySection from './sections/GallerySection';
-import PricingSection from './sections/PricingSection';
-import FAQSection from './sections/FAQSection';
-import FooterSection from './sections/FooterSection';
-import StatsSection from './sections/StatsSection';
-import TeamSection from './sections/TeamSection';
-import ServicesSection from './sections/ServicesSection';
-import VideoSection from './sections/VideoSection';
-import CountdownSection from './sections/CountdownSection';
-import BannerSection from './sections/BannerSection';
-import PartnersSection from './sections/PartnersSection';
-import NewsletterSection from './sections/NewsletterSection';
-import DividerSection from './sections/DividerSection';
-import ImageComparisonSection from './sections/ImageComparisonSection';
+import { Section, SectionType } from '../../types/builder';
 import { mergeSectionData } from './sections/sectionDefaults';
+import { SECTION_RENDERERS } from '../../registry/sectionRenderers';
 
 type Props = {
   section: Section;
@@ -33,7 +10,7 @@ type Props = {
   siteId?: string;
 };
 
-const SectionRenderer = ({ section, isSelected, onSelect, siteId }: Props) => {
+const SectionRenderer = ({ section, isSelected, onSelect, siteId, previewMode }: Props) => {
   /**
    * BULLETPROOF DATA RESOLUTION
    * ────────────────────────────
@@ -49,10 +26,10 @@ const SectionRenderer = ({ section, isSelected, onSelect, siteId }: Props) => {
   const rawData: unknown =
     (section.data && typeof section.data === 'object' && Object.keys(section.data).length > 0)
       ? section.data
-      : ((section as Record<string, unknown>).content ?? {});
+      : ((section as unknown as Record<string, unknown>).content ?? {});
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sectionData = mergeSectionData(section.type as any, rawData) as Record<string, any>;
+  const resolvedData = mergeSectionData(section.type as any, rawData) as Record<string, any>;
 
   const style = section.style || {};
   const padding = style.padding || {};
@@ -110,64 +87,14 @@ const SectionRenderer = ({ section, isSelected, onSelect, siteId }: Props) => {
     width:    style.maxWidth !== undefined ? '100%'                : undefined,
   };
 
-  const renderSection = () => {
-    switch (section.type) {
-      case 'navbar':
-        return <NavbarSection data={sectionData as any} style={sectionStyle} siteId={siteId} />;
-      case 'hero':
-        return <HeroSection data={sectionData as any} style={sectionStyle} />;
-      case 'features':
-        return <FeaturesSection data={sectionData as any} style={sectionStyle} />;
-      case 'products':
-        return <ProductsSection data={sectionData as any} style={sectionStyle} />;
-      case 'deals':
-        return <DealsSection data={sectionData as any} style={sectionStyle} />;
-      case 'collections':
-        return <CollectionsSection data={sectionData as any} style={sectionStyle} />;
-      case 'testimonials':
-        return <TestimonialsSection data={sectionData as any} style={sectionStyle} />;
-      case 'cta':
-        return <CTASection data={sectionData as any} style={sectionStyle} />;
-      case 'about':
-        return <AboutSection data={sectionData as any} style={sectionStyle} />;
-      case 'contact':
-        return <ContactSection data={sectionData as any} style={sectionStyle} />;
-      case 'gallery':
-        return <GallerySection data={sectionData as any} style={sectionStyle} />;
-      case 'pricing':
-        return <PricingSection data={sectionData as any} style={sectionStyle} />;
-      case 'faq':
-        return <FAQSection data={sectionData as any} style={sectionStyle} />;
-      case 'footer':
-        return <FooterSection data={sectionData as any} style={sectionStyle} siteId={siteId} />;
-      case 'stats':
-        return <StatsSection data={sectionData as any} style={sectionStyle} />;
-      case 'team':
-        return <TeamSection data={sectionData as any} style={sectionStyle} />;
-      case 'services':
-        return <ServicesSection data={sectionData as any} style={sectionStyle} />;
-      case 'video':
-        return <VideoSection data={sectionData as any} style={sectionStyle} />;
-      case 'countdown':
-        return <CountdownSection data={sectionData as any} style={sectionStyle} />;
-      case 'banner':
-        return <BannerSection data={sectionData as any} style={sectionStyle} />;
-      case 'partners':
-        return <PartnersSection data={sectionData as any} style={sectionStyle} />;
-      case 'newsletter':
-        return <NewsletterSection data={sectionData as any} style={sectionStyle} />;
-      case 'divider':
-        return <DividerSection data={sectionData as any} style={sectionStyle} />;
-      case 'imageComparison':
-        return <ImageComparisonSection data={sectionData as any} style={sectionStyle} />;
-      default:
-        return (
-          <div className="p-8 text-center text-madas-text/60">
-            Unknown section type: {section.type}
-          </div>
-        );
-    }
-  };
+  const Renderer = SECTION_RENDERERS[section.type as SectionType];
+  if (!Renderer) {
+    return (
+      <div className="p-8 text-center text-gray-400 text-sm">
+        Unknown section type: {section.type}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -184,7 +111,7 @@ const SectionRenderer = ({ section, isSelected, onSelect, siteId }: Props) => {
           }}
         />
       )}
-      {renderSection()}
+      <Renderer data={resolvedData} style={sectionStyle} siteId={siteId} previewMode={previewMode} />
     </div>
   );
 };
