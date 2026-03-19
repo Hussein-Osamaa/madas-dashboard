@@ -12,8 +12,8 @@ type Props = {
   onSave: () => void;
   saving: boolean;
   autosaveStatus?: AutosaveStatus;
-  onToggleSidebar: () => void;
-  showSidebar: boolean;
+  onToggleSidebar?: () => void;
+  showSidebar?: boolean;
   showTheme?: boolean;
   onToggleTheme?: () => void;
   showPages?: boolean;
@@ -40,14 +40,6 @@ const BuilderToolbar = ({
   onSave,
   saving,
   autosaveStatus = 'idle',
-  onToggleSidebar: _onToggleSidebar,
-  showSidebar: _showSidebar,
-  showTheme: _showTheme,
-  onToggleTheme: _onToggleTheme,
-  showPages: _showPages,
-  onTogglePages: _onTogglePages,
-  showSEO: _showSEO,
-  onToggleSEO: _onToggleSEO,
   onBack,
   onSettings,
   sections,
@@ -98,8 +90,11 @@ const BuilderToolbar = ({
           <span className="text-sm font-medium text-[#e8e8e8] max-w-[120px] truncate">{siteName}</span>
         </div>
 
-        {/* Page selector */}
-        <select className="bg-[#252525] text-[#ccc] text-xs rounded-md px-2 py-1 border border-[#333] focus:outline-none focus:border-[#27491F] cursor-pointer flex-shrink-0">
+        {/* TODO: multi-page support — wire to real page state in Task 8 */}
+        <select
+          disabled
+          className="bg-[#252525] text-[#555] text-xs rounded-md px-2 py-1 border border-[#333] focus:outline-none cursor-not-allowed flex-shrink-0"
+        >
           <option value="home">Home page</option>
         </select>
 
@@ -181,7 +176,9 @@ const BuilderToolbar = ({
             const a = document.createElement('a');
             a.href = url;
             a.download = `${siteName.replace(/\s+/g, '-')}.html`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
           }}
           title="Export as HTML"
