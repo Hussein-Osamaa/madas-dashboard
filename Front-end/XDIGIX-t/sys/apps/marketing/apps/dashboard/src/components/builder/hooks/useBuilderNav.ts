@@ -7,7 +7,8 @@ export interface NavFrame {
   view: NavView;
   label: string;
   sectionId?: string;
-  blockKey?: string;
+  blockKey?: string;   // block type key (e.g. 'feature')
+  blockIndex?: number; // index within the blocks array
 }
 
 export function useBuilderNav() {
@@ -24,11 +25,11 @@ export function useBuilderNav() {
     ]);
   }, []);
 
-  const pushBlock = useCallback((blockKey: string, label: string) => {
+  const pushBlock = useCallback((blockKey: string, label: string, blockIndex: number) => {
     setStack((prev) => {
       const base = prev.slice(0, 2);
       if (base.length < 2) return prev; // called before pushSection — ignore
-      return [...base, { view: 'block', label, blockKey }];
+      return [...base, { view: 'block' as NavView, label, blockKey, blockIndex }];
     });
   }, []);
 

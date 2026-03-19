@@ -5,6 +5,7 @@ import { Section, SectionType } from '../../types/builder';
 import { SECTION_REGISTRY } from '../../registry/sectionRegistry';
 import { useBuilderNav } from './hooks/useBuilderNav';
 import SectionEditor from './SectionEditor';
+import BlockEditor from './engine/BlockEditor';
 
 // ── Props ──────────────────────────────────────────────────────────────────
 
@@ -216,13 +217,43 @@ function PanelContent({
       )}
 
       {/* ── BLOCK SETTINGS VIEW ── */}
-      {nav.current.view === 'block' && (
-        <div className="flex-1 flex flex-col overflow-hidden p-4">
-          <p className="text-xs text-[#666] text-center mt-8">
-            Block-level editing coming soon.
-          </p>
-        </div>
-      )}
+      {nav.current.view === 'block' && selectedSection && (() => {
+        const entry = SECTION_REGISTRY[selectedSection.type as SectionType];
+        const blockSchema = entry?.blocks?.find(b => b.type === nav.current.blockKey);
+        const blockIndex = nav.current.blockIndex ?? 0;
+        const blockItems = (selectedSection.data[blockSchema?.dataKey ?? ''] as Record<string, unknown>[]) ?? [];
+        const blockData = blockItems[blockIndex];
+
+        if (!blockSchema || !blockData) {
+          return (
+            <div className="flex-1 flex flex-col overflow-hidden p-4">
+              <p className="text-xs text-[#666] text-center mt-8">Block not found.</p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex-1 overflow-y-auto p-4">
+            <p className="text-[11px] font-semibold text-[#999] uppercase tracking-[.6px] mb-3">
+              {blockSchema.singularLabel} #{blockIndex + 1}
+            </p>
+            <BlockEditor
+              schema={blockSchema}
+              data={blockData}
+              onChange={(updatedBlock) => {
+                const updatedItems = [...blockItems];
+                updatedItems[blockIndex] = updatedBlock;
+                onUpdateSection(selectedSection.id, {
+                  ...selectedSection.data,
+                  [blockSchema.dataKey]: updatedItems,
+                });
+              }}
+              siteId={siteId}
+              businessId={businessId}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }
