@@ -12,9 +12,11 @@ import type { ApiBinding, AnalyticsEvents } from '../../registry/types';
 type Props = {
   section: Section;
   onUpdate: (data: any) => void;
-  onClose: () => void;
+  onClose?: () => void;
   businessId?: string;
   siteId?: string;
+  embedded?: boolean;
+  activeTabOverride?: 'content' | 'style';
 };
 
 type Tab = 'content' | 'analytics';
@@ -195,73 +197,78 @@ const DataAnalyticsPanel: React.FC<{
 };
 
 /* ── Main SectionEditor ─────────────────────────────────────────────── */
-const SectionEditor: React.FC<Props> = ({ section, onUpdate, onClose, businessId, siteId }) => {
+const SectionEditor: React.FC<Props> = ({ section, onUpdate, onClose, businessId, siteId, embedded, activeTabOverride }) => {
   const entry = SECTION_REGISTRY[section.type];
   const [activeTab, setActiveTab] = useState<Tab>('content');
+
+  // When embedded, use the override tab; otherwise use internal state
+  const resolvedTab = activeTabOverride ?? activeTab;
 
   const hasDataTab = !!(entry?.apiBinding || entry?.analyticsEvents);
 
   return (
     <div className="h-full flex flex-col">
-      {/* ── Header ── */}
-      <div className="p-4 border-b border-gray-200 flex-shrink-0">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center gap-1.5 text-sm text-madas-text/70 hover:text-primary transition-colors mb-3"
-        >
-          <span className="material-icons text-lg">arrow_back</span>
-          <span>Back to Sections</span>
-        </button>
+      {/* ── Header + internal tab bar — suppressed when embedded ── */}
+      {!embedded && (
+        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1.5 text-sm text-madas-text/70 hover:text-primary transition-colors mb-3"
+          >
+            <span className="material-icons text-lg">arrow_back</span>
+            <span>Back to Sections</span>
+          </button>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-primary">
-              {entry?.label ?? section.type}
-            </h3>
-            <p className="text-xs text-madas-text/60 mt-0.5">
-              {entry?.description ?? `Edit ${section.type} section`}
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-primary">
+                {entry?.label ?? section.type}
+              </h3>
+              <p className="text-xs text-madas-text/60 mt-0.5">
+                {entry?.description ?? `Edit ${section.type} section`}
+              </p>
+            </div>
+            {entry && (
+              <span className="material-icons text-2xl text-gray-200">{entry.icon}</span>
+            )}
           </div>
-          {entry && (
-            <span className="material-icons text-2xl text-gray-200">{entry.icon}</span>
+
+          {/* ── Tab bar — only shown when the section has data/analytics info ── */}
+          {hasDataTab && (
+            <div className="flex mt-3 bg-gray-100 rounded-lg p-0.5 gap-0.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('content')}
+                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md transition-all ${
+                  resolvedTab === 'content'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <span className="material-icons text-sm">edit</span>
+                Content
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('analytics')}
+                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md transition-all ${
+                  resolvedTab === 'analytics'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <span className="material-icons text-sm">insights</span>
+                Data & Analytics
+              </button>
+            </div>
           )}
         </div>
-
-        {/* ── Tab bar — only shown when the section has data/analytics info ── */}
-        {hasDataTab && (
-          <div className="flex mt-3 bg-gray-100 rounded-lg p-0.5 gap-0.5">
-            <button
-              type="button"
-              onClick={() => setActiveTab('content')}
-              className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md transition-all ${
-                activeTab === 'content'
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <span className="material-icons text-sm">edit</span>
-              Content
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('analytics')}
-              className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md transition-all ${
-                activeTab === 'analytics'
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <span className="material-icons text-sm">insights</span>
-              Data & Analytics
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* ── Editor body ── */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'analytics' ? (
+        {resolvedTab === 'analytics' ? (
           <DataAnalyticsPanel
             apiBinding={entry?.apiBinding}
             analyticsEvents={entry?.analyticsEvents}
@@ -271,7 +278,7 @@ const SectionEditor: React.FC<Props> = ({ section, onUpdate, onClose, businessId
             <entry.Editor
               section={section}
               onUpdate={onUpdate}
-              onClose={onClose}
+              onClose={onClose ?? (() => {})}
               businessId={businessId}
               siteId={siteId}
             />
