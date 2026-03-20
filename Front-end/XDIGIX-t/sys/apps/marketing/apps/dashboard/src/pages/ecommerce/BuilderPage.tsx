@@ -125,19 +125,103 @@ const BuilderPage = () => {
         }
 
         if (loadedSections.length === 0) {
+          // Shopify Dawn-style default theme — clean, minimal storefront
           const defaultSections: Section[] = [
+            {
+              id: 'banner-1',
+              type: 'banner',
+              order: 0,
+              data: {
+                text: 'Welcome to our store',
+                link: '', linkText: '',
+                backgroundColor: '#1a1a1a', textColor: '#ffffff',
+                dismissible: false, enableMarquee: false, marqueeSpeed: 15,
+              },
+            },
+            {
+              id: 'navbar-1',
+              type: 'navbar',
+              order: 1,
+              data: {
+                logo: '', logoText: siteName || 'xdigix',
+                menuItems: [
+                  { label: 'Home', link: '/' },
+                  { label: 'Catalog', link: '/catalog' },
+                  { label: 'Contact', link: '/contact' },
+                ],
+                showSearch: true, searchPlaceholder: 'Search...',
+                showCart: true, cartCount: 0,
+                showWishlist: false, wishlistCount: 0,
+                showUserIcon: true,
+                backgroundColor: '#ffffff', textColor: '#1a1a1a', sticky: false,
+              },
+            },
             {
               id: 'hero-1',
               type: 'hero',
-              order: 0,
+              order: 2,
               data: {
-                title: 'Welcome to Our Store',
-                subtitle: 'Discover amazing products',
-                buttonText: 'Shop Now',
-                buttonLink: '#',
+                title: 'Browse our latest products',
+                subtitle: '',
+                buttonText: 'Shop all',
+                buttonLink: '/catalog',
                 backgroundImage: '',
-                backgroundColor: 'linear-gradient(135deg, #27491F 0%, #F0CAE1 100%)',
-                textColor: '#FFFFFF',
+                backgroundColor: '#6b8f71',
+                textColor: '#ffffff',
+                isCarousel: false,
+                overlayEnabled: true,
+                overlayColor: 'rgba(0,0,0,0.3)',
+              },
+            },
+            {
+              id: 'products-1',
+              type: 'products',
+              order: 3,
+              data: {
+                title: 'Featured products',
+                subtitle: '',
+                layout: 'grid', columns: 4,
+                selectedProducts: [],
+                showPrice: true, showAddToCart: false,
+                cardStyle: {
+                  backgroundColor: '#ffffff', textColor: '#1a1a1a', priceColor: '#6b7280',
+                  borderRadius: 0, shadow: 'none',
+                  imageAspect: 'square', imageFit: 'contain', imageBackgroundColor: '#f3f4f6',
+                  buttonBackgroundColor: '#1a1a1a', buttonTextColor: '#ffffff',
+                  buttonBorderRadius: 0, buttonFullWidth: false,
+                  showBorder: false, borderColor: '#e5e7eb',
+                },
+              },
+            },
+            {
+              id: 'newsletter-1',
+              type: 'newsletter',
+              order: 4,
+              data: {
+                title: 'Subscribe to our emails',
+                subtitle: '',
+                placeholder: 'Email',
+                buttonText: '→',
+                backgroundColor: '#f9fafb',
+                successMessage: 'Thank you for subscribing!',
+              },
+            },
+            {
+              id: 'footer-1',
+              type: 'footer',
+              order: 5,
+              data: {
+                layout: 'minimal',
+                logoText: siteName || 'xdigix', logo: '',
+                tagline: '',
+                copyrightText: `© ${new Date().getFullYear()}, ${siteName || 'xdigix'}`,
+                columns: [],
+                policyLinks: [
+                  { label: 'Privacy policy', link: '/privacy' },
+                ],
+                socialLinks: [],
+                showNewsletter: false,
+                backgroundColor: '#f9fafb', textColor: '#6b7280',
               },
             },
           ];

@@ -22,14 +22,14 @@ export interface SiteTheme {
 }
 
 export const DEFAULT_THEME: SiteTheme = {
-  colorPrimary:   '#27491F',
-  colorSecondary: '#F0CAE1',
-  colorAccent:    '#FFD300',
+  colorPrimary:   '#1a1a1a',
+  colorSecondary: '#6b8f71',
+  colorAccent:    '#4338ca',
   colorBg:        '#ffffff',
-  colorText:      '#1f2937',
+  colorText:      '#1a1a1a',
   fontHeading:    'Inter',
   fontBody:       'Inter',
-  borderRadius:   'rounded',
+  borderRadius:   'sharp',
   spacing:        'normal',
 };
 
