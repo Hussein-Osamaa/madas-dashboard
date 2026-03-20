@@ -467,7 +467,7 @@ const BuilderCanvas = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
+    <div className="flex-1 overflow-auto bg-[#e9ebee] p-4 sm:p-6 lg:p-8">
       <div 
         ref={previewWrapperRef}
         className={`mx-auto transition-all duration-300 ${
@@ -486,10 +486,10 @@ const BuilderCanvas = ({
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={sortedSections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
             <div
-              className="bg-white min-h-screen"
+              className={`bg-white overflow-hidden min-h-[600px] ${previewMode === 'desktop' ? 'rounded-xl shadow-[0_8px_32px_rgba(0,0,0,.14)] max-w-[1100px] mx-auto my-6' : 'min-h-screen'}`}
               style={{
                 width: previewMode === 'mobile' ? '375px' : previewMode === 'tablet' ? '768px' : '100%',
-                maxWidth: '100%',
+                maxWidth: previewMode === 'desktop' ? '1100px' : '100%',
                 overflowX: 'hidden'
               }}
             >

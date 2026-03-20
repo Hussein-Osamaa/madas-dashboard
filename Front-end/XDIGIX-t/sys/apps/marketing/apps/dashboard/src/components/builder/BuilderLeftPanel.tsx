@@ -66,33 +66,33 @@ function PanelContent({
     : 'Block settings';
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a1a] overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Panel title row */}
       <div className="px-3.5 pt-3 pb-0 flex items-center gap-2 flex-shrink-0">
-        <span className="text-[11px] font-semibold text-[#999] uppercase tracking-[.6px] flex-1">
+        <span className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-[.6px] flex-1">
           {viewTitle}
         </span>
         <button
           onClick={onOpenTheme}
           title="Theme settings"
-          className="w-6 h-6 rounded flex items-center justify-center text-[#666] hover:text-[#ccc] hover:bg-[#2a2a2a] transition-colors"
+          className="w-6 h-6 rounded flex items-center justify-center text-[#6b7280] hover:text-[#111827] hover:bg-[#f3f4f6] transition-colors"
         >
           <Sun size={13} />
         </button>
       </div>
 
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1 px-3.5 pt-2.5 pb-2 border-b border-[#2a2a2a] flex-shrink-0 min-h-[36px] overflow-hidden">
+      <div className="flex items-center gap-1 px-3.5 pt-2.5 pb-2 border-b border-[#e5e7eb] flex-shrink-0 min-h-[36px] overflow-hidden">
         {nav.stack.map((frame, i) => (
           <span key={i} className="flex items-center gap-1 min-w-0">
-            {i > 0 && <ChevronRight size={10} className="text-[#444] flex-shrink-0" />}
+            {i > 0 && <ChevronRight size={10} className="text-[#9ca3af] flex-shrink-0" />}
             <button
               onClick={() => handleBreadcrumbClick(i)}
               className={clsx(
                 'text-[11px] truncate transition-colors max-w-[100px]',
                 i === nav.stack.length - 1
-                  ? 'text-[#e8e8e8] font-medium cursor-default'
-                  : 'text-[#666] hover:text-[#ccc] cursor-pointer'
+                  ? 'text-[#111827] font-medium cursor-default'
+                  : 'text-[#6b7280] hover:text-[#111827] cursor-pointer'
               )}
             >
               {i === 0 ? 'Home page' : frame.label}
@@ -115,16 +115,16 @@ function PanelContent({
               >
                 <div className={clsx(
                   'flex items-center gap-2.5 px-3.5 py-2 transition-colors',
-                  'hover:bg-[#242424]',
-                  isSelected && 'bg-[#27491F22] border-l-2 border-[#27491F] pl-[calc(0.875rem-2px)]'
+                  'hover:bg-[#f3f4f6]',
+                  isSelected && 'bg-[#e8f0e6] border-l-2 border-[#27491F] pl-[calc(0.875rem-2px)]'
                 )}>
                   {/* Section icon — Material Icons glyph */}
-                  <div className="w-7 h-7 rounded-md bg-[#252525] flex items-center justify-center flex-shrink-0">
-                    <span className="material-icons text-sm text-[#888]">{entry?.icon ?? 'web'}</span>
+                  <div className="w-7 h-7 rounded-md bg-[#f3f4f6] flex items-center justify-center flex-shrink-0">
+                    <span className="material-icons text-sm text-[#6b7280]">{entry?.icon ?? 'web'}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-[#d0d0d0] truncate">{entry?.label ?? section.type}</div>
-                    <div className="text-[10px] text-[#555] uppercase tracking-[.4px]">{entry?.category ?? 'section'}</div>
+                    <div className="text-xs font-medium text-[#111827] truncate">{entry?.label ?? section.type}</div>
+                    <div className="text-[10px] text-[#9ca3af] uppercase tracking-[.4px]">{entry?.category ?? 'section'}</div>
                   </div>
                   {/* Hover actions */}
                   <div className="hidden group-hover:flex items-center gap-0.5">
@@ -132,18 +132,18 @@ function PanelContent({
                       onClick={(e) => { e.stopPropagation(); onReorderSection(section.id, 'up'); }}
                       disabled={idx === 0}
                       title="Move up"
-                      className="w-5 h-5 rounded text-[10px] flex items-center justify-center text-[#666] hover:text-[#ccc] hover:bg-[#333] disabled:opacity-30 transition-colors"
+                      className="w-5 h-5 rounded text-[10px] flex items-center justify-center text-[#6b7280] hover:text-[#111827] hover:bg-[#f3f4f6] disabled:opacity-30 transition-colors"
                     >↑</button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onReorderSection(section.id, 'down'); }}
                       disabled={idx === sections.length - 1}
                       title="Move down"
-                      className="w-5 h-5 rounded text-[10px] flex items-center justify-center text-[#666] hover:text-[#ccc] hover:bg-[#333] disabled:opacity-30 transition-colors"
+                      className="w-5 h-5 rounded text-[10px] flex items-center justify-center text-[#6b7280] hover:text-[#111827] hover:bg-[#f3f4f6] disabled:opacity-30 transition-colors"
                     >↓</button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onDeleteSection(section.id); }}
                       title="Delete section"
-                      className="w-5 h-5 rounded text-[11px] flex items-center justify-center text-[#666] hover:text-red-400 hover:bg-[#333] transition-colors"
+                      className="w-5 h-5 rounded text-[11px] flex items-center justify-center text-[#6b7280] hover:text-red-400 hover:bg-[#f3f4f6] transition-colors"
                     >×</button>
                   </div>
                 </div>
@@ -153,7 +153,7 @@ function PanelContent({
           {/* Add section */}
           <button
             onClick={onOpenAddSheet}
-            className="mx-3.5 mt-1.5 mb-3 flex items-center gap-2 w-[calc(100%-28px)] px-3 py-2.5 border border-dashed border-[#2a2a2a] rounded-lg text-[#666] text-xs hover:border-[#444] hover:text-[#999] hover:bg-[#1f1f1f] transition-all"
+            className="mx-3.5 mt-1.5 mb-3 flex items-center gap-2 w-[calc(100%-28px)] px-3 py-2.5 border border-dashed border-[#e5e7eb] rounded-lg text-[#27491F] text-xs hover:border-[#27491F] hover:text-[#27491F] hover:bg-[#e8f0e6] transition-all"
           >
             <Plus size={13} />
             Add section
@@ -169,13 +169,13 @@ function PanelContent({
             {(() => {
               const entry = SECTION_REGISTRY[selectedSection.type as SectionType];
               return (
-                <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[#222] rounded-lg mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#27491F33] flex items-center justify-center flex-shrink-0">
-                    <span className="material-icons text-base text-[#6dbf67]">{entry?.icon ?? 'web'}</span>
+                <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[#f9fafb] rounded-lg mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#e8f0e6] flex items-center justify-center flex-shrink-0">
+                    <span className="material-icons text-base text-[#27491F]">{entry?.icon ?? 'web'}</span>
                   </div>
                   <div>
-                    <div className="text-[13px] font-semibold text-[#e8e8e8]">{entry?.label ?? selectedSection.type}</div>
-                    <div className="text-[10px] text-[#666] uppercase tracking-[.5px]">{entry?.category ?? 'section'}</div>
+                    <div className="text-[13px] font-semibold text-[#111827]">{entry?.label ?? selectedSection.type}</div>
+                    <div className="text-[10px] text-[#6b7280] uppercase tracking-[.5px]">{entry?.category ?? 'section'}</div>
                   </div>
                 </div>
               );
@@ -183,7 +183,7 @@ function PanelContent({
           </div>
 
           {/* Content / Style tabs */}
-          <div className="flex border-b border-[#2a2a2a] flex-shrink-0 px-3.5">
+          <div className="flex border-b border-[#e5e7eb] flex-shrink-0 px-3.5">
             {(['content', 'style'] as const).map((tab) => (
               <button
                 key={tab}
@@ -191,8 +191,8 @@ function PanelContent({
                 className={clsx(
                   'flex-1 py-2.5 text-center text-xs font-medium capitalize border-b-2 -mb-px transition-all',
                   ssTab === tab
-                    ? 'text-[#e8e8e8] border-[#27491F]'
-                    : 'text-[#666] border-transparent hover:text-[#ccc]'
+                    ? 'text-[#27491F] border-[#27491F]'
+                    : 'text-[#6b7280] border-transparent hover:text-[#111827]'
                 )}
               >
                 {tab}
@@ -227,14 +227,14 @@ function PanelContent({
         if (!blockSchema || !blockData) {
           return (
             <div className="flex-1 flex flex-col overflow-hidden p-4">
-              <p className="text-xs text-[#666] text-center mt-8">Block not found.</p>
+              <p className="text-xs text-[#6b7280] text-center mt-8">Block not found.</p>
             </div>
           );
         }
 
         return (
           <div className="flex-1 overflow-y-auto p-4">
-            <p className="text-[11px] font-semibold text-[#999] uppercase tracking-[.6px] mb-3">
+            <p className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-[.6px] mb-3">
               {blockSchema.singularLabel} #{blockIndex + 1}
             </p>
             <BlockEditor
@@ -269,7 +269,7 @@ export default function BuilderLeftPanel({
   // Desktop mode: fixed 280px left panel
   if (!isDrawer) {
     return (
-      <div className="w-[280px] border-r border-[#2a2a2a] flex-shrink-0 h-full overflow-hidden">
+      <div className="w-[300px] border-r border-[#e5e7eb] flex-shrink-0 h-full overflow-hidden">
         <PanelContent {...panelProps} />
       </div>
     );
@@ -286,7 +286,7 @@ export default function BuilderLeftPanel({
       )}
       <div
         className={clsx(
-          'fixed left-0 top-12 bottom-0 w-[280px] z-50 md:hidden transition-transform duration-200 shadow-2xl',
+          'fixed left-0 top-12 bottom-0 w-[300px] z-50 md:hidden transition-transform duration-200 shadow-2xl',
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >

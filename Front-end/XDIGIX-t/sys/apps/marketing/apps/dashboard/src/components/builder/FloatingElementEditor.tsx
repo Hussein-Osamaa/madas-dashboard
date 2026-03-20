@@ -90,17 +90,17 @@ export default function FloatingElementEditor({ element, anchorRect, section, on
     <div
       ref={wrapperRef}
       style={posStyle}
-      className="bg-[#1e1e1e] border border-[#2d2d2d] rounded-xl shadow-2xl overflow-hidden"
+      className="bg-white border border-[#e5e7eb] rounded-xl shadow-2xl overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#2a2a2a]">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#e5e7eb] bg-[#f9fafb]">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-[#27491F]" />
-          <span className="text-[11px] font-semibold text-[#ccc] capitalize">{element.type} text</span>
+          <span className="text-[11px] font-semibold text-[#111827] capitalize">{element.type} text</span>
         </div>
         <button
           onClick={onClose}
-          className="w-5 h-5 rounded flex items-center justify-center text-[#666] hover:text-[#ccc] hover:bg-[#2a2a2a] transition-colors"
+          className="w-5 h-5 rounded flex items-center justify-center text-[#6b7280] hover:text-[#111827] hover:bg-[#f3f4f6] transition-colors"
         >
           <X size={10} />
         </button>
@@ -109,7 +109,7 @@ export default function FloatingElementEditor({ element, anchorRect, section, on
       <div className="p-3 space-y-3">
         {/* Content field — controlled */}
         <div>
-          <label className="block text-[10px] font-semibold text-[#666] uppercase tracking-wide mb-1.5">
+          <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-wide mb-1.5">
             {fieldLabel}
           </label>
           <textarea
@@ -119,13 +119,13 @@ export default function FloatingElementEditor({ element, anchorRect, section, on
               setLocalValue(e.target.value);
               onUpdate(section.id, { [fieldKey]: e.target.value });
             }}
-            className="w-full bg-[#252525] border border-[#333] rounded-md text-[#e8e8e8] text-[12px] px-2 py-1.5 outline-none resize-none focus:border-[#27491F] font-sans"
+            className="w-full bg-white border border-[#e5e7eb] rounded-md text-[#111827] text-[12px] px-2 py-1.5 outline-none resize-none focus:border-[#27491F] font-sans"
           />
         </div>
 
         {/* Color row */}
         <div>
-          <label className="block text-[10px] font-semibold text-[#666] uppercase tracking-wide mb-1.5">Text color</label>
+          <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-wide mb-1.5">Text color</label>
           <div className="flex gap-1.5 flex-wrap">
             {SWATCHES.map((color) => (
               <button
@@ -142,13 +142,13 @@ export default function FloatingElementEditor({ element, anchorRect, section, on
         {/* Link field — buttons only */}
         {isButtonType && (
           <div>
-            <label className="block text-[10px] font-semibold text-[#666] uppercase tracking-wide mb-1.5">Link URL</label>
+            <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-wide mb-1.5">Link URL</label>
             <input
               type="text"
               placeholder="https://…"
               value={String((section.data as Record<string, unknown>).buttonLink ?? '')}
               onChange={(e) => onUpdate(section.id, { buttonLink: e.target.value })}
-              className="w-full bg-[#252525] border border-[#333] rounded-md text-[#e8e8e8] text-[12px] px-2 py-1.5 outline-none focus:border-[#27491F] font-sans"
+              className="w-full bg-white border border-[#e5e7eb] rounded-md text-[#111827] text-[12px] px-2 py-1.5 outline-none focus:border-[#27491F] font-sans"
             />
           </div>
         )}

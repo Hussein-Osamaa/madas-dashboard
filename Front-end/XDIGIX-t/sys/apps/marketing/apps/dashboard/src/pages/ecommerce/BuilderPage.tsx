@@ -549,6 +549,7 @@ const BuilderPage = () => {
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        onOpenAddSheet={() => setShowAddSheet(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -585,7 +586,7 @@ const BuilderPage = () => {
         />
 
         {/* Main Canvas */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto bg-[#e9ebee]">
           <BuilderCanvas
             sections={sections}
             selectedSection={selectedSection}
