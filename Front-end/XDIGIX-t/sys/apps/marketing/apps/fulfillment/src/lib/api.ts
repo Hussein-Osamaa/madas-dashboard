@@ -195,7 +195,7 @@ export async function missing(clientId: string, productId: string, quantity: num
 }
 
 // ---------------------------------------------------------------------------
-// Restock Session
+// Restock Session (legacy — single-user fire-and-forget report)
 // ---------------------------------------------------------------------------
 
 export interface RestockSessionItem {
@@ -215,6 +215,109 @@ export async function finishRestockSession(
   return fetchApi<{ success: boolean; reportId: string; totalItems: number }>('/warehouse/restock-session', {
     method: 'POST',
     body: JSON.stringify({ clientId, items, sessionNote }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Live Restock Session (multi-user, real-time)
+// ---------------------------------------------------------------------------
+
+export interface LiveRestockSessionSummary {
+  sessionId: string;
+  clientId: string;
+  clientName?: string;
+  status: 'ACTIVE' | 'FINISHED' | 'CANCELLED';
+  joinCode: string;
+  createdBy: string;
+  totalScans: number;
+  workers: Array<{ userId: string; name: string; email?: string; scanCount: number }>;
+  entries: Array<{
+    productId: string;
+    productName: string;
+    size: string;
+    barcode: string;
+    count: number;
+  }>;
+  unmatchedScans: number;
+  lastScanned: {
+    productId: string;
+    barcode: string;
+    workerId: string;
+    scannedAt: string;
+    productName?: string;
+    size?: string;
+  } | null;
+  recentScans: Array<{
+    productId: string;
+    barcode: string;
+    workerId: string;
+    scannedAt: string;
+    productName?: string;
+    size?: string;
+    count?: number;
+  }>;
+}
+
+export type LiveRestockRestore = LiveRestockSessionSummary & { joinCode: string };
+
+/** Start a new live restock session for a client. Returns sessionId and joinCode. */
+export async function restockStart(clientId: string): Promise<{ sessionId: string; joinCode: string }> {
+  return fetchApi<{ sessionId: string; joinCode: string }>('/restock/start', {
+    method: 'POST',
+    body: JSON.stringify({ clientId }),
+  });
+}
+
+/** Join an existing restock session by join code. */
+export async function restockJoin(joinCode: string): Promise<{ sessionId: string; clientId: string; clientName?: string; joinCode: string }> {
+  return fetchApi<{ sessionId: string; clientId: string; clientName?: string; joinCode: string }>('/restock/join', {
+    method: 'POST',
+    body: JSON.stringify({ joinCode: String(joinCode).trim() }),
+  });
+}
+
+/** Get the current state of a restock session. */
+export async function getRestockSession(sessionId: string): Promise<LiveRestockSessionSummary> {
+  return fetchApi<LiveRestockSessionSummary>(`/restock/session/${sessionId}`);
+}
+
+/** Restore an active restock session after page refresh. */
+export async function restockRestore(sessionId: string): Promise<LiveRestockRestore> {
+  return fetchApi<LiveRestockRestore>(`/restock/restore/${sessionId}`);
+}
+
+/** Send a barcode scan to the server. Server processes + broadcasts via socket. */
+export async function restockScan(
+  sessionId: string,
+  barcode: string,
+): Promise<{ success: boolean; matched: boolean; product?: { id: string; name?: string; size?: string } }> {
+  return fetchApi('/restock/scan', {
+    method: 'POST',
+    body: JSON.stringify({ sessionId, barcode }),
+  });
+}
+
+/** Finish the restock session — server applies stock updates and generates report. */
+export async function restockFinish(sessionId: string): Promise<{
+  success: boolean;
+  reportId?: string;
+  totalItems: number;
+  succeeded: number;
+  failed: number;
+  entries: Array<{ productId: string; productName: string; size: string; count: number }>;
+  zeroedProducts: Array<{ id: string; name: string }>;
+}> {
+  return fetchApi('/restock/finish', {
+    method: 'POST',
+    body: JSON.stringify({ sessionId }),
+  });
+}
+
+/** Cancel the restock session without applying stock updates. */
+export async function restockCancel(sessionId: string): Promise<void> {
+  await fetchApi('/restock/cancel', {
+    method: 'POST',
+    body: JSON.stringify({ sessionId }),
   });
 }
 

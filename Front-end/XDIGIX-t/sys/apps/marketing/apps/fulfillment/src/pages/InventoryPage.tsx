@@ -3,7 +3,7 @@ import { useLiveRefresh } from '../hooks/useLiveRefresh';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 import { useStaffAuth } from '../contexts/StaffAuthContext';
-import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download, ScanBarcode, X, Check, RotateCcw, FileText, ClipboardList, AlertCircle } from 'lucide-react';
+import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download, ScanBarcode, X, Check, RotateCcw, FileText, ClipboardList, AlertCircle, Users, Copy, Wifi, WifiOff } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
 import { normalizeProductFromApi } from '../components/SizeVariantsEditor';
 import {
@@ -23,11 +23,19 @@ import {
   deleteProduct,
   bulkUpdateStock,
   finishRestockSession,
+  restockStart,
+  restockJoin,
+  restockScan,
+  restockFinish,
+  restockCancel,
+  restockRestore,
+  getRestockSession,
   type FulfillmentClient,
   type ProductWithStock,
   type Warehouse,
   type RestockSessionItem,
 } from '../lib/api';
+import { connectRestockSocket, isRestockSocketDisabled } from '../lib/restockSocket';
 import {
   exportProductsToExcel,
   importProductsFromExcel,
@@ -59,6 +67,8 @@ type RestockReport = {
   clientName: string;
   finishedAt: Date;
   totalScans: number;
+  matchedUnits: number;                            // total units actually added to stock
+  unmatchedScans: number;                          // scans with no matching barcode
   productsRestocked: number;
   zeroedCount: number;
   succeeded: number;
@@ -68,6 +78,8 @@ type RestockReport = {
 };
 
 const RESTOCK_STORAGE_KEY = 'xdf_restock_session';
+const LIVE_RESTOCK_SESSION_KEY = 'xdf_live_restock_session_id';
+const LIVE_RESTOCK_JOIN_CODE_KEY = 'xdf_live_restock_join_code';
 
 function saveRestockToStorage(session: RestockSession | null) {
   if (!session) {
@@ -161,6 +173,146 @@ export default function InventoryPage() {
   const [restockReport, setRestockReport] = useState<RestockReport | null>(null);
   const restockInputRef = useRef<HTMLInputElement>(null);
 
+  // Live multi-user restock session state
+  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
+  const [liveJoinCode, setLiveJoinCode] = useState('');
+  const [liveWorkers, setLiveWorkers] = useState<Array<{ userId: string; name: string; email?: string; scanCount: number }>>([]);
+  const [liveSocketConnected, setLiveSocketConnected] = useState(false);
+  const [liveTotalScans, setLiveTotalScans] = useState(0);
+  const [liveUnmatchedScans, setLiveUnmatchedScans] = useState(0);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [joinError, setJoinError] = useState('');
+  const [joiningSession, setJoiningSession] = useState(false);
+  const [liveSessionClosed, setLiveSessionClosed] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  const isLiveSession = !!liveSessionId;
+
+  // Persist/restore live session across refreshes
+  const persistLiveSession = useCallback((sid: string, code: string) => {
+    localStorage.setItem(LIVE_RESTOCK_SESSION_KEY, sid);
+    localStorage.setItem(LIVE_RESTOCK_JOIN_CODE_KEY, code);
+  }, []);
+
+  const clearLiveSession = useCallback(() => {
+    localStorage.removeItem(LIVE_RESTOCK_SESSION_KEY);
+    localStorage.removeItem(LIVE_RESTOCK_JOIN_CODE_KEY);
+    setLiveSessionId(null);
+    setLiveJoinCode('');
+    setLiveWorkers([]);
+    setLiveTotalScans(0);
+    setLiveUnmatchedScans(0);
+    setLiveSessionClosed(false);
+  }, []);
+
+  // Restore active live session on mount
+  useEffect(() => {
+    if (liveSessionId) return;
+    const savedId = localStorage.getItem(LIVE_RESTOCK_SESSION_KEY);
+    if (!savedId) return;
+    restockRestore(savedId)
+      .then((data) => {
+        if (data.status !== 'ACTIVE') {
+          clearLiveSession();
+          return;
+        }
+        setLiveSessionId(savedId);
+        setLiveJoinCode(data.joinCode || '');
+        setLiveWorkers(data.workers || []);
+        setLiveTotalScans(data.totalScans ?? 0);
+        setLiveUnmatchedScans(data.unmatchedScans ?? 0);
+        // Merge server entries into local restock session
+        if (data.entries?.length && restockSession) {
+          setRestockSession((prev) => {
+            if (!prev) return prev;
+            const next = { ...prev, entries: new Map(prev.entries), totalScans: data.totalScans ?? prev.totalScans };
+            data.entries.forEach((e) => {
+              const key = `${e.productId}::${e.size}`;
+              next.entries.set(key, e);
+            });
+            return next;
+          });
+        }
+      })
+      .catch(() => {
+        clearLiveSession();
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Connect to restock socket for live updates
+  useEffect(() => {
+    if (!liveSessionId) return;
+    const cleanup = connectRestockSocket(liveSessionId, {
+      onConnect: () => setLiveSocketConnected(true),
+      onDisconnect: () => setLiveSocketConnected(false),
+      onScanUpdate: (data) => {
+        setLiveTotalScans(data.totalScans);
+        // Update workers
+        setLiveWorkers((prev) => {
+          const byId = new Map(prev.map((w) => [w.userId, w]));
+          Object.entries(data.workerScanCounts || {}).forEach(([userId, scanCount]) => {
+            byId.set(userId, { userId, name: byId.get(userId)?.name ?? userId.slice(-6), scanCount });
+          });
+          return Array.from(byId.values()).sort((a, b) => b.scanCount - a.scanCount);
+        });
+        // Merge entries if provided
+        if (data.entries?.length) {
+          setRestockSession((prev) => {
+            if (!prev) return prev;
+            const next = { ...prev, entries: new Map(prev.entries), totalScans: data.totalScans };
+            data.entries.forEach((e) => {
+              const key = `${e.productId}::${e.size}`;
+              next.entries.set(key, e);
+            });
+            return next;
+          });
+        }
+        // Update last scan feedback
+        if (data.lastScanned) {
+          setRestockLastScan({
+            barcode: data.lastScanned.barcode,
+            matched: !!data.lastScanned.productId,
+            detail: data.lastScanned.productName
+              ? `${data.lastScanned.productName} – ${data.lastScanned.size || 'default'}`
+              : 'No matching product',
+          });
+        }
+      },
+      onRestockClosed: () => {
+        setLiveSessionClosed(true);
+      },
+    });
+    return cleanup;
+  }, [liveSessionId, setRestockSession]);
+
+  // Fetch session data periodically for sync (fallback when socket is unavailable)
+  useEffect(() => {
+    if (!liveSessionId || liveSocketConnected) return;
+    const interval = setInterval(() => {
+      getRestockSession(liveSessionId)
+        .then((s) => {
+          setLiveWorkers(s.workers || []);
+          setLiveTotalScans(s.totalScans);
+          setLiveUnmatchedScans(s.unmatchedScans ?? 0);
+          if (s.entries?.length) {
+            setRestockSession((prev) => {
+              if (!prev) return prev;
+              const next = { ...prev, entries: new Map(prev.entries), totalScans: s.totalScans };
+              s.entries.forEach((e) => {
+                const key = `${e.productId}::${e.size}`;
+                next.entries.set(key, e);
+              });
+              return next;
+            });
+          }
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [liveSessionId, liveSocketConnected, setRestockSession]);
+
   const barcodeToProduct = useMemo(() => {
     const map = new Map<string, { productId: string; productName: string; size: string }>();
     products.forEach((p) => {
@@ -180,9 +332,11 @@ export default function InventoryPage() {
     return map;
   }, [products]);
 
-  const handleStartRestock = () => {
+  const handleStartRestock = async () => {
     if (!selectedClientId) return;
     const client = clients.find((c) => c.id === selectedClientId);
+
+    // Create local session first
     setRestockSession({
       active: true,
       clientId: selectedClientId,
@@ -193,7 +347,64 @@ export default function InventoryPage() {
     });
     setRestockLastScan(null);
     setRestockScanInput('');
+
+    // Try to create a live server-side session for multi-user support
+    try {
+      const { sessionId, joinCode } = await restockStart(selectedClientId);
+      setLiveSessionId(sessionId);
+      setLiveJoinCode(joinCode);
+      persistLiveSession(sessionId, joinCode);
+    } catch (err) {
+      // If live session creation fails, continue with local-only mode
+      console.warn('[Restock] Live session creation failed — continuing in local mode:', (err as Error).message);
+    }
+
     setTimeout(() => restockInputRef.current?.focus(), 100);
+  };
+
+  const handleJoinRestock = async () => {
+    if (!joinCodeInput.trim()) return;
+    setJoiningSession(true);
+    setJoinError('');
+    try {
+      const data = await restockJoin(joinCodeInput.trim());
+      // Set local session to match the live session
+      setSelectedClientId(data.clientId);
+      setRestockSession({
+        active: true,
+        clientId: data.clientId,
+        clientName: data.clientName || data.clientId,
+        startedAt: new Date(),
+        totalScans: 0,
+        entries: new Map(),
+      });
+      setLiveSessionId(data.sessionId);
+      setLiveJoinCode(data.joinCode);
+      persistLiveSession(data.sessionId, data.joinCode);
+      setShowJoinModal(false);
+      setJoinCodeInput('');
+
+      // Fetch current session state
+      const session = await getRestockSession(data.sessionId);
+      setLiveWorkers(session.workers || []);
+      setLiveTotalScans(session.totalScans);
+      setLiveUnmatchedScans(session.unmatchedScans ?? 0);
+      if (session.entries?.length) {
+        setRestockSession((prev) => {
+          if (!prev) return prev;
+          const next = { ...prev, entries: new Map(prev.entries), totalScans: session.totalScans };
+          session.entries.forEach((e) => {
+            const key = `${e.productId}::${e.size}`;
+            next.entries.set(key, e);
+          });
+          return next;
+        });
+      }
+    } catch (err) {
+      setJoinError((err as Error).message || 'Failed to join session');
+    } finally {
+      setJoiningSession(false);
+    }
   };
 
   const handleRestockScan = (barcode: string) => {
@@ -201,6 +412,7 @@ export default function InventoryPage() {
     const bc = barcode.trim();
     const match = barcodeToProduct.get(bc);
 
+    // Update local state immediately (optimistic)
     setRestockSession((prev) => {
       if (!prev) return prev;
       const next = { ...prev, totalScans: prev.totalScans + 1, entries: new Map(prev.entries) };
@@ -229,6 +441,13 @@ export default function InventoryPage() {
     });
     setRestockScanInput('');
     restockInputRef.current?.focus();
+
+    // Send scan to server for live multi-user sync (fire-and-forget)
+    if (liveSessionId) {
+      restockScan(liveSessionId, bc).catch((err) =>
+        console.warn('[Restock] Live scan send failed:', (err as Error).message)
+      );
+    }
   };
 
   const handleRestockScanKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -241,6 +460,11 @@ export default function InventoryPage() {
   const handleCancelRestock = () => {
     if (restockSession && restockSession.totalScans > 0) {
       if (!window.confirm('Cancel restock session? All scanned data will be lost.')) return;
+    }
+    // Cancel live session if active
+    if (liveSessionId) {
+      restockCancel(liveSessionId).catch(() => {});
+      clearLiveSession();
     }
     setRestockSession(null);
     setRestockLastScan(null);
@@ -334,15 +558,27 @@ export default function InventoryPage() {
 
       await loadProducts();
 
+      // Clean up live session if active
+      if (liveSessionId) {
+        restockFinish(liveSessionId).catch(() => {});
+        clearLiveSession();
+      }
+
       setRestockSession(null);
       setShowRestockConfirm(false);
       setRestockLastScan(null);
+
+      // Compute matched units vs unmatched scans
+      const matchedUnits = capturedEntries.reduce((s, e) => s + e.count, 0);
+      const unmatchedScans = totalScanned - matchedUnits;
 
       // Show the full report modal
       setRestockReport({
         clientName: restockSession.clientName,
         finishedAt: new Date(),
         totalScans: totalScanned,
+        matchedUnits,
+        unmatchedScans: Math.max(0, unmatchedScans),
         productsRestocked: productsUpdated,
         zeroedCount,
         succeeded: result.succeeded,
@@ -863,6 +1099,17 @@ export default function InventoryPage() {
               Restock
             </button>
           )}
+          {/* Join existing session */}
+          {!restockSession && (
+            <button
+              type="button"
+              onClick={() => { setShowJoinModal(true); setJoinCodeInput(''); setJoinError(''); }}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
+            >
+              <Users className="w-5 h-5" />
+              Join Session
+            </button>
+          )}
         </div>
       </div>
 
@@ -875,10 +1122,19 @@ export default function InventoryPage() {
                 <ScanBarcode className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Restock Session</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Restock Session</h3>
+                  {isLiveSession && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400">
+                      {liveSocketConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                      Live
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {restockSession.clientName} &middot; Started {restockSession.startedAt.toLocaleTimeString()}
-                  &middot; {restockSession.totalScans} scans
+                  &middot; {isLiveSession ? liveTotalScans : restockSession.totalScans} scans
+                  {liveWorkers.length > 0 && ` · ${liveWorkers.length} worker${liveWorkers.length !== 1 ? 's' : ''}`}
                 </p>
               </div>
             </div>
@@ -909,6 +1165,53 @@ export default function InventoryPage() {
               </button>
             </div>
           </div>
+
+          {/* Join code + workers (live session) */}
+          {isLiveSession && (
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              {/* Join Code */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/20">
+                <Users className="w-4 h-4 text-blue-500" />
+                <span className="text-xs text-gray-500 dark:text-gray-400">Join Code:</span>
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm tracking-wider">{liveJoinCode}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(liveJoinCode).catch(() => {});
+                    setCodeCopied(true);
+                    setTimeout(() => setCodeCopied(false), 2000);
+                  }}
+                  className="p-1 rounded hover:bg-blue-500/20 text-blue-500"
+                  title="Copy join code"
+                >
+                  {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+
+              {/* Workers */}
+              {liveWorkers.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {liveWorkers.map((w) => (
+                    <div
+                      key={w.userId}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs"
+                      title={w.email || w.userId}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">{w.name || w.email || w.userId.slice(-6)}</span>
+                      <span className="text-gray-500 dark:text-gray-400">({w.scanCount})</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Connection status */}
+              <span className={`flex items-center gap-1 text-xs ${liveSocketConnected ? 'text-emerald-500' : 'text-amber-500'}`}>
+                {liveSocketConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                {liveSocketConnected ? 'Connected' : 'Reconnecting...'}
+              </span>
+            </div>
+          )}
 
           {/* Scanner input */}
           <div className="relative mb-4">
@@ -1796,11 +2099,12 @@ export default function InventoryPage() {
               </div>
 
               {/* Summary cards */}
-              <div className="grid grid-cols-4 gap-3 p-4 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+              <div className="grid grid-cols-5 gap-3 p-4 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
                 {[
                   { label: 'Total Scans', value: restockReport.totalScans, color: 'text-blue-600 dark:text-blue-400' },
-                  { label: 'Products', value: restockReport.productsRestocked, color: 'text-emerald-600 dark:text-emerald-400' },
-                  { label: 'Size Entries', value: totalSizes, color: 'text-amber-600 dark:text-amber-400' },
+                  { label: 'Matched Units', value: restockReport.matchedUnits, color: 'text-emerald-600 dark:text-emerald-400' },
+                  { label: 'Unmatched', value: restockReport.unmatchedScans, color: restockReport.unmatchedScans > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400' },
+                  { label: 'Products', value: restockReport.productsRestocked, color: 'text-amber-600 dark:text-amber-400' },
                   { label: 'Zeroed', value: restockReport.zeroedCount, color: 'text-red-600 dark:text-red-400' },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="text-center p-3 rounded-xl bg-gray-50 dark:bg-white/5 print:bg-gray-100 print:rounded-lg">
@@ -1809,6 +2113,14 @@ export default function InventoryPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Unmatched scans warning */}
+              {restockReport.unmatchedScans > 0 && (
+                <div className="mx-4 mt-3 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-sm text-amber-700 dark:text-amber-400">
+                  <span className="font-medium">{restockReport.unmatchedScans} barcode scan{restockReport.unmatchedScans !== 1 ? 's' : ''}</span> did not match any product in the system.
+                  These scans were counted but no stock was added. Check if these barcodes exist in the product catalog.
+                </div>
+              )}
 
               {/* Products & sizes table */}
               <div className="flex-1 overflow-y-auto print:overflow-visible">
@@ -1965,6 +2277,82 @@ export default function InventoryPage() {
           </div>
         );
       })()}
+
+      {/* Join Session Modal */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#0d0e26] rounded-2xl border border-gray-200 dark:border-white/10 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/20">
+                  <Users className="w-5 h-5 text-blue-500" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Join Restock Session</h2>
+              </div>
+              <button onClick={() => setShowJoinModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Enter the session code shared by the session creator to join and scan together in real-time.
+              </p>
+              <input
+                type="text"
+                value={joinCodeInput}
+                onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleJoinRestock(); }}
+                placeholder="Enter join code..."
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-center text-2xl font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-base placeholder:tracking-normal"
+              />
+              {joinError && (
+                <p className="mt-2 text-sm text-red-500 text-center">{joinError}</p>
+              )}
+            </div>
+            <div className="flex gap-3 p-5 pt-0">
+              <button
+                onClick={() => setShowJoinModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleJoinRestock}
+                disabled={!joinCodeInput.trim() || joiningSession}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm disabled:opacity-50 transition-colors"
+              >
+                {joiningSession ? 'Joining...' : 'Join Session'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live session closed notification */}
+      {liveSessionClosed && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#0d0e26] rounded-2xl border border-gray-200 dark:border-white/10 w-full max-w-sm shadow-2xl p-6 text-center">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/20 mx-auto mb-3">
+              <AlertCircle className="w-6 h-6 text-amber-500" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Session Ended</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              The restock session has been finished or cancelled by the session owner.
+            </p>
+            <button
+              onClick={() => {
+                clearLiveSession();
+                setRestockSession(null);
+                setRestockLastScan(null);
+              }}
+              className="w-full px-4 py-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
