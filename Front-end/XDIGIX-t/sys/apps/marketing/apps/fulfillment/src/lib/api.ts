@@ -203,6 +203,8 @@ export interface RestockSessionItem {
   productName?: string;
   sku?: string;
   quantity: number;
+  /** Size-level breakdown (e.g. { "40": 2, "42": 3 }) */
+  sizes?: Record<string, number>;
 }
 
 export async function finishRestockSession(

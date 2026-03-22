@@ -1,6 +1,6 @@
 /**
  * Reports Page - Restock Session Reports
- * Lists all restock reports across clients, with client name, date, staff, and item details.
+ * Lists all restock reports across clients, with scanned products, sizes & quantities.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -19,6 +19,8 @@ import {
   XCircle,
   AlertCircle,
   Building2,
+  Printer,
+  ClipboardList,
 } from 'lucide-react';
 
 interface RestockReportItem {
@@ -26,6 +28,8 @@ interface RestockReportItem {
   productName?: string;
   sku?: string;
   quantity: number;
+  /** Size-level breakdown sent by the fulfillment app */
+  sizes?: Record<string, number>;
 }
 
 interface RestockReport {
@@ -47,6 +51,99 @@ interface ReportsResponse {
   total: number;
   page: number;
   pages: number;
+}
+
+/** Group items by product and flatten sizes for display (like the phone modal) */
+function groupItemsByProduct(items: RestockReportItem[]) {
+  const grouped = new Map<
+    string,
+    { productName: string; sizes: { size: string; count: number }[]; total: number }
+  >();
+
+  for (const item of items) {
+    const name = item.productName || item.productId;
+    if (item.sizes && Object.keys(item.sizes).length > 0) {
+      // Has size-level breakdown
+      if (!grouped.has(item.productId)) {
+        grouped.set(item.productId, { productName: name, sizes: [], total: 0 });
+      }
+      const g = grouped.get(item.productId)!;
+      for (const [size, count] of Object.entries(item.sizes)) {
+        g.sizes.push({ size, count });
+        g.total += count;
+      }
+    } else {
+      // Legacy report — no size data, show quantity as "total" only
+      if (!grouped.has(item.productId)) {
+        grouped.set(item.productId, { productName: name, sizes: [], total: 0 });
+      }
+      const g = grouped.get(item.productId)!;
+      g.total += item.quantity;
+    }
+  }
+
+  return Array.from(grouped.values()).sort((a, b) => a.productName.localeCompare(b.productName));
+}
+
+/** Open a printable version of a single report in a new tab */
+function printReport(report: RestockReport) {
+  const rows = groupItemsByProduct(report.items);
+  const totalSizes = rows.reduce((s, r) => s + r.sizes.length, 0);
+  const dateStr = (() => {
+    try {
+      const d = new Date(report.finishedAt || report.createdAt);
+      return `${d.toLocaleDateString('en-EG', { day: '2-digit', month: 'short', year: 'numeric' })} ${d.toLocaleTimeString('en-EG', { hour: '2-digit', minute: '2-digit' })}`;
+    } catch {
+      return report.finishedAt || report.createdAt;
+    }
+  })();
+
+  const sizeRows = rows
+    .map((row) => {
+      const badges =
+        row.sizes.length > 0
+          ? row.sizes
+              .slice()
+              .sort((a, b) => a.size.localeCompare(b.size))
+              .map(
+                (sz) =>
+                  `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;background:#ecfdf5;border:1px solid #a7f3d0;font-size:12px;margin:2px"><span style="color:#374151">${sz.size}</span><span style="font-weight:700;color:#047857">${sz.count}</span></span>`,
+              )
+              .join(' ')
+          : '<span style="color:#9ca3af;font-size:12px">No size data</span>';
+      return `<tr style="border-top:1px solid #e5e7eb"><td style="padding:10px 12px;font-weight:500;vertical-align:top">${row.productName}</td><td style="padding:10px 12px;vertical-align:top">${badges}</td><td style="padding:10px 12px;text-align:right;font-weight:700;color:#047857;vertical-align:top">${row.total}</td></tr>`;
+    })
+    .join('');
+
+  const htmlParts = [
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Restock Report</title>',
+    '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:20px;color:#111827;font-size:14px}@media print{body{padding:10px}}table{border-collapse:collapse}</style></head><body>',
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">',
+    '<div style="width:40px;height:40px;border-radius:12px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:20px">\u{1F4CB}</div>',
+    `<div><h1 style="font-size:18px;font-weight:700">Restock Report</h1><p style="font-size:13px;color:#6b7280">${report.clientName || report.clientId} \u00b7 ${dateStr}</p></div></div>`,
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">',
+    `<div style="text-align:center;padding:12px;background:#f9fafb;border-radius:12px"><p style="font-size:22px;font-weight:700;color:#2563eb">${report.totalItems}</p><p style="font-size:11px;color:#6b7280;margin-top:2px">Total Units</p></div>`,
+    `<div style="text-align:center;padding:12px;background:#f9fafb;border-radius:12px"><p style="font-size:22px;font-weight:700;color:#059669">${rows.length}</p><p style="font-size:11px;color:#6b7280;margin-top:2px">Products</p></div>`,
+    `<div style="text-align:center;padding:12px;background:#f9fafb;border-radius:12px"><p style="font-size:22px;font-weight:700;color:#d97706">${totalSizes || report.items.length}</p><p style="font-size:11px;color:#6b7280;margin-top:2px">Size Entries</p></div>`,
+    `<div style="text-align:center;padding:12px;background:#f9fafb;border-radius:12px"><p style="font-size:22px;font-weight:700;color:#6b7280">${report.staffEmail || 'N/A'}</p><p style="font-size:11px;color:#6b7280;margin-top:2px">Staff</p></div></div>`,
+    '<h3 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:8px">Restocked Products</h3>',
+    '<table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">',
+    '<thead><tr style="background:#f9fafb"><th style="text-align:left;padding:10px 12px;color:#6b7280;font-weight:500;font-size:13px">Product</th><th style="text-align:left;padding:10px 12px;color:#6b7280;font-weight:500;font-size:13px">Sizes &amp; Quantities</th><th style="text-align:right;padding:10px 12px;color:#6b7280;font-weight:500;font-size:13px">Total</th></tr></thead>',
+    `<tbody>${sizeRows}</tbody>`,
+    `<tfoot><tr style="background:#f9fafb;border-top:1px solid #e5e7eb"><td style="padding:10px 12px;font-weight:600">Total</td><td style="padding:10px 12px;font-size:12px;color:#6b7280">${rows.length} product${rows.length !== 1 ? 's' : ''}</td><td style="padding:10px 12px;text-align:right;font-weight:700">${report.totalItems}</td></tr></tfoot></table>`,
+    '</body></html>',
+  ].join('\n');
+
+  const blob = new Blob([htmlParts], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (win) {
+    win.addEventListener('afterprint', () => URL.revokeObjectURL(url));
+    win.addEventListener('load', () => {
+      setTimeout(() => win.print(), 400);
+    });
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
 export default function ReportsPage() {
@@ -100,8 +197,8 @@ export default function ReportsPage() {
         r.items.some(
           (i) =>
             (i.productName || i.productId).toLowerCase().includes(q) ||
-            (i.sku || '').toLowerCase().includes(q)
-        )
+            (i.sku || '').toLowerCase().includes(q),
+        ),
     );
   }, [reports, searchTerm]);
 
@@ -176,7 +273,7 @@ export default function ReportsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by client, staff, product…"
+            placeholder="Search by client, staff, product\u2026"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
@@ -184,7 +281,7 @@ export default function ReportsPage() {
         </div>
         <input
           type="text"
-          placeholder="Filter by client ID…"
+          placeholder="Filter by client ID\u2026"
           value={clientFilter}
           onChange={(e) => setClientFilter(e.target.value)}
           className="sm:w-56 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
@@ -215,7 +312,9 @@ export default function ReportsPage() {
             <FileText className="w-8 h-8 text-gray-500" />
           </div>
           <p className="text-gray-400 font-medium">No restock reports found</p>
-          <p className="text-sm text-gray-500 mt-1">Reports appear here after warehouse staff finish restock sessions.</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Reports appear here after warehouse staff finish restock sessions.
+          </p>
         </div>
       )}
 
@@ -224,6 +323,11 @@ export default function ReportsPage() {
         <div className="space-y-3">
           {filteredReports.map((report) => {
             const isExpanded = expandedId === report._id;
+            const groupedRows = isExpanded ? groupItemsByProduct(report.items) : [];
+            const totalSizeEntries = isExpanded
+              ? groupedRows.reduce((s, r) => s + Math.max(r.sizes.length, 1), 0)
+              : 0;
+
             return (
               <div
                 key={report._id}
@@ -255,14 +359,18 @@ export default function ReportsPage() {
                   {/* Staff */}
                   <div className="hidden md:flex items-center gap-1.5 text-xs text-gray-400 flex-shrink-0 max-w-[160px]">
                     <User className="w-3.5 h-3.5" />
-                    <span className="truncate">{report.staffEmail || report.staffId || 'N/A'}</span>
+                    <span className="truncate">
+                      {report.staffEmail || report.staffId || 'N/A'}
+                    </span>
                   </div>
 
                   {/* Items count */}
                   <div className="flex items-center gap-1.5 text-xs flex-shrink-0">
                     <Package className="w-3.5 h-3.5 text-blue-400" />
-                    <span className="text-blue-300 font-medium">{report.items?.length ?? 0} SKUs</span>
-                    <span className="text-gray-500">·</span>
+                    <span className="text-blue-300 font-medium">
+                      {report.items?.length ?? 0} SKUs
+                    </span>
+                    <span className="text-gray-500">&middot;</span>
                     <span className="text-amber-400 font-medium">{report.totalItems} units</span>
                   </div>
 
@@ -289,7 +397,7 @@ export default function ReportsPage() {
                   )}
                 </button>
 
-                {/* Expanded details */}
+                {/* Expanded details — shows scanned products with sizes like the phone modal */}
                 {isExpanded && (
                   <div className="px-5 pb-4 border-t border-white/5">
                     {/* Meta row */}
@@ -304,8 +412,24 @@ export default function ReportsPage() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Mail className="w-3 h-3" />
-                        {report.emailSent ? 'Report emailed ✓' : 'Email not sent'}
+                        {report.emailSent ? 'Report emailed \u2713' : 'Email not sent'}
                       </span>
+                    </div>
+
+                    {/* Summary cards */}
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-3 rounded-xl bg-white/5">
+                        <p className="text-xl font-bold text-blue-400">{report.totalItems}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Total Units</p>
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-white/5">
+                        <p className="text-xl font-bold text-emerald-400">{groupedRows.length}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Products</p>
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-white/5">
+                        <p className="text-xl font-bold text-amber-400">{totalSizeEntries}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Size Entries</p>
+                      </div>
                     </div>
 
                     {/* Session note */}
@@ -316,50 +440,92 @@ export default function ReportsPage() {
                       </div>
                     )}
 
-                    {/* Items table */}
-                    {report.items && report.items.length > 0 ? (
-                      <div className="overflow-x-auto rounded-lg border border-white/10">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b border-white/10 bg-white/5">
-                              <th className="text-left px-3 py-2 text-gray-400 font-medium">#</th>
-                              <th className="text-left px-3 py-2 text-gray-400 font-medium">Product</th>
-                              <th className="text-left px-3 py-2 text-gray-400 font-medium">SKU</th>
-                              <th className="text-right px-3 py-2 text-gray-400 font-medium">Qty Added</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {report.items.map((item, idx) => (
-                              <tr
-                                key={item.productId + idx}
-                                className="border-b border-white/5 last:border-0 hover:bg-white/5"
-                              >
-                                <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
-                                <td className="px-3 py-2 text-white font-medium">
-                                  {item.productName || item.productId}
+                    {/* Products & sizes table — matches phone Restock Report modal */}
+                    {groupedRows.length > 0 ? (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-1.5">
+                          <ClipboardList className="w-3.5 h-3.5" /> Restocked Products
+                        </p>
+                        <div className="overflow-x-auto rounded-lg border border-white/10">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-white/10 bg-white/5">
+                                <th className="text-left px-3 py-2.5 text-gray-400 font-medium">
+                                  Product
+                                </th>
+                                <th className="text-left px-3 py-2.5 text-gray-400 font-medium">
+                                  Sizes &amp; Quantities
+                                </th>
+                                <th className="text-right px-3 py-2.5 text-gray-400 font-medium">
+                                  Total
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {groupedRows.map((row, i) => (
+                                <tr
+                                  key={i}
+                                  className="border-b border-white/5 last:border-0 hover:bg-white/5"
+                                >
+                                  <td className="px-3 py-3 text-white font-medium align-top">
+                                    {row.productName}
+                                  </td>
+                                  <td className="px-3 py-3 align-top">
+                                    {row.sizes.length > 0 ? (
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {row.sizes
+                                          .slice()
+                                          .sort((a, b) => a.size.localeCompare(b.size))
+                                          .map((sz) => (
+                                            <span
+                                              key={sz.size}
+                                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-xs"
+                                            >
+                                              <span className="text-gray-300">{sz.size}</span>
+                                              <span className="font-bold text-emerald-400">
+                                                {sz.count}
+                                              </span>
+                                            </span>
+                                          ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-500 italic">No size data</span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-3 text-right font-bold text-emerald-400 align-top">
+                                    {row.total}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="bg-white/5 border-t border-white/10">
+                                <td className="px-3 py-2.5 font-semibold text-white">Total</td>
+                                <td className="px-3 py-2.5 text-xs text-gray-500">
+                                  {groupedRows.length} product
+                                  {groupedRows.length !== 1 ? 's' : ''}, {totalSizeEntries} size
+                                  entr{totalSizeEntries !== 1 ? 'ies' : 'y'}
                                 </td>
-                                <td className="px-3 py-2 text-gray-400">{item.sku || '—'}</td>
-                                <td className="px-3 py-2 text-right text-amber-400 font-semibold">
-                                  +{item.quantity}
+                                <td className="px-3 py-2.5 text-right font-bold text-white text-sm">
+                                  {report.totalItems}
                                 </td>
                               </tr>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr className="bg-white/5 border-t border-white/10">
-                              <td colSpan={3} className="px-3 py-2 text-right text-gray-400 font-medium">
-                                Total units restocked
-                              </td>
-                              <td className="px-3 py-2 text-right text-amber-400 font-bold text-sm">
-                                +{report.totalItems}
-                              </td>
-                            </tr>
-                          </tfoot>
-                        </table>
+                            </tfoot>
+                          </table>
+                        </div>
                       </div>
                     ) : (
                       <p className="text-xs text-gray-500 italic">No item details available.</p>
                     )}
+
+                    {/* Print button */}
+                    <button
+                      onClick={() => printReport(report)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-gray-300 transition-all"
+                    >
+                      <Printer className="w-4 h-4" />
+                      Print Report
+                    </button>
                   </div>
                 )}
               </div>
@@ -372,7 +538,7 @@ export default function ReportsPage() {
       {pages > 1 && (
         <div className="flex items-center justify-between mt-6">
           <p className="text-sm text-gray-400">
-            Page {page} of {pages} · {total} total
+            Page {page} of {pages} &middot; {total} total
           </p>
           <div className="flex gap-2">
             <button

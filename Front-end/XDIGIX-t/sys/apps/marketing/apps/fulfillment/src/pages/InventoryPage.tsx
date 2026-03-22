@@ -290,7 +290,7 @@ export default function InventoryPage() {
         (done, total) => setRestockProgress({ done, total })
       );
 
-      // Build items for the restock report email
+      // Build items for the restock report email — include size-level breakdown
       const reportItems: RestockSessionItem[] = [];
       productStockMap.forEach((sizeStock, productId) => {
         const totalQty = Object.values(sizeStock).reduce((s, q) => s + q, 0);
@@ -302,6 +302,7 @@ export default function InventoryPage() {
           productName: entry?.productName,
           sku: sku || undefined,
           quantity: totalQty,
+          sizes: { ...sizeStock },
         });
       });
 
@@ -1821,7 +1822,53 @@ export default function InventoryPage() {
               {/* Footer buttons */}
               <div className="flex items-center justify-between gap-3 p-4 border-t border-gray-100 dark:border-white/10 print:hidden">
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    // Build standalone printable HTML that works on mobile browsers
+                    const sizeRows = groupedRows.map((row) => {
+                      const rowTotal = row.sizes.reduce((s, sz) => s + sz.count, 0);
+                      const badges = row.sizes
+                        .slice()
+                        .sort((a, b) => a.size.localeCompare(b.size))
+                        .map((sz) => `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;background:#ecfdf5;border:1px solid #a7f3d0;font-size:12px;margin:2px"><span style="color:#374151">${sz.size}</span><span style="font-weight:700;color:#047857">${sz.count}</span></span>`)
+                        .join(' ');
+                      return `<tr style="border-top:1px solid #e5e7eb"><td style="padding:10px 12px;font-weight:500;vertical-align:top">${row.productName}</td><td style="padding:10px 12px;vertical-align:top">${badges}</td><td style="padding:10px 12px;text-align:right;font-weight:700;color:#047857;vertical-align:top">${rowTotal}</td></tr>`;
+                    }).join('');
+
+                    const zeroedSection = restockReport.zeroedProducts.length > 0
+                      ? `<h3 style="color:#dc2626;font-size:13px;text-transform:uppercase;margin:20px 0 8px">Products Set to 0</h3><table style="width:100%;border-collapse:collapse;border:1px solid #fecaca;border-radius:8px;overflow:hidden"><tbody>${restockReport.zeroedProducts.map((p) => `<tr style="border-top:1px solid #fee2e2"><td style="padding:8px 12px">${p.name}</td><td style="padding:8px 12px;text-align:right;font-weight:700;color:#dc2626">0</td></tr>`).join('')}</tbody></table>`
+                      : '';
+
+                    const htmlContent = [
+                      '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Restock Report</title>',
+                      '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:20px;color:#111827;font-size:14px}@media print{body{padding:10px}}table{border-collapse:collapse}</style></head><body>',
+                      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">',
+                      '<div style="width:40px;height:40px;border-radius:12px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:20px">\u{1F4CB}</div>',
+                      `<div><h1 style="font-size:18px;font-weight:700">Restock Report</h1><p style="font-size:13px;color:#6b7280">${restockReport.clientName} \u00b7 ${restockReport.finishedAt.toLocaleDateString('en-EG', { day: '2-digit', month: 'short', year: 'numeric' })} ${restockReport.finishedAt.toLocaleTimeString('en-EG', { hour: '2-digit', minute: '2-digit' })}</p></div></div>`,
+                      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">',
+                      `<div style="text-align:center;padding:12px;background:#f9fafb;border-radius:12px"><p style="font-size:22px;font-weight:700;color:#2563eb">${restockReport.totalScans}</p><p style="font-size:11px;color:#6b7280;margin-top:2px">Total Scans</p></div>`,
+                      `<div style="text-align:center;padding:12px;background:#f9fafb;border-radius:12px"><p style="font-size:22px;font-weight:700;color:#059669">${restockReport.productsRestocked}</p><p style="font-size:11px;color:#6b7280;margin-top:2px">Products</p></div>`,
+                      `<div style="text-align:center;padding:12px;background:#f9fafb;border-radius:12px"><p style="font-size:22px;font-weight:700;color:#d97706">${totalSizes}</p><p style="font-size:11px;color:#6b7280;margin-top:2px">Size Entries</p></div>`,
+                      `<div style="text-align:center;padding:12px;background:#f9fafb;border-radius:12px"><p style="font-size:22px;font-weight:700;color:#dc2626">${restockReport.zeroedCount}</p><p style="font-size:11px;color:#6b7280;margin-top:2px">Zeroed</p></div></div>`,
+                      '<h3 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:8px">Restocked Products</h3>',
+                      '<table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">',
+                      '<thead><tr style="background:#f9fafb"><th style="text-align:left;padding:10px 12px;color:#6b7280;font-weight:500;font-size:13px">Product</th><th style="text-align:left;padding:10px 12px;color:#6b7280;font-weight:500;font-size:13px">Sizes &amp; Quantities</th><th style="text-align:right;padding:10px 12px;color:#6b7280;font-weight:500;font-size:13px">Total</th></tr></thead>',
+                      `<tbody>${sizeRows}</tbody>`,
+                      `<tfoot><tr style="background:#f9fafb;border-top:1px solid #e5e7eb"><td style="padding:10px 12px;font-weight:600">Total</td><td style="padding:10px 12px;font-size:12px;color:#6b7280">${groupedRows.length} product${groupedRows.length !== 1 ? 's' : ''}, ${totalSizes} size entr${totalSizes !== 1 ? 'ies' : 'y'}</td><td style="padding:10px 12px;text-align:right;font-weight:700">${restockReport.totalScans}</td></tr></tfoot></table>`,
+                      zeroedSection,
+                      '</body></html>',
+                    ].join('\n');
+
+                    // Use Blob URL — works on all browsers including mobile
+                    const blob = new Blob([htmlContent], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const win = window.open(url, '_blank');
+                    if (win) {
+                      win.addEventListener('afterprint', () => URL.revokeObjectURL(url));
+                      win.addEventListener('load', () => { setTimeout(() => win.print(), 400); });
+                    }
+                    // Clean up after 30s regardless
+                    setTimeout(() => URL.revokeObjectURL(url), 30000);
+                  }}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 text-sm font-medium"
                 >
                   <Printer className="w-4 h-4" />
