@@ -95,7 +95,10 @@ export function setupRealtime(httpServer: HttpServer): Server {
           (tenantId && channel === `tenant:${tenantId}`) ||
           (businessId && channel === `business:${businessId}`) ||
           (businessId && channel === `warehouse:client:${businessId}`) ||
-          channel === 'warehouse:staff'
+          channel === 'warehouse:staff' ||
+          // Allow audit and restock session rooms (staff can join via join code)
+          channel.startsWith('audit:') ||
+          channel.startsWith('restock:')
         )
       ) {
         socket.join(channel);
