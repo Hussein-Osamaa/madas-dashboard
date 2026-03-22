@@ -370,8 +370,10 @@ export default function InventoryPage() {
       // Update local session's joinCode to match the backend's code so staff can actually join
       setRestockSession((prev) => prev ? { ...prev, joinCode: serverCode } : prev);
     } catch (err) {
-      // If live session creation fails, continue with local-only mode
+      // If live session creation fails, continue with local-only mode (no multi-user)
       console.warn('[Restock] Live session creation failed — continuing in local mode:', (err as Error).message);
+      // Clear the local join code so users know multi-user is not available
+      setRestockSession((prev) => prev ? { ...prev, joinCode: '' } : prev);
     }
 
     setTimeout(() => restockInputRef.current?.focus(), 100);
@@ -1184,7 +1186,8 @@ export default function InventoryPage() {
 
           {/* Join code + workers */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
-            {/* Join Code — always visible so staff can share */}
+            {/* Join Code — only visible when backend session is active */}
+            {restockSession.joinCode ? (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/20">
               <Users className="w-4 h-4 text-blue-500" />
               <span className="text-xs text-gray-500 dark:text-gray-400">Session Code:</span>
@@ -1202,6 +1205,11 @@ export default function InventoryPage() {
                 {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
+            ) : (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20">
+              <span className="text-xs text-amber-600 dark:text-amber-400">Solo mode — multi-user not available</span>
+            </div>
+            )}
 
             {/* Workers (visible when live session is active) */}
             {liveWorkers.length > 0 && (
