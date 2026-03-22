@@ -363,10 +363,12 @@ export default function InventoryPage() {
 
     // Try to create a live server-side session for multi-user support
     try {
-      const { sessionId, joinCode } = await restockStart(selectedClientId);
+      const { sessionId, joinCode: serverCode } = await restockStart(selectedClientId);
       setLiveSessionId(sessionId);
-      setLiveJoinCode(joinCode);
-      persistLiveSession(sessionId, joinCode);
+      setLiveJoinCode(serverCode);
+      persistLiveSession(sessionId, serverCode);
+      // Update local session's joinCode to match the backend's code so staff can actually join
+      setRestockSession((prev) => prev ? { ...prev, joinCode: serverCode } : prev);
     } catch (err) {
       // If live session creation fails, continue with local-only mode
       console.warn('[Restock] Live session creation failed — continuing in local mode:', (err as Error).message);
