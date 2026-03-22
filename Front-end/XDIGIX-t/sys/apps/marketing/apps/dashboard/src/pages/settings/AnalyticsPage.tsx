@@ -135,23 +135,17 @@ const AnalyticsPage = () => {
       permission="settings_integrations"
       fallback={
         <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-          <span className="material-icons text-6xl text-madas-text/30 mb-4">lock</span>
-          <p className="text-lg font-medium text-madas-text/70 mb-2">Access Denied</p>
-          <p className="text-sm text-madas-text/60">
+          <span className="material-icons text-6xl text-gray-300 mb-4">lock</span>
+          <p className="text-lg font-medium text-gray-500 mb-2">Access Denied</p>
+          <p className="text-sm text-gray-400">
             You don't have permission to access analytics settings. Please contact your administrator.
           </p>
         </div>
       }
     >
-      <div className="space-y-6 px-6 py-8">
-        <header>
-          <h1 className="text-3xl font-semibold text-primary">Analytics</h1>
-          <p className="text-sm text-madas-text/70">Manage tracking pixels and analytics scripts for your website.</p>
-        </header>
-
-        <div className="space-y-6">
+      <div className="space-y-5">
           {/* Tab Navigation */}
-          <nav className="flex flex-wrap gap-2 rounded-xl border border-gray-100 bg-white p-2 overflow-x-auto">
+          <nav className="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-white p-2 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -159,8 +153,8 @@ const AnalyticsPage = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm transition-all whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-base hover:text-primary'
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 <span className="material-icons text-base">{tab.icon}</span>
@@ -171,7 +165,7 @@ const AnalyticsPage = () => {
 
           {/* Tab Content */}
           <main>
-            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               {activeTab === 'meta' && (
                 <MetaPixelTab
                   pixels={pixelData.metaPixels || []}
@@ -221,7 +215,6 @@ const AnalyticsPage = () => {
               )}
             </div>
           </main>
-        </div>
       </div>
     </PermissionGuard>
   );

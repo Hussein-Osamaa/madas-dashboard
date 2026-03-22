@@ -16,11 +16,33 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 /* ── Types ──────────────────────────────────────────────────────── */
+export type PageType =
+  | 'home'
+  | 'products'
+  | 'product'
+  | 'collections'
+  | 'collection-list'
+  | 'gift-card'
+  | 'cart'
+  | 'checkout'
+  | 'page'
+  | 'blog'
+  | 'blog-post'
+  | 'search'
+  | 'password';
+
 export interface SitePage {
   id: string;
   slug: string;
   name: string;
+  type: PageType;
+  /** System pages can't be deleted */
+  isSystem?: boolean;
+  /** Pages with sub-templates (e.g., Products → individual product) */
+  hasChildren?: boolean;
+  icon?: string;
   order?: number;
+  group?: 'main' | 'utility' | 'content';
   seo?: {
     title?: string;
     description?: string;
@@ -28,6 +50,19 @@ export interface SitePage {
     canonical?: string;
   };
 }
+
+/** Default system pages — always present, can't be deleted */
+export const SYSTEM_PAGES: SitePage[] = [
+  { id: 'home',            slug: 'home',             name: 'Home page',        type: 'home',            isSystem: true, icon: 'home',             order: 0,  group: 'main' },
+  { id: 'products',        slug: 'products',         name: 'Products',         type: 'products',        isSystem: true, icon: 'sell',             order: 1,  group: 'main',    hasChildren: true },
+  { id: 'collections',     slug: 'collections',      name: 'Collections',      type: 'collections',     isSystem: true, icon: 'filter_vintage',   order: 2,  group: 'main',    hasChildren: true },
+  { id: 'collection-list', slug: 'collection-list',  name: 'Collections list', type: 'collection-list', isSystem: true, icon: 'format_list_bulleted', order: 3, group: 'main' },
+  { id: 'gift-card',       slug: 'gift-card',        name: 'Gift card',        type: 'gift-card',       isSystem: true, icon: 'card_giftcard',    order: 4,  group: 'main' },
+  { id: 'cart',            slug: 'cart',              name: 'Cart',             type: 'cart',            isSystem: true, icon: 'shopping_bag',     order: 10, group: 'utility' },
+  { id: 'checkout',        slug: 'checkout',          name: 'Checkout',         type: 'checkout',        isSystem: true, icon: 'shopping_cart',    order: 11, group: 'utility' },
+  { id: 'search',          slug: 'search',            name: 'Search',           type: 'search',          isSystem: true, icon: 'search',           order: 30, group: 'utility' },
+  { id: 'password',        slug: 'password',          name: 'Password',         type: 'password',        isSystem: true, icon: 'lock',             order: 31, group: 'utility' },
+];
 
 interface Props {
   pages: SitePage[];
@@ -54,6 +89,7 @@ const SortablePageRow = ({
   page,
   isActive,
   isHome,
+  isSystem,
   onSelect,
   onRename,
   onDelete,
@@ -61,6 +97,7 @@ const SortablePageRow = ({
   page: SitePage;
   isActive: boolean;
   isHome: boolean;
+  isSystem: boolean;
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
@@ -85,8 +122,10 @@ const SortablePageRow = ({
         isActive ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-700'
       }`}
     >
-      {/* Drag handle */}
-      {!isHome && (
+      {/* Icon for system pages, drag handle for custom pages */}
+      {page.icon ? (
+        <span className={`material-icons text-lg ${isActive ? 'text-primary' : 'text-gray-400'}`}>{page.icon}</span>
+      ) : !isSystem ? (
         <button
           type="button"
           {...attributes}
@@ -95,8 +134,9 @@ const SortablePageRow = ({
         >
           <span className="material-icons text-sm">drag_handle</span>
         </button>
+      ) : (
+        <span className="w-5" />
       )}
-      {isHome && <span className="w-5" />}
 
       {/* Page name / rename input */}
       <div className="flex-1 min-w-0" onClick={onSelect}>
@@ -117,17 +157,17 @@ const SortablePageRow = ({
         <span className="text-xs text-gray-400 truncate block">/{page.slug}</span>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setEditing(true); setNameValue(page.name); }}
-          className="p-1 rounded text-gray-400 hover:text-primary hover:bg-gray-100"
-          title="Rename page"
-        >
-          <span className="material-icons text-sm">edit</span>
-        </button>
-        {!isHome && (
+      {/* Actions — hidden for system pages */}
+      {!isSystem && (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setEditing(true); setNameValue(page.name); }}
+            className="p-1 rounded text-gray-400 hover:text-primary hover:bg-gray-100"
+            title="Rename page"
+          >
+            <span className="material-icons text-sm">edit</span>
+          </button>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
@@ -136,8 +176,11 @@ const SortablePageRow = ({
           >
             <span className="material-icons text-sm">delete_outline</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
+      {page.hasChildren && (
+        <span className="material-icons text-sm text-gray-400 flex-shrink-0">chevron_right</span>
+      )}
     </div>
   );
 };
@@ -234,6 +277,7 @@ const PageManager = ({
                 page={page}
                 isActive={page.slug === currentSlug}
                 isHome={page.slug === 'home'}
+                isSystem={!!page.isSystem}
                 onSelect={() => onSelectPage(page.slug)}
                 onRename={(name) => onRenamePage(page.id, name)}
                 onDelete={() => {

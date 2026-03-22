@@ -59,8 +59,8 @@ const NAVBAR: SectionDefaults = {
   wishlistUrl:              '#',
   showUserIcon:             false,
   userIconUrl:              '#',
-  backgroundColor:          '#ffffff',
-  textColor:                '#171817',
+  backgroundColor:          'inherit',
+  textColor:                'inherit',
   sticky:                   true,
   hoverBackgroundColor:     '',
   hoverColor:               '#27491F',
@@ -183,8 +183,6 @@ const CTA: SectionDefaults = {
   buttonLink:           '#',
   secondaryButtonText:  '',
   secondaryButtonLink:  '#',
-  backgroundColor:      '#27491F',
-  textColor:            '#ffffff',
   buttonBackgroundColor:'#FFD300',
   buttonTextColor:      '#171817',
   layout:               'centered',    // 'centered' | 'split'
@@ -245,9 +243,7 @@ const FAQ: SectionDefaults = {
 };
 
 const FOOTER: SectionDefaults = {
-  layout:                      'classic',   // 'classic' | 'minimal'
-  backgroundColor:             '#1a1a1a',
-  textColor:                   '#ffffff',
+  layout:                      'classic',   // 'classic' | 'minimal',
   borderColor:                 'rgba(255,255,255,0.1)',
   logoText:                    'My Store',
   logo:                        '',
@@ -314,16 +310,12 @@ const COUNTDOWN: SectionDefaults = {
   showMinutes:    true,
   showSeconds:    true,
   expiredMessage: 'Sale has ended.',
-  backgroundColor:'#27491F',
-  textColor:      '#ffffff',
 };
 
 const BANNER: SectionDefaults = {
   text:           'Free shipping on all orders over 200 SAR! 🎉',
   link:           '#',
   linkText:       'Shop Now',
-  backgroundColor:'#27491F',
-  textColor:      '#ffffff',
   icon:           '',
   dismissible:    true,
   position:       'top',
@@ -344,8 +336,6 @@ const NEWSLETTER: SectionDefaults = {
   subtitle:        'Subscribe for exclusive deals, new arrivals, and more.',
   placeholder:     'Enter your email address',
   buttonText:      'Subscribe',
-  backgroundColor: '#27491F',
-  textColor:       '#ffffff',
   successMessage:  "You're subscribed! 🎉",
 };
 
@@ -368,6 +358,86 @@ const IMAGE_COMPARISON: SectionDefaults = {
   sliderColor:    '#27491F',
   showLabels:     true,
   orientation:    'horizontal',
+};
+
+const PRODUCT_INFO: SectionDefaults = {
+  product_name:          'Sample Product',
+  product_vendor:        'Vendor',
+  product_price:         99.99,
+  product_compare_price: 0,
+  product_description:   'This is a sample product description. Add details about materials, care instructions, sizing, and other important information.',
+  product_images:        [],
+  product_available:     true,
+  product_sku:           'SKU-001',
+  product_inventory:     25,
+  media_width:           'medium',
+  padding_top:           36,
+  padding_bottom:        36,
+  blocks: [
+    { type: 'vendor' },
+    { type: 'title' },
+    { type: 'price' },
+    { type: 'quantity_selector' },
+    { type: 'buy_buttons' },
+    { type: 'description' },
+    { type: 'share' },
+  ],
+};
+
+const CART: SectionDefaults = {
+  title:              'Your cart',
+  empty_message:      'Your cart is empty',
+  empty_button_text:  'Continue shopping',
+  empty_button_link:  '/',
+  show_notes:         true,
+  show_shipping:      true,
+  preview_mode:       'with_items',
+  padding_top:        36,
+  padding_bottom:     36,
+};
+
+const SLIDESHOW: SectionDefaults = {
+  slides: [
+    {
+      image: '',
+      heading: 'Welcome to our store',
+      subheading: 'Discover amazing products crafted just for you.',
+      button_label: 'Shop Now',
+      button_link: '#',
+      button_style: 'solid',
+      content_position: 'middle-center',
+      text_alignment: 'center',
+      overlay_opacity: 40,
+    },
+    {
+      image: '',
+      heading: 'New Arrivals',
+      subheading: 'Check out the latest additions to our collection.',
+      button_label: 'Explore',
+      button_link: '#',
+      button_style: 'solid',
+      content_position: 'middle-left',
+      text_alignment: 'left',
+      overlay_opacity: 40,
+    },
+    {
+      image: '',
+      heading: 'Special Offers',
+      subheading: "Limited time deals you don't want to miss.",
+      button_label: 'View Deals',
+      button_link: '#',
+      button_style: 'outline',
+      content_position: 'bottom-center',
+      text_alignment: 'center',
+      overlay_opacity: 40,
+    },
+  ],
+  slide_height: 'large',
+  autoplay: true,
+  autoplay_speed: 5,
+  show_arrows: true,
+  show_dots: true,
+  transition: 'slide',
 };
 
 /**
@@ -399,6 +469,9 @@ export const SECTION_DEFAULTS: Record<SectionType, SectionDefaults> = {
   newsletter:      NEWSLETTER,
   divider:         DIVIDER,
   imageComparison: IMAGE_COMPARISON,
+  slideshow:       SLIDESHOW,
+  productInfo:     PRODUCT_INFO,
+  cart:            CART,
 };
 
 /**

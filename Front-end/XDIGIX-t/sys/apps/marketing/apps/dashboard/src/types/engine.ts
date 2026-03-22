@@ -16,7 +16,9 @@ export type FieldType =
   | 'select'        // Dropdown           → SelectField
   | 'toggle'        // Boolean switch     → ToggleField
   | 'date'          // Date picker        → <input type="date">
-  | 'icon';         // Material icon glyph→ TextField + live preview
+  | 'icon'          // Material icon glyph→ TextField + live preview
+  | 'header'        // Section divider    → <h3> label with separator
+  | 'button-group'; // Inline button group (Left|Center|Right) → ButtonGroupField
 
 export interface SelectOption {
   value: string | number;
@@ -101,6 +103,14 @@ export interface SectionRendererProps {
   style?: React.CSSProperties;
   siteId?: string;
   previewMode?: 'desktop' | 'tablet' | 'mobile';
+  /** Whether this section is currently selected in the builder */
+  isSelected?: boolean;
+  /** Called when the user clicks "edit" on a block overlay.
+   *  dataKey = the key in section.data that holds the block array (e.g. 'blocks', 'items', 'stats')
+   *  blockIndex = index within that array */
+  onEditBlock?: (dataKey: string, blockIndex: number) => void;
+  /** Called when the user clicks "delete" on a block overlay */
+  onDeleteBlock?: (dataKey: string, blockIndex: number) => void;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

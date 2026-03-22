@@ -1,5 +1,5 @@
 // src/components/builder/engine/SchemaFormField.tsx
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { FieldSchema } from '../../../types/engine';
 import TextField from '../editors/shared/TextField';
 import ColorField from '../editors/shared/ColorField';
@@ -7,6 +7,7 @@ import ImageField from '../editors/shared/ImageField';
 import SelectField from '../editors/shared/SelectField';
 import ToggleField from '../editors/shared/ToggleField';
 import NumberField from '../editors/shared/NumberField';
+import { useTheme, DEFAULT_COLOR_SCHEMES } from '../../../contexts/ThemeContext';
 
 interface Props {
   fieldKey: string;
@@ -19,6 +20,65 @@ interface Props {
   siteId?: string;
   businessId?: string;
 }
+
+/* ── Color Scheme visual picker ──────────────────────────────────────── */
+const ColorSchemeSelect: React.FC<{ value: string; onChange: (v: string) => void; label: string }> = ({ value, onChange, label }) => {
+  const { theme } = useTheme();
+  const schemes = theme.colorSchemes ?? DEFAULT_COLOR_SCHEMES;
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const active = schemes.find(s => s.id === value) ?? schemes[0];
+
+  return (
+    <div className="space-y-1" ref={ref}>
+      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white hover:border-gray-300 transition-colors cursor-pointer"
+      >
+        {/* Color preview dots */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: active?.background ?? '#fff' }} />
+          <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: active?.text ?? '#000' }} />
+          <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: active?.solidButtonBg ?? '#000' }} />
+        </div>
+        <span className="flex-1 text-left text-[13px] text-[#374151] truncate">{active?.name ?? value}</span>
+        <span className="material-icons text-sm text-[#9ca3af]">{open ? 'expand_less' : 'expand_more'}</span>
+      </button>
+      {open && (
+        <div className="mt-1 border border-gray-200 rounded-lg bg-white shadow-lg overflow-hidden z-50 relative">
+          {schemes.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => { onChange(s.id); setOpen(false); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors ${s.id === value ? 'bg-[#e8f0e6]' : ''}`}
+            >
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: s.background }} />
+                <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: s.text }} />
+                <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: s.solidButtonBg }} />
+              </div>
+              <span className="text-[13px] text-[#374151] flex-1">{s.name}</span>
+              {s.id === value && <span className="material-icons text-sm text-[#27491F]">check</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const SchemaFormField: React.FC<Props> = ({
   fieldKey,
@@ -169,6 +229,16 @@ const SchemaFormField: React.FC<Props> = ({
       );
 
     case 'select':
+      // Use visual color scheme picker for color_scheme fields
+      if (fieldKey === 'color_scheme') {
+        return (
+          <ColorSchemeSelect
+            label={schema.label}
+            value={String(value ?? schema.defaultValue ?? '')}
+            onChange={(v) => onChange(v)}
+          />
+        );
+      }
       return (
         <SelectField
           label={schema.label}
@@ -200,6 +270,41 @@ const SchemaFormField: React.FC<Props> = ({
             className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
           {schema.helpText && <p className="text-xs text-gray-400">{schema.helpText}</p>}
+        </div>
+      );
+
+    case 'header':
+      return (
+        <div className="pt-3 pb-1 border-t border-gray-200 mt-2">
+          <h3 className="text-[13px] font-semibold text-[#111827]">{schema.label}</h3>
+          {schema.helpText && <p className="text-[11px] text-[#9ca3af] mt-0.5">{schema.helpText}</p>}
+        </div>
+      );
+
+    case 'button-group':
+      return (
+        <div className="space-y-1.5">
+          <label className="block text-[13px] font-medium text-[#374151]">{schema.label}</label>
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+            {(schema.options ?? []).map((opt) => {
+              const isActive = String(value ?? schema.defaultValue ?? '') === String(opt.value);
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => onChange(opt.value)}
+                  className={`flex-1 py-2 text-xs font-medium transition-all border-r last:border-r-0 border-gray-200 ${
+                    isActive
+                      ? 'bg-[#111827] text-white'
+                      : 'bg-white text-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          {schema.helpText && <p className="text-[11px] text-[#9ca3af]">{schema.helpText}</p>}
         </div>
       );
 

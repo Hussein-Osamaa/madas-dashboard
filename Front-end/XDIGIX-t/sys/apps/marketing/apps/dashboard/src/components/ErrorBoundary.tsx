@@ -21,6 +21,21 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[ErrorBoundary] Caught error:', error, info.componentStack);
+
+    // Auto-recover from DOM reconciliation errors caused by browser extensions
+    // (Google Translate, Grammarly, ad-blockers) modifying the DOM outside React.
+    const msg = error.message || '';
+    if (
+      msg.includes('removeChild') ||
+      msg.includes('insertBefore') ||
+      msg.includes('not a child')
+    ) {
+      console.warn(
+        '[ErrorBoundary] DOM reconciliation error detected – auto-recovering. ' +
+          'This is typically caused by browser extensions modifying the DOM.',
+      );
+      this.setState({ hasError: false, error: null });
+    }
   }
 
   handleReload = () => {

@@ -76,7 +76,8 @@ const getBaseSections = (): SidebarSection[] => [
           { label: 'External Website', to: '/ecommerce/external-website', icon: 'link' },
           { label: 'Visit Store', to: '/ecommerce/visit-store', icon: 'shopping_bag' },
           { label: 'Custom Domains', to: '/ecommerce/custom-domains', icon: 'language' },
-          { label: 'Navigation', to: '/ecommerce/navigation', icon: 'navigation' }
+          { label: 'Navigation', to: '/ecommerce/navigation', icon: 'navigation' },
+          { label: 'Preferences', to: '/ecommerce/preferences', icon: 'tune' }
         ]
       },
       {

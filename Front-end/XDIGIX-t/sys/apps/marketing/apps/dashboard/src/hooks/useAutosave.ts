@@ -19,6 +19,8 @@ import { Section } from '../types/builder';
      const { triggerSave } = useAutosave(siteId, sections, {
        onStatusChange: setAutosaveStatus,
        onError: (e) => toast.error(e.message),
+       getPageSections: () => pageSectionsMapRef.current,
+       currentPageSlug: 'home',
      });
 ───────────────────────────────────────────────────────────────────────── */
 
@@ -35,6 +37,10 @@ interface UseAutosaveOptions {
   apiBase?: string;
   /** Bearer token getter — must be stable (wrapped in useCallback by caller) */
   getToken?: () => string | null;
+  /** Get the full pageSections map — if provided, autosave persists page context */
+  getPageSections?: () => Record<string, Section[]>;
+  /** Current page slug — used to update pageSections map before saving */
+  currentPageSlug?: string;
 }
 
 export function useAutosave(
@@ -48,6 +54,8 @@ export function useAutosave(
     debounceMs = 3000,
     apiBase = '/api',
     getToken,
+    getPageSections,
+    currentPageSlug = 'home',
   } = options;
 
   const timerRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,10 +85,25 @@ export function useAutosave(
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
+      // Build payload: always save pageSections map
+      // Top-level `sections` is always the home page for backward compatibility
+      const payload: Record<string, unknown> = {};
+
+      if (getPageSections) {
+        const pageSections = { ...getPageSections() };
+        // Ensure current page's sections are up-to-date in the map
+        pageSections[currentPageSlug] = sectionsRef.current;
+        payload.pageSections = pageSections;
+        // Top-level sections = home page for backward compat
+        payload.sections = pageSections['home'] || sectionsRef.current;
+      } else {
+        payload.sections = sectionsRef.current;
+      }
+
       const res = await fetch(`${apiBase}/sites/${siteId}`, {
         method: 'PATCH',
         headers,
-        body: JSON.stringify({ sections: sectionsRef.current }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -101,7 +124,7 @@ export function useAutosave(
         onError?.(err as Error);
       }
     }
-  }, [siteId, apiBase, getToken, onStatusChange, onError]);
+  }, [siteId, apiBase, getToken, getPageSections, currentPageSlug, onStatusChange, onError]);
 
   /** Debounced autosave — fires whenever sections reference changes */
   useEffect(() => {

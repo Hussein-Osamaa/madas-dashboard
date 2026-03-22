@@ -62,14 +62,16 @@ const SortableSection = ({ section, isSelected, onSelect, onDelete, onDuplicate,
         >
           <span className="material-icons text-sm">content_copy</span>
         </button>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="w-7 h-7 rounded bg-white/90 backdrop-blur text-[#6b7280] hover:text-red-500 hover:bg-white shadow-[0_1px_2px_rgba(0,0,0,.06)] flex items-center justify-center transition-colors"
-          title="Delete"
-        >
-          <span className="material-icons text-sm">delete</span>
-        </button>
+        {!section.locked && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="w-7 h-7 rounded bg-white/90 backdrop-blur text-[#6b7280] hover:text-red-500 hover:bg-white shadow-[0_1px_2px_rgba(0,0,0,.06)] flex items-center justify-center transition-colors"
+            title="Delete"
+          >
+            <span className="material-icons text-sm">delete</span>
+          </button>
+        )}
       </div>
 
       {/* Section Content */}

@@ -31,6 +31,7 @@ export const routePermissionMap: Record<string, string[]> = {
   '/ecommerce/website-settings': ['website_settings'],
   '/ecommerce/code-editor': ['website_builder'],
   '/ecommerce/external-website': ['website_settings'],
+  '/ecommerce/preferences': ['website_settings'],
   '/rbac/users': ['staff_view'],
   '/rbac/roles': ['roles_view'],
   '/settings': ['settings_general'],

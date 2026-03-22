@@ -1,108 +1,78 @@
-import { useState, memo} from 'react';
+import { useState, memo } from 'react';
 import { BannerSectionData } from '../../../types/builder';
+import BlockWrapper from '../BlockWrapper';
 
-type Props = {
-  data: BannerSectionData;
-  style?: React.CSSProperties;
-};
+type Props = { data: BannerSectionData; style?: React.CSSProperties; isSelected?: boolean; onEditBlock?: (dataKey: string, blockIndex: number) => void; onDeleteBlock?: (dataKey: string, blockIndex: number) => void };
 
-const BannerSection = ({ data, style }: Props) => {
-  const {
-    text = '🎉 Special Offer: Get 20% off your first order! Use code WELCOME20',
-    link,
-    linkText = 'Shop Now',
-    backgroundColor = '#27491F',
-    textColor = '#ffffff',
-    icon,
-    dismissible = false,
-    enableMarquee = false,
-    marqueeSpeed = 20
-  } = data ?? {};
+const BannerSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }: Props) => {
+  const d = (data ?? {}) as Record<string, any>;
+  const text = d.text || 'Welcome to our store';
+  const link = d.link || '';
+  const linkText = d.linkText || '';
+  const dismissible = d.dismissible ?? false;
+  const enableMarquee = d.enableMarquee ?? false;
+  const marqueeSpeed = d.marqueeSpeed ?? 30;
+  const icon = d.icon || '';
 
-  const [isDismissed, setIsDismissed] = useState(false);
+  // Blocks-based announcements
+  const announcements = d.announcements ?? [];
+  const [dismissed, setDismissed] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  if (isDismissed) return null;
+  if (dismissed) return null;
 
-  // Create the marquee item with separator
-  const marqueeItem = (key: number) => (
-    <span key={key} className="inline-flex items-center px-4" data-edit-type="description">
-      {icon && <span className="text-base sm:text-xl mr-3">{icon}</span>}
-      <span className="text-xs sm:text-sm md:text-base font-medium whitespace-nowrap" style={{ color: textColor }}>
-        {text}
-      </span>
-      <span className="ml-8 opacity-50" style={{ color: textColor }}>✦</span>
-    </span>
-  );
+  const items = announcements.length > 0
+    ? announcements
+    : [{ text, link, linkText }];
+
+  const currentItem = items[currentIndex] || items[0];
 
   return (
-    <section
-      className="banner-section w-full py-2 sm:py-3 relative overflow-hidden"
-      style={{ backgroundColor, ...style }}
-      data-edit-type="background"
-    >
-      {enableMarquee && (
-        <style>{`
-          @keyframes scroll-left {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
-          }
-          .marquee-track {
-            display: flex;
-            width: fit-content;
-            animation: scroll-left ${marqueeSpeed}s linear infinite;
-          }
-          .marquee-track:hover {
-            animation-play-state: paused;
-          }
-        `}</style>
-      )}
-      
-      <div className={enableMarquee ? "w-full overflow-hidden" : "max-w-6xl mx-auto flex items-center justify-center gap-2 sm:gap-4 px-3 sm:px-6"}>
-        {/* Static elements on the left */}
-        {!enableMarquee && icon && (
-          <span className="text-base sm:text-xl flex-shrink-0" data-edit-type="description">{icon}</span>
-        )}
-        
-        {/* Text - either static or marquee */}
-        {enableMarquee ? (
-          <div className="marquee-track" data-edit-type="description">
-            {/* First set - visible initially */}
-            {[0,1,2,3,4,5].map(i => marqueeItem(i))}
-            {/* Second set - creates seamless loop */}
-            {[6,7,8,9,10,11].map(i => marqueeItem(i))}
-          </div>
-        ) : (
-          <p
-            className="banner-text text-sm sm:text-base font-medium text-center cursor-pointer hover:opacity-80 transition-opacity"
-          style={{ color: textColor }}
-            data-edit-type="description"
-        >
-          {text}
-        </p>
+    <section className="relative w-full" style={{ ...style }}>
+      <div className="flex items-center justify-center min-h-[40px] px-4 py-2">
+        {items.length > 1 && (
+          <button onClick={() => setCurrentIndex((currentIndex - 1 + items.length) % items.length)}
+            className="p-1 opacity-70 hover:opacity-100 transition-opacity mr-2">
+            <span className="material-icons text-sm" style={{}}>chevron_left</span>
+          </button>
         )}
 
-        {/* CTA Button - only show when not marquee */}
-        {link && !enableMarquee && (
-          <a
-            href={link}
-            className="banner-button inline-flex items-center gap-1 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all hover:scale-105 flex-shrink-0"
-            style={{ backgroundColor: textColor, color: backgroundColor }}
-            data-edit-type="button"
-          >
-            {linkText}
-            <span className="material-icons text-sm">arrow_forward</span>
-          </a>
+        <BlockWrapper dataKey="items" blockIndex={currentIndex} blockType="announcement" isSelected={!!isSelected} onEdit={onEditBlock ?? ((_dk: string, _bi: number) => {})} onDelete={onDeleteBlock ?? ((_dk: string, _bi: number) => {})}>
+        <div className="flex items-center gap-2 text-sm tracking-wide">
+          {icon && <span className="material-icons text-sm">{icon}</span>}
+          {enableMarquee ? (
+            <div className="overflow-hidden max-w-md">
+              <div className="whitespace-nowrap animate-marquee" style={{ animationDuration: `${marqueeSpeed}s` }}>
+                <span>{currentItem.text}</span>
+                {currentItem.link && currentItem.linkText && (
+                  <a href={currentItem.link} className="underline ml-2 hover:no-underline">{currentItem.linkText}</a>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              <span>{currentItem.text}</span>
+              {currentItem.link && currentItem.linkText && (
+                <a href={currentItem.link} className="underline ml-1 hover:no-underline" style={{}}>
+                  {currentItem.linkText}
+                </a>
+              )}
+            </>
+          )}
+        </div>
+        </BlockWrapper>
+
+        {items.length > 1 && (
+          <button onClick={() => setCurrentIndex((currentIndex + 1) % items.length)}
+            className="p-1 opacity-70 hover:opacity-100 transition-opacity ml-2">
+            <span className="material-icons text-sm" style={{}}>chevron_right</span>
+          </button>
         )}
 
         {dismissible && (
-          <button
-            onClick={() => setIsDismissed(true)}
-            className="absolute right-4 sm:right-6 p-1 rounded-full hover:bg-white/20 transition-colors flex-shrink-0 z-10"
-            aria-label="Dismiss"
-          >
-            <span className="material-icons text-base" style={{ color: textColor }}>
-              close
-            </span>
+          <button onClick={() => setDismissed(true)}
+            className="absolute right-3 p-1 opacity-70 hover:opacity-100 transition-opacity">
+            <span className="material-icons text-sm" style={{}}>close</span>
           </button>
         )}
       </div>
@@ -111,4 +81,3 @@ const BannerSection = ({ data, style }: Props) => {
 };
 
 export default memo(BannerSection);
-

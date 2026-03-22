@@ -22,13 +22,20 @@ export type SectionType =
   | 'partners'
   | 'newsletter'
   | 'divider'
-  | 'imageComparison';
+  | 'imageComparison'
+  | 'slideshow'
+  | 'productInfo'
+  | 'cart';
 
 export interface Section {
   id: string;
   type: SectionType;
   order: number;
   data: Record<string, any>;
+  /** Section cannot be deleted — only hidden */
+  locked?: boolean;
+  /** Section is hidden (not rendered on canvas/preview) */
+  hidden?: boolean;
   style?: {
     padding?: { top?: number; bottom?: number; left?: number; right?: number };
     paddingTop?: number;
@@ -342,7 +349,12 @@ export interface NavbarMenuItem {
 export interface NavbarSectionData {
   logo?: string;
   logoText?: string;
+  logoPosition?: 'top-left' | 'top-center' | 'middle-left' | 'middle-center';
+  mobileLogoPosition?: 'center' | 'left';
+  menuType?: 'dropdown' | 'mega' | 'drawer';
   menuItems: NavbarMenuItem[];
+  stickyMode?: 'none' | 'always' | 'on-scroll-up' | 'reduce-logo';
+  separatorLine?: boolean;
   showSearch?: boolean;
   searchPlaceholder?: string;
   showCart?: boolean;
@@ -355,10 +367,14 @@ export interface NavbarSectionData {
   userIconUrl?: string;
   backgroundColor?: string;
   textColor?: string;
+  colorScheme?: string;
   sticky?: boolean;
   hoverBackgroundColor?: string;
   hoverColor?: string;
   hoverEffect?: string;
+  bottomMargin?: number;
+  padding_top?: number;
+  padding_bottom?: number;
 }
 
 export interface FooterSectionData {

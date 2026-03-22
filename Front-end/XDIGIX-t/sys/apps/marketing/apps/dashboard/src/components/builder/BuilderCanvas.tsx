@@ -16,9 +16,10 @@ import {
 } from '@dnd-kit/sortable';
 import { Section, SectionType } from '../../types/builder';
 import { SelectedElement, ElementType } from '../../types/elementEditor';
-import { getElementTypeFromRegistry } from '../../registry/sectionRegistry';
+import { getElementTypeFromRegistry, SECTION_REGISTRY } from '../../registry/sectionRegistry';
 import SectionRenderer from './SectionRenderer';
 import SortableSection from './SortableSection';
+import AddBlockButton from './AddBlockButton';
 import { useTheme, buildThemeCssVars, FONT_OPTIONS } from '../../contexts/ThemeContext';
 
 type Props = {
@@ -34,6 +35,9 @@ type Props = {
   onDuplicateSection: (id: string) => void;
   siteId?: string;
   onSelectElementWithRect?: (element: SelectedElement, rect: DOMRect) => void;
+  onEditBlock?: (sectionId: string, dataKey: string, blockIndex: number) => void;
+  onDeleteBlock?: (sectionId: string, dataKey: string, blockIndex: number) => void;
+  onAddBlock?: (sectionId: string, dataKey: string, blockData: Record<string, unknown>) => void;
 };
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -265,7 +269,10 @@ const BuilderCanvas = ({
   onReorderSections,
   onDuplicateSection,
   siteId,
-  onSelectElementWithRect
+  onSelectElementWithRect,
+  onEditBlock,
+  onDeleteBlock,
+  onAddBlock
 }: Props) => {
   const previewWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -300,6 +307,10 @@ const BuilderCanvas = ({
 
   // Handle click on section content to select elements
   const handleSectionContentClick = useCallback((e: React.MouseEvent, sectionId: string) => {
+    // Never intercept clicks on BlockWrapper control buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-block-action]')) return;
+
     // Only handle if this section is already selected
     if (selectedSection !== sectionId) {
       return; // Let the section selection happen first
@@ -307,7 +318,6 @@ const BuilderCanvas = ({
 
     e.stopPropagation();
 
-    const target = e.target as HTMLElement;
     const sectionContainer = (e.currentTarget as HTMLElement).querySelector('[data-section-content]') || e.currentTarget;
 
     // Resolve the section type for registry-aware detection
@@ -324,7 +334,6 @@ const BuilderCanvas = ({
       // Default to background if clicking on empty space
       const bgElement = { type: 'background' as const, sectionId };
       onSelectElement(bgElement);
-      // Don't call onSelectElementWithRect for background clicks (no specific element to anchor to)
     }
   }, [selectedSection, sections, onSelectElement, onSelectElementWithRect]);
 
@@ -335,20 +344,22 @@ const BuilderCanvas = ({
 
     const preventNavigation = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      
+
+      // Never intercept clicks on BlockWrapper control buttons (edit/delete/add)
+      if (target.closest('[data-block-action]')) return;
+
       // Find if the click is on or within an anchor tag
       const anchor = target.closest('a');
       if (anchor && anchor.href) {
         e.preventDefault();
-        e.stopPropagation();
+        // Don't stopPropagation — let React handlers on BlockWrapper fire
         return;
       }
-      
+
       // Also prevent form submissions
       const form = target.closest('form');
       if (form) {
         e.preventDefault();
-        e.stopPropagation();
         return;
       }
     };
@@ -438,7 +449,7 @@ const BuilderCanvas = ({
   };
 
   const sortedSections = useMemo(
-    () => [...sections].sort((a, b) => a.order - b.order),
+    () => [...sections].filter(s => !s.hidden).sort((a, b) => a.order - b.order),
     [sections]
   );
 
@@ -467,7 +478,7 @@ const BuilderCanvas = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-[#e9ebee] p-4 sm:p-6 lg:p-8">
+    <div className="h-full overflow-y-auto bg-[#e9ebee] p-4 sm:p-6 lg:p-8">
       <div 
         ref={previewWrapperRef}
         className={`mx-auto transition-all duration-300 ${
@@ -490,8 +501,12 @@ const BuilderCanvas = ({
               style={{
                 width: previewMode === 'mobile' ? '375px' : previewMode === 'tablet' ? '768px' : '100%',
                 maxWidth: previewMode === 'desktop' ? '1100px' : '100%',
-                overflowX: 'hidden'
-              }}
+                overflowX: 'hidden',
+                fontFamily: `'${theme.fontBody}', system-ui, sans-serif`,
+                fontSize: `${(theme.bodyScale || 100) / 100}rem`,
+                '--font-heading': `'${theme.fontHeading}', system-ui, sans-serif`,
+                '--heading-scale': `${(theme.headingScale || 100) / 100}`,
+              } as React.CSSProperties}
             >
               {/* Global editable-element hover outline */}
               <style>{`
@@ -595,7 +610,16 @@ const BuilderCanvas = ({
                           onSelect={() => onSelectSection(section.id)}
                           previewMode={previewMode}
                           siteId={siteId}
+                          onEditBlock={onEditBlock ? (dk: string, bi: number) => onEditBlock(section.id, dk, bi) : undefined}
+                          onDeleteBlock={onDeleteBlock ? (dk: string, bi: number) => onDeleteBlock(section.id, dk, bi) : undefined}
                         />
+                        {/* Add Block button — only for selected sections with block schemas */}
+                        {selectedSection === section.id && onAddBlock && (
+                          <AddBlockButton
+                            sectionType={section.type as SectionType}
+                            onAddBlock={(dataKey, blockData) => onAddBlock(section.id, dataKey, blockData)}
+                          />
+                        )}
                       </div>
                     </div>
                   </SortableSection>

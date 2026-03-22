@@ -1,119 +1,60 @@
 import { memo } from 'react';
 import { TeamSectionData } from '../../../types/builder';
+import BlockWrapper from '../BlockWrapper';
 
-type Props = {
-  data: TeamSectionData;
-  style?: React.CSSProperties;
-};
+type Props = { data: TeamSectionData; style?: React.CSSProperties; isSelected?: boolean; onEditBlock?: (dataKey: string, blockIndex: number) => void; onDeleteBlock?: (dataKey: string, blockIndex: number) => void };
 
-const TeamSection = ({ data, style }: Props) => {
-  const {
-    title = 'Meet Our Team',
-    subtitle = 'The people behind our success',
-    members = [],
-    layout = 'grid'
-  } = data ?? {};
+const FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
+];
 
-  type TeamMember = {
-    name: string;
-    role: string;
-    image?: string;
-    bio?: string;
-    socialLinks?: Array<{ platform: string; link: string }>;
+const TeamSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }: Props) => {
+  const d = (data ?? {}) as Record<string, any>;
+
+  const title = d.title || 'Our Team';
+  const subtitle = d.subtitle || '';
+  const columns = d.columns ?? 4;
+  const paddingTop = d.padding_top ?? 36;
+  const paddingBottom = d.padding_bottom ?? 36;
+
+  const members = d.members ?? [];
+
+  const colsMap: Record<number, string> = {
+    2: 'grid-cols-1 sm:grid-cols-2',
+    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-2 lg:grid-cols-4',
   };
 
-  const defaultMembers: TeamMember[] = [
-    { name: 'John Doe', role: 'CEO & Founder', image: '', bio: 'Visionary leader with 10+ years experience' },
-    { name: 'Jane Smith', role: 'CTO', image: '', bio: 'Tech innovator and problem solver' },
-    { name: 'Mike Johnson', role: 'Lead Designer', image: '', bio: 'Creative mind behind our designs' },
-    { name: 'Sarah Wilson', role: 'Marketing Head', image: '', bio: 'Growth strategist and brand expert' }
+  const defaultMembers = [
+    { name: 'Team Member', role: 'Position', image: '', bio: '' },
+    { name: 'Team Member', role: 'Position', image: '', bio: '' },
+    { name: 'Team Member', role: 'Position', image: '', bio: '' },
+    { name: 'Team Member', role: 'Position', image: '', bio: '' },
   ];
 
-  const displayMembers: TeamMember[] = members.length > 0 ? members : defaultMembers;
-
-  const getSocialIcon = (platform: string) => {
-    const icons: Record<string, string> = {
-      twitter: '𝕏',
-      linkedin: 'in',
-      facebook: 'f',
-      instagram: '📷',
-      github: '⚫'
-    };
-    return icons[platform.toLowerCase()] || '🔗';
-  };
+  const displayMembers = members.length > 0 ? members : defaultMembers;
 
   return (
-    <section
-      className="w-full py-12 sm:py-16 md:py-20 px-4 sm:px-6 bg-white transition-all duration-300"
-      style={style}
-    >
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10 sm:mb-14">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 sm:mb-4">
-            {title}
-          </h2>
-          {subtitle && (
-            <p className="text-base sm:text-lg text-madas-text/70 px-2">{subtitle}</p>
-          )}
+    <section className="w-full" style={{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px`, ...style }}>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold mb-2">{title}</h2>
+          {subtitle && <p className="text-sm" style={{ opacity: 0.75 }}>{subtitle}</p>}
         </div>
-
-        <div
-          className={`grid gap-6 sm:gap-8 ${
-            layout === 'grid'
-              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-              : 'grid-cols-1 sm:grid-cols-2'
-          }`}
-        >
-          {displayMembers.map((member, index) => (
-            <div
-              key={index}
-              className="group text-center p-6 rounded-2xl border border-gray-200 hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-2"
-            >
-              {/* Avatar */}
-              <div className="relative mb-4 mx-auto w-24 h-24 sm:w-32 sm:h-32">
-                {member.image ? (
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full rounded-full object-cover border-4 border-primary/20 group-hover:border-primary/40 transition-colors"
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border-4 border-primary/20 group-hover:border-primary/40 transition-colors">
-                    <span className="text-3xl sm:text-4xl text-primary font-bold">
-                      {member.name.charAt(0)}
-                    </span>
-                  </div>
-                )}
-                {/* Decorative ring */}
-                <div className="absolute inset-0 rounded-full border-2 border-dashed border-primary/30 scale-110 opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-500" />
+        <div className={`grid ${colsMap[columns] || colsMap[4]} gap-6 sm:gap-8`}>
+          {displayMembers.map((member: any, index: number) => (
+            <BlockWrapper key={index} dataKey="members" blockIndex={index} blockType="team_member" isSelected={!!isSelected} onEdit={onEditBlock ?? ((_dk: string, _bi: number) => {})} onDelete={onDeleteBlock ?? ((_dk: string, _bi: number) => {})}>
+            <div className="text-center">
+              <div className="aspect-square bg-[#F3F3F3] overflow-hidden mb-4">
+                <img src={member.image || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]} alt={member.name} className="w-full h-full object-cover" />
               </div>
-
-              {/* Info */}
-              <h3 className="text-lg sm:text-xl font-bold text-primary mb-1 group-hover:text-primary/80 transition-colors">
-                {member.name}
-              </h3>
-              <p className="text-sm text-accent font-medium mb-3">{member.role}</p>
-              {member.bio && (
-                <p className="text-sm text-madas-text/70 mb-4 line-clamp-2">{member.bio}</p>
-              )}
-
-              {/* Social Links */}
-              {member.socialLinks && member.socialLinks.length > 0 && (
-                <div className="flex justify-center gap-2">
-                  {member.socialLinks.map((social: { platform: string; link: string }, i: number) => (
-                    <a
-                      key={i}
-                      href={social.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-primary hover:text-white flex items-center justify-center text-sm font-medium transition-all"
-                    >
-                      {getSocialIcon(social.platform)}
-                    </a>
-                  ))}
-                </div>
-              )}
+              <h3 className="text-base font-bold">{member.name}</h3>
+              {member.role && <p className="text-sm mt-0.5" style={{ opacity: 0.6 }}>{member.role}</p>}
+              {member.bio && <p className="text-sm mt-2 leading-relaxed" style={{ opacity: 0.75 }}>{member.bio}</p>}
             </div>
+            </BlockWrapper>
           ))}
         </div>
       </div>
@@ -122,4 +63,3 @@ const TeamSection = ({ data, style }: Props) => {
 };
 
 export default memo(TeamSection);
-

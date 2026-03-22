@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, memo} from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { ImageComparisonSectionData } from '../../../types/builder';
 
 type Props = {
@@ -7,18 +7,20 @@ type Props = {
 };
 
 const ImageComparisonSection = ({ data, style }: Props) => {
-  const {
-    title,
-    subtitle,
-    beforeImage = '',
-    afterImage = '',
-    beforeLabel = 'Before',
-    afterLabel = 'After',
-    sliderPosition = 50,
-    sliderColor = '#FFFFFF',
-    showLabels = true,
-    orientation = 'horizontal'
-  } = data ?? {};
+  const d = (data ?? {}) as Record<string, any>;
+
+  const title = d.title || '';
+  const subtitle = d.subtitle || '';
+  const beforeImage = d.beforeImage || '';
+  const afterImage = d.afterImage || '';
+  const beforeLabel = d.beforeLabel || 'Before';
+  const afterLabel = d.afterLabel || 'After';
+  const sliderPosition = d.sliderPosition ?? 50;
+  const sliderColor = d.sliderColor || '#FFFFFF';
+  const showLabels = d.showLabels ?? true;
+  const orientation = d.orientation || 'horizontal';
+  const paddingTop = d.padding_top ?? 36;
+  const paddingBottom = d.padding_bottom ?? 36;
 
   const [position, setPosition] = useState(sliderPosition);
   const [isDragging, setIsDragging] = useState(false);
@@ -26,7 +28,6 @@ const ImageComparisonSection = ({ data, style }: Props) => {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDragging(true);
-    // Immediately update position on click
     if ('clientX' in e) {
       handleMove(e.clientX, e.clientY);
     } else if (e.touches[0]) {
@@ -40,9 +41,9 @@ const ImageComparisonSection = ({ data, style }: Props) => {
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
     if (!containerRef.current) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
-    
+
     if (orientation === 'horizontal') {
       const x = clientX - rect.left;
       const percentage = Math.min(Math.max((x / rect.width) * 100, 0), 100);
@@ -73,7 +74,7 @@ const ImageComparisonSection = ({ data, style }: Props) => {
       window.addEventListener('touchmove', handleTouchMove);
       window.addEventListener('touchend', handleMouseUp);
     }
-    
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -82,7 +83,6 @@ const ImageComparisonSection = ({ data, style }: Props) => {
     };
   }, [isDragging, handleMouseMove, handleTouchMove]);
 
-  // Update position when sliderPosition prop changes
   useEffect(() => {
     setPosition(sliderPosition);
   }, [sliderPosition]);
@@ -90,36 +90,36 @@ const ImageComparisonSection = ({ data, style }: Props) => {
   const hasImages = beforeImage && afterImage;
 
   return (
-    <section 
-      className="w-full py-12 sm:py-16 px-4 sm:px-6 bg-white transition-all duration-300"
-      style={style}
+    <section
+      className="w-full"
+      style={{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px`, ...style }}
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
         {(title || subtitle) && (
-          <div className="text-center mb-8 sm:mb-12">
+          <div className="text-center mb-8">
             {title && (
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 sm:mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">
                 {title}
               </h2>
             )}
             {subtitle && (
-              <p className="text-base sm:text-lg text-madas-text/70 px-2">
+              <p className="text-sm" style={{ opacity: 0.75 }}>
                 {subtitle}
               </p>
             )}
           </div>
         )}
 
-        <div 
+        <div
           ref={containerRef}
-          className="relative overflow-hidden rounded-xl cursor-ew-resize select-none"
-          style={{ aspectRatio: '4/5' }}
+          className="relative overflow-hidden cursor-ew-resize select-none max-w-4xl mx-auto"
+          style={{ aspectRatio: '16/9' }}
           onMouseDown={handleMouseDown}
           onTouchStart={handleMouseDown}
         >
           {hasImages ? (
             <>
-              {/* After Image (Right side - full background) */}
+              {/* After Image (full background) */}
               <div className="absolute inset-0">
                 <img
                   src={afterImage}
@@ -129,8 +129,8 @@ const ImageComparisonSection = ({ data, style }: Props) => {
                 />
               </div>
 
-              {/* Before Image (Left side - clipped) */}
-              <div 
+              {/* Before Image (clipped) */}
+              <div
                 className="absolute inset-0 overflow-hidden"
                 style={
                   orientation === 'horizontal'
@@ -144,11 +144,11 @@ const ImageComparisonSection = ({ data, style }: Props) => {
                   className="absolute top-0 left-0 h-full object-cover"
                   style={
                     orientation === 'horizontal'
-                      ? { 
+                      ? {
                           width: containerRef.current ? `${containerRef.current.offsetWidth}px` : '100%',
                           maxWidth: 'none'
                         }
-                      : { 
+                      : {
                           height: containerRef.current ? `${containerRef.current.offsetHeight}px` : '100%',
                           width: '100%'
                         }
@@ -157,47 +157,45 @@ const ImageComparisonSection = ({ data, style }: Props) => {
                 />
               </div>
 
-              {/* Slider Line with Handle */}
-              <div 
+              {/* Slider Line */}
+              <div
                 className="absolute"
                 style={{
                   backgroundColor: sliderColor,
-                  boxShadow: '0 0 8px rgba(0,0,0,0.4)',
-                  ...(orientation === 'horizontal' 
-                    ? { 
-                        top: 0, 
-                        bottom: 0, 
-                        width: '2px', 
-                        left: `${position}%`, 
-                        transform: 'translateX(-50%)' 
+                  ...(orientation === 'horizontal'
+                    ? {
+                        top: 0,
+                        bottom: 0,
+                        width: '2px',
+                        left: `${position}%`,
+                        transform: 'translateX(-50%)'
                       }
-                    : { 
-                        left: 0, 
-                        right: 0, 
-                        height: '2px', 
-                        top: `${position}%`, 
-                        transform: 'translateY(-50%)' 
+                    : {
+                        left: 0,
+                        right: 0,
+                        height: '2px',
+                        top: `${position}%`,
+                        transform: 'translateY(-50%)'
                       }
                   )
                 }}
               />
-              
-              {/* Small Circular Handle */}
+
+              {/* Handle */}
               <div
-                className="absolute flex items-center justify-center rounded-full shadow-lg cursor-grab active:cursor-grabbing"
+                className="absolute flex items-center justify-center cursor-grab active:cursor-grabbing"
                 style={{
                   width: '32px',
                   height: '32px',
                   backgroundColor: sliderColor,
-                  border: '2px solid rgba(0,0,0,0.2)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  border: '2px solid rgba(0,0,0,0.1)',
                   ...(orientation === 'horizontal'
                     ? { left: `${position}%`, top: '50%', transform: 'translate(-50%, -50%)' }
                     : { top: `${position}%`, left: '50%', transform: 'translate(-50%, -50%)' }
                   )
                 }}
               >
-                <span className="material-icons text-gray-600" style={{ fontSize: '16px' }}>
+                <span className="material-icons" style={{ fontSize: '16px' }}>
                   {orientation === 'horizontal' ? 'code' : 'unfold_more'}
                 </span>
               </div>
@@ -205,16 +203,10 @@ const ImageComparisonSection = ({ data, style }: Props) => {
               {/* Labels */}
               {showLabels && (
                 <>
-                  <div 
-                    className="absolute bottom-4 left-4 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff' }}
-                  >
+                  <div className="absolute bottom-4 left-4 px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-white bg-[#121212]/60">
                     {beforeLabel}
                   </div>
-                  <div 
-                    className="absolute bottom-4 right-4 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff' }}
-                  >
+                  <div className="absolute bottom-4 right-4 px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-white bg-[#121212]/60">
                     {afterLabel}
                   </div>
                 </>
@@ -222,18 +214,18 @@ const ImageComparisonSection = ({ data, style }: Props) => {
             </>
           ) : (
             /* Placeholder */
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#F3F3F3]">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-4 mb-4">
-                  <div className="w-24 h-24 bg-primary/20 rounded-lg flex items-center justify-center">
-                    <span className="material-icons text-3xl text-primary/50">image</span>
+                  <div className="w-24 h-24 bg-[#E8E8E8] flex items-center justify-center">
+                    <span className="material-icons text-3xl text-[#ccc]">image</span>
                   </div>
-                  <div className="w-1 h-32 bg-white shadow-lg rounded-full"></div>
-                  <div className="w-24 h-24 bg-accent/20 rounded-lg flex items-center justify-center">
-                    <span className="material-icons text-3xl text-primary/50">image</span>
+                  <div className="w-0.5 h-32 bg-[#121212]/15"></div>
+                  <div className="w-24 h-24 bg-[#E8E8E8] flex items-center justify-center">
+                    <span className="material-icons text-3xl text-[#ccc]">image</span>
                   </div>
                 </div>
-                <p className="text-sm text-madas-text/60">Add before and after images to compare</p>
+                <p className="text-sm" style={{ opacity: 0.5 }}>Add before and after images to compare</p>
               </div>
             </div>
           )}

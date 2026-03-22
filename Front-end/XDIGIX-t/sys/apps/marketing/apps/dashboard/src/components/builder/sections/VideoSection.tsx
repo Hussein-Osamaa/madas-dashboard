@@ -1,115 +1,74 @@
-import { useState, memo} from 'react';
+import { memo } from 'react';
 import { VideoSectionData } from '../../../types/builder';
 
-type Props = {
-  data: VideoSectionData;
-  style?: React.CSSProperties;
-};
+type Props = { data: VideoSectionData; style?: React.CSSProperties };
 
 const VideoSection = ({ data, style }: Props) => {
-  const {
-    title,
-    subtitle,
-    videoUrl = '',
-    videoType = 'youtube',
-    thumbnailUrl,
-    autoplay = false,
-    showControls = true
-  } = data ?? {};
+  const d = (data ?? {}) as Record<string, any>;
 
-  const [isPlaying, setIsPlaying] = useState(autoplay);
+  const heading = d.heading ?? d.title ?? '';
+  const headingSize = d.heading_size ?? 'h1';
+  const videoUrl = d.video_url ?? d.videoUrl ?? '';
+  const coverImage = d.cover_image ?? d.thumbnailUrl ?? '';
+  const enableLooping = d.enable_looping ?? d.autoplay ?? false;
+  const fullWidth = d.full_width ?? false;
+  const description = d.description ?? d.subtitle ?? '';
+  const paddingTop = d.padding_top ?? 36;
+  const paddingBottom = d.padding_bottom ?? 36;
 
-  const getEmbedUrl = () => {
-    if (!videoUrl) return '';
-
-    if (videoType === 'youtube') {
-      // Extract video ID from various YouTube URL formats
-      const match = videoUrl.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^&?/\s]{11})/);
-      const videoId = match ? match[1] : videoUrl;
-      return `https://www.youtube.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&controls=${showControls ? 1 : 0}&rel=0`;
-    }
-
-    if (videoType === 'vimeo') {
-      const match = videoUrl.match(/vimeo\.com\/(\d+)/);
-      const videoId = match ? match[1] : videoUrl;
-      return `https://player.vimeo.com/video/${videoId}?autoplay=${isPlaying ? 1 : 0}&controls=${showControls ? 1 : 0}`;
-    }
-
-    return videoUrl;
+  const headingSizeMap: Record<string, string> = {
+    h2: 'text-2xl md:text-3xl',
+    h1: 'text-3xl md:text-4xl',
+    h0: 'text-4xl md:text-5xl',
+    hxl: 'text-5xl md:text-6xl',
   };
 
-  const handlePlayClick = () => {
-    setIsPlaying(true);
+  // Parse YouTube/Vimeo URLs
+  const getEmbedUrl = (url: string) => {
+    if (!url) return '';
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=0&loop=${enableLooping ? 1 : 0}`;
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}?loop=${enableLooping ? 1 : 0}`;
+    return url;
   };
+
+  const embedUrl = getEmbedUrl(videoUrl);
 
   return (
-    <section
-      className="w-full py-12 sm:py-16 md:py-20 px-4 sm:px-6 bg-gray-900 transition-all duration-300"
-      style={style}
-    >
-      <div className="max-w-5xl mx-auto">
-        {(title || subtitle) && (
-          <div className="text-center mb-10 sm:mb-14">
-            {title && (
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
-                {title}
-              </h2>
-            )}
-            {subtitle && (
-              <p className="text-base sm:text-lg text-white/70 px-2">{subtitle}</p>
-            )}
-          </div>
+    <section className="w-full" style={{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px`, ...style }}>
+      <div className={`${fullWidth ? 'w-full' : 'max-w-[1200px]'} mx-auto px-4 sm:px-6`}>
+        {heading && (
+          <h2 className={`${headingSizeMap[headingSize] || headingSizeMap.h1} font-bold text-center mb-6`}>
+            {heading}
+          </h2>
         )}
-
-        <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
-          {!isPlaying && thumbnailUrl ? (
-            <div className="relative w-full h-full cursor-pointer group" onClick={handlePlayClick}>
-              <img
-                src={thumbnailUrl}
-                alt="Video thumbnail"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+        <div className="relative w-full aspect-video bg-[#F3F3F3] overflow-hidden">
+          {embedUrl ? (
+            <iframe src={embedUrl} className="absolute inset-0 w-full h-full" frameBorder="0"
+              allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
+          ) : coverImage ? (
+            <div className="relative w-full h-full">
+              <img src={coverImage} alt="" className="w-full h-full object-cover" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-xl">
-                  <span className="material-icons text-primary text-3xl sm:text-4xl md:text-5xl ml-1">
-                    play_arrow
-                  </span>
+                <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="material-icons text-3xl text-[#121212]/80 ml-1">play_arrow</span>
                 </div>
               </div>
             </div>
-          ) : videoUrl ? (
-            videoType === 'custom' ? (
-              <video
-                src={videoUrl}
-                className="w-full h-full object-cover"
-                controls={showControls}
-                autoPlay={isPlaying}
-                playsInline
-              />
-            ) : (
-              <iframe
-                src={getEmbedUrl()}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            )
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex flex-col items-center justify-center">
-              <span className="material-icons text-6xl sm:text-8xl text-white/30 mb-4">
-                play_circle
-              </span>
-              <p className="text-white/50 text-sm sm:text-base">Add a video URL to display</p>
+            <div className="w-full h-full bg-[#F3F3F3] flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-[#E8E8E8] flex items-center justify-center">
+                  <span className="material-icons text-4xl text-[#ccc] ml-1">play_arrow</span>
+                </div>
+                <p className="text-sm" style={{ opacity: 0.5 }}>Add a video URL to display</p>
+              </div>
             </div>
           )}
         </div>
-
-        {/* Video info/caption */}
-        {(title || subtitle) && (
-          <div className="mt-6 text-center">
-            <p className="text-white/50 text-sm">Click to play</p>
-          </div>
+        {description && (
+          <p className="text-xs text-center mt-3" style={{ opacity: 0.6 }}>{description}</p>
         )}
       </div>
     </section>
@@ -117,4 +76,3 @@ const VideoSection = ({ data, style }: Props) => {
 };
 
 export default memo(VideoSection);
-

@@ -45,9 +45,6 @@ const ProfitSettlementPage = () => import('./pages/finance/ProfitSettlementPage'
 const FinanceAnalyticsPage = () => import('./pages/finance/AnalyticsPage');
 
 const MainSettingsPage = () => import('./pages/settings/SettingsPage');
-const AnalyticsPage = () => import('./pages/settings/AnalyticsPage');
-const ShippingPage = () => import('./pages/settings/ShippingPage');
-const PaymentsPage = () => import('./pages/settings/PaymentsPage');
 
 const DiscountsPage = () => import('./pages/marketing/DiscountsPage');
 const PricingPage = () => import('./pages/marketing/PricingPage');
@@ -63,6 +60,7 @@ const StorePreviewPage = () => import('./pages/ecommerce/StorePreviewPage');
 const PublicWebsitePage = () => import('./pages/ecommerce/PublicWebsitePage');
 const CodeEditorPage = () => import('./pages/ecommerce/CodeEditorPage');
 const ExternalWebsitePage = () => import('./pages/ecommerce/ExternalWebsitePage');
+const PreferencesPage = () => import('./pages/ecommerce/PreferencesPage');
 const ProductsPage = () => import('./pages/ecommerce/ProductsPage');
 const AboutPage = () => import('./pages/ecommerce/AboutPage');
 const LastPiecesPage = () => import('./pages/ecommerce/LastPiecesPage');
@@ -104,10 +102,6 @@ export const router = createBrowserRouter([
       { path: 'finance/cash-flow', element: Lazy(CashFlowPage) },
       { path: 'finance/profit-settlement', element: Lazy(ProfitSettlementPage) },
       { path: 'finance/analytics', element: Lazy(FinanceAnalyticsPage) },
-      { path: 'settings', element: Lazy(MainSettingsPage) },
-      { path: 'settings/analytics', element: Lazy(AnalyticsPage) },
-      { path: 'settings/shipping', element: Lazy(ShippingPage) },
-      { path: 'settings/payments', element: Lazy(PaymentsPage) },
       { path: 'ecommerce/website-builder', element: Lazy(WebsiteBuilderPage) },
       { path: 'ecommerce/visit-store', element: Lazy(VisitStorePage) },
       { path: 'ecommerce/custom-domains', element: Lazy(CustomDomainsPage) },
@@ -116,10 +110,12 @@ export const router = createBrowserRouter([
       { path: 'ecommerce/navigation', element: Lazy(NavigationPage) },
       { path: 'ecommerce/code-editor', element: Lazy(CodeEditorPage) },
       { path: 'ecommerce/external-website', element: Lazy(ExternalWebsitePage) },
+      { path: 'ecommerce/preferences', element: Lazy(PreferencesPage) },
       { path: 'rbac/roles', element: Lazy(RolesPage) },
       { path: 'rbac/users', element: Lazy(UsersPage) },
     ]
   },
+  { path: 'settings', element: <ProtectedRoute>{Lazy(MainSettingsPage)}</ProtectedRoute> },
   { path: 'ecommerce/builder', element: <ProtectedRoute>{Lazy(BuilderPage)}</ProtectedRoute> },
   { path: 'ecommerce/preview/:siteId', element: <ProtectedRoute>{Lazy(StorePreviewPage)}</ProtectedRoute> },
   { path: 'site/:siteId', element: Lazy(PublicWebsitePage) },

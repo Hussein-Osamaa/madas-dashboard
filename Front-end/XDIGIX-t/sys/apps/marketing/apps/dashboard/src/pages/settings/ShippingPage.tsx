@@ -204,23 +204,17 @@ const ShippingPage = () => {
       permission="settings_shipping"
       fallback={
         <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-          <span className="material-icons text-6xl text-madas-text/30 mb-4">lock</span>
-          <p className="text-lg font-medium text-madas-text/70 mb-2">Access Denied</p>
-          <p className="text-sm text-madas-text/60">
+          <span className="material-icons text-6xl text-gray-300 mb-4">lock</span>
+          <p className="text-lg font-medium text-gray-500 mb-2">Access Denied</p>
+          <p className="text-sm text-gray-400">
             You don't have permission to access shipping settings. Please contact your administrator.
           </p>
         </div>
       }
     >
-      <div className="space-y-6 px-6 py-8">
-        <header>
-          <h1 className="text-3xl font-semibold text-primary">Shipping Integrations</h1>
-          <p className="text-sm text-madas-text/70">Configure shipping carriers and delivery providers for your store.</p>
-        </header>
-
-        <div className="space-y-6">
+      <div className="space-y-5">
           {/* Tab Navigation */}
-          <nav className="flex flex-wrap gap-2 rounded-xl border border-gray-100 bg-white p-2 overflow-x-auto">
+          <nav className="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-white p-2 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -228,8 +222,8 @@ const ShippingPage = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm transition-all whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-base hover:text-primary'
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 <span className={`material-icons text-base ${activeTab === tab.id ? 'text-white' : tab.color}`}>
@@ -242,7 +236,7 @@ const ShippingPage = () => {
 
           {/* Tab Content */}
           <main>
-            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               {activeTab === 'bosta' && (
                 <BostaTab
                   data={shippingData.bosta || { enabled: false, testMode: true, countryId: '60e4482c7cb7d4bc4849c4d5' }}
@@ -300,7 +294,6 @@ const ShippingPage = () => {
               )}
             </div>
           </main>
-        </div>
       </div>
     </PermissionGuard>
   );
@@ -365,8 +358,8 @@ const BostaTab = ({ data, onSave, saving }: BostaTabProps) => {
             <BostaLogo className="w-12 h-12" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-primary">Bosta Integration</h2>
-            <p className="text-sm text-madas-text/60">Connect your Bosta account for shipping in Egypt & KSA</p>
+            <h2 className="text-xl font-semibold text-gray-900">Bosta Integration</h2>
+            <p className="text-sm text-gray-400">Connect your Bosta account for shipping in Egypt & KSA</p>
             <a 
               href="https://bosta.co" 
               target="_blank" 
@@ -384,12 +377,12 @@ const BostaTab = ({ data, onSave, saving }: BostaTabProps) => {
             onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
         </label>
       </div>
 
       {formData.enabled && (
-        <div className="space-y-4 pt-4 border-t border-gray-100">
+        <div className="space-y-4 pt-4 border-t border-gray-200">
           <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 mb-4">
             <div className="flex items-start gap-3">
               <span className="material-icons text-blue-600">info</span>
@@ -407,7 +400,7 @@ const BostaTab = ({ data, onSave, saving }: BostaTabProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">API Key *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">API Key *</label>
               <div className="flex gap-2">
                 <input
                   type="password"
@@ -416,14 +409,14 @@ const BostaTab = ({ data, onSave, saving }: BostaTabProps) => {
                     setFormData({ ...formData, apiKey: e.target.value });
                     setTestResult(null);
                   }}
-                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent font-mono text-sm"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent font-mono"
                   placeholder="Enter your Bosta API key"
                 />
                 <button
                   type="button"
                   onClick={handleTestApiKey}
                   disabled={testing || !formData.apiKey}
-                  className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-madas-text hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {testing ? (
                     <>
@@ -450,75 +443,75 @@ const BostaTab = ({ data, onSave, saving }: BostaTabProps) => {
                   {testResult.message}
                 </div>
               )}
-              <p className="mt-1 text-xs text-madas-text/50">
+              <p className="mt-1 text-xs text-gray-400">
                 Get your API key from Bosta dashboard → Settings → API Keys
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Business ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Business ID</label>
               <input
                 type="text"
                 value={formData.businessId || ''}
                 onChange={(e) => setFormData({ ...formData, businessId: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Your Bosta business ID"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Country</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
               <select
                 value={formData.countryId || '60e4482c7cb7d4bc4849c4d5'}
                 onChange={(e) => setFormData({ ...formData, countryId: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="60e4482c7cb7d4bc4849c4d5">🇪🇬 Egypt</option>
                 <option value="eF-3f9FZr">🇸🇦 Saudi Arabia (KSA)</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Default Pickup Location ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Default Pickup Location ID</label>
               <input
                 type="text"
                 value={formData.defaultPickupLocationId || ''}
                 onChange={(e) => setFormData({ ...formData, defaultPickupLocationId: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Pickup location ID from Bosta"
               />
-              <p className="mt-1 text-xs text-madas-text/50">
+              <p className="mt-1 text-xs text-gray-400">
                 Configure pickup locations in your Bosta dashboard
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Webhook URL (Optional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL (Optional)</label>
               <input
                 type="url"
                 value={formData.webhookUrl || ''}
                 onChange={(e) => setFormData({ ...formData, webhookUrl: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="https://your-domain.com/webhooks/bosta"
               />
-              <p className="mt-1 text-xs text-madas-text/50">
+              <p className="mt-1 text-xs text-gray-400">
                 Receive delivery status updates
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="bosta-test"
                 checked={formData.testMode || false}
                 onChange={(e) => setFormData({ ...formData, testMode: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
               />
-              <label htmlFor="bosta-test" className="text-sm text-madas-text/70">Test Mode (Sandbox)</label>
+              <label htmlFor="bosta-test" className="text-sm text-gray-500">Test Mode (Sandbox)</label>
             </div>
           </div>
 
           <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
-            <h4 className="text-sm font-medium text-madas-text/80 mb-2">Available Services</h4>
-            <ul className="text-xs text-madas-text/60 space-y-1">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Available Services</h4>
+            <ul className="text-xs text-gray-400 space-y-1">
               <li className="flex items-center gap-2">
                 <span className="material-icons text-green-500 text-sm">check_circle</span>
                 Delivery creation & tracking
@@ -544,12 +537,12 @@ const BostaTab = ({ data, onSave, saving }: BostaTabProps) => {
         </div>
       )}
 
-      <div className="flex justify-end pt-4 border-t border-gray-100">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={() => onSave(formData)}
           disabled={saving}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
@@ -580,8 +573,8 @@ const AramexTab = ({ data, onSave, saving }: ProviderTabProps) => {
             <span className="material-icons text-3xl text-red-600">flight_takeoff</span>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-primary">Aramex Integration</h2>
-            <p className="text-sm text-madas-text/60">Connect your Aramex account for shipping services</p>
+            <h2 className="text-xl font-semibold text-gray-900">Aramex Integration</h2>
+            <p className="text-sm text-gray-400">Connect your Aramex account for shipping services</p>
           </div>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -591,49 +584,49 @@ const AramexTab = ({ data, onSave, saving }: ProviderTabProps) => {
             onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
         </label>
       </div>
 
       {formData.enabled && (
-        <div className="space-y-4 pt-4 border-t border-gray-100">
+        <div className="space-y-4 pt-4 border-t border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Account Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
               <input
                 type="text"
                 value={formData.accountNumber || ''}
                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter Aramex account number"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Username</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
               <input
                 type="text"
                 value={formData.username || ''}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter username"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
                 value={formData.password || ''}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter password"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Default Service</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Default Service</label>
               <select
                 value={formData.defaultService || ''}
                 onChange={(e) => setFormData({ ...formData, defaultService: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="">Select service</option>
                 <option value="express">Express</option>
@@ -643,27 +636,27 @@ const AramexTab = ({ data, onSave, saving }: ProviderTabProps) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="aramex-test"
                 checked={formData.testMode || false}
                 onChange={(e) => setFormData({ ...formData, testMode: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
               />
-              <label htmlFor="aramex-test" className="text-sm text-madas-text/70">Test Mode (Sandbox)</label>
+              <label htmlFor="aramex-test" className="text-sm text-gray-500">Test Mode (Sandbox)</label>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex justify-end pt-4 border-t border-gray-100">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={() => onSave(formData)}
           disabled={saving}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
@@ -688,8 +681,8 @@ const DHLTab = ({ data, onSave, saving }: ProviderTabProps) => {
             <span className="material-icons text-3xl text-yellow-600">local_shipping</span>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-primary">DHL Integration</h2>
-            <p className="text-sm text-madas-text/60">Connect your DHL Express account</p>
+            <h2 className="text-xl font-semibold text-gray-900">DHL Integration</h2>
+            <p className="text-sm text-gray-400">Connect your DHL Express account</p>
           </div>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -699,49 +692,49 @@ const DHLTab = ({ data, onSave, saving }: ProviderTabProps) => {
             onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
         </label>
       </div>
 
       {formData.enabled && (
-        <div className="space-y-4 pt-4 border-t border-gray-100">
+        <div className="space-y-4 pt-4 border-t border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Account Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
               <input
                 type="text"
                 value={formData.accountNumber || ''}
                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter DHL account number"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">API Key</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
               <input
                 type="text"
                 value={formData.apiKey || ''}
                 onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter API key"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">API Secret</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">API Secret</label>
               <input
                 type="password"
                 value={formData.apiSecret || ''}
                 onChange={(e) => setFormData({ ...formData, apiSecret: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter API secret"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Default Service</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Default Service</label>
               <select
                 value={formData.defaultService || ''}
                 onChange={(e) => setFormData({ ...formData, defaultService: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="">Select service</option>
                 <option value="express-worldwide">Express Worldwide</option>
@@ -752,27 +745,27 @@ const DHLTab = ({ data, onSave, saving }: ProviderTabProps) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="dhl-test"
                 checked={formData.testMode || false}
                 onChange={(e) => setFormData({ ...formData, testMode: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
               />
-              <label htmlFor="dhl-test" className="text-sm text-madas-text/70">Test Mode (Sandbox)</label>
+              <label htmlFor="dhl-test" className="text-sm text-gray-500">Test Mode (Sandbox)</label>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex justify-end pt-4 border-t border-gray-100">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={() => onSave(formData)}
           disabled={saving}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
@@ -797,8 +790,8 @@ const FedExTab = ({ data, onSave, saving }: ProviderTabProps) => {
             <span className="material-icons text-3xl text-purple-600">flight</span>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-primary">FedEx Integration</h2>
-            <p className="text-sm text-madas-text/60">Connect your FedEx account for shipping</p>
+            <h2 className="text-xl font-semibold text-gray-900">FedEx Integration</h2>
+            <p className="text-sm text-gray-400">Connect your FedEx account for shipping</p>
           </div>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -808,49 +801,49 @@ const FedExTab = ({ data, onSave, saving }: ProviderTabProps) => {
             onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
         </label>
       </div>
 
       {formData.enabled && (
-        <div className="space-y-4 pt-4 border-t border-gray-100">
+        <div className="space-y-4 pt-4 border-t border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Account Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
               <input
                 type="text"
                 value={formData.accountNumber || ''}
                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter FedEx account number"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">API Key</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
               <input
                 type="text"
                 value={formData.apiKey || ''}
                 onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter API key"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">API Secret</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">API Secret</label>
               <input
                 type="password"
                 value={formData.apiSecret || ''}
                 onChange={(e) => setFormData({ ...formData, apiSecret: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter API secret"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Default Service</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Default Service</label>
               <select
                 value={formData.defaultService || ''}
                 onChange={(e) => setFormData({ ...formData, defaultService: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="">Select service</option>
                 <option value="priority-overnight">Priority Overnight</option>
@@ -862,27 +855,27 @@ const FedExTab = ({ data, onSave, saving }: ProviderTabProps) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="fedex-test"
                 checked={formData.testMode || false}
                 onChange={(e) => setFormData({ ...formData, testMode: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
               />
-              <label htmlFor="fedex-test" className="text-sm text-madas-text/70">Test Mode (Sandbox)</label>
+              <label htmlFor="fedex-test" className="text-sm text-gray-500">Test Mode (Sandbox)</label>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex justify-end pt-4 border-t border-gray-100">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={() => onSave(formData)}
           disabled={saving}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
@@ -907,8 +900,8 @@ const UPSTab = ({ data, onSave, saving }: ProviderTabProps) => {
             <span className="material-icons text-3xl text-amber-700">inventory_2</span>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-primary">UPS Integration</h2>
-            <p className="text-sm text-madas-text/60">Connect your UPS account for shipping services</p>
+            <h2 className="text-xl font-semibold text-gray-900">UPS Integration</h2>
+            <p className="text-sm text-gray-400">Connect your UPS account for shipping services</p>
           </div>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -918,59 +911,59 @@ const UPSTab = ({ data, onSave, saving }: ProviderTabProps) => {
             onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
         </label>
       </div>
 
       {formData.enabled && (
-        <div className="space-y-4 pt-4 border-t border-gray-100">
+        <div className="space-y-4 pt-4 border-t border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Account Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
               <input
                 type="text"
                 value={formData.accountNumber || ''}
                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter UPS account number"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Username</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
               <input
                 type="text"
                 value={formData.username || ''}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter username"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
                 value={formData.password || ''}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter password"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Access License Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Access License Number</label>
               <input
                 type="text"
                 value={formData.apiKey || ''}
                 onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 placeholder="Enter access license number"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-madas-text/80 mb-2">Default Service</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Default Service</label>
               <select
                 value={formData.defaultService || ''}
                 onChange={(e) => setFormData({ ...formData, defaultService: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="">Select service</option>
                 <option value="next-day-air">Next Day Air</option>
@@ -982,27 +975,27 @@ const UPSTab = ({ data, onSave, saving }: ProviderTabProps) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="ups-test"
                 checked={formData.testMode || false}
                 onChange={(e) => setFormData({ ...formData, testMode: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
               />
-              <label htmlFor="ups-test" className="text-sm text-madas-text/70">Test Mode (Sandbox)</label>
+              <label htmlFor="ups-test" className="text-sm text-gray-500">Test Mode (Sandbox)</label>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex justify-end pt-4 border-t border-gray-100">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={() => onSave(formData)}
           disabled={saving}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
@@ -1084,8 +1077,8 @@ const LocalProvidersTab = ({ data, onSave, saving }: LocalProvidersTabProps) => 
             <span className="material-icons text-3xl text-green-600">delivery_dining</span>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-primary">Local Delivery Providers</h2>
-            <p className="text-sm text-madas-text/60">Manage your local delivery partners and couriers</p>
+            <h2 className="text-xl font-semibold text-gray-900">Local Delivery Providers</h2>
+            <p className="text-sm text-gray-400">Manage your local delivery partners and couriers</p>
           </div>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -1095,18 +1088,18 @@ const LocalProvidersTab = ({ data, onSave, saving }: LocalProvidersTabProps) => 
             onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
         </label>
       </div>
 
       {formData.enabled && (
-        <div className="space-y-4 pt-4 border-t border-gray-100">
+        <div className="space-y-4 pt-4 border-t border-gray-200">
           <div className="flex justify-between items-center">
-            <h3 className="font-medium text-madas-text/80">Delivery Partners</h3>
+            <h3 className="font-medium text-gray-700">Delivery Partners</h3>
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-[#1f3c19] transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               <span className="material-icons text-sm">add</span>
               Add Provider
@@ -1114,7 +1107,7 @@ const LocalProvidersTab = ({ data, onSave, saving }: LocalProvidersTabProps) => 
           </div>
 
           {formData.providers.length === 0 ? (
-            <div className="text-center py-8 text-madas-text/50">
+            <div className="text-center py-8 text-gray-400">
               <span className="material-icons text-4xl mb-2">local_shipping</span>
               <p>No local providers added yet</p>
             </div>
@@ -1136,16 +1129,16 @@ const LocalProvidersTab = ({ data, onSave, saving }: LocalProvidersTabProps) => 
                       </span>
                     </div>
                     <div>
-                      <h4 className="font-medium text-madas-text/90">{provider.name}</h4>
-                      <p className="text-sm text-madas-text/60">{provider.phone}</p>
+                      <h4 className="font-medium text-gray-900">{provider.name}</h4>
+                      <p className="text-sm text-gray-400">{provider.phone}</p>
                       {provider.zones.length > 0 && (
-                        <p className="text-xs text-madas-text/50">Zones: {provider.zones.join(', ')}</p>
+                        <p className="text-xs text-gray-400">Zones: {provider.zones.join(', ')}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {provider.flatRate && (
-                      <span className="text-sm text-madas-text/70 mr-2">
+                      <span className="text-sm text-gray-500 mr-2">
                         ${provider.flatRate.toFixed(2)} flat
                       </span>
                     )}
@@ -1177,12 +1170,12 @@ const LocalProvidersTab = ({ data, onSave, saving }: LocalProvidersTabProps) => 
         </div>
       )}
 
-      <div className="flex justify-end pt-4 border-t border-gray-100">
+      <div className="flex justify-end pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={() => onSave(formData)}
           disabled={saving}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
@@ -1192,55 +1185,55 @@ const LocalProvidersTab = ({ data, onSave, saving }: LocalProvidersTabProps) => 
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-primary mb-4">Add Local Provider</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Local Provider</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Provider Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Provider Name *</label>
                 <input
                   type="text"
                   value={newProvider.name}
                   onChange={(e) => setNewProvider({ ...newProvider, name: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="e.g., Fast Local Delivery"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Phone Number *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
                 <input
                   type="tel"
                   value={newProvider.phone}
                   onChange={(e) => setNewProvider({ ...newProvider, phone: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="+20 123 456 7890"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Email (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
                 <input
                   type="email"
                   value={newProvider.email}
                   onChange={(e) => setNewProvider({ ...newProvider, email: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="provider@email.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Delivery Zones (comma separated)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Zones (comma separated)</label>
                 <input
                   type="text"
                   value={newProvider.zones}
                   onChange={(e) => setNewProvider({ ...newProvider, zones: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="Cairo, Giza, Alexandria"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Flat Rate (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Flat Rate (Optional)</label>
                 <input
                   type="number"
                   value={newProvider.flatRate}
                   onChange={(e) => setNewProvider({ ...newProvider, flatRate: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="50.00"
                   step="0.01"
                 />
@@ -1253,14 +1246,14 @@ const LocalProvidersTab = ({ data, onSave, saving }: LocalProvidersTabProps) => 
                   setShowAddModal(false);
                   setNewProvider({ name: '', phone: '', email: '', zones: '', flatRate: '' });
                 }}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-base"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleAddProvider}
-                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-[#1f3c19]"
+                className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800"
               >
                 Add Provider
               </button>
@@ -1442,8 +1435,8 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
             <span className="material-icons text-3xl text-blue-600">public</span>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-primary">Shipping Regions & Exceptions</h2>
-            <p className="text-sm text-madas-text/60">Define shipping zones, rates, and special rules</p>
+            <h2 className="text-xl font-semibold text-gray-900">Shipping Regions & Exceptions</h2>
+            <p className="text-sm text-gray-400">Define shipping zones, rates, and special rules</p>
           </div>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -1453,34 +1446,34 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
             onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
         </label>
       </div>
 
       {formData.enabled && (
-        <div className="space-y-6 pt-4 border-t border-gray-100">
+        <div className="space-y-6 pt-4 border-t border-gray-200">
           {/* Default Settings */}
           <div className="rounded-lg bg-gray-50 p-4">
-            <h3 className="text-sm font-semibold text-madas-text mb-3">Default Settings</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Default Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Default Shipping Rate</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Default Shipping Rate</label>
                 <input
                   type="number"
                   min="0"
                   value={formData.defaultRate}
                   onChange={(e) => setFormData({ ...formData, defaultRate: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="50"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Default Estimated Delivery</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Default Estimated Delivery</label>
                 <input
                   type="text"
                   value={formData.defaultEstimatedDays}
                   onChange={(e) => setFormData({ ...formData, defaultEstimatedDays: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="3-5 days"
                 />
               </div>
@@ -1490,7 +1483,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
           {/* Regions Section */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-madas-text">Shipping Regions</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Shipping Regions</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -1507,7 +1500,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                   });
                   setShowAddRegionModal(true);
                 }}
-                className="inline-flex items-center gap-1 text-sm text-primary hover:text-[#1f3c19]"
+                className="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-800"
               >
                 <span className="material-icons text-base">add</span>
                 Add Region
@@ -1516,22 +1509,22 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
 
             {formData.regions.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-200 p-8 text-center">
-                <span className="material-icons text-4xl text-madas-text/30 mb-2">map</span>
-                <p className="text-sm text-madas-text/60">No shipping regions defined</p>
-                <p className="text-xs text-madas-text/40 mt-1">Add regions to set different rates per area</p>
+                <span className="material-icons text-4xl text-gray-300 mb-2">map</span>
+                <p className="text-sm text-gray-400">No shipping regions defined</p>
+                <p className="text-xs text-gray-300 mt-1">Add regions to set different rates per area</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {formData.regions.map((region) => (
                   <div
                     key={region.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-white"
+                    className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-white"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-3 h-3 rounded-full ${region.enabled ? 'bg-green-500' : 'bg-gray-300'}`} />
                       <div>
-                        <p className="font-medium text-madas-text">{region.name}</p>
-                        <p className="text-xs text-madas-text/60">
+                        <p className="font-medium text-gray-900">{region.name}</p>
+                        <p className="text-xs text-gray-400">
                           {region.governorates.slice(0, 3).join(', ')}
                           {region.governorates.length > 3 && ` +${region.governorates.length - 3} more`}
                         </p>
@@ -1539,8 +1532,8 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-primary">{region.shippingRate} EGP</p>
-                        <p className="text-xs text-madas-text/50">{region.estimatedDays}</p>
+                        <p className="text-sm font-semibold text-gray-900">{region.shippingRate} EGP</p>
+                        <p className="text-xs text-gray-400">{region.estimatedDays}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -1548,7 +1541,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                           onClick={() => handleEditRegion(region)}
                           className="p-1 rounded hover:bg-gray-100"
                         >
-                          <span className="material-icons text-sm text-madas-text/60">edit</span>
+                          <span className="material-icons text-sm text-gray-400">edit</span>
                         </button>
                         <button
                           type="button"
@@ -1568,7 +1561,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
           {/* Exceptions Section */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-madas-text">Shipping Exceptions</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Shipping Exceptions</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -1583,7 +1576,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                   });
                   setShowAddExceptionModal(true);
                 }}
-                className="inline-flex items-center gap-1 text-sm text-primary hover:text-[#1f3c19]"
+                className="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-800"
               >
                 <span className="material-icons text-base">add</span>
                 Add Exception
@@ -1592,22 +1585,22 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
 
             {formData.exceptions.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-200 p-8 text-center">
-                <span className="material-icons text-4xl text-madas-text/30 mb-2">rule</span>
-                <p className="text-sm text-madas-text/60">No shipping exceptions defined</p>
-                <p className="text-xs text-madas-text/40 mt-1">Add rules for special cases like remote areas or heavy items</p>
+                <span className="material-icons text-4xl text-gray-300 mb-2">rule</span>
+                <p className="text-sm text-gray-400">No shipping exceptions defined</p>
+                <p className="text-xs text-gray-300 mt-1">Add rules for special cases like remote areas or heavy items</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {formData.exceptions.map((exception) => (
                   <div
                     key={exception.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-white"
+                    className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-white"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-3 h-3 rounded-full ${exception.enabled ? 'bg-orange-500' : 'bg-gray-300'}`} />
                       <div>
-                        <p className="font-medium text-madas-text">{exception.name}</p>
-                        <p className="text-xs text-madas-text/60">
+                        <p className="font-medium text-gray-900">{exception.name}</p>
+                        <p className="text-xs text-gray-400">
                           {exception.type}: {exception.condition}
                         </p>
                       </div>
@@ -1630,7 +1623,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                           onClick={() => handleEditException(exception)}
                           className="p-1 rounded hover:bg-gray-100"
                         >
-                          <span className="material-icons text-sm text-madas-text/60">edit</span>
+                          <span className="material-icons text-sm text-gray-400">edit</span>
                         </button>
                         <button
                           type="button"
@@ -1648,12 +1641,12 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
           </div>
 
           {/* Save Button */}
-          <div className="flex justify-end pt-4 border-t border-gray-100">
+          <div className="flex justify-end pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={() => onSave(formData)}
               disabled={saving}
-              className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
+              className="rounded-lg bg-gray-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
             >
               {saving ? 'Saving...' : 'Save Settings'}
             </button>
@@ -1665,23 +1658,23 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
       {showAddRegionModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-primary mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {editingRegion ? 'Edit Region' : 'Add Shipping Region'}
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Region Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Region Name *</label>
                 <input
                   type="text"
                   value={newRegion.name || ''}
                   onChange={(e) => setNewRegion({ ...newRegion, name: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="e.g., Greater Cairo, Delta Region"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Select Governorates * ({newRegion.governorates?.length || 0} selected)
                 </label>
                 <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 p-2 grid grid-cols-2 gap-1">
@@ -1690,15 +1683,15 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                       key={gov}
                       className={`flex items-center gap-2 p-2 rounded cursor-pointer text-sm transition-colors ${
                         newRegion.governorates?.includes(gov)
-                          ? 'bg-primary/10 text-primary'
-                          : 'hover:bg-gray-50 text-madas-text/80'
+                          ? 'bg-gray-900/10 text-gray-900'
+                          : 'hover:bg-gray-50 text-gray-700'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={newRegion.governorates?.includes(gov) || false}
                         onChange={() => toggleGovernorate(gov)}
-                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                        className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                       />
                       {gov}
                     </label>
@@ -1708,22 +1701,22 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-madas-text/80 mb-1">Shipping Rate (EGP)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Rate (EGP)</label>
                   <input
                     type="number"
                     min="0"
                     value={newRegion.shippingRate || 0}
                     onChange={(e) => setNewRegion({ ...newRegion, shippingRate: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-madas-text/80 mb-1">Estimated Delivery</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Delivery</label>
                   <input
                     type="text"
                     value={newRegion.estimatedDays || ''}
                     onChange={(e) => setNewRegion({ ...newRegion, estimatedDays: e.target.value })}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     placeholder="3-5 days"
                   />
                 </div>
@@ -1731,25 +1724,25 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-madas-text/80 mb-1">Free Shipping Above (EGP)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Free Shipping Above (EGP)</label>
                   <input
                     type="number"
                     min="0"
                     value={newRegion.freeShippingThreshold || ''}
                     onChange={(e) => setNewRegion({ ...newRegion, freeShippingThreshold: e.target.value ? Number(e.target.value) : undefined })}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     placeholder="Optional"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-madas-text/80 mb-1">Priority</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                   <input
                     type="number"
                     min="1"
                     max="10"
                     value={newRegion.priority || 1}
                     onChange={(e) => setNewRegion({ ...newRegion, priority: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -1760,9 +1753,9 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                   id="regionEnabled"
                   checked={newRegion.enabled ?? true}
                   onChange={(e) => setNewRegion({ ...newRegion, enabled: e.target.checked })}
-                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                  className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                 />
-                <label htmlFor="regionEnabled" className="text-sm text-madas-text/80">Enable this region</label>
+                <label htmlFor="regionEnabled" className="text-sm text-gray-700">Enable this region</label>
               </div>
             </div>
 
@@ -1773,14 +1766,14 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                   setShowAddRegionModal(false);
                   setEditingRegion(null);
                 }}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-base"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleAddRegion}
-                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-[#1f3c19]"
+                className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800"
               >
                 {editingRegion ? 'Update Region' : 'Add Region'}
               </button>
@@ -1793,27 +1786,27 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
       {showAddExceptionModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-primary mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {editingException ? 'Edit Exception' : 'Add Shipping Exception'}
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Exception Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Exception Name *</label>
                 <input
                   type="text"
                   value={newException.name || ''}
                   onChange={(e) => setNewException({ ...newException, name: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder="e.g., Remote Area Surcharge, Heavy Items"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Exception Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Exception Type</label>
                 <select
                   value={newException.type || 'location'}
                   onChange={(e) => setNewException({ ...newException, type: e.target.value as ShippingException['type'] })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 >
                   <option value="location">Location Based</option>
                   <option value="product">Product Based</option>
@@ -1823,12 +1816,12 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Condition *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Condition *</label>
                 <input
                   type="text"
                   value={newException.condition || ''}
                   onChange={(e) => setNewException({ ...newException, condition: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   placeholder={
                     newException.type === 'location' ? 'e.g., North Sinai, South Sinai' :
                     newException.type === 'weight' ? 'e.g., > 10kg' :
@@ -1836,7 +1829,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                     'e.g., SKU-001, SKU-002'
                   }
                 />
-                <p className="text-xs text-madas-text/50 mt-1">
+                <p className="text-xs text-gray-400 mt-1">
                   {newException.type === 'location' && 'Enter governorate names separated by commas'}
                   {newException.type === 'weight' && 'Use > or < with weight in kg'}
                   {newException.type === 'category' && 'Enter category names separated by commas'}
@@ -1845,11 +1838,11 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1">Action</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Action</label>
                 <select
                   value={newException.action || 'surcharge'}
                   onChange={(e) => setNewException({ ...newException, action: e.target.value as ShippingException['action'] })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 >
                   <option value="surcharge">Add Surcharge</option>
                   <option value="custom_rate">Custom Rate</option>
@@ -1860,7 +1853,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
 
               {(newException.action === 'surcharge' || newException.action === 'custom_rate') && (
                 <div>
-                  <label className="block text-sm font-medium text-madas-text/80 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     {newException.action === 'surcharge' ? 'Surcharge Amount (EGP)' : 'Custom Rate (EGP)'}
                   </label>
                   <input
@@ -1868,7 +1861,7 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                     min="0"
                     value={newException.value || 0}
                     onChange={(e) => setNewException({ ...newException, value: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />
                 </div>
               )}
@@ -1879,9 +1872,9 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                   id="exceptionEnabled"
                   checked={newException.enabled ?? true}
                   onChange={(e) => setNewException({ ...newException, enabled: e.target.checked })}
-                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                  className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                 />
-                <label htmlFor="exceptionEnabled" className="text-sm text-madas-text/80">Enable this exception</label>
+                <label htmlFor="exceptionEnabled" className="text-sm text-gray-700">Enable this exception</label>
               </div>
             </div>
 
@@ -1892,14 +1885,14 @@ const RegionsTab = ({ data, onSave, saving }: RegionsTabProps) => {
                   setShowAddExceptionModal(false);
                   setEditingException(null);
                 }}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-base"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleAddException}
-                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-[#1f3c19]"
+                className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800"
               >
                 {editingException ? 'Update Exception' : 'Add Exception'}
               </button>

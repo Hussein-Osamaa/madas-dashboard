@@ -66,16 +66,9 @@ const SectionEnginePanel: React.FC<Props> = ({
         />
       )}
 
-      {showBlocks && hasBlocks && blocks.map((blockSchema) => (
-        <BlockListEditor
-          key={blockSchema.type}
-          schema={blockSchema}
-          items={(section.data[blockSchema.dataKey] as Record<string, unknown>[]) ?? []}
-          onChange={(items) => onUpdate({ ...section.data, [blockSchema.dataKey]: items })}
-          siteId={siteId}
-          businessId={businessId}
-        />
-      ))}
+      {/* Blocks are now managed in the outline tree (BuilderLeftPanel) —
+         clicking a block in the tree opens its dedicated block settings view.
+         We no longer render inline block editors here to avoid duplication. */}
 
       {showStyle && (
         <StylePanel section={section} onUpdate={onUpdate} />

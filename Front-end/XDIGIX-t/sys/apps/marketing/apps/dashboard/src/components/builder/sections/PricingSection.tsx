@@ -1,92 +1,69 @@
 import { memo } from 'react';
 import { PricingSectionData } from '../../../types/builder';
+import BlockWrapper from '../BlockWrapper';
 
-type Props = {
-  data: PricingSectionData;
-  style?: React.CSSProperties;
-};
+type Props = { data: PricingSectionData; style?: React.CSSProperties; isSelected?: boolean; onEditBlock?: (dataKey: string, blockIndex: number) => void; onDeleteBlock?: (dataKey: string, blockIndex: number) => void };
 
-const PricingSection = ({ data, style }: Props) => {
-  const { 
-    title = 'Pricing Plans', 
-    subtitle = 'Choose the perfect plan for you', 
-    plans = [],
-    currency = '$',
-    billingPeriod = '/month'
-  } = data ?? {};
+const PricingSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }: Props) => {
+  const d = (data ?? {}) as Record<string, any>;
+
+  const title = d.title || 'Pricing';
+  const subtitle = d.subtitle || '';
+  const currency = d.currency || '$';
+  const billingPeriod = d.billingPeriod || '/month';
+  const paddingTop = d.padding_top ?? 36;
+  const paddingBottom = d.padding_bottom ?? 36;
+
+  const plans = d.plans ?? [];
+
+  const defaultPlans = [
+    { name: 'Basic', price: 9, features: ['Feature one', 'Feature two', 'Feature three'], highlighted: false, buttonText: 'Choose plan' },
+    { name: 'Pro', price: 29, features: ['Feature one', 'Feature two', 'Feature three', 'Feature four'], highlighted: true, buttonText: 'Choose plan' },
+    { name: 'Enterprise', price: 99, features: ['Feature one', 'Feature two', 'Feature three', 'Feature four', 'Feature five'], highlighted: false, buttonText: 'Choose plan' },
+  ];
+
+  const displayPlans = plans.length > 0 ? plans : defaultPlans;
 
   return (
-    <section 
-      className="w-full py-12 sm:py-16 px-4 sm:px-6 bg-gray-50 transition-all duration-300"
-      style={style}
-    >
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 sm:mb-4">{title}</h2>
-          {subtitle && <p className="text-base sm:text-lg text-madas-text/70 px-2">{subtitle}</p>}
+    <section className="w-full" style={{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px`, ...style }}>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold mb-2">{title}</h2>
+          {subtitle && <p className="text-sm" style={{ opacity: 0.75 }}>{subtitle}</p>}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {plans.length === 0 ? (
-            <>
-              {['Basic', 'Pro', 'Enterprise'].map((planName, i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-                  <h3 className="text-2xl font-bold text-primary mb-2">{planName}</h3>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold text-primary">{currency}{(i + 1) * 29}</span>
-                    <span className="text-madas-text/60">{billingPeriod}</span>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {[1, 2, 3, 4].map((j) => (
-                      <li key={j} className="flex items-center gap-2">
-                        <span className="material-icons text-green-600 text-sm">check_circle</span>
-                        <span className="text-madas-text/70">Feature {j}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <button className="w-full py-3 bg-primary text-white rounded-lg hover:bg-[#1f3c19] transition-colors">
-                    Get Started
-                  </button>
-                </div>
-              ))}
-            </>
-          ) : (
-            plans.map((plan, index) => (
-              <div 
-                key={index} 
-                className={`relative bg-white rounded-xl p-6 sm:p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group ${
-                  plan.highlighted 
-                    ? 'border-2 border-primary ring-4 ring-primary/10 scale-105' 
-                    : 'border border-gray-200'
-                }`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary text-white text-xs font-semibold rounded-full">
-                    Most Popular
-                  </div>
-                )}
-                <h3 className="text-xl sm:text-2xl font-bold text-primary mb-2 group-hover:text-primary/80 transition-colors">{plan.name}</h3>
-                <div className="mb-4 sm:mb-6">
-                  <span className="text-3xl sm:text-4xl font-bold text-primary">{currency}{plan.price}</span>
-                  <span className="text-sm sm:text-base text-madas-text/60">{billingPeriod}</span>
-                </div>
-                <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="material-icons text-green-600 text-sm flex-shrink-0 mt-0.5">check_circle</span>
-                      <span className="text-xs sm:text-sm text-madas-text/70">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button className={`w-full py-2.5 sm:py-3 text-sm sm:text-base rounded-lg font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all ${
-                  plan.highlighted 
-                    ? 'bg-primary text-white hover:bg-[#1f3c19]' 
-                    : 'bg-gray-100 text-primary hover:bg-gray-200'
-                }`}>
-                  {plan.buttonText || 'Get Started'}
-                </button>
+        <div className={`grid grid-cols-1 md:grid-cols-${Math.min(displayPlans.length, 3)} gap-6 max-w-4xl mx-auto`}>
+          {displayPlans.map((plan: any, index: number) => (
+            <BlockWrapper key={index} dataKey="plans" blockIndex={index} blockType="pricing_plan" isSelected={!!isSelected} onEdit={onEditBlock ?? ((_dk: string, _bi: number) => {})} onDelete={onDeleteBlock ?? ((_dk: string, _bi: number) => {})}>
+            <div className={`border p-8`} style={{ borderColor: plan.highlighted ? 'var(--scheme-btn-bg, #121212)' : 'currentColor', borderWidth: plan.highlighted ? '2px' : '1px', opacity: plan.highlighted ? 1 : undefined }}>
+              <h3 className="text-lg font-bold mb-2">{plan.name}</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">{currency}{plan.price}</span>
+                <span className="text-sm" style={{ opacity: 0.6 }}>{billingPeriod}</span>
               </div>
-            ))
-          )}
+              <ul className="space-y-3 mb-8">
+                {(Array.isArray(plan.features)
+                  ? plan.features
+                  : typeof plan.features === 'string'
+                    ? plan.features.split('\n').filter((s: string) => s.trim())
+                    : []
+                ).map((feature: string, fi: number) => (
+                  <li key={fi} className="flex items-start gap-2 text-sm" style={{ opacity: 0.75 }}>
+                    <span className="material-icons text-sm mt-0.5">check</span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <button
+                className="w-full py-3 text-sm font-medium tracking-wider uppercase transition-colors border"
+                style={plan.highlighted
+                  ? { backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)', borderColor: 'var(--scheme-btn-bg, #121212)' }
+                  : { borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)', backgroundColor: 'transparent' }
+                }>
+                {plan.buttonText || 'Choose plan'}
+              </button>
+            </div>
+            </BlockWrapper>
+          ))}
         </div>
       </div>
     </section>
@@ -94,4 +71,3 @@ const PricingSection = ({ data, style }: Props) => {
 };
 
 export default memo(PricingSection);
-

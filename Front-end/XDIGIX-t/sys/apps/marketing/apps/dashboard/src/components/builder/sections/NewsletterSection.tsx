@@ -1,91 +1,53 @@
-import { useState, memo} from 'react';
+import { memo } from 'react';
 import { NewsletterSectionData } from '../../../types/builder';
+import BlockWrapper from '../BlockWrapper';
 
-type Props = {
-  data: NewsletterSectionData;
-  style?: React.CSSProperties;
-};
+type Props = { data: NewsletterSectionData; style?: React.CSSProperties; isSelected?: boolean; onEditBlock?: (dataKey: string, blockIndex: number) => void; onDeleteBlock?: (dataKey: string, blockIndex: number) => void };
 
-const NewsletterSection = ({ data, style }: Props) => {
-  const {
-    title = 'Stay Updated',
-    subtitle = 'Subscribe to our newsletter for the latest updates and exclusive offers',
-    placeholder = 'Enter your email address',
-    buttonText = 'Subscribe',
-    backgroundColor = '#f9fafb',
-    successMessage = 'Thank you for subscribing!'
-  } = data ?? {};
+const NewsletterSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }: Props) => {
+  const d = (data ?? {}) as Record<string, any>;
 
-  const [email, setEmail] = useState('');
-  const [isSubscribed, setIsSubscribed] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setIsSubscribed(true);
-      setEmail('');
-    }
+  const title = d.title || 'Subscribe to our emails';
+  const subtitle = d.subtitle || '';
+  const placeholder = d.placeholder || 'Email';
+  const buttonText = d.buttonText || 'Subscribe';
+  const fullWidth = d.full_width ?? true;
+  const paddingTop = d.padding_top ?? 40;
+  const paddingBottom = d.padding_bottom ?? 52;
+  const headingSize = d.heading_size ?? 'h1';
+  const headingSizeMap: Record<string, string> = {
+    h2: 'text-2xl md:text-3xl',
+    h1: 'text-3xl md:text-4xl',
+    h0: 'text-4xl md:text-5xl',
+    hxl: 'text-5xl md:text-6xl',
   };
 
   return (
-    <section
-      className="w-full py-12 sm:py-16 md:py-20 px-4 sm:px-6 transition-all duration-300"
-      style={{ backgroundColor, ...style }}
-    >
-      <div className="max-w-3xl mx-auto text-center">
-        {/* Decorative icon */}
-        <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 mb-6 rounded-2xl bg-primary/10">
-          <span className="material-icons text-primary text-2xl sm:text-3xl">mail</span>
-        </div>
-
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 sm:mb-4">
+    <section className="w-full text-center" style={{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px`, ...style }}>
+      <div className={`${fullWidth ? 'max-w-[1200px]' : 'max-w-xl'} mx-auto px-4 sm:px-6`}>
+        <BlockWrapper dataKey="headingBlocks" blockIndex={0} blockType="heading" isSelected={!!isSelected} onEdit={onEditBlock ?? ((_dk: string, _bi: number) => {})} onDelete={onDeleteBlock ?? ((_dk: string, _bi: number) => {})}>
+        <h2 className={`${headingSizeMap[headingSize] || headingSizeMap.h1} font-bold mb-3`}>
           {title}
         </h2>
         {subtitle && (
-          <p className="text-base sm:text-lg text-madas-text/70 mb-8 sm:mb-10 px-2">
-            {subtitle}
-          </p>
+          <p className="text-sm mb-6 max-w-lg mx-auto" style={{ opacity: 0.75 }}>{subtitle}</p>
         )}
-
-        {isSubscribed ? (
-          <div className="flex flex-col items-center gap-4 py-6">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center animate-bounce">
-              <span className="material-icons text-green-600 text-3xl">check</span>
-            </div>
-            <p className="text-lg font-semibold text-green-600">{successMessage}</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-xl mx-auto">
-            <div className="relative flex-1">
-              <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                email
-              </span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={placeholder}
-                required
-                className="w-full pl-12 pr-4 py-3 sm:py-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm sm:text-base transition-all"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-6 sm:px-8 py-3 sm:py-4 bg-primary text-white rounded-xl font-semibold hover:bg-[#1f3c19] transition-all hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
-            >
-              {buttonText}
-            </button>
-          </form>
-        )}
-
-        {/* Privacy note */}
-        <p className="mt-6 text-xs sm:text-sm text-madas-text/50">
-          We respect your privacy. Unsubscribe at any time.
-        </p>
+        </BlockWrapper>
+        <BlockWrapper dataKey="emailFormBlocks" blockIndex={1} blockType="email_form" isSelected={!!isSelected} onEdit={onEditBlock ?? ((_dk: string, _bi: number) => {})} onDelete={onDeleteBlock ?? ((_dk: string, _bi: number) => {})}>
+        <form onSubmit={(e) => e.preventDefault()} className="flex max-w-md mx-auto">
+          <input type="email" placeholder={placeholder}
+            className="flex-1 px-4 py-3 border text-sm bg-transparent outline-none min-w-0"
+            style={{ borderColor: 'currentColor', color: 'inherit', opacity: 1 }} />
+          <button type="submit"
+            className="px-6 py-3 text-sm tracking-wider transition-colors flex-shrink-0 flex items-center gap-1"
+            style={{ backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}>
+            <span className="material-icons text-sm">arrow_forward</span>
+          </button>
+        </form>
+        </BlockWrapper>
       </div>
     </section>
   );
 };
 
 export default memo(NewsletterSection);
-

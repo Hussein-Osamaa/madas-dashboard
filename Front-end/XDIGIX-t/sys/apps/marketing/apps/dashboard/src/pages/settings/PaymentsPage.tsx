@@ -104,7 +104,7 @@ const PaymentsPage = () => {
   const [saving, setSaving] = useState(false);
 
   const tabs: Array<{ id: PaymentTab; label: string; icon: string; color: string }> = [
-    { id: 'overview', label: 'Overview', icon: 'dashboard', color: 'text-primary' },
+    { id: 'overview', label: 'Overview', icon: 'dashboard', color: 'text-gray-900' },
     { id: 'cod', label: 'Cash on Delivery', icon: 'payments', color: 'text-green-600' },
     { id: 'stripe', label: 'Stripe', icon: 'credit_card', color: 'text-indigo-600' },
     { id: 'paymob', label: 'Paymob', icon: 'account_balance', color: 'text-blue-600' },
@@ -175,24 +175,7 @@ const PaymentsPage = () => {
         </div>
       }
     >
-      <div className="space-y-6 px-6 py-8">
-        {/* Header */}
-        <header>
-          <div className="flex items-center gap-2 mb-1">
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="rounded-lg p-1.5 text-madas-text/50 hover:bg-base transition-colors"
-            >
-              <span className="material-icons text-xl">arrow_back</span>
-            </button>
-            <h1 className="text-3xl font-semibold text-primary">Payment Methods</h1>
-          </div>
-          <p className="text-sm text-madas-text/70 ml-10">
-            Configure payment gateways and methods for your store.
-          </p>
-        </header>
-
+      <div className="space-y-5">
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2">
           {tabs.map(tab => (
@@ -203,8 +186,8 @@ const PaymentsPage = () => {
               className={clsx(
                 'flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors',
                 activeTab === tab.id
-                  ? 'bg-primary text-white'
-                  : 'border border-gray-200 text-madas-text hover:bg-base'
+                  ? 'bg-gray-900 text-white'
+                  : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
               )}
             >
               <span className={clsx('material-icons text-base', activeTab === tab.id ? 'text-white' : tab.color)}>
@@ -216,7 +199,7 @@ const PaymentsPage = () => {
         </div>
 
         {/* Content */}
-        <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           {activeTab === 'overview' && (
             <OverviewTab data={data} onSelect={setActiveTab} tabs={tabs} />
           )}
@@ -367,8 +350,8 @@ const OverviewTab = ({ data, onSelect, tabs }: OverviewTabProps) => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-primary">Payment Methods Overview</h2>
-          <p className="text-sm text-madas-text/60 mt-1">
+          <h2 className="text-xl font-semibold text-gray-900">Payment Methods Overview</h2>
+          <p className="text-sm text-gray-500 mt-1">
             {enabledCount} of {methods.length} payment methods enabled
           </p>
         </div>
@@ -386,7 +369,7 @@ const OverviewTab = ({ data, onSelect, tabs }: OverviewTabProps) => {
                 'flex items-start gap-4 p-5 rounded-xl border-2 text-left transition-all hover:shadow-md',
                 enabled
                   ? 'border-green-200 bg-green-50/50'
-                  : 'border-gray-100 bg-white hover:border-gray-200'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
               )}
             >
               <div className={clsx(
@@ -399,7 +382,7 @@ const OverviewTab = ({ data, onSelect, tabs }: OverviewTabProps) => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-madas-text/90 text-sm">{method.label}</h3>
+                  <h3 className="font-semibold text-gray-700 text-sm">{method.label}</h3>
                   {enabled && (
                     <span className="inline-flex items-center gap-0.5 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
                       <span className="material-icons text-[10px]">check_circle</span>
@@ -407,11 +390,11 @@ const OverviewTab = ({ data, onSelect, tabs }: OverviewTabProps) => {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-madas-text/50 mt-0.5">
+                <p className="text-xs text-gray-400 mt-0.5">
                   {enabled ? 'Enabled — click to configure' : 'Not configured — click to set up'}
                 </p>
               </div>
-              <span className="material-icons text-madas-text/30 text-lg mt-1">chevron_right</span>
+              <span className="material-icons text-gray-300 text-lg mt-1">chevron_right</span>
             </button>
           );
         })}
@@ -458,8 +441,8 @@ const ProviderForm = ({ title, description, icon, iconColor, data, saving, hasTe
             <span className="material-icons text-3xl">{icon}</span>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-primary">{title}</h2>
-            <p className="text-sm text-madas-text/60 mt-0.5">{description}</p>
+            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+            <p className="text-sm text-gray-500 mt-0.5">{description}</p>
           </div>
         </div>
       </div>
@@ -467,8 +450,8 @@ const ProviderForm = ({ title, description, icon, iconColor, data, saving, hasTe
       {/* Enabled toggle */}
       <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
         <div>
-          <p className="font-medium text-madas-text/90">Enable {title}</p>
-          <p className="text-xs text-madas-text/50">Show this payment method to customers at checkout</p>
+          <p className="font-medium text-gray-700">Enable {title}</p>
+          <p className="text-xs text-gray-400">Show this payment method to customers at checkout</p>
         </div>
         <button
           type="button"
@@ -489,8 +472,8 @@ const ProviderForm = ({ title, description, icon, iconColor, data, saving, hasTe
       {hasTestMode && (
         <div className="flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50/50 p-4">
           <div>
-            <p className="font-medium text-madas-text/90">Test Mode</p>
-            <p className="text-xs text-madas-text/50">Use sandbox/test credentials for development</p>
+            <p className="font-medium text-gray-700">Test Mode</p>
+            <p className="text-xs text-gray-400">Use sandbox/test credentials for development</p>
           </div>
           <button
             type="button"
@@ -514,13 +497,13 @@ const ProviderForm = ({ title, description, icon, iconColor, data, saving, hasTe
           if (field.type === 'toggle') {
             return (
               <div key={field.key} className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
-                <p className="text-sm font-medium text-madas-text/80">{field.label}</p>
+                <p className="text-sm font-medium text-gray-700">{field.label}</p>
                 <button
                   type="button"
                   onClick={() => set(field.key, !local[field.key])}
                   className={clsx(
                     'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                    local[field.key] ? 'bg-primary' : 'bg-gray-300'
+                    local[field.key] ? 'bg-gray-900' : 'bg-gray-300'
                   )}
                 >
                   <span className={clsx(
@@ -535,13 +518,13 @@ const ProviderForm = ({ title, description, icon, iconColor, data, saving, hasTe
           if (field.type === 'textarea') {
             return (
               <div key={field.key}>
-                <label className="block text-sm font-medium text-madas-text/80 mb-1.5">{field.label}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
                 <textarea
                   value={(local[field.key] as string) || ''}
                   onChange={e => set(field.key, e.target.value)}
                   placeholder={field.placeholder}
                   rows={3}
-                  className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
                 />
               </div>
             );
@@ -552,20 +535,20 @@ const ProviderForm = ({ title, description, icon, iconColor, data, saving, hasTe
 
           return (
             <div key={field.key}>
-              <label className="block text-sm font-medium text-madas-text/80 mb-1.5">{field.label}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
               <div className="relative">
                 <input
                   type={isPassword && !visible ? 'password' : field.type === 'number' ? 'number' : 'text'}
                   value={(local[field.key] as string | number) ?? ''}
                   onChange={e => set(field.key, field.type === 'number' ? Number(e.target.value) : e.target.value)}
                   placeholder={field.placeholder}
-                  className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary pr-10"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent pr-10"
                 />
                 {isPassword && (
                   <button
                     type="button"
                     onClick={() => setShowSecrets(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-madas-text/40 hover:text-madas-text/70"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     <span className="material-icons text-lg">{visible ? 'visibility_off' : 'visibility'}</span>
                   </button>
@@ -582,7 +565,7 @@ const ProviderForm = ({ title, description, icon, iconColor, data, saving, hasTe
           type="button"
           disabled={saving}
           onClick={() => onSave(local)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
         >
           {saving ? (
             <>

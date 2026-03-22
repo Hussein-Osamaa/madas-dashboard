@@ -1,557 +1,326 @@
-import { useState, useEffect, useRef, memo} from 'react';
+import { useState, useEffect, useRef, memo, Fragment } from 'react';
 import { HeroSectionData } from '../../../types/builder';
-import { sanitizeHtml } from './sanitizeHtml';
+import BlockWrapper from '../BlockWrapper';
 
 type Props = {
   data: HeroSectionData;
   style?: React.CSSProperties;
+  isSelected?: boolean;
+  onEditBlock?: (dataKey: string, blockIndex: number) => void;
+  onDeleteBlock?: (dataKey: string, blockIndex: number) => void;
 };
 
-// Height class map — shared across layouts
-const HEIGHT_CLASS: Record<string, string> = {
-  compact: 'min-h-[280px]',
-  medium:  'min-h-[420px]',
-  large:   'min-h-[560px]',
-  full:    'min-h-screen',
-};
-
-const HeroSection = ({ data, style }: Props) => {
+const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlock }: Props) => {
   const d = (data ?? {}) as Record<string, any>;
-  const layout            = (d.layout          ?? 'default') as string;
-  const isCarousel        = d.isCarousel        ?? false;
-  const slides            = d.slides            ?? [];
-  const title             = d.title             ?? 'Welcome to Our Store';
-  const subtitle          = d.subtitle          ?? 'Discover amazing products';
-  const buttonText        = d.buttonText        ?? 'Shop Now';
-  const buttonLink        = d.buttonLink        ?? '#';
-  const secondaryButtonText  = (d.secondaryButtonText  ?? '') as string;
-  const secondaryButtonLink  = (d.secondaryButtonLink  ?? '#') as string;
-  const backgroundImage   = d.backgroundImage   ?? '';
-  const backgroundColor   = d.backgroundColor   ?? 'linear-gradient(135deg, #27491F 0%, #3a6b2e 100%)';
-  const textColor         = d.textColor         ?? '#FFFFFF';
-  const overlayEnabled    = d.overlayEnabled     ?? false;
-  const overlayColor      = d.overlayColor       ?? 'rgba(0,0,0,0.35)';
-  const autoplay          = d.autoplay          ?? false;
-  const autoplayInterval  = d.autoplayInterval  ?? 5000;
-  const showNavigation    = d.showNavigation    ?? true;
-  const showIndicators    = d.showIndicators    ?? true;
-  const imageUrl          = (d.imageUrl         ?? '') as string;
-  const imagePosition     = (d.imagePosition    ?? 'right') as string;
-  const height            = (d.height           ?? 'large') as string;
 
-  const isMinimal = layout === 'minimal';
-  const isSplit   = layout === 'split';
-  const isCompact = layout === 'compact';
+  // Settings
+  const image = d.image || d.backgroundImage || '';
+  const image2 = d.image_2 || '';
+  const overlayOpacity = d.image_overlay_opacity ?? 0;
+  const imageHeight = d.image_height ?? d.height ?? 'medium';
+  const animation = d.animation ?? 'none';
+  const contentPosition = d.desktop_content_position ?? 'middle-center';
+  const contentAlignment = d.desktop_content_alignment ?? 'center';
+  const showTextBox = d.show_text_box ?? false;
+
+  // Mobile layout
+  const mobileStackImages = d.mobile_stack_images ?? false;
+  const mobileContentAlignment = d.mobile_content_alignment ?? 'center';
+  const mobileShowContainer = d.mobile_show_container ?? false;
+
+  // Blocks data — rendered in array order
+  const blocks: any[] = d.blocks ?? [];
+
+  // Also support carousel
+  const isCarousel = d.isCarousel ?? false;
+  const slides = d.slides ?? [];
+  const autoplay = d.autoplay ?? false;
+  const autoplayInterval = d.autoplayInterval ?? 5000;
 
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
-  // Prepare slides array
-  const heroSlides = isCarousel && slides && slides.length > 0
-    ? slides
-    : [{ title, subtitle, buttonText, buttonLink, backgroundImage, backgroundColor, textColor }];
+  const heroSlides = isCarousel && slides.length > 0 ? slides : null;
 
-  const totalSlides = heroSlides.length;
-  const maxSlideIndex = totalSlides - 1;
-
-  // Autoplay functionality
   useEffect(() => {
-    if (isCarousel && autoplay && totalSlides > 1) {
+    if (isCarousel && autoplay && heroSlides && heroSlides.length > 1) {
       autoplayRef.current = setInterval(() => {
-        setCurrentSlide((prev) => (prev >= maxSlideIndex ? 0 : prev + 1));
+        setCurrentSlide(prev => (prev + 1) % heroSlides.length);
       }, autoplayInterval);
-
-      return () => {
-        if (autoplayRef.current) {
-          clearInterval(autoplayRef.current);
-        }
-      };
+      return () => { if (autoplayRef.current) clearInterval(autoplayRef.current); };
     }
-  }, [isCarousel, autoplay, totalSlides, maxSlideIndex, autoplayInterval]);
+  }, [isCarousel, autoplay, autoplayInterval, heroSlides?.length]);
 
-  const handlePrev = () => {
-    setCurrentSlide((prev) => (prev === 0 ? maxSlideIndex : prev - 1));
-    if (autoplayRef.current) {
-      clearInterval(autoplayRef.current);
-      autoplayRef.current = setInterval(() => {
-        setCurrentSlide((prev) => (prev >= maxSlideIndex ? 0 : prev + 1));
-      }, autoplayInterval);
-    }
+  // Animation: intersection observer for entrance animations
+  useEffect(() => {
+    if (animation === 'none') { setIsVisible(true); return; }
+    const el = sectionRef.current;
+    if (!el) { setIsVisible(true); return; }
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [animation]);
+
+  // Height classes
+  const heightMap: Record<string, string> = {
+    small: 'min-h-[300px]',
+    medium: 'min-h-[450px]',
+    large: 'min-h-[600px]',
+    full: 'min-h-screen',
   };
 
-  const handleNext = () => {
-    setCurrentSlide((prev) => (prev >= maxSlideIndex ? 0 : prev + 1));
-    if (autoplayRef.current) {
-      clearInterval(autoplayRef.current);
-      autoplayRef.current = setInterval(() => {
-        setCurrentSlide((prev) => (prev >= maxSlideIndex ? 0 : prev + 1));
-      }, autoplayInterval);
-    }
+  // Content position mapping (flex-col: justify = vertical, items = horizontal)
+  const posMap: Record<string, string> = {
+    'top-left': 'justify-start items-start',
+    'top-center': 'justify-start items-center',
+    'top-right': 'justify-start items-end',
+    'middle-left': 'justify-center items-start',
+    'middle-center': 'justify-center items-center',
+    'middle-right': 'justify-center items-end',
+    'bottom-left': 'justify-end items-start',
+    'bottom-center': 'justify-end items-center',
+    'bottom-right': 'justify-end items-end',
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
+  const alignMap: Record<string, string> = {
+    left: 'text-left',
+    center: 'text-center',
+    right: 'text-right',
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+  const mobileAlignMap: Record<string, string> = {
+    left: 'max-md:text-left',
+    center: 'max-md:text-center',
+    right: 'max-md:text-right',
   };
 
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-
-    if (isLeftSwipe) {
-      handleNext();
-    }
-    if (isRightSwipe) {
-      handlePrev();
-    }
+  const headingSizeMap: Record<string, string> = {
+    h2: 'text-2xl md:text-3xl',
+    h1: 'text-3xl md:text-5xl',
+    h0: 'text-4xl md:text-6xl',
+    hxl: 'text-5xl md:text-7xl',
+    hxxl: 'text-6xl md:text-8xl',
   };
 
-  const currentSlideData = heroSlides[currentSlide] || heroSlides[0];
-
-  // Get text styles - prefer slide-specific styles, fall back to global styles
-  const textStyle = currentSlideData.textStyle || (data as any).textStyle || {};
-  // Note: textColor is now handled via HTML spans in the title/subtitle content
-  // We only use it as a fallback base color if no spans are present
-  const baseTextColor = currentSlideData.textColor || '#FFFFFF';
-  const titleHasHTML = currentSlideData.title && /<[^>]+>/.test(currentSlideData.title);
-  const subtitleHasHTML = currentSlideData.subtitle && /<[^>]+>/.test(currentSlideData.subtitle);
-  
-  const titleStyle: React.CSSProperties = {
-    fontSize:   textStyle.titleFontSize   ? `${textStyle.titleFontSize}px`   : undefined,
-    fontWeight: textStyle.titleFontWeight || undefined,
-    textAlign:  (textStyle.titleAlignment ?? (isSplit ? 'left' : 'center')) as React.CSSProperties['textAlign'],
-    color:      titleHasHTML ? undefined : baseTextColor,
-  };
-  const subtitleStyle: React.CSSProperties = {
-    fontSize:   textStyle.subtitleFontSize   ? `${textStyle.subtitleFontSize}px`   : undefined,
-    fontWeight: textStyle.subtitleFontWeight || undefined,
-    textAlign:  (textStyle.subtitleAlignment ?? (isSplit ? 'left' : 'center')) as React.CSSProperties['textAlign'],
-    color:      subtitleHasHTML ? undefined : baseTextColor,
-    opacity:    subtitleHasHTML ? undefined : 0.9,
-  };
-  const buttonStyle = textStyle.buttonStyle || {};
-
-  const backgroundStyle = currentSlideData.backgroundImage
-    ? {
-        backgroundImage: `url(${currentSlideData.backgroundImage})`,
-        backgroundSize: currentSlideData.backgroundSize || data.backgroundSize || 'cover',
-        backgroundPosition: currentSlideData.backgroundPosition || data.backgroundPosition || 'center',
-        backgroundRepeat: 'no-repeat'
+  // Animation CSS class
+  const getAnimationStyle = (): React.CSSProperties => {
+    if (animation === 'none') return {};
+    const base: React.CSSProperties = { transition: 'opacity 0.8s ease, transform 0.8s ease' };
+    if (!isVisible) {
+      switch (animation) {
+        case 'fade-in': return { ...base, opacity: 0 };
+        case 'slide-up': return { ...base, opacity: 0, transform: 'translateY(40px)' };
+        case 'zoom-in': return { ...base, opacity: 0, transform: 'scale(0.95)' };
+        default: return base;
       }
-    : {
-        background: currentSlideData.backgroundColor
-      };
-
-  // Get button variant for styling - default to 'outlined' for minimal layout
-  const buttonVariant = buttonStyle.variant || (isMinimal ? 'outlined' : 'filled');
-  
-  // Button styles based on variant
-  const getButtonStyles = () => {
-    const baseStyles = {
-      borderRadius: buttonStyle.borderRadius ? `${buttonStyle.borderRadius}px` : '0',
-      fontSize: buttonStyle.fontSize ? `${buttonStyle.fontSize}px` : undefined,
-      fontWeight: buttonStyle.fontWeight || '500',
-      padding: buttonStyle.padding || '1rem 2.5rem',
-      transition: 'all 0.3s ease',
-      ...(!buttonStyle.fontSize ? { fontSize: 'inherit' } : {})
-    };
-
-    // Outlined variant - transparent with border
-    if (buttonVariant === 'outlined') {
-      return {
-        ...baseStyles,
-        backgroundColor: 'transparent',
-        color: buttonStyle.textColor || '#FFFFFF',
-        border: `1px solid ${buttonStyle.textColor || '#FFFFFF'}`,
-        boxShadow: 'none'
-      };
     }
-    
-    // Ghost variant - transparent with no border (text only)
-    if (buttonVariant === 'ghost') {
-      return {
-        ...baseStyles,
-        backgroundColor: 'transparent',
-        color: buttonStyle.textColor || '#FFFFFF',
-        border: 'none',
-        boxShadow: 'none',
-        textDecoration: 'underline',
-        textUnderlineOffset: '4px'
-      };
-    }
-
-    // Filled variant - solid background
-    return {
-      ...baseStyles,
-      backgroundColor: buttonStyle.backgroundColor || '#FFFFFF',
-      color: buttonStyle.textColor || (currentSlideData.backgroundColor?.includes?.('#27491F') ? '#27491F' : '#000'),
-      border: 'none',
-      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-    };
+    return { ...base, opacity: 1, transform: 'translateY(0) scale(1)' };
   };
 
-  // Get button color for hover effect
-  const buttonTextColor = buttonStyle.textColor || '#FFFFFF';
-  const buttonHoverEffect = buttonStyle.hoverEffect || 'fill';
-  const buttonHoverBgColor = buttonStyle.hoverBackgroundColor || buttonTextColor;
-  const buttonHoverTextColor = buttonStyle.hoverTextColor || (isMinimal ? '#1a1a1a' : currentSlideData.backgroundColor || '#000');
+  // Parallax: applied to background image only
+  const parallaxStyle = animation === 'parallax' ? { backgroundAttachment: 'fixed' as const } : {};
 
-  // Secondary button styles (outlined variant using text colour)
-  const getSecondaryButtonStyles = (): React.CSSProperties => ({
-    borderRadius: buttonStyle.borderRadius ? `${buttonStyle.borderRadius}px` : '0',
-    fontSize:     buttonStyle.fontSize ? `${buttonStyle.fontSize}px` : 'inherit',
-    fontWeight:   buttonStyle.fontWeight || '500',
-    padding:      buttonStyle.padding || '1rem 2.5rem',
-    transition:   'all 0.3s ease',
-    display:      'inline-block',
-    backgroundColor: 'transparent',
-    color:           buttonStyle.textColor || baseTextColor,
-    border:          `2px solid ${buttonStyle.textColor || baseTextColor}`,
-    textDecoration:  'none',
-  });
+  const wrapBlock = (blockIndex: number, blockType: string, children: React.ReactNode) => {
+    if (!isSelected) return <Fragment key={`block-${blockIndex}`}>{children}</Fragment>;
+    return (
+      <BlockWrapper key={`block-${blockIndex}`} dataKey="blocks" blockIndex={blockIndex} blockType={blockType} isSelected={isSelected} onEdit={onEditBlock ?? ((_dk: string, _bi: number) => {})} onDelete={onDeleteBlock ?? ((_dk: string, _bi: number) => {})}>
+        {children}
+      </BlockWrapper>
+    );
+  };
 
-  // Height class for default/minimal layout
-  const heightCls = HEIGHT_CLASS[isMinimal ? 'full' : height] ?? HEIGHT_CLASS.large;
+  // Fallback placeholder image when no user image is set
+  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop';
+  const displayImage = image || FALLBACK_IMAGE;
 
-  // ─── SPLIT layout ────────────────────────────────────────────────────────────
-  if (isSplit) {
-    const imgOnLeft = imagePosition === 'left';
-    const splitBg: React.CSSProperties = currentSlideData.backgroundImage
-      ? {}
-      : { background: currentSlideData.backgroundColor || backgroundColor };
+  const renderContent = (slideData?: any) => {
+    const bg = slideData?.backgroundColor || d.backgroundColor || '';
+    const txt = slideData?.textColor || d.textColor || '#FFFFFF';
+    const hasSecondImage = !slideData && image2;
+
+    // Button alignment derived from text alignment
+    const btnAlignMap: Record<string, string> = {
+      left: 'justify-start',
+      center: 'justify-center',
+      right: 'justify-end',
+    };
+    const btnJustify = btnAlignMap[contentAlignment] || 'justify-center';
+
+    const posClasses = posMap[contentPosition] || posMap['middle-center'];
+    const textAlign = alignMap[contentAlignment] || 'text-center';
+    const mobileTextAlign = mobileAlignMap[mobileContentAlignment] || '';
 
     return (
-      <section
-        className="hero-section relative w-full overflow-hidden"
-        style={{ ...splitBg, ...style }}
-        data-edit-type="background"
+      <div className={`relative w-full ${heightMap[imageHeight] || heightMap.medium}`}
+        style={{
+          backgroundColor: !displayImage && !slideData?.backgroundImage ? (bg || '#121212') : undefined,
+          ...style,
+          ...getAnimationStyle(),
+        }}
       >
-        <div className={`flex flex-col ${imgOnLeft ? 'md:flex-row-reverse' : 'md:flex-row'} min-h-[480px]`}>
-          {/* Text panel */}
-          <div className="flex-1 flex items-center justify-center px-8 sm:px-12 py-16 md:py-20">
-            <div className="max-w-lg w-full">
-              <h1
-                className={`hero-title mb-5 leading-tight cursor-pointer hover:opacity-80 transition-opacity ${
-                  !textStyle.titleFontSize ? 'text-3xl sm:text-4xl md:text-5xl' : ''
-                } ${!textStyle.titleFontWeight ? 'font-bold' : ''}`}
-                style={titleStyle}
-                data-edit-type="title"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.title || 'Welcome to Our Store') }} /* sanitized */
-              />
-              <p
-                className={`hero-subtitle mb-8 leading-relaxed cursor-pointer hover:opacity-80 transition-opacity ${
-                  !textStyle.subtitleFontSize ? 'text-base sm:text-lg' : ''
-                }`}
-                style={subtitleStyle}
-                data-edit-type="subtitle"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.subtitle || '') }} /* sanitized */
-              />
-              <div className="flex flex-wrap gap-3">
-                {currentSlideData.buttonText && (
-                  <a
-                    href={currentSlideData.buttonLink || '#'}
-                    className="hero-button hero-button-filled inline-block"
-                    style={getButtonStyles()}
-                    data-edit-type="button"
-                  >
-                    {currentSlideData.buttonText}
-                  </a>
-                )}
-                {secondaryButtonText && (
-                  <a
-                    href={secondaryButtonLink}
-                    className="hero-button hero-button-outlined inline-block"
-                    style={getSecondaryButtonStyles()}
-                    data-edit-type="button"
-                  >
-                    {secondaryButtonText}
-                  </a>
-                )}
-              </div>
+        {/* Background image(s) */}
+        {hasSecondImage ? (
+          <div className={`absolute inset-0 flex ${mobileStackImages ? 'max-md:flex-col' : ''}`}>
+            <div className="flex-1 relative overflow-hidden">
+              <img src={displayImage} alt="" className="w-full h-full object-cover" style={parallaxStyle} />
+            </div>
+            <div className="flex-1 relative overflow-hidden">
+              <img src={image2} alt="" className="w-full h-full object-cover" style={parallaxStyle} />
             </div>
           </div>
-
-          {/* Image panel */}
-          <div className="flex-1 relative min-h-[280px] md:min-h-0 overflow-hidden">
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={currentSlideData.title ?? ''}
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.08)' }}
-              >
-                <span className="material-icons text-white/30 text-7xl">image</span>
-              </div>
-            )}
+        ) : (displayImage || slideData?.backgroundImage) ? (
+          <div className="absolute inset-0">
+            <img
+              src={slideData?.backgroundImage || displayImage}
+              alt=""
+              className="w-full h-full object-cover"
+              style={parallaxStyle}
+            />
           </div>
-        </div>
-      </section>
-    );
-  }
+        ) : null}
 
-  // ─── COMPACT layout — short banner ───────────────────────────────────────────
-  if (isCompact) {
-    return (
-      <section
-        className="hero-section relative w-full overflow-hidden"
-        style={style}
-        data-edit-type="background"
-      >
-        <div className="absolute inset-0 z-0" style={backgroundStyle} />
-        {(currentSlideData.backgroundImage || overlayEnabled) && (
-          <div className="absolute inset-0 z-0" style={{ background: overlayColor || 'rgba(0,0,0,0.4)' }} />
+        {/* Overlay */}
+        {overlayOpacity > 0 && (
+          <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity / 100 }} />
         )}
-        <div className={`relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 max-w-6xl mx-auto px-6 sm:px-10 py-10 sm:py-12 ${HEIGHT_CLASS.compact}`}>
-          <div className="flex-1 text-center sm:text-left">
-            <h2
-              className={`hero-title font-bold leading-tight cursor-pointer hover:opacity-80 transition-opacity mb-2 ${
-                !textStyle.titleFontSize ? 'text-xl sm:text-2xl md:text-3xl' : ''
-              }`}
-              style={titleStyle}
-              data-edit-type="title"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.title || 'Limited Time Offer') }} /* sanitized */
-            />
-            <p
-              className={`hero-subtitle cursor-pointer hover:opacity-80 transition-opacity ${
-                !textStyle.subtitleFontSize ? 'text-sm sm:text-base' : ''
-              }`}
-              style={subtitleStyle}
-              data-edit-type="subtitle"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.subtitle || '') }} /* sanitized */
-            />
-          </div>
-          {currentSlideData.buttonText && (
-            <div className="shrink-0 flex flex-wrap gap-3">
-              <a
-                href={currentSlideData.buttonLink || '#'}
-                className="hero-button hero-button-filled whitespace-nowrap"
-                style={getButtonStyles()}
-                data-edit-type="button"
-              >
-                {currentSlideData.buttonText}
-              </a>
-              {secondaryButtonText && (
-                <a
-                  href={secondaryButtonLink}
-                  className="hero-button hero-button-outlined whitespace-nowrap"
-                  style={getSecondaryButtonStyles()}
-                  data-edit-type="button"
-                >
-                  {secondaryButtonText}
-                </a>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
-    );
-  }
 
-  return (
-    <section
-      className={`hero-section relative w-full text-center overflow-hidden flex items-center justify-center ${heightCls} px-4 sm:px-6`}
-      style={style}
-      onTouchStart={isCarousel ? handleTouchStart : undefined}
-      onTouchMove={isCarousel ? handleTouchMove : undefined}
-      onTouchEnd={isCarousel ? handleTouchEnd : undefined}
-      data-edit-type="background"
-    >
-      {/* Button hover effects - Left to Right Fill Animation */}
-      <style>{`
-        .hero-button {
-          position: relative;
-          overflow: hidden;
-          z-index: 1;
-        }
-        .hero-button::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 0%;
-          height: 100%;
-          background: ${buttonTextColor};
-          transition: width 0.4s ease;
-          z-index: -1;
-        }
-        .hero-button:hover::before {
-          width: 100%;
-        }
-        .hero-button-outlined {
-          transition: color 0.4s ease, border-color 0.3s ease;
-        }
-        .hero-button-outlined:hover {
-          color: ${isMinimal ? '#1a1a1a' : (currentSlideData.backgroundColor?.includes?.('gradient') ? '#000' : currentSlideData.backgroundColor || '#000')} !important;
-          border-color: ${buttonTextColor} !important;
-        }
-        .hero-button-ghost {
-          transition: opacity 0.3s ease;
-        }
-        .hero-button-ghost::before {
-          display: none;
-        }
-        .hero-button-ghost:hover {
-          opacity: 0.7 !important;
-        }
-        .hero-button-filled {
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .hero-button-filled:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
-        }
-      `}</style>
-      {/* Background with fade transition */}
-      <div
-        key={currentSlide}
-        className="hero-background absolute inset-0 transition-opacity duration-700 ease-in-out z-0"
-        style={backgroundStyle}
-        data-edit-type="background"
-      />
-      {currentSlideData.backgroundImage && !isMinimal && (
-        <div 
-          key={`overlay-${currentSlide}`}
-          className="absolute inset-0 z-0 transition-opacity duration-700 ease-in-out"
-          style={{ 
-            background: currentSlideData.backgroundColor || 'rgba(0, 0, 0, 0.3)',
-            opacity: 0.4
-          }}
-        />
-      )}
-
-      {/* Navigation Arrows - Only show for carousel with multiple slides */}
-      {isCarousel && totalSlides > 1 && showNavigation && (
-        <>
-          <button
-            onClick={handlePrev}
-            className={`carousel-nav absolute left-4 sm:left-8 z-20 transition-all duration-300 hover:scale-110 ${
-              isMinimal 
-                ? 'bottom-8 top-auto -translate-y-0 bg-transparent text-white/70 hover:text-white p-2' 
-                : 'top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 sm:p-3 shadow-lg hover:shadow-xl border border-gray-200'
-            }`}
-            aria-label="Previous slide"
-            data-edit-type="icon"
-          >
-            <span className={`material-icons ${isMinimal ? 'text-2xl' : 'text-primary text-xl sm:text-2xl'}`}>chevron_left</span>
-          </button>
-          
-          <button
-            onClick={handleNext}
-            className={`carousel-nav absolute right-4 sm:right-8 z-20 transition-all duration-300 hover:scale-110 ${
-              isMinimal 
-                ? 'bottom-8 top-auto -translate-y-0 bg-transparent text-white/70 hover:text-white p-2' 
-                : 'top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 sm:p-3 shadow-lg hover:shadow-xl border border-gray-200'
-            }`}
-            aria-label="Next slide"
-            data-edit-type="icon"
-          >
-            <span className={`material-icons ${isMinimal ? 'text-2xl' : 'text-primary text-xl sm:text-2xl'}`}>chevron_right</span>
-          </button>
-        </>
-      )}
-
-      <div className={`relative z-10 ${isMinimal ? 'flex flex-col items-center justify-center' : 'max-w-4xl mx-auto'}`}>
-        <div className="transition-opacity duration-500 ease-in-out">
-          {/* Title - Hidden in minimal layout */}
-          {!isMinimal && (
-            <h1 
-              className={`hero-title mb-4 sm:mb-6 leading-tight cursor-pointer hover:opacity-80 transition-opacity ${
-                !textStyle.titleFontSize 
-                  ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl' 
-                  : ''
-              } ${
-                !textStyle.titleFontWeight 
-                  ? 'font-bold' 
-                  : ''
-              }`}
-              style={titleStyle}
-              data-edit-type="title"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.title || 'Welcome to Our Store') }} /* sanitized */
-            />
-          )}
-
-          {/* Subtitle - Hidden in minimal layout */}
-          {!isMinimal && (
-            <p
-              className={`hero-subtitle mb-6 sm:mb-8 px-2 cursor-pointer hover:opacity-80 transition-opacity ${
-                !subtitleHasHTML ? 'opacity-90' : ''
-              } ${
-                !textStyle.subtitleFontSize
-                  ? 'text-base sm:text-lg md:text-xl'
-                  : ''
-              }`}
-              style={subtitleStyle}
-              data-edit-type="subtitle"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSlideData.subtitle || 'Discover amazing products') }} /* sanitized */
-            />
-          )}
-          
-          {/* Buttons */}
-          <div className="flex flex-wrap justify-center gap-3">
-            {currentSlideData.buttonText && (
-              <a
-                href={currentSlideData.buttonLink || '#'}
-                className={`hero-button hero-button-${buttonVariant} inline-block transition-all duration-300 ${
-                  isMinimal ? 'text-sm sm:text-base tracking-wider uppercase' : ''
-                }`}
-                style={getButtonStyles()}
-                data-edit-type="button"
-              >
-                {currentSlideData.buttonText}
-              </a>
-            )}
-            {secondaryButtonText && (
-              <a
-                href={secondaryButtonLink}
-                className="hero-button hero-button-outlined inline-block transition-all duration-300"
-                style={getSecondaryButtonStyles()}
-                data-edit-type="button"
-              >
-                {secondaryButtonText}
-              </a>
+        {/* Positioning container — flex-col fills the whole slide area */}
+        <div className={`relative z-10 flex flex-col ${posClasses} w-full h-full px-8 sm:px-16 py-12`}>
+          <div className={`max-w-2xl ${textAlign} ${mobileTextAlign} ${
+            showTextBox || mobileShowContainer
+              ? `${showTextBox ? 'md:bg-white/90 md:backdrop-blur-sm md:p-6' : ''} ${mobileShowContainer ? 'max-md:bg-white/90 max-md:backdrop-blur-sm max-md:p-5' : ''}`
+              : ''
+          }`}>
+            {blocks.map((block: any, idx: number) => {
+              if (block.type === 'heading') {
+                const h = slideData?.title || block.text || d.title || 'Image banner';
+                const hSize = block.heading_size || 'h1';
+                return wrapBlock(idx, 'heading',
+                  <h2 className={`${headingSizeMap[hSize] || headingSizeMap.h1} font-bold leading-tight mb-3`}
+                    style={{ color: (showTextBox || mobileShowContainer) ? '#121212' : txt }}>
+                    {h}
+                  </h2>
+                );
+              }
+              if (block.type === 'text') {
+                const t = slideData?.subtitle || block.text || d.subtitle || '';
+                if (!t) return null;
+                return wrapBlock(idx, 'text',
+                  <p className="text-base md:text-lg mb-6 opacity-80"
+                    style={{ color: (showTextBox || mobileShowContainer) ? '#121212' : txt }}>
+                    {t}
+                  </p>
+                );
+              }
+              if (block.type === 'buttons') {
+                const b1Text = slideData?.buttonText || block.button_label_1 || d.buttonText || '';
+                const b1Link = block.button_link_1 || d.buttonLink || '#';
+                const b2Text = slideData ? '' : (block.button_label_2 || d.secondaryButtonText || '');
+                const b2Link = block.button_link_2 || d.secondaryButtonLink || '#';
+                const bSec1 = block.button_style_1 === 'outline';
+                const bSec2 = block.button_style_2 === 'outline' || block.button_style_secondary_2 !== false;
+                return wrapBlock(idx, 'buttons',
+                  <div className={`flex flex-wrap gap-3 ${btnJustify} ${mobileContentAlignment === 'center' ? 'max-md:justify-center' : mobileContentAlignment === 'right' ? 'max-md:justify-end' : 'max-md:justify-start'}`}>
+                    {b1Text && (
+                      <a href={b1Link} className={`inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-colors ${
+                        bSec1
+                          ? 'border border-current bg-transparent'
+                          : showTextBox ? 'bg-[#121212] text-white' : 'bg-white text-[#121212]'
+                      }`} style={bSec1 ? { color: showTextBox ? '#121212' : txt } : {}}>
+                        {b1Text}
+                      </a>
+                    )}
+                    {b2Text && (
+                      <a href={b2Link} className={`inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-colors ${
+                        bSec2
+                          ? 'border border-current bg-transparent'
+                          : showTextBox ? 'bg-[#121212] text-white' : 'bg-white text-[#121212]'
+                      }`} style={bSec2 ? { color: showTextBox ? '#121212' : txt } : {}}>
+                        {b2Text}
+                      </a>
+                    )}
+                  </div>
+                );
+              }
+              if (block.type === 'email_signup') {
+                const placeholder = block.placeholder || 'Email';
+                const btnLabel = block.button_label || 'Subscribe';
+                return wrapBlock(idx, 'email_signup',
+                  <div className={`flex gap-2 mt-2 ${contentAlignment === 'center' ? 'justify-center' : contentAlignment === 'right' ? 'justify-end' : 'justify-start'}`}>
+                    <div className="flex w-full max-w-md">
+                      <input
+                        type="email"
+                        placeholder={placeholder}
+                        className="flex-1 px-4 py-3 text-sm border border-white/30 bg-white/10 backdrop-blur-sm text-white placeholder:text-white/60 focus:outline-none focus:ring-1 focus:ring-white/50"
+                        style={{ color: (showTextBox || mobileShowContainer) ? '#121212' : txt, borderColor: (showTextBox || mobileShowContainer) ? '#d1d5db' : undefined, backgroundColor: (showTextBox || mobileShowContainer) ? '#fff' : undefined }}
+                      />
+                      {btnLabel && (
+                        <button
+                          className="px-6 py-3 text-sm font-medium tracking-wider uppercase flex-shrink-0"
+                          style={{
+                            backgroundColor: (showTextBox || mobileShowContainer) ? '#121212' : '#fff',
+                            color: (showTextBox || mobileShowContainer) ? '#fff' : '#121212',
+                          }}
+                        >
+                          {btnLabel}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })}
+            {/* Fallback if no blocks exist — legacy support */}
+            {blocks.length === 0 && (
+              <>
+                <h2 className={`${headingSizeMap.h1} font-bold leading-tight mb-3`}
+                  style={{ color: txt }}>
+                  {d.title || 'Image banner'}
+                </h2>
+                {d.subtitle && (
+                  <p className="text-base md:text-lg mb-6 opacity-80" style={{ color: txt }}>{d.subtitle}</p>
+                )}
+                {d.buttonText && (
+                  <a href={d.buttonLink || '#'} className={`inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase bg-white text-[#121212]`}>
+                    {d.buttonText}
+                  </a>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
+    );
+  };
 
-      {/* Carousel Indicators */}
-      {isCarousel && totalSlides > 1 && showIndicators && (
-        <div className={`absolute left-1/2 -translate-x-1/2 z-20 flex gap-2 ${
-          isMinimal ? 'bottom-8' : 'bottom-4 sm:bottom-8'
-        }`}>
-          {heroSlides.map((_: any, index: number) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`rounded-full transition-all duration-300 ${
-                isMinimal
-                  ? index === currentSlide
-                    ? 'bg-white w-2 h-2'
-                    : 'bg-white/40 w-2 h-2 hover:bg-white/60'
-                  : index === currentSlide
-                    ? 'bg-white w-6 sm:w-8 h-2 sm:h-2.5'
-                    : 'bg-white/50 w-2 sm:w-2.5 h-2 sm:h-2.5 hover:bg-white/75'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
+  if (isCarousel && heroSlides && heroSlides.length > 1) {
+    return (
+      <section ref={sectionRef} className="relative w-full overflow-hidden">
+        <div className="relative" style={{ transform: `translateX(-${currentSlide * 100}%)`, transition: 'transform 0.5s ease' }}>
+          <div className="flex">
+            {heroSlides.map((slide: any, i: number) => (
+              <div key={i} className="w-full flex-shrink-0">{renderContent(slide)}</div>
+            ))}
+          </div>
+        </div>
+        {/* Dots */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {heroSlides.map((_: any, i: number) => (
+            <button key={i} onClick={() => setCurrentSlide(i)}
+              className={`w-2.5 h-2.5 rounded-full transition-colors ${i === currentSlide ? 'bg-white' : 'bg-white/50'}`} />
           ))}
         </div>
-      )}
-    </section>
-  );
+      </section>
+    );
+  }
+
+  return <section ref={sectionRef} className="relative w-full">{renderContent()}</section>;
 };
 
 export default memo(HeroSection);
-

@@ -1,51 +1,59 @@
 import { memo } from 'react';
 import { ContactSectionData } from '../../../types/builder';
 
-type Props = {
-  data: ContactSectionData;
-  style?: React.CSSProperties;
-};
+type Props = { data: ContactSectionData; style?: React.CSSProperties };
 
 const ContactSection = ({ data, style }: Props) => {
-  const {
-    title = 'Get in Touch',
-    subtitle = "We'd love to hear from you",
-    email = 'contact@example.com',
-    phone = '+1 (555) 123-4567',
-    address = '123 Main St, City, State 12345'
-  } = data ?? {};
+  const d = (data ?? {}) as Record<string, any>;
+
+  const heading = d.heading ?? d.title ?? 'Contact form';
+  const headingSize = d.heading_size ?? 'h1';
+  const paddingTop = d.padding_top ?? 36;
+  const paddingBottom = d.padding_bottom ?? 36;
+
+  const headingSizeMap: Record<string, string> = {
+    h2: 'text-2xl md:text-3xl',
+    h1: 'text-3xl md:text-4xl',
+    h0: 'text-4xl md:text-5xl',
+    hxl: 'text-5xl md:text-6xl',
+  };
 
   return (
-    <section 
-      className="w-full py-12 sm:py-16 px-4 sm:px-6 bg-gray-50 transition-all duration-300"
-      style={style}
-    >
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 sm:mb-4">{title}</h2>
-          {subtitle && <p className="text-base sm:text-lg text-madas-text/70 px-2">{subtitle}</p>}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          <div className="text-center p-4 sm:p-6 bg-white rounded-xl border border-gray-200">
-            <span className="material-icons text-3xl sm:text-4xl text-primary mb-3 sm:mb-4">email</span>
-            <h3 className="text-sm sm:text-base font-semibold text-primary mb-2">Email</h3>
-            <p className="text-xs sm:text-sm text-madas-text/70 break-words">{email}</p>
+    <section className="w-full" style={{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px`, ...style }}>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <h2 className={`${headingSizeMap[headingSize] || headingSizeMap.h1} font-bold text-center mb-8`}>
+          {heading}
+        </h2>
+        <form onSubmit={(e) => e.preventDefault()} className="max-w-2xl mx-auto space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <input type="text" placeholder="Name"
+                className="w-full px-4 py-3 border text-sm bg-transparent outline-none transition-colors" style={{ borderColor: 'currentColor', opacity: 0.2 }} />
+            </div>
+            <div>
+              <input type="email" placeholder="Email *" required
+                className="w-full px-4 py-3 border text-sm bg-transparent outline-none transition-colors" style={{ borderColor: 'currentColor', opacity: 0.2 }} />
+            </div>
           </div>
-          <div className="text-center p-4 sm:p-6 bg-white rounded-xl border border-gray-200">
-            <span className="material-icons text-3xl sm:text-4xl text-primary mb-3 sm:mb-4">phone</span>
-            <h3 className="text-sm sm:text-base font-semibold text-primary mb-2">Phone</h3>
-            <p className="text-xs sm:text-sm text-madas-text/70">{phone}</p>
+          <div>
+            <input type="tel" placeholder="Phone number"
+              className="w-full px-4 py-3 border text-sm bg-transparent outline-none transition-colors" style={{ borderColor: 'currentColor', opacity: 0.2 }} />
           </div>
-          <div className="text-center p-4 sm:p-6 bg-white rounded-xl border border-gray-200 sm:col-span-2 lg:col-span-1">
-            <span className="material-icons text-3xl sm:text-4xl text-primary mb-3 sm:mb-4">location_on</span>
-            <h3 className="text-sm sm:text-base font-semibold text-primary mb-2">Address</h3>
-            <p className="text-xs sm:text-sm text-madas-text/70 break-words">{address}</p>
+          <div>
+            <textarea placeholder="Comment" rows={6}
+              className="w-full px-4 py-3 border text-sm bg-transparent outline-none transition-colors resize-none" style={{ borderColor: 'currentColor', opacity: 0.2 }} />
           </div>
-        </div>
+          <div className="text-center">
+            <button type="submit"
+              className="inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-colors"
+              style={{ backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}>
+              Send
+            </button>
+          </div>
+        </form>
       </div>
     </section>
   );
 };
 
 export default memo(ContactSection);
-

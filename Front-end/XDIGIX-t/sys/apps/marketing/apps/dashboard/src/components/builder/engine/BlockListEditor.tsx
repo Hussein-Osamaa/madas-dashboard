@@ -17,8 +17,8 @@ interface Props {
 const BlockListEditor: React.FC<Props> = ({ schema, items, onChange, siteId, businessId }) => {
   return (
     <div className="p-4 space-y-3">
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-        {schema.label}s
+      <p className="text-xs font-bold text-[#6b7280] uppercase tracking-widest">
+        {schema.label}
       </p>
       <ArrayEditor
         label={schema.label}

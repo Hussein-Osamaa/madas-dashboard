@@ -31,6 +31,9 @@ import PartnersSection from '../components/builder/sections/PartnersSection';
 import NewsletterSection from '../components/builder/sections/NewsletterSection';
 import DividerSection from '../components/builder/sections/DividerSection';
 import ImageComparisonSection from '../components/builder/sections/ImageComparisonSection';
+import SlideshowSection from '../components/builder/sections/SlideshowSection';
+import ProductInfoSection from '../components/builder/sections/ProductInfoSection';
+import CartSection from '../components/builder/sections/CartSection';
 
 // ── Renderer Map ─────────────────────────────────────────────────────────
 // Each entry is a thin wrapper that passes data/style (and siteId where the
@@ -44,29 +47,39 @@ import ImageComparisonSection from '../components/builder/sections/ImageComparis
 // Only NavbarSection and FooterSection declare siteId in their Props type;
 // all others only accept data + style.
 
+// Shorthand for the block-editing props forwarded to sections with blocks
+const bp = (p: SectionRendererProps) => ({
+  isSelected: p.isSelected ?? false,
+  onEditBlock: p.onEditBlock,
+  onDeleteBlock: p.onDeleteBlock,
+});
+
 export const SECTION_RENDERERS: Record<SectionType, React.ComponentType<SectionRendererProps>> = {
-  hero:            ({ data, style }) => <HeroSection data={data as never} style={style} />,
-  navbar:          ({ data, style, siteId }) => <NavbarSection data={data as never} style={style} siteId={siteId} />,
-  features:        ({ data, style }) => <FeaturesSection data={data as never} style={style} />,
-  products:        ({ data, style }) => <ProductsSection data={data as never} style={style} />,
-  deals:           ({ data, style }) => <DealsSection data={data as never} style={style} />,
-  collections:     ({ data, style }) => <CollectionsSection data={data as never} style={style} />,
-  testimonials:    ({ data, style }) => <TestimonialsSection data={data as never} style={style} />,
-  cta:             ({ data, style }) => <CTASection data={data as never} style={style} />,
-  about:           ({ data, style }) => <AboutSection data={data as never} style={style} />,
-  contact:         ({ data, style }) => <ContactSection data={data as never} style={style} />,
-  gallery:         ({ data, style }) => <GallerySection data={data as never} style={style} />,
-  pricing:         ({ data, style }) => <PricingSection data={data as never} style={style} />,
-  faq:             ({ data, style }) => <FAQSection data={data as never} style={style} />,
-  footer:          ({ data, style, siteId }) => <FooterSection data={data as never} style={style} siteId={siteId} />,
-  stats:           ({ data, style }) => <StatsSection data={data as never} style={style} />,
-  team:            ({ data, style }) => <TeamSection data={data as never} style={style} />,
-  services:        ({ data, style }) => <ServicesSection data={data as never} style={style} />,
-  video:           ({ data, style }) => <VideoSection data={data as never} style={style} />,
-  countdown:       ({ data, style }) => <CountdownSection data={data as never} style={style} />,
-  banner:          ({ data, style }) => <BannerSection data={data as never} style={style} />,
-  partners:        ({ data, style }) => <PartnersSection data={data as never} style={style} />,
-  newsletter:      ({ data, style }) => <NewsletterSection data={data as never} style={style} />,
-  divider:         ({ data, style }) => <DividerSection data={data as never} style={style} />,
-  imageComparison: ({ data, style }) => <ImageComparisonSection data={data as never} style={style} />,
+  hero:            (p) => <HeroSection data={p.data as never} style={p.style} {...bp(p)} />,
+  navbar:          (p) => <NavbarSection data={p.data as never} style={p.style} siteId={p.siteId} />,
+  features:        (p) => <FeaturesSection data={p.data as never} style={p.style} {...bp(p)} />,
+  products:        (p) => <ProductsSection data={p.data as never} style={p.style} {...bp(p)} />,
+  deals:           (p) => <DealsSection data={p.data as never} style={p.style} {...bp(p)} />,
+  collections:     (p) => <CollectionsSection data={p.data as never} style={p.style} {...bp(p)} />,
+  testimonials:    (p) => <TestimonialsSection data={p.data as never} style={p.style} {...bp(p)} />,
+  cta:             (p) => <CTASection data={p.data as never} style={p.style} {...bp(p)} />,
+  about:           (p) => <AboutSection data={p.data as never} style={p.style} {...bp(p)} />,
+  contact:         (p) => <ContactSection data={p.data as never} style={p.style} {...bp(p)} />,
+  gallery:         (p) => <GallerySection data={p.data as never} style={p.style} {...bp(p)} />,
+  pricing:         (p) => <PricingSection data={p.data as never} style={p.style} {...bp(p)} />,
+  faq:             (p) => <FAQSection data={p.data as never} style={p.style} {...bp(p)} />,
+  footer:          (p) => <FooterSection data={p.data as never} style={p.style} siteId={p.siteId} {...bp(p)} />,
+  stats:           (p) => <StatsSection data={p.data as never} style={p.style} {...bp(p)} />,
+  team:            (p) => <TeamSection data={p.data as never} style={p.style} {...bp(p)} />,
+  services:        (p) => <ServicesSection data={p.data as never} style={p.style} {...bp(p)} />,
+  video:           (p) => <VideoSection data={p.data as never} style={p.style} {...bp(p)} />,
+  countdown:       (p) => <CountdownSection data={p.data as never} style={p.style} {...bp(p)} />,
+  banner:          (p) => <BannerSection data={p.data as never} style={p.style} {...bp(p)} />,
+  partners:        (p) => <PartnersSection data={p.data as never} style={p.style} {...bp(p)} />,
+  newsletter:      (p) => <NewsletterSection data={p.data as never} style={p.style} {...bp(p)} />,
+  divider:         (p) => <DividerSection data={p.data as never} style={p.style} {...bp(p)} />,
+  imageComparison: (p) => <ImageComparisonSection data={p.data as never} style={p.style} {...bp(p)} />,
+  slideshow:       (p) => <SlideshowSection data={p.data as never} style={p.style} {...bp(p)} />,
+  productInfo:     (p) => <ProductInfoSection data={p.data as never} style={p.style} {...bp(p)} />,
+  cart:            (p) => <CartSection data={p.data as never} style={p.style} {...bp(p)} />,
 };

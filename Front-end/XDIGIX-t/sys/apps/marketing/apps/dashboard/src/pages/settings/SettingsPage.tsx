@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDarkMode } from '../../contexts/DarkModeContext';
@@ -9,7 +9,69 @@ import { collection, db, doc, getDocs, addDoc, updateDoc, deleteDoc, query, wher
 import { getPlanPermissions } from '@shared/lib/planPermissions';
 import { useNavigate } from 'react-router-dom';
 
-type SettingsTab = 'general' | 'business' | 'notifications' | 'security' | 'roles' | 'permissions' | 'integrations' | 'linked-businesses';
+// Lazy-loaded settings sub-pages (rendered inside the content area)
+const AnalyticsPage = lazy(() => import('./AnalyticsPage'));
+const ShippingPage = lazy(() => import('./ShippingPage'));
+const PaymentsPage = lazy(() => import('./PaymentsPage'));
+
+type SettingsSection =
+  | 'general'
+  | 'plan'
+  | 'billing'
+  | 'users'
+  | 'payments'
+  | 'checkout'
+  | 'customer-accounts'
+  | 'shipping'
+  | 'taxes'
+  | 'locations'
+  | 'apps'
+  | 'sales-channels'
+  | 'domains'
+  | 'customer-events'
+  | 'notifications'
+  | 'linked-inventories'
+  | 'page-access'
+  | 'security'
+  | 'integrations'
+  | 'analytics'
+  | 'metafields'
+  | 'languages'
+  | 'customer-privacy'
+  | 'policies';
+
+type SidebarMenuItem = {
+  id: SettingsSection;
+  label: string;
+  icon: string;
+  route?: string;
+  comingSoon?: boolean;
+};
+
+const sidebarMenuItems: SidebarMenuItem[] = [
+  { id: 'general', label: 'General', icon: 'settings' },
+  { id: 'plan', label: 'Plan', icon: 'description' },
+  { id: 'billing', label: 'Billing', icon: 'receipt_long', comingSoon: true },
+  { id: 'users', label: 'Users', icon: 'people' },
+  { id: 'payments', label: 'Payments', icon: 'payments' },
+  { id: 'checkout', label: 'Checkout', icon: 'shopping_cart', comingSoon: true },
+  { id: 'customer-accounts', label: 'Customer accounts', icon: 'person', comingSoon: true },
+  { id: 'shipping', label: 'Shipping and delivery', icon: 'local_shipping' },
+  { id: 'taxes', label: 'Taxes and duties', icon: 'account_balance', comingSoon: true },
+  { id: 'locations', label: 'Locations', icon: 'location_on', comingSoon: true },
+  { id: 'apps', label: 'Apps', icon: 'apps', comingSoon: true },
+  { id: 'sales-channels', label: 'Sales channels', icon: 'store', comingSoon: true },
+  { id: 'domains', label: 'Domains', icon: 'dns', route: '/ecommerce/custom-domains' },
+  { id: 'customer-events', label: 'Customer events', icon: 'celebration', comingSoon: true },
+  { id: 'notifications', label: 'Notifications', icon: 'notifications' },
+  { id: 'linked-inventories', label: 'Linked Inventories', icon: 'link' },
+  { id: 'analytics', label: 'Analytics', icon: 'analytics' },
+  { id: 'integrations', label: 'Integrations', icon: 'extension' },
+  { id: 'metafields', label: 'Metafields and metaobjects', icon: 'folder_open', comingSoon: true },
+  { id: 'languages', label: 'Languages', icon: 'translate', comingSoon: true },
+  { id: 'customer-privacy', label: 'Customer privacy', icon: 'lock', comingSoon: true },
+  { id: 'policies', label: 'Policies', icon: 'policy', comingSoon: true },
+];
 
 const SettingsPage = () => {
   const { businessId, businessName, plan, loading, refresh } = useBusiness();
@@ -17,7 +79,8 @@ const SettingsPage = () => {
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
   const { loading: rbacLoading } = useRBAC();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const [activeSection, setActiveSection] = useState<SettingsSection>('general');
+  const [sidebarSearch, setSidebarSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [currency, setCurrency] = useState<string>('USD');
   const [fiscalYearStart, setFiscalYearStart] = useState<string>('january');
@@ -26,39 +89,36 @@ const SettingsPage = () => {
     return (localStorage.getItem('defaultInventorySource') as 'mine' | 'xdf') || 'mine';
   });
 
-  const tabs: Array<{ id: SettingsTab; label: string; icon: string }> = [
-    { id: 'general', label: 'General', icon: 'tune' },
-    { id: 'business', label: 'Business', icon: 'business' },
-    { id: 'linked-businesses', label: 'Linked Inventories', icon: 'link' },
-    { id: 'notifications', label: 'Notifications', icon: 'notifications' },
-    { id: 'security', label: 'Security', icon: 'security' },
-    { id: 'permissions', label: 'Page Access', icon: 'lock_open' },
-    { id: 'roles', label: 'Roles & Permissions', icon: 'admin_panel_settings' },
-    { id: 'integrations', label: 'Integrations', icon: 'extension' }
-  ];
+  const storeDomain = useMemo(() => {
+    const name = (businessNameInput || businessName || 'store').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return `${name}.xdigix.com`;
+  }, [businessNameInput, businessName]);
+
+  const filteredMenuItems = useMemo(() => {
+    if (!sidebarSearch.trim()) return sidebarMenuItems;
+    const q = sidebarSearch.toLowerCase();
+    return sidebarMenuItems.filter((item) => item.label.toLowerCase().includes(q));
+  }, [sidebarSearch]);
 
   // Load business settings when businessId is available
   useEffect(() => {
     const loadBusinessSettings = async () => {
       if (!businessId) return;
-      
+
       try {
         const businessDocRef = doc(db, 'businesses', businessId);
         const businessDoc = await getDoc(businessDocRef);
-        
+
         if (businessDoc.exists()) {
           const data = businessDoc.data();
-          // Load currency from plan.currency or business.currency, default to USD
-          const loadedCurrency = (data.plan as { currency?: string } | undefined)?.currency 
-            || (data.currency as string | undefined) 
+          const loadedCurrency = (data.plan as { currency?: string } | undefined)?.currency
+            || (data.currency as string | undefined)
             || 'USD';
           setCurrency(loadedCurrency);
-          
-          // Load fiscal year start
+
           const loadedFiscalYear = (data.fiscalYearStart as string | undefined) || 'january';
           setFiscalYearStart(loadedFiscalYear);
-          
-          // Load business name
+
           const loadedBusinessName = data.businessName || data.name || businessName || '';
           setBusinessNameInput(loadedBusinessName);
         }
@@ -66,7 +126,7 @@ const SettingsPage = () => {
         console.error('Error loading business settings:', error);
       }
     };
-    
+
     loadBusinessSettings();
   }, [businessId, businessName]);
 
@@ -80,23 +140,19 @@ const SettingsPage = () => {
     try {
       setSaving(true);
       const businessDocRef = doc(db, 'businesses', businessId);
-      
-      // Update business document with currency and other settings
+
       await updateDoc(businessDocRef, {
         businessName: businessNameInput || businessName,
         currency: currency,
         fiscalYearStart: fiscalYearStart,
-        // Update plan.currency as well for backward compatibility
         plan: {
           ...plan,
           currency: currency
         },
         updatedAt: new Date()
       });
-      
-      // Refresh business context to get updated values
+
       await refresh();
-      
       alert('Business settings saved successfully!');
     } catch (error) {
       console.error('Error saving business settings:', error);
@@ -106,521 +162,618 @@ const SettingsPage = () => {
     }
   }, [businessId, businessNameInput, businessName, currency, fiscalYearStart, plan, refresh]);
 
+  const handleMenuItemClick = (item: SidebarMenuItem) => {
+    if (item.route) {
+      navigate(item.route);
+      return;
+    }
+    setActiveSection(item.id);
+  };
+
   if (loading || rbacLoading) {
     return <FullScreenLoader message="Loading settings..." />;
   }
+
+  // Coming soon placeholder
+  const ComingSoonContent = ({ icon, label }: { icon: string; label: string }) => (
+    <div className="w-full">
+      <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+        <span className="material-icons text-5xl text-gray-300 mb-4 block">{icon}</span>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">{label}</h2>
+        <p className="text-sm text-gray-500">This feature is coming soon. Stay tuned for updates.</p>
+      </div>
+    </div>
+  );
+
+  // Render the right-side content based on active section
+  const renderContent = () => {
+    const currentItem = sidebarMenuItems.find((i) => i.id === activeSection);
+    if (currentItem?.comingSoon) {
+      return <ComingSoonContent icon={currentItem.icon} label={currentItem.label} />;
+    }
+
+    switch (activeSection) {
+      case 'general':
+        return (
+          <div className="w-full space-y-6">
+            {/* Store details card */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Store details</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Store name</label>
+                  <input
+                    type="text"
+                    value={businessNameInput}
+                    onChange={(e) => setBusinessNameInput(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                    placeholder="Your business name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Store contact email</label>
+                  <input
+                    type="email"
+                    defaultValue={user?.email || ''}
+                    disabled
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Email cannot be changed here. Contact support if needed.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Business ID</label>
+                  <input
+                    type="text"
+                    value={businessId || ''}
+                    disabled
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-500 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Preferences card */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Preferences</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                  <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                    <option value="en">English</option>
+                    <option value="ar">Arabic</option>
+                    <option value="fr">French</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Default Inventory</label>
+                  <p className="text-xs text-gray-500 mb-1">Choose which inventory view opens by default on the Products page.</p>
+                  <select
+                    value={defaultInventorySource}
+                    onChange={(e) => {
+                      const v = e.target.value as 'mine' | 'xdf';
+                      setDefaultInventorySource(v);
+                      localStorage.setItem('defaultInventorySource', v);
+                    }}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  >
+                    <option value="mine">My Products</option>
+                    <option value="xdf">XDF (XDIGIX-FULFILLMENT)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="EGP">EGP (E£)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="AED">AED (د.إ)</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">Used across all financial reports and transactions.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fiscal year start</label>
+                  <select
+                    value={fiscalYearStart}
+                    onChange={(e) => setFiscalYearStart(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  >
+                    <option value="january">January</option>
+                    <option value="april">April</option>
+                    <option value="july">July</option>
+                    <option value="october">October</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Dark Mode</p>
+                    <p className="text-xs text-gray-500">Toggle dark theme for the dashboard</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleDarkMode}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 ${
+                      isDark ? 'bg-gray-900' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        isDark ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Standards and formats card */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Standards and formats</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Time zone</label>
+                  <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                    <option value="UTC">UTC</option>
+                    <option value="Africa/Cairo">Africa/Cairo (GMT+2)</option>
+                    <option value="America/New_York">America/New_York (GMT-5)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Save button */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleSaveBusinessSettings}
+                disabled={saving}
+                className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'plan':
+        return (
+          <div className="w-full space-y-6">
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Current plan</h2>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                    {plan?.type ? `${plan.type.charAt(0).toUpperCase()}${plan.type.slice(1)}` : 'Basic'} Plan
+                    {plan?.status === 'trial' ? ' (Trial)' : ''}
+                  </span>
+                  <button
+                    type="button"
+                    className="text-sm text-gray-900 font-medium hover:underline"
+                    onClick={() => alert('Upgrade plan functionality coming soon')}
+                  >
+                    Upgrade
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Your current subscription plan determines which features and pages are available.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'users':
+        return (
+          <div className="w-full">
+            <RolesAndPermissionsTab businessId={businessId} businessName={businessName} plan={plan} />
+          </div>
+        );
+
+      case 'notifications':
+        return (
+          <div className="w-full">
+            <PermissionGuard
+              permission="settings_general"
+              fallback={
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800 font-medium">Access Restricted</p>
+                  <p className="text-yellow-700 text-sm mt-1">
+                    You don't have permission to modify notification settings.
+                  </p>
+                </div>
+              }
+            >
+              <div className="space-y-6">
+                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                  <h2 className="text-base font-semibold text-gray-900 mb-4">Notification Settings</h2>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Email Notifications</p>
+                        <p className="text-xs text-gray-500">Receive notifications via email</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                      >
+                        <span className="inline-block h-4 w-4 translate-x-6 transform rounded-full bg-white transition-transform" />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Order Notifications</p>
+                        <p className="text-xs text-gray-500">Get notified when new orders are placed</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                      >
+                        <span className="inline-block h-4 w-4 translate-x-6 transform rounded-full bg-white transition-transform" />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Low Stock Alerts</p>
+                        <p className="text-xs text-gray-500">Receive alerts when inventory is running low</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                      >
+                        <span className="inline-block h-4 w-4 translate-x-6 transform rounded-full bg-white transition-transform" />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Payment Notifications</p>
+                        <p className="text-xs text-gray-500">Get notified about payment updates</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                      >
+                        <span className="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            </PermissionGuard>
+          </div>
+        );
+
+      case 'payments':
+        return (
+          <div className="w-full">
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><span className="material-icons text-2xl text-gray-300 animate-spin">progress_activity</span></div>}>
+              <PaymentsPage />
+            </Suspense>
+          </div>
+        );
+
+      case 'shipping':
+        return (
+          <div className="w-full">
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><span className="material-icons text-2xl text-gray-300 animate-spin">progress_activity</span></div>}>
+              <ShippingPage />
+            </Suspense>
+          </div>
+        );
+
+      case 'analytics':
+        return (
+          <div className="w-full">
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><span className="material-icons text-2xl text-gray-300 animate-spin">progress_activity</span></div>}>
+              <AnalyticsPage />
+            </Suspense>
+          </div>
+        );
+
+      case 'linked-inventories':
+        return (
+          <div className="w-full">
+            <LinkedBusinessesTab businessId={businessId} />
+          </div>
+        );
+
+      case 'page-access':
+        return (
+          <div className="w-full">
+            <PageAccessTab plan={plan} />
+          </div>
+        );
+
+      case 'security':
+        return (
+          <div className="w-full">
+            <PermissionGuard
+              permission="settings_general"
+              fallback={
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800 font-medium">Access Restricted</p>
+                  <p className="text-yellow-700 text-sm mt-1">
+                    You don't have permission to modify security settings.
+                  </p>
+                </div>
+              }
+            >
+              <div className="space-y-6">
+                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                  <h2 className="text-base font-semibold text-gray-900 mb-4">Change password</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                      <input
+                        type="password"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        placeholder="Enter current password"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                      <input
+                        type="password"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        placeholder="Enter new password"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">Password must be at least 8 characters long</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                      <input
+                        type="password"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                  <h2 className="text-base font-semibold text-gray-900 mb-4">Two-Factor Authentication</h2>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">Add an extra layer of security to your account</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                    >
+                      <span className="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                  <h2 className="text-base font-semibold text-gray-900 mb-4">Active Sessions</h2>
+                  <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <div>
+                        <p className="font-medium text-gray-700">Current Session</p>
+                        <p className="text-xs text-gray-500">This device - {new Date().toLocaleString()}</p>
+                      </div>
+                      <span className="text-xs text-green-600 font-medium">Active</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="mt-3 text-sm text-red-600 hover:underline"
+                    onClick={() => alert('View all sessions functionality coming soon')}
+                  >
+                    View All Sessions
+                  </button>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60"
+                  >
+                    {saving ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+              </div>
+            </PermissionGuard>
+          </div>
+        );
+
+      case 'integrations':
+        return (
+          <div className="w-full">
+            <PermissionGuard
+              permission="settings_integrations"
+              fallback={
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800 font-medium">Access Restricted</p>
+                  <p className="text-yellow-700 text-sm mt-1">
+                    You don't have permission to modify integration settings.
+                  </p>
+                </div>
+              }
+            >
+              <div className="space-y-6">
+                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                  <h2 className="text-base font-semibold text-gray-900 mb-2">Integrations</h2>
+                  <p className="text-sm text-gray-500 mb-5">
+                    Manage your third-party integrations and service connections.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('analytics')}
+                      className="flex items-start space-x-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-gray-400 hover:shadow-sm transition-all text-left"
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <span className="material-icons text-gray-700 text-xl">analytics</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm mb-0.5">Analytics</h3>
+                        <p className="text-xs text-gray-500">
+                          Meta, Google, TikTok, Snapchat, Pinterest, and custom scripts.
+                        </p>
+                      </div>
+                      <span className="material-icons text-gray-400 text-lg">chevron_right</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('shipping')}
+                      className="flex items-start space-x-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-gray-400 hover:shadow-sm transition-all text-left"
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <span className="material-icons text-blue-600 text-xl">local_shipping</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm mb-0.5">Shipping</h3>
+                        <p className="text-xs text-gray-500">
+                          Aramex, DHL, FedEx, UPS, and local providers.
+                        </p>
+                      </div>
+                      <span className="material-icons text-gray-400 text-lg">chevron_right</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('payments')}
+                      className="flex items-start space-x-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-gray-400 hover:shadow-sm transition-all text-left"
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                        <span className="material-icons text-green-600 text-xl">payments</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm mb-0.5">Payment Methods</h3>
+                        <p className="text-xs text-gray-500">
+                          Stripe, Paymob, Fawry, InstaPay, Vodafone Cash, and bank transfers.
+                        </p>
+                      </div>
+                      <span className="material-icons text-gray-400 text-lg">chevron_right</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </PermissionGuard>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <PermissionGuard
       permission="settings_general"
       fallback={
         <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-          <span className="material-icons text-6xl text-madas-text/30 mb-4">lock</span>
-          <p className="text-lg font-medium text-madas-text/70 mb-2">Access Denied</p>
-          <p className="text-sm text-madas-text/60">
+          <span className="material-icons text-6xl text-gray-300 mb-4">lock</span>
+          <p className="text-lg font-medium text-gray-500 mb-2">Access Denied</p>
+          <p className="text-sm text-gray-400">
             You don't have permission to access settings. Please contact your administrator.
           </p>
         </div>
       }
     >
-      <div className="space-y-6 px-6 py-8">
-        <header>
-          <h1 className="text-3xl font-semibold text-primary">Settings</h1>
-          <p className="text-sm text-madas-text/70">Manage your account and business preferences.</p>
-        </header>
-
-        <div className="space-y-6">
-          {/* Horizontal Tab Navigation */}
-          <nav className="flex flex-wrap gap-2 rounded-xl border border-gray-100 bg-white p-2 overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-base hover:text-primary'
-                }`}
-              >
-                <span className="material-icons text-base">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-
-        {/* Main Content */}
-        <main>
-          <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-            {activeTab === 'general' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-primary mb-2">General Settings</h2>
-                  <p className="text-sm text-madas-text/70">Manage your account preferences and display settings.</p>
-                </div>
-
-                <section className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Display Name</label>
-                    <input
-                      type="text"
-                      defaultValue={user?.displayName || ''}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="Your display name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Email</label>
-                    <input
-                      type="email"
-                      defaultValue={user?.email || ''}
-                      disabled
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-madas-text/60"
-                    />
-                    <p className="mt-1 text-xs text-madas-text/60">Email cannot be changed here. Contact support if needed.</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Language</label>
-                    <select className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
-                      <option value="en">English</option>
-                      <option value="ar">Arabic</option>
-                      <option value="fr">French</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Time Zone</label>
-                    <select className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
-                      <option value="UTC">UTC</option>
-                      <option value="Africa/Cairo">Africa/Cairo (GMT+2)</option>
-                      <option value="America/New_York">America/New_York (GMT-5)</option>
-                    </select>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-100">
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Default Inventory</label>
-                    <p className="text-xs text-madas-text/60 mb-2">Choose which inventory view opens by default on the Products page.</p>
-                    <select
-                      value={defaultInventorySource}
-                      onChange={(e) => {
-                        const v = e.target.value as 'mine' | 'xdf';
-                        setDefaultInventorySource(v);
-                        localStorage.setItem('defaultInventorySource', v);
-                      }}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                    >
-                      <option value="mine">My Products</option>
-                      <option value="xdf">XDF (XDIGIX-FULFILLMENT)</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div>
-                      <p className="text-sm font-medium text-madas-text/80">Dark Mode</p>
-                      <p className="text-xs text-madas-text/60">Toggle dark theme for the dashboard</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={toggleDarkMode}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 ${
-                        isDark ? 'bg-primary' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          isDark ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </section>
-
-                <div className="flex justify-end pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'business' && (
-              <PermissionGuard
-                permission="settings_general"
-                fallback={
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-yellow-800 font-medium">Access Restricted</p>
-                    <p className="text-yellow-700 text-sm mt-1">
-                      You don't have permission to modify business settings.
-                    </p>
-                  </div>
-                }
-              >
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-primary mb-2">Business Settings</h2>
-                    <p className="text-sm text-madas-text/70">Manage your business information and preferences.</p>
-                  </div>
-
-                <section className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Business Name</label>
-                    <input
-                      type="text"
-                      value={businessNameInput}
-                      onChange={(e) => setBusinessNameInput(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="Your business name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Business ID</label>
-                    <input
-                      type="text"
-                      value={businessId || ''}
-                      disabled
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-madas-text/60 font-mono text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Current Plan</label>
-                    <div className="flex items-center space-x-3">
-                      <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                        {plan?.type ? `${plan.type.charAt(0).toUpperCase()}${plan.type.slice(1)}` : 'Basic'} Plan
-                        {plan?.status === 'trial' ? ' (Trial)' : ''}
-                      </span>
-                      <button
-                        type="button"
-                        className="text-sm text-primary hover:underline"
-                        onClick={() => alert('Upgrade plan functionality coming soon')}
-                      >
-                        Upgrade
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Currency</label>
-                    <select 
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                    >
-                      <option value="USD">USD ($)</option>
-                      <option value="EGP">EGP (E£)</option>
-                      <option value="EUR">EUR (€)</option>
-                      <option value="GBP">GBP (£)</option>
-                      <option value="AED">AED (د.إ)</option>
-                    </select>
-                    <p className="mt-1 text-xs text-madas-text/60">Select your business currency. This will be used across all financial reports and transactions.</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Fiscal Year Start</label>
-                    <select 
-                      value={fiscalYearStart}
-                      onChange={(e) => setFiscalYearStart(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                    >
-                      <option value="january">January</option>
-                      <option value="april">April</option>
-                      <option value="july">July</option>
-                      <option value="october">October</option>
-                    </select>
-                  </div>
-                </section>
-
-                <div className="flex justify-end pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    onClick={handleSaveBusinessSettings}
-                    disabled={saving}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </div>
-              </PermissionGuard>
-            )}
-
-            {activeTab === 'notifications' && (
-              <PermissionGuard
-                permission="settings_general"
-                fallback={
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-yellow-800 font-medium">Access Restricted</p>
-                    <p className="text-yellow-700 text-sm mt-1">
-                      You don't have permission to modify notification settings.
-                    </p>
-                  </div>
-                }
-              >
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-primary mb-2">Notification Settings</h2>
-                    <p className="text-sm text-madas-text/70">Configure how and when you receive notifications.</p>
-                  </div>
-
-                <section className="space-y-4">
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                    <div>
-                      <p className="text-sm font-medium text-madas-text/80">Email Notifications</p>
-                      <p className="text-xs text-madas-text/60">Receive notifications via email</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                    >
-                      <span className="inline-block h-4 w-4 translate-x-6 transform rounded-full bg-white transition-transform" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                    <div>
-                      <p className="text-sm font-medium text-madas-text/80">Order Notifications</p>
-                      <p className="text-xs text-madas-text/60">Get notified when new orders are placed</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                    >
-                      <span className="inline-block h-4 w-4 translate-x-6 transform rounded-full bg-white transition-transform" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                    <div>
-                      <p className="text-sm font-medium text-madas-text/80">Low Stock Alerts</p>
-                      <p className="text-xs text-madas-text/60">Receive alerts when inventory is running low</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                    >
-                      <span className="inline-block h-4 w-4 translate-x-6 transform rounded-full bg-white transition-transform" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                    <div>
-                      <p className="text-sm font-medium text-madas-text/80">Payment Notifications</p>
-                      <p className="text-xs text-madas-text/60">Get notified about payment updates</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                    >
-                      <span className="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform" />
-                    </button>
-                  </div>
-                </section>
-
-                <div className="flex justify-end pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </div>
-              </PermissionGuard>
-            )}
-
-            {activeTab === 'security' && (
-              <PermissionGuard
-                permission="settings_general"
-                fallback={
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-yellow-800 font-medium">Access Restricted</p>
-                    <p className="text-yellow-700 text-sm mt-1">
-                      You don't have permission to modify security settings.
-                    </p>
-                  </div>
-                }
-              >
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-primary mb-2">Security Settings</h2>
-                    <p className="text-sm text-madas-text/70">Manage your account security and authentication.</p>
-                  </div>
-
-                <section className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Current Password</label>
-                    <input
-                      type="password"
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="Enter current password"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">New Password</label>
-                    <input
-                      type="password"
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="Enter new password"
-                    />
-                    <p className="mt-1 text-xs text-madas-text/60">Password must be at least 8 characters long</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">Confirm New Password</label>
-                    <input
-                      type="password"
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="Confirm new password"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div>
-                      <p className="text-sm font-medium text-madas-text/80">Two-Factor Authentication</p>
-                      <p className="text-xs text-madas-text/60">Add an extra layer of security to your account</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-                    >
-                      <span className="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform" />
-                    </button>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-medium text-madas-text/80 mb-3">Active Sessions</h3>
-                    <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <div>
-                          <p className="font-medium text-madas-text/80">Current Session</p>
-                          <p className="text-xs text-madas-text/60">This device • {new Date().toLocaleString()}</p>
-                        </div>
-                        <span className="text-xs text-green-600 font-medium">Active</span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="mt-3 text-sm text-red-600 hover:underline"
-                      onClick={() => alert('View all sessions functionality coming soon')}
-                    >
-                      View All Sessions
-                    </button>
-                  </div>
-                </section>
-
-                <div className="flex justify-end pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f3c19] disabled:opacity-60"
-                  >
-                    {saving ? 'Updating...' : 'Update Password'}
-                  </button>
-                </div>
-              </div>
-              </PermissionGuard>
-            )}
-
-            {activeTab === 'linked-businesses' && (
-              <LinkedBusinessesTab businessId={businessId} />
-            )}
-
-            {activeTab === 'permissions' && (
-              <PageAccessTab plan={plan} />
-            )}
-
-            {activeTab === 'roles' && (
-              <RolesAndPermissionsTab businessId={businessId} businessName={businessName} plan={plan} />
-            )}
-
-            {activeTab === 'integrations' && (
-              <PermissionGuard
-                permission="settings_integrations"
-                fallback={
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-yellow-800 font-medium">Access Restricted</p>
-                    <p className="text-yellow-700 text-sm mt-1">
-                      You don't have permission to modify integration settings.
-                    </p>
-                  </div>
-                }
-              >
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-primary mb-2">Integrations</h2>
-                    <p className="text-sm text-madas-text/70">
-                      Manage your third-party integrations and tracking pixels.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => navigate('/settings/analytics')}
-                      className="flex items-start space-x-4 p-6 rounded-xl border border-gray-200 bg-white hover:border-primary hover:shadow-md transition-all text-left"
-                    >
-                      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <span className="material-icons text-primary text-2xl">analytics</span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-madas-text/90 mb-1">Analytics</h3>
-                        <p className="text-sm text-madas-text/60">
-                          Manage tracking pixels including Meta, Google, TikTok, Snapchat, Pinterest, and custom scripts.
-                        </p>
-                      </div>
-                      <span className="material-icons text-madas-text/40">chevron_right</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => navigate('/settings/shipping')}
-                      className="flex items-start space-x-4 p-6 rounded-xl border border-gray-200 bg-white hover:border-primary hover:shadow-md transition-all text-left"
-                    >
-                      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <span className="material-icons text-blue-600 text-2xl">local_shipping</span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-madas-text/90 mb-1">Shipping</h3>
-                        <p className="text-sm text-madas-text/60">
-                          Configure shipping carriers including Aramex, DHL, FedEx, UPS, and local providers.
-                        </p>
-                      </div>
-                      <span className="material-icons text-madas-text/40">chevron_right</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => navigate('/settings/payments')}
-                      className="flex items-start space-x-4 p-6 rounded-xl border border-gray-200 bg-white hover:border-primary hover:shadow-md transition-all text-left"
-                    >
-                      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                        <span className="material-icons text-green-600 text-2xl">payments</span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-madas-text/90 mb-1">Payment Methods</h3>
-                        <p className="text-sm text-madas-text/60">
-                          Configure payment gateways including Stripe, Paymob, Fawry, InstaPay, Vodafone Cash, and bank transfers.
-                        </p>
-                      </div>
-                      <span className="material-icons text-madas-text/40">chevron_right</span>
-                    </button>
-                  </div>
-                </div>
-              </PermissionGuard>
-            )}
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-3">
+          <div className="flex items-center space-x-3">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <span className="material-icons text-gray-600 text-xl">arrow_back</span>
+            </button>
+            <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
           </div>
-        </main>
+        </div>
+
+        <div className="flex min-h-[calc(100vh-57px)]">
+          {/* Left Sidebar */}
+          <aside className="w-[280px] flex-shrink-0 bg-[#f6f6f7] border-r border-gray-200 flex flex-col">
+            {/* Store info */}
+            <div className="px-4 pt-5 pb-3">
+              <h2 className="text-sm font-semibold text-gray-900 truncate">
+                {businessNameInput || businessName || 'My Store'}
+              </h2>
+              <p className="text-xs text-gray-500 truncate mt-0.5">{storeDomain}</p>
+            </div>
+
+            {/* Search */}
+            <div className="px-3 pb-2">
+              <div className="relative">
+                <span className="material-icons absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                <input
+                  type="text"
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  placeholder="Search"
+                  className="w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Menu items */}
+            <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+              {filteredMenuItems.map((item) => {
+                const isActive = activeSection === item.id && !item.route;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleMenuItemClick(item)}
+                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-all text-left ${
+                      isActive
+                        ? 'bg-white shadow-sm text-gray-900 font-medium'
+                        : 'text-gray-700 hover:bg-gray-200/60'
+                    }`}
+                  >
+                    <span className={`material-icons text-lg ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                      {item.icon}
+                    </span>
+                    <span className="truncate">{item.label}</span>
+                    {item.route && (
+                      <span className="material-icons text-gray-400 text-sm ml-auto">open_in_new</span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* User info at bottom */}
+            <div className="border-t border-gray-200 px-4 py-3 flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                <span className="material-icons text-gray-600 text-base">person</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {user?.displayName || 'User'}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
+              </div>
+            </div>
+          </aside>
+
+          {/* Right content area */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+            {renderContent()}
+          </main>
+        </div>
       </div>
-    </div>
     </PermissionGuard>
   );
 };
@@ -631,9 +784,9 @@ type LinkedBusinessesTabProps = {
 };
 
 const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
-  const { 
-    linkedBusinesses, 
-    removeLinkedBusiness, 
+  const {
+    linkedBusinesses,
+    removeLinkedBusiness,
     role,
     incomingLinkRequests,
     outgoingLinkRequests,
@@ -668,7 +821,7 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
     setSuccessMessage(null);
 
     const result = await sendLinkRequest(newBusinessId.trim(), 'read');
-    
+
     if (result.success) {
       setNewBusinessId('');
       setSuccessMessage(result.message);
@@ -676,7 +829,7 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
     } else {
       setError(result.message);
     }
-    
+
     setSending(false);
   };
 
@@ -738,15 +891,15 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-primary mb-2">Linked Inventories</h2>
-            <p className="text-sm text-madas-text/70">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Linked Inventories</h2>
+            <p className="text-sm text-gray-500">
               Link other businesses to view their inventory from your dashboard.
             </p>
           </div>
           <button
             type="button"
             onClick={() => refreshLinkRequests()}
-            className="p-2 rounded-lg hover:bg-gray-100 text-madas-text/60 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
             title="Refresh requests"
           >
             <span className="material-icons text-xl">refresh</span>
@@ -776,8 +929,8 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
                       <span className="material-icons text-orange-600 text-lg">store</span>
                     </div>
                     <div>
-                      <h4 className="font-medium text-madas-text/90">{request.fromBusinessName}</h4>
-                      <p className="text-xs text-madas-text/50">
+                      <h4 className="font-medium text-gray-900">{request.fromBusinessName}</h4>
+                      <p className="text-xs text-gray-400">
                         Requested {request.requestedAt.toLocaleDateString()}
                       </p>
                     </div>
@@ -812,12 +965,12 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
 
         {/* Send Request Section */}
         {isOwner && (
-          <div className="rounded-xl border border-gray-100 bg-white p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Request Access to Another Business</h3>
-            <p className="text-sm text-madas-text/70 mb-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Request Access to Another Business</h3>
+            <p className="text-sm text-gray-500 mb-4">
               Enter the Business ID of the business you want to link. They will receive a request and must approve it before you can view their inventory.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
@@ -828,13 +981,13 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
                   setSuccessMessage(null);
                 }}
                 placeholder="Enter Business ID (e.g., abc123xyz...)"
-                className="flex-1 rounded-lg border border-gray-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               />
               <button
                 type="button"
                 onClick={handleSendRequest}
                 disabled={sending || !newBusinessId.trim()}
-                className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-[#1f3c19] transition-colors disabled:opacity-60 whitespace-nowrap"
+                className="rounded-lg bg-gray-900 px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors disabled:opacity-60 whitespace-nowrap"
               >
                 {sending ? (
                   <span className="flex items-center gap-2">
@@ -849,13 +1002,13 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
                 )}
               </button>
             </div>
-            
+
             {error && (
               <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
-            
+
             {successMessage && (
               <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-700">{successMessage}</p>
@@ -866,16 +1019,16 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
 
         {/* Outgoing Requests (Pending) */}
         {outgoingLinkRequests && outgoingLinkRequests.length > 0 && (
-          <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center gap-2">
                 <span className="material-icons text-blue-600">pending</span>
-                <h3 className="text-lg font-semibold text-primary">Pending Requests</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Pending Requests</h3>
                 <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                   {outgoingLinkRequests.length}
                 </span>
               </div>
-              <p className="text-sm text-madas-text/70 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 Waiting for approval from other businesses
               </p>
             </div>
@@ -887,8 +1040,8 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
                       <span className="material-icons text-blue-600 text-lg">hourglass_empty</span>
                     </div>
                     <div>
-                      <h4 className="font-medium text-madas-text/90">{request.toBusinessName}</h4>
-                      <p className="text-xs text-madas-text/50">
+                      <h4 className="font-medium text-gray-900">{request.toBusinessName}</h4>
+                      <p className="text-xs text-gray-400">
                         Sent {request.requestedAt.toLocaleDateString()}
                       </p>
                     </div>
@@ -946,22 +1099,22 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
         </div>
 
         {/* Linked Businesses List */}
-        <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center gap-2">
               <span className="material-icons text-green-600">link</span>
-              <h3 className="text-lg font-semibold text-primary">Linked Businesses</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Linked Businesses</h3>
             </div>
-            <p className="text-sm text-madas-text/70 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               {linkedBusinesses?.length || 0} business{(linkedBusinesses?.length || 0) !== 1 ? 'es' : ''} linked
             </p>
           </div>
-          
+
           {!linkedBusinesses || linkedBusinesses.length === 0 ? (
             <div className="p-12 text-center">
-              <span className="material-icons text-5xl text-madas-text/20 mb-4 block">link_off</span>
-              <p className="text-madas-text/70 mb-2">No linked businesses yet</p>
-              <p className="text-sm text-madas-text/50">
+              <span className="material-icons text-5xl text-gray-200 mb-4 block">link_off</span>
+              <p className="text-gray-500 mb-2">No linked businesses yet</p>
+              <p className="text-sm text-gray-400">
                 Send a request above to start viewing other inventories
               </p>
             </div>
@@ -974,8 +1127,8 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
                       <span className="material-icons text-green-600 text-lg">store</span>
                     </div>
                     <div>
-                      <h4 className="font-medium text-madas-text/90">{business.name}</h4>
-                      <p className="text-xs text-madas-text/50 font-mono">{business.id}</p>
+                      <h4 className="font-medium text-gray-900">{business.name}</h4>
+                      <p className="text-xs text-gray-400 font-mono">{business.id}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -1005,43 +1158,43 @@ const LinkedBusinessesTab = ({ businessId }: LinkedBusinessesTabProps) => {
         </div>
 
         {/* Info Card */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
-          <h3 className="text-lg font-semibold text-primary mb-4">How Linked Inventories Work</h3>
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">How Linked Inventories Work</h3>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-semibold text-sm">1</span>
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-gray-900 font-semibold text-sm">1</span>
               </div>
               <div>
-                <p className="font-medium text-madas-text/90">Get the Business ID</p>
-                <p className="text-sm text-madas-text/60">Ask the other business owner to share their Business ID from their Settings page.</p>
+                <p className="font-medium text-gray-900">Get the Business ID</p>
+                <p className="text-sm text-gray-500">Ask the other business owner to share their Business ID from their Settings page.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-semibold text-sm">2</span>
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-gray-900 font-semibold text-sm">2</span>
               </div>
               <div>
-                <p className="font-medium text-madas-text/90">Send a Request</p>
-                <p className="text-sm text-madas-text/60">Enter their Business ID and send a link request. They will be notified and can approve or reject it.</p>
+                <p className="font-medium text-gray-900">Send a Request</p>
+                <p className="text-sm text-gray-500">Enter their Business ID and send a link request. They will be notified and can approve or reject it.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-semibold text-sm">3</span>
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-gray-900 font-semibold text-sm">3</span>
               </div>
               <div>
-                <p className="font-medium text-madas-text/90">Wait for Approval</p>
-                <p className="text-sm text-madas-text/60">Once they approve your request, the link will be established and you can view their inventory.</p>
+                <p className="font-medium text-gray-900">Wait for Approval</p>
+                <p className="text-sm text-gray-500">Once they approve your request, the link will be established and you can view their inventory.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-semibold text-sm">4</span>
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-gray-900 font-semibold text-sm">4</span>
               </div>
               <div>
-                <p className="font-medium text-madas-text/90">View Their Inventory</p>
-                <p className="text-sm text-madas-text/60">Switch between inventories from the Products page using the business selector dropdown.</p>
+                <p className="font-medium text-gray-900">View Their Inventory</p>
+                <p className="text-sm text-gray-500">Switch between inventories from the Products page using the business selector dropdown.</p>
               </div>
             </div>
           </div>
@@ -1139,22 +1292,22 @@ const PageAccessTab = ({ plan }: PageAccessTabProps) => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-primary mb-2">Page Access</h2>
-        <p className="text-sm text-madas-text/70">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Page Access</h2>
+        <p className="text-sm text-gray-500">
           View which pages and features are available in your <strong>{getPlanDisplayName()}</strong>.
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-4 mb-4">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-madas-text/80">Current Plan</p>
-            <p className="text-lg font-semibold text-primary mt-1">{getPlanDisplayName()}</p>
+            <p className="text-sm font-medium text-gray-700">Current Plan</p>
+            <p className="text-lg font-semibold text-gray-900 mt-1">{getPlanDisplayName()}</p>
           </div>
           <button
             type="button"
             onClick={() => alert('Upgrade plan functionality coming soon')}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-[#1f3c19] transition-colors"
+            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
           >
             Upgrade Plan
           </button>
@@ -1167,10 +1320,10 @@ const PageAccessTab = ({ plan }: PageAccessTabProps) => {
           const totalCount = category.pages.length;
 
           return (
-            <div key={category.category} className="rounded-xl border border-gray-100 bg-white p-6">
+            <div key={category.category} className="rounded-xl border border-gray-200 bg-white p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-primary">{category.category}</h3>
-                <span className="text-sm text-madas-text/60">
+                <h3 className="text-lg font-semibold text-gray-900">{category.category}</h3>
+                <span className="text-sm text-gray-500">
                   {accessibleCount} of {totalCount} available
                 </span>
               </div>
@@ -1200,7 +1353,7 @@ const PageAccessTab = ({ plan }: PageAccessTabProps) => {
                           <div className="flex items-center justify-between">
                             <h4
                               className={`text-sm font-semibold ${
-                                accessible ? 'text-madas-text/90' : 'text-madas-text/50'
+                                accessible ? 'text-gray-900' : 'text-gray-400'
                               }`}
                             >
                               {page.name}
@@ -1216,7 +1369,7 @@ const PageAccessTab = ({ plan }: PageAccessTabProps) => {
                             )}
                           </div>
                           {!accessible && (
-                            <p className="text-xs text-madas-text/50 mt-1">
+                            <p className="text-xs text-gray-400 mt-1">
                               Upgrade plan to access
                             </p>
                           )}
@@ -1655,10 +1808,10 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
 
   const loadData = useCallback(async () => {
     if (!businessId) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Load staff members
       const staffRef = collection(db, 'businesses', businessId, 'staff');
       const staffSnapshot = await getDocs(staffRef);
@@ -1670,10 +1823,10 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
 
       // Load permissions
       const permissionsData = await getPermissions();
-      
+
       console.log('[SettingsPage] Loaded permissions:', permissionsData);
       console.log('[SettingsPage] Permissions count:', permissionsData?.length || 0);
-      
+
       // Show all permissions in the edit modal (not filtered by plan)
       // Plan filtering is done at the checkbox level
       if (!permissionsData || permissionsData.length === 0) {
@@ -1715,7 +1868,7 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
 
     try {
       // Get permissions based on role
-      const permissions = inviteData.role === 'other' 
+      const permissions = inviteData.role === 'other'
         ? inviteData.customPermissions // Use custom permissions if "Other" is selected
         : getRolePermissions(inviteData.role);
 
@@ -1766,22 +1919,22 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
         const emailResult = await emailResponse.json();
 
         if (emailResult.success) {
-          alert(`✅ Staff added and invitation email sent to ${inviteData.email}!`);
+          alert(`Staff added and invitation email sent to ${inviteData.email}!`);
         } else {
-          alert(`✅ Staff added, but email failed: ${emailResult.message}. Please share login link manually:\n\n${setupUrl}`);
+          alert(`Staff added, but email failed: ${emailResult.message}. Please share login link manually:\n\n${setupUrl}`);
         }
       } catch (emailError) {
         console.error('Email sending error:', emailError);
-        alert(`✅ Staff added, but couldn't send email. Please share this link manually:\n\n${setupUrl}`);
+        alert(`Staff added, but couldn't send email. Please share this link manually:\n\n${setupUrl}`);
       }
 
       setShowInviteModal(false);
-      setInviteData({ 
-        firstName: '', 
-        lastName: '', 
-        email: '', 
-        phoneCode: '+20', 
-        phoneNumber: '', 
+      setInviteData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneCode: '+20',
+        phoneNumber: '',
         role: 'administrator',
         showCustomPermissions: false,
         customPermissions: []
@@ -1806,8 +1959,8 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-        <p className="text-sm text-madas-text/70">Loading staff members...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
+        <p className="text-sm text-gray-500">Loading staff members...</p>
       </div>
     );
   }
@@ -1815,8 +1968,8 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-primary mb-2">Staff Management</h2>
-        <p className="text-sm text-madas-text/70">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Staff Management</h2>
+        <p className="text-sm text-gray-500">
           Manage staff invitations and control their access to pages based on your subscription plan.
         </p>
       </div>
@@ -1824,18 +1977,18 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
       {/* Staff Members Section */}
       <section className="space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-primary">Staff Members</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Staff Members</h3>
           <button
             type="button"
             onClick={() => setShowInviteModal(true)}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-[#1f3c19] transition-colors"
+            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
           >
             <span className="material-icons text-base mr-1 align-middle">person_add</span>
             Invite Staff
           </button>
         </div>
 
-        <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -1897,7 +2050,7 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                             // Object format: { orders: ["view", "create"] } (legacy format)
                             let permissionKeys: string[] = [];
                             const staffPermissions = staff.permissions;
-                            
+
                             if (Array.isArray(staffPermissions)) {
                               // Already in array format
                               permissionKeys = staffPermissions;
@@ -1918,12 +2071,12 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                                 }
                               });
                             }
-                            
+
                             // Parse name into first and last name
                             const nameParts = (staff.name || '').split(' ');
                             const firstName = staff.firstName || nameParts[0] || '';
                             const lastName = staff.lastName || nameParts.slice(1).join(' ') || '';
-                            
+
                             setEditStaffData({
                               firstName: firstName,
                               lastName: lastName,
@@ -1935,7 +2088,7 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                             });
                             setShowEditStaffModal(true);
                           }}
-                          className="text-primary hover:text-primary-dark"
+                          className="text-gray-900 hover:text-gray-700"
                           title="Edit"
                         >
                           <span className="material-icons text-base">edit</span>
@@ -1997,69 +2150,69 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 my-8">
-            <h3 className="text-xl font-semibold text-primary mb-6">Add staff</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Add staff</h3>
             <div className="space-y-6">
               {/* Personal Information */}
             <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                       First Name
                 </label>
                 <input
                   type="text"
                       value={inviteData.firstName}
                       onChange={(e) => setInviteData({ ...inviteData, firstName: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       placeholder="First Name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                       Last Name
                     </label>
                     <input
                       type="text"
                       value={inviteData.lastName}
                       onChange={(e) => setInviteData({ ...inviteData, lastName: e.target.value })}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       placeholder="Last Name"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email Address
                 </label>
                 <input
                   type="email"
                   value={inviteData.email}
                   onChange={(e) => setInviteData({ ...inviteData, email: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     placeholder="Email Address"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                     Phone Number
                 </label>
                   <div className="flex gap-2">
                 <select
                       value={inviteData.phoneCode}
                       onChange={(e) => setInviteData({ ...inviteData, phoneCode: e.target.value })}
-                      className="rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     >
-                      <option value="+20">🇪🇬 +20</option>
-                      <option value="+1">🇺🇸 +1</option>
-                      <option value="+44">🇬🇧 +44</option>
-                      <option value="+971">🇦🇪 +971</option>
-                      <option value="+966">🇸🇦 +966</option>
+                      <option value="+20">+20</option>
+                      <option value="+1">+1</option>
+                      <option value="+44">+44</option>
+                      <option value="+971">+971</option>
+                      <option value="+966">+966</option>
                 </select>
                     <input
                       type="tel"
                       value={inviteData.phoneNumber}
                       onChange={(e) => setInviteData({ ...inviteData, phoneNumber: e.target.value })}
-                      className="flex-1 rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       placeholder="Phone Number"
                     />
               </div>
@@ -2068,98 +2221,98 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
 
               {/* Role Selection */}
               <div>
-                <h4 className="text-sm font-semibold text-madas-text/90 mb-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-4">
                   Select a Role for the staff you're inviting
                 </h4>
                 <div className="space-y-3">
-                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary cursor-pointer transition-colors">
+                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       name="role"
                       value="administrator"
                       checked={inviteData.role === 'administrator'}
                       onChange={(e) => setInviteData({ ...inviteData, role: e.target.value, showCustomPermissions: false })}
-                      className="mt-1 h-4 w-4 text-primary focus:ring-2 focus:ring-primary"
+                      className="mt-1 h-4 w-4 text-gray-900 focus:ring-2 focus:ring-gray-900"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-madas-text/90">Administrator</div>
-                      <div className="text-xs text-madas-text/60 mt-0.5">Can Access Everything</div>
+                      <div className="font-medium text-sm text-gray-900">Administrator</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Can Access Everything</div>
                     </div>
                   </label>
 
-                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary cursor-pointer transition-colors">
+                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       name="role"
                       value="posstaff"
                       checked={inviteData.role === 'posstaff'}
                       onChange={(e) => setInviteData({ ...inviteData, role: e.target.value, showCustomPermissions: false })}
-                      className="mt-1 h-4 w-4 text-primary focus:ring-2 focus:ring-primary"
+                      className="mt-1 h-4 w-4 text-gray-900 focus:ring-2 focus:ring-gray-900"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-madas-text/90">POSstaff</div>
-                      <div className="text-xs text-madas-text/60 mt-0.5">Can Create Discounts, View Collections and Products</div>
+                      <div className="font-medium text-sm text-gray-900">POSstaff</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Can Create Discounts, View Collections and Products</div>
                       <a href="#" className="text-xs text-blue-600 hover:underline mt-1 block">Can sell offline through POS Application</a>
                     </div>
                   </label>
 
-                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary cursor-pointer transition-colors">
+                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       name="role"
                       value="marketing_manager"
                       checked={inviteData.role === 'marketing_manager'}
                       onChange={(e) => setInviteData({ ...inviteData, role: e.target.value, showCustomPermissions: false })}
-                      className="mt-1 h-4 w-4 text-primary focus:ring-2 focus:ring-primary"
+                      className="mt-1 h-4 w-4 text-gray-900 focus:ring-2 focus:ring-gray-900"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-madas-text/90">Marketing Manager</div>
-                      <div className="text-xs text-madas-text/60 mt-0.5">Can View Products, Discounts, Collections and Navigation</div>
+                      <div className="font-medium text-sm text-gray-900">Marketing Manager</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Can View Products, Discounts, Collections and Navigation</div>
                     </div>
                   </label>
 
-                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary cursor-pointer transition-colors">
+                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       name="role"
                       value="website_manager"
                       checked={inviteData.role === 'website_manager'}
                       onChange={(e) => setInviteData({ ...inviteData, role: e.target.value, showCustomPermissions: false })}
-                      className="mt-1 h-4 w-4 text-primary focus:ring-2 focus:ring-primary"
+                      className="mt-1 h-4 w-4 text-gray-900 focus:ring-2 focus:ring-gray-900"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-madas-text/90">Website Manager</div>
-                      <div className="text-xs text-madas-text/60 mt-0.5">Can Access Everything in Products, Collections, Discounts, Customers and Orders</div>
+                      <div className="font-medium text-sm text-gray-900">Website Manager</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Can Access Everything in Products, Collections, Discounts, Customers and Orders</div>
                     </div>
                   </label>
 
-                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary cursor-pointer transition-colors">
+                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       name="role"
                       value="products_manager"
                       checked={inviteData.role === 'products_manager'}
                       onChange={(e) => setInviteData({ ...inviteData, role: e.target.value, showCustomPermissions: false })}
-                      className="mt-1 h-4 w-4 text-primary focus:ring-2 focus:ring-primary"
+                      className="mt-1 h-4 w-4 text-gray-900 focus:ring-2 focus:ring-gray-900"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-madas-text/90">Products Manager</div>
-                      <div className="text-xs text-madas-text/60 mt-0.5">Can Create, View and Delete Products</div>
+                      <div className="font-medium text-sm text-gray-900">Products Manager</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Can Create, View and Delete Products</div>
                     </div>
                   </label>
 
-                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary cursor-pointer transition-colors">
+                  <label className="flex items-start space-x-3 p-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       name="role"
                       value="other"
                       checked={inviteData.role === 'other'}
                       onChange={(e) => setInviteData({ ...inviteData, role: e.target.value, showCustomPermissions: true, customPermissions: [] })}
-                      className="mt-1 h-4 w-4 text-primary focus:ring-2 focus:ring-primary"
+                      className="mt-1 h-4 w-4 text-gray-900 focus:ring-2 focus:ring-gray-900"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-madas-text/90">Other</div>
-                      <div className="text-xs text-madas-text/60 mt-0.5">Assign Permissions separately below</div>
+                      <div className="font-medium text-sm text-gray-900">Other</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Assign Permissions separately below</div>
                     </div>
                   </label>
                 </div>
@@ -2168,7 +2321,7 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
               {/* Custom Permissions Section (shown when "Other" is selected) */}
               {inviteData.showCustomPermissions && inviteData.role === 'other' && (
                 <div className="border-t pt-4">
-                  <label className="block text-sm font-medium text-madas-text/80 mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     Assign Permissions
                   </label>
                   <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 space-y-3">
@@ -2184,7 +2337,7 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                             className={`flex items-start space-x-3 p-2 rounded-lg border-2 transition-all cursor-pointer ${
                               hasAllPagePermissions
                                 ? 'border-green-300 bg-green-50'
-                                : 'border-gray-200 bg-white hover:border-primary'
+                                : 'border-gray-200 bg-white hover:border-gray-900'
                             }`}
                           >
                             <input
@@ -2203,11 +2356,11 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                                 }
                                 setInviteData({ ...inviteData, customPermissions: newPermissions });
                               }}
-                              className="mt-1 h-4 w-4 rounded border-2 border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+                              className="mt-1 h-4 w-4 rounded border-2 border-gray-300 text-gray-900 focus:ring-2 focus:ring-gray-900"
                             />
                             <div className="flex-1">
-                              <div className="font-medium text-sm text-madas-text/90">{page.name}</div>
-                              <div className="text-xs text-madas-text/60 mt-0.5">{page.description}</div>
+                              <div className="font-medium text-sm text-gray-900">{page.name}</div>
+                              <div className="text-xs text-gray-500 mt-0.5">{page.description}</div>
                             </div>
                           </label>
                         );
@@ -2222,25 +2375,25 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                   type="button"
                   onClick={() => {
                     setShowInviteModal(false);
-                    setInviteData({ 
-                      firstName: '', 
-                      lastName: '', 
-                      email: '', 
-                      phoneCode: '+20', 
-                      phoneNumber: '', 
+                    setInviteData({
+                      firstName: '',
+                      lastName: '',
+                      email: '',
+                      phoneCode: '+20',
+                      phoneNumber: '',
                       role: 'administrator',
                       showCustomPermissions: false,
                       customPermissions: []
                     });
                   }}
-                  className="rounded-lg border border-gray-200 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-base transition-colors"
+                  className="rounded-lg border border-gray-200 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSendInvitation}
-                  className="rounded-lg bg-black px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                  className="rounded-lg bg-gray-900 px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
                 >
                   Save change
                 </button>
@@ -2254,73 +2407,73 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
       {showEditStaffModal && editingStaff && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl p-6 max-w-4xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
-            <h3 className="text-xl font-semibold text-primary mb-6 flex-shrink-0">Edit staff</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex-shrink-0">Edit staff</h3>
             <div className="space-y-8 overflow-y-auto flex-1 pr-2">
               {/* Personal Information Section */}
               <div>
-                <h4 className="text-sm font-semibold text-madas-text/90 mb-4">Personal Information</h4>
+                <h4 className="text-sm font-semibold text-gray-900 mb-4">Personal Information</h4>
             <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                         First Name
                 </label>
                 <input
                   type="text"
                         value={editStaffData.firstName}
                         onChange={(e) => setEditStaffData({ ...editStaffData, firstName: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                         placeholder="First Name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                         Last Name
                       </label>
                       <input
                         type="text"
                         value={editStaffData.lastName}
                         onChange={(e) => setEditStaffData({ ...editStaffData, lastName: e.target.value })}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                         placeholder="Last Name"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Email Address
                 </label>
                 <input
                   type="email"
                   value={editStaffData.email}
                   onChange={(e) => setEditStaffData({ ...editStaffData, email: e.target.value })}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent bg-gray-50"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-gray-50"
                       placeholder="Email Address"
                   disabled
                 />
-                <p className="mt-1 text-xs text-madas-text/60">Email cannot be changed</p>
+                <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-madas-text/80 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                       Phone Number
                 </label>
                     <div className="flex gap-2">
                 <select
                         value={editStaffData.phoneCode}
                         onChange={(e) => setEditStaffData({ ...editStaffData, phoneCode: e.target.value })}
-                        className="rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       >
-                        <option value="+20">🇪🇬 +20</option>
-                        <option value="+1">🇺🇸 +1</option>
-                        <option value="+44">🇬🇧 +44</option>
-                        <option value="+971">🇦🇪 +971</option>
-                        <option value="+966">🇸🇦 +966</option>
+                        <option value="+20">+20</option>
+                        <option value="+1">+1</option>
+                        <option value="+44">+44</option>
+                        <option value="+971">+971</option>
+                        <option value="+966">+966</option>
                 </select>
                       <input
                         type="tel"
                         value={editStaffData.phoneNumber}
                         onChange={(e) => setEditStaffData({ ...editStaffData, phoneNumber: e.target.value })}
-                        className="flex-1 rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                         placeholder="Phone Number"
                       />
                     </div>
@@ -2331,7 +2484,7 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
               {/* Edit Staff Permissions Section */}
               <div>
                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                  <h4 className="text-sm font-semibold text-madas-text/90">Edit Staff Permissions</h4>
+                  <h4 className="text-sm font-semibold text-gray-900">Edit Staff Permissions</h4>
                     <button
                       type="button"
                       onClick={() => {
@@ -2344,12 +2497,12 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                       });
                       setEditStaffData({ ...editStaffData, permissions: allPermissions });
                       }}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-base text-madas-text/80 transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 transition-colors"
                     >
                       Select All
                     </button>
                 </div>
-                
+
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                   {permissionCategories.map((category) => {
                     const categoryPermissions = category.permissions.map((p) => p.key);
@@ -2359,7 +2512,7 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                     const someCategorySelected = categoryPermissions.some((key) =>
                       editStaffData.permissions.includes(key)
                     );
-                      
+
                       return (
                       <div key={category.name} className="border border-gray-200 rounded-lg p-4 space-y-3">
                         {/* Category Header with Select All */}
@@ -2385,10 +2538,9 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                               }
                               setEditStaffData({ ...editStaffData, permissions: newPermissions });
                             }}
-                            className="h-4 w-4 rounded border-2 border-gray-300 text-purple-600 focus:ring-2 focus:ring-purple-500"
-                            style={{ accentColor: '#9333ea' }}
+                            className="h-4 w-4 rounded border-2 border-gray-300 text-gray-900 focus:ring-2 focus:ring-gray-900"
                           />
-                          <span className="font-medium text-sm text-madas-text/90">
+                          <span className="font-medium text-sm text-gray-900">
                             {category.name} (Select all)
                           </span>
                         </label>
@@ -2416,10 +2568,9 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                                     }
                                       setEditStaffData({ ...editStaffData, permissions: newPermissions });
                                     }}
-                                  className="h-4 w-4 rounded border-2 border-gray-300 text-purple-600 focus:ring-2 focus:ring-purple-500"
-                                  style={{ accentColor: '#9333ea' }}
+                                  className="h-4 w-4 rounded border-2 border-gray-300 text-gray-900 focus:ring-2 focus:ring-gray-900"
                                 />
-                                <span className="text-sm text-madas-text/70">{permission.label}</span>
+                                <span className="text-sm text-gray-500">{permission.label}</span>
                                 </label>
                               );
                             })}
@@ -2437,18 +2588,18 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                   onClick={() => {
                     setShowEditStaffModal(false);
                     setEditingStaff(null);
-                    setEditStaffData({ 
-                      firstName: '', 
-                      lastName: '', 
-                      email: '', 
-                      phoneCode: '+20', 
-                      phoneNumber: '', 
-                      role: 'staff', 
-                      permissions: [] 
+                    setEditStaffData({
+                      firstName: '',
+                      lastName: '',
+                      email: '',
+                      phoneCode: '+20',
+                      phoneNumber: '',
+                      role: 'staff',
+                      permissions: []
                     });
                     setPermissionSearch('');
                   }}
-                  className="rounded-lg border border-gray-200 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-base transition-colors"
+                  className="rounded-lg border border-gray-200 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -2475,14 +2626,14 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                       alert('Staff member updated successfully!');
                       setShowEditStaffModal(false);
                       setEditingStaff(null);
-                      setEditStaffData({ 
-                        firstName: '', 
-                        lastName: '', 
-                        email: '', 
-                        phoneCode: '+20', 
-                        phoneNumber: '', 
-                        role: 'staff', 
-                        permissions: [] 
+                      setEditStaffData({
+                        firstName: '',
+                        lastName: '',
+                        email: '',
+                        phoneCode: '+20',
+                        phoneNumber: '',
+                        role: 'staff',
+                        permissions: []
                       });
                       setPermissionSearch('');
                       await loadData();
@@ -2491,7 +2642,7 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
                       alert('Failed to update staff member. Please try again.');
                     }
                   }}
-                  className="rounded-lg bg-black px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                  className="rounded-lg bg-gray-900 px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
                 >
                   Save change
                 </button>
@@ -2505,6 +2656,3 @@ const RolesAndPermissionsTab = ({ businessId, businessName, plan }: RolesAndPerm
 };
 
 export default SettingsPage;
-
-
-
