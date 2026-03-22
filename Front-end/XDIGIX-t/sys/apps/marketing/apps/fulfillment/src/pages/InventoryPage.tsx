@@ -61,7 +61,16 @@ type RestockSession = {
   startedAt: Date;
   totalScans: number;
   entries: Map<string, RestockEntry>;
+  joinCode: string;
 };
+
+/** Generate a short random join code (e.g. "A3X7K2") */
+function generateJoinCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I to avoid confusion
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
 
 type RestockReport = {
   clientName: string;
@@ -93,6 +102,7 @@ function saveRestockToStorage(session: RestockSession | null) {
     startedAt: session.startedAt.toISOString(),
     totalScans: session.totalScans,
     entries: Array.from(session.entries.entries()),
+    joinCode: session.joinCode,
   };
   sessionStorage.setItem(RESTOCK_STORAGE_KEY, JSON.stringify(serializable));
 }
@@ -110,6 +120,7 @@ function loadRestockFromStorage(): RestockSession | null {
       startedAt: new Date(parsed.startedAt),
       totalScans: parsed.totalScans ?? 0,
       entries: new Map(parsed.entries ?? []),
+      joinCode: parsed.joinCode || generateJoinCode(),
     };
   } catch {
     return null;
@@ -335,6 +346,7 @@ export default function InventoryPage() {
   const handleStartRestock = async () => {
     if (!selectedClientId) return;
     const client = clients.find((c) => c.id === selectedClientId);
+    const localCode = generateJoinCode();
 
     // Create local session first
     setRestockSession({
@@ -344,6 +356,7 @@ export default function InventoryPage() {
       startedAt: new Date(),
       totalScans: 0,
       entries: new Map(),
+      joinCode: localCode,
     });
     setRestockLastScan(null);
     setRestockScanInput('');
@@ -377,6 +390,7 @@ export default function InventoryPage() {
         startedAt: new Date(),
         totalScans: 0,
         entries: new Map(),
+        joinCode: data.joinCode,
       });
       setLiveSessionId(data.sessionId);
       setLiveJoinCode(data.joinCode);
@@ -1166,52 +1180,52 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* Join code + workers (live session) */}
-          {isLiveSession && (
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              {/* Join Code */}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/20">
-                <Users className="w-4 h-4 text-blue-500" />
-                <span className="text-xs text-gray-500 dark:text-gray-400">Join Code:</span>
-                <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm tracking-wider">{liveJoinCode}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(liveJoinCode).catch(() => {});
-                    setCodeCopied(true);
-                    setTimeout(() => setCodeCopied(false), 2000);
-                  }}
-                  className="p-1 rounded hover:bg-blue-500/20 text-blue-500"
-                  title="Copy join code"
-                >
-                  {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
+          {/* Join code + workers */}
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            {/* Join Code — always visible so staff can share */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/20">
+              <Users className="w-4 h-4 text-blue-500" />
+              <span className="text-xs text-gray-500 dark:text-gray-400">Session Code:</span>
+              <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-lg tracking-widest">{restockSession.joinCode}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(restockSession.joinCode).catch(() => {});
+                  setCodeCopied(true);
+                  setTimeout(() => setCodeCopied(false), 2000);
+                }}
+                className="p-1 rounded hover:bg-blue-500/20 text-blue-500"
+                title="Copy session code"
+              >
+                {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {/* Workers (visible when live session is active) */}
+            {liveWorkers.length > 0 && (
+              <div className="flex items-center gap-2">
+                {liveWorkers.map((w) => (
+                  <div
+                    key={w.userId}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs"
+                    title={w.email || w.userId}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">{w.name || w.email || w.userId.slice(-6)}</span>
+                    <span className="text-gray-500 dark:text-gray-400">({w.scanCount})</span>
+                  </div>
+                ))}
               </div>
+            )}
 
-              {/* Workers */}
-              {liveWorkers.length > 0 && (
-                <div className="flex items-center gap-2">
-                  {liveWorkers.map((w) => (
-                    <div
-                      key={w.userId}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs"
-                      title={w.email || w.userId}
-                    >
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">{w.name || w.email || w.userId.slice(-6)}</span>
-                      <span className="text-gray-500 dark:text-gray-400">({w.scanCount})</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Connection status */}
+            {/* Connection status (only when live) */}
+            {isLiveSession && (
               <span className={`flex items-center gap-1 text-xs ${liveSocketConnected ? 'text-emerald-500' : 'text-amber-500'}`}>
                 {liveSocketConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                 {liveSocketConnected ? 'Connected' : 'Reconnecting...'}
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Scanner input */}
           <div className="relative mb-4">
