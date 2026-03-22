@@ -3,7 +3,7 @@ import { useLiveRefresh } from '../hooks/useLiveRefresh';
 import { useRefetchOnVisible } from '../hooks/useRefetchOnVisible';
 import { useWarehouseLive } from '../hooks/useWarehouseLive';
 import { useStaffAuth } from '../contexts/StaffAuthContext';
-import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download, ScanBarcode, X, Check, RotateCcw, FileText, ClipboardList } from 'lucide-react';
+import { Package, ChevronDown, Plus, Pencil, Trash2, Warehouse as WarehouseIcon, Search, Printer, Upload, Download, ScanBarcode, X, Check, RotateCcw, FileText, ClipboardList, AlertCircle } from 'lucide-react';
 import BarcodePrintModal from '../components/BarcodePrintModal';
 import { normalizeProductFromApi } from '../components/SizeVariantsEditor';
 import {
@@ -61,6 +61,7 @@ type RestockReport = {
   totalScans: number;
   productsRestocked: number;
   zeroedCount: number;
+  succeeded: number;
   failed: number;
   entries: RestockEntry[];                          // sorted by productName
   zeroedProducts: { id: string; name: string }[];  // products set to 0
@@ -344,6 +345,7 @@ export default function InventoryPage() {
         totalScans: totalScanned,
         productsRestocked: productsUpdated,
         zeroedCount,
+        succeeded: result.succeeded,
         failed: result.failed,
         entries: capturedEntries,
         zeroedProducts: capturedZeroed,
@@ -384,6 +386,26 @@ export default function InventoryPage() {
       return name.includes(q) || sku.includes(q) || barcode.includes(q);
     });
   }, [products, searchTerm]);
+
+  // Compute total stock stats across all products for this client
+  const stockStats = useMemo(() => {
+    let totalUnits = 0;
+    let totalSKUs = 0;
+    let outOfStock = 0;
+    for (const p of products) {
+      const d = p as Record<string, unknown>;
+      const stock = d.stock as Record<string, number> | undefined;
+      if (!stock || typeof stock !== 'object') {
+        outOfStock++;
+        continue;
+      }
+      const qty = Object.values(stock).reduce((s, q) => s + (typeof q === 'number' ? q : 0), 0);
+      totalUnits += qty;
+      totalSKUs++;
+      if (qty === 0) outOfStock++;
+    }
+    return { totalUnits, totalSKUs, outOfStock };
+  }, [products]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const paginatedProducts = useMemo(
@@ -995,6 +1017,39 @@ export default function InventoryPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Stock Stats */}
+      {selectedClientId && !loadingProducts && products.length > 0 && (
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-500/10">
+              <Package className="w-5 h-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stockStats.totalUnits.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Total Stock</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500/10">
+              <ClipboardList className="w-5 h-5 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stockStats.totalSKUs}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Products</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-500/10">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stockStats.outOfStock}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Out of Stock</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1713,6 +1768,31 @@ export default function InventoryPage() {
                 >
                   <X className="w-5 h-5" />
                 </button>
+              </div>
+
+              {/* Inventory update status */}
+              <div className="px-6 pt-4 print:px-4">
+                {restockReport.failed === 0 ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-sm">
+                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                      Inventory updated successfully
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400/70">
+                      &mdash; {restockReport.succeeded} product{restockReport.succeeded !== 1 ? 's' : ''} updated
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-sm">
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <span className="font-medium text-amber-700 dark:text-amber-400">
+                      Partially updated
+                    </span>
+                    <span className="text-amber-600 dark:text-amber-400/70">
+                      &mdash; {restockReport.succeeded} succeeded, {restockReport.failed} failed
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Summary cards */}
