@@ -34,6 +34,12 @@ export async function startRestock(
   clientId: string,
   createdBy: string,
 ): Promise<{ sessionId: string; joinCode: string }> {
+  // Auto-close any stale ACTIVE sessions created by this user
+  await RestockSessionModel.updateMany(
+    { createdBy, status: 'ACTIVE' },
+    { $set: { status: 'CANCELLED' } },
+  );
+
   let joinCode = randomJoinCode();
   let existing = await RestockSessionModel.findOne({ joinCode, status: 'ACTIVE' });
   while (existing) {
@@ -76,13 +82,11 @@ export async function joinRestock(
     };
   }
 
-  // Prevent joining multiple active sessions
-  const inOther = await RestockSessionModel.findOne({
-    status: 'ACTIVE',
-    _id: { $ne: session._id },
-    participants: workerId,
-  });
-  if (inOther) throw new Error('You are already in another active restock session');
+  // Auto-leave any other active sessions so the worker can join the new one
+  await RestockSessionModel.updateMany(
+    { status: 'ACTIVE', _id: { $ne: session._id }, participants: workerId },
+    { $pull: { participants: workerId } },
+  );
 
   if (!session.participants) session.participants = [];
   if (!session.participants.includes(workerId)) session.participants.push(workerId);
