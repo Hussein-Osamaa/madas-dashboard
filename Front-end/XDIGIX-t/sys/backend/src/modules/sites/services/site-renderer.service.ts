@@ -424,6 +424,14 @@ ul,ol{list-style:none}
 @media(prefers-reduced-motion:no-preference){
   .xd-reveal{opacity:0;translate:0 24px;transition:opacity .6s ease,translate .6s ease}
   .xd-reveal.xd-visible{opacity:1;translate:0 0}
+  .xd-reveal-fade-in{opacity:0;transition:opacity .6s ease}
+  .xd-reveal-fade-in.xd-visible{opacity:1}
+  .xd-reveal-slide-left{opacity:0;translate:-40px 0;transition:opacity .6s ease,translate .6s ease}
+  .xd-reveal-slide-left.xd-visible{opacity:1;translate:0 0}
+  .xd-reveal-slide-right{opacity:0;translate:40px 0;transition:opacity .6s ease,translate .6s ease}
+  .xd-reveal-slide-right.xd-visible{opacity:1;translate:0 0}
+  .xd-reveal-zoom-in{opacity:0;scale:.92;transition:opacity .6s ease,scale .6s ease}
+  .xd-reveal-zoom-in.xd-visible{opacity:1;scale:1}
 }
 `;
 
@@ -487,31 +495,86 @@ function renderNavbar(c: Record<string, unknown>): string {
 }
 
 function renderHero(c: Record<string, unknown>): string {
-  const layout    = (c.layout as string)   || 'default';
-  const height    = (c.height  as string)  || 'large';
+  // ── Support both Dawn blocks format AND legacy flat fields ──────
+  const blocks = (c.blocks as Array<Record<string, unknown>>) || [];
+  const hasDawnData = blocks.length > 0 || c.image || c.image_height;
+
+  // Image: Dawn uses `image`, legacy uses `backgroundImage`
+  const bgImg     = (c.image as string) || (c.backgroundImage as string) || '';
+  // Height: Dawn uses `image_height`, legacy uses `height`
+  const height    = (c.image_height as string) || (c.height as string) || 'large';
   const heightCls = height === 'full' ? 'xd-hero-full' : height === 'medium' ? 'xd-hero-medium' : height === 'compact' ? 'xd-hero-compact' : 'xd-hero-large';
-  const bgImg     = c.backgroundImage  as string || '';
-  const bgColor   = c.backgroundColor  as string || 'linear-gradient(135deg,#27491F,#3a6b2e)';
-  const txtColor  = c.textColor         as string || '#ffffff';
-  const title     = c.title     as string || 'Welcome to Our Store';
-  const subtitle  = c.subtitle  as string || '';
-  const btn1Text  = c.buttonText as string || '';
-  const btn1Link  = c.buttonLink as string || '#';
-  const btn2Text  = c.secondaryButtonText as string || '';
-  const btn2Link  = c.secondaryButtonLink as string || '#';
+  // Overlay
+  const overlayOpacity = (c.image_overlay_opacity as number) ?? 0;
+  // Text color — scheme sets it via wrapper, default white for hero
+  const txtColor  = (c.textColor as string) || '#ffffff';
+  // Background color fallback
+  const bgColor   = (c.backgroundColor as string) || '#121212';
   const bgStyle   = bgImg ? `background:url('${attr(bgImg)}') center/cover no-repeat` : `background:${attr(bgColor)}`;
 
+  // Content positioning (Dawn format)
+  const pos = (c.desktop_content_position as string) || 'middle-center';
+  const align = (c.desktop_content_alignment as string) || 'center';
+  const showTextBox = c.show_text_box === true;
+
+  // Map position to flexbox
+  const [vPos, hPos] = pos.includes('-') ? pos.split('-') : ['middle', 'center'];
+  const justifyMap: Record<string, string> = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
+  const alignMap: Record<string, string> = { left: 'flex-start', center: 'center', right: 'flex-end' };
+  const textAlignMap: Record<string, string> = { left: 'left', center: 'center', right: 'right' };
+  const containerAlign = `display:flex;flex-direction:column;justify-content:${justifyMap[vPos] || 'center'};align-items:${alignMap[hPos] || 'center'};text-align:${textAlignMap[align] || 'center'};`;
+
+  // ── Extract content from blocks (Dawn format) ──────────────────
+  let title = '';
+  let subtitle = '';
+  let btn1Text = '', btn1Link = '#', btn2Text = '', btn2Link = '#';
+  let headingSize = 'h1';
+
+  if (hasDawnData && blocks.length > 0) {
+    for (const block of blocks) {
+      if (block.type === 'heading') {
+        title = (block.text as string) || '';
+        headingSize = (block.heading_size as string) || 'h1';
+      } else if (block.type === 'text') {
+        subtitle = (block.text as string) || '';
+      } else if (block.type === 'buttons') {
+        btn1Text = (block.button_label_1 as string) || '';
+        btn1Link = (block.button_link_1 as string) || '#';
+        btn2Text = (block.button_label_2 as string) || '';
+        btn2Link = (block.button_link_2 as string) || '#';
+      }
+    }
+  } else {
+    // Legacy flat fields
+    title    = (c.title as string) || 'Welcome to Our Store';
+    subtitle = (c.subtitle as string) || '';
+    btn1Text = (c.buttonText as string) || '';
+    btn1Link = (c.buttonLink as string) || '#';
+    btn2Text = (c.secondaryButtonText as string) || '';
+    btn2Link = (c.secondaryButtonLink as string) || '#';
+  }
+
+  // Heading size class
+  const hSizeMap: Record<string, string> = {
+    h0: 'font-size:3.5rem', h1: 'font-size:3rem', h2: 'font-size:2.25rem',
+    h3: 'font-size:1.875rem', h4: 'font-size:1.5rem', h5: 'font-size:1.25rem',
+  };
+  const headingStyle = hSizeMap[headingSize] || hSizeMap.h1;
+
+  // Layout: split vs default
+  const layout = (c.layout as string) || 'default';
+
   if (layout === 'split') {
-    const imgUrl = (c.imageUrl as string) || bgImg;
+    const imgUrl = (c.imageUrl as string) || (c.image_2 as string) || bgImg;
     const rev    = (c.imagePosition as string) === 'left' ? ' style="direction:rtl"' : '';
     return `
 <section class="xd-hero-split"${rev}>
   <div class="xd-hero-split-text" style="color:${attr(txtColor)};background:${bgImg ? '' : attr(bgColor)};direction:ltr">
-    <h1 class="xd-h1 xd-reveal">${txt(title)}</h1>
+    <h1 class="xd-h1 xd-reveal" style="${headingStyle}">${txt(title)}</h1>
     ${subtitle ? `<p class="xd-lead xd-reveal" style="margin-top:1rem;margin-bottom:1.75rem">${txt(subtitle)}</p>` : ''}
     <div class="xd-flex xd-reveal">
-      ${btn1Text ? `<a href="${attr(btn1Link)}" class="xd-btn xd-btn-primary">${txt(btn1Text)}</a>` : ''}
-      ${btn2Text ? `<a href="${attr(btn2Link)}" class="xd-btn xd-btn-outline-white">${txt(btn2Text)}</a>` : ''}
+      ${btn1Text ? `<a href="${attr(btn1Link)}" class="xd-btn xd-btn-primary" style="border-radius:var(--btn-radius,0);text-transform:uppercase;letter-spacing:.05em;font-size:.875rem;font-weight:500">${txt(btn1Text)}</a>` : ''}
+      ${btn2Text ? `<a href="${attr(btn2Link)}" class="xd-btn xd-btn-outline-white" style="border-radius:var(--btn-radius,0);text-transform:uppercase;letter-spacing:.05em;font-size:.875rem;font-weight:500">${txt(btn2Text)}</a>` : ''}
     </div>
   </div>
   <div class="xd-hero-split-img">
@@ -520,17 +583,20 @@ function renderHero(c: Record<string, unknown>): string {
 </section>`;
   }
 
+  const textBoxStyle = showTextBox ? 'background:rgba(255,255,255,0.9);backdrop-filter:blur(8px);padding:1.5rem;color:#121212;' : '';
+  const contentColor = showTextBox ? '#121212' : txtColor;
+
   return `
-<section class="xd-hero ${heightCls}" style="${bgStyle};color:${attr(txtColor)}">
+<section class="xd-hero ${heightCls}" style="${bgStyle};color:${attr(txtColor)};position:relative;overflow:hidden">
   ${bgImg ? `<img class="xd-hero-bg" src="${attr(bgImg)}" alt="" loading="eager" fetchpriority="high" decoding="async">` : ''}
-  ${c.overlayEnabled ? `<div class="xd-hero-overlay" style="background:${attr(c.overlayColor as string || 'rgba(0,0,0,0.4)')}"></div>` : ''}
-  <div class="xd-hero-content xd-container">
-    <div class="xd-hero-inner xd-hero-center">
-      <h1 class="xd-h1 xd-reveal">${txt(title)}</h1>
-      ${subtitle ? `<p class="xd-lead xd-reveal" style="margin-inline:auto;margin-bottom:2rem">${txt(subtitle)}</p>` : ''}
-      <div class="xd-flex-center xd-reveal">
-        ${btn1Text ? `<a href="${attr(btn1Link)}" class="xd-btn xd-btn-white">${txt(btn1Text)}</a>` : ''}
-        ${btn2Text ? `<a href="${attr(btn2Link)}" class="xd-btn xd-btn-outline-white">${txt(btn2Text)}</a>` : ''}
+  ${overlayOpacity > 0 ? `<div class="xd-hero-overlay" style="position:absolute;inset:0;background:rgba(0,0,0,${(overlayOpacity / 100).toFixed(2)});z-index:1"></div>` : ''}
+  <div class="xd-hero-content xd-container" style="${containerAlign}padding:3rem 2rem;position:relative;z-index:2;min-height:inherit;height:100%">
+    <div style="max-width:42rem;${textBoxStyle}">
+      ${title ? `<h1 class="xd-h1 xd-reveal" style="${headingStyle};font-weight:bold;line-height:1.15;margin-bottom:.75rem;color:${attr(contentColor)}">${txt(title)}</h1>` : ''}
+      ${subtitle ? `<p class="xd-lead xd-reveal" style="margin-bottom:1.5rem;opacity:.85;color:${attr(contentColor)}">${txt(subtitle)}</p>` : ''}
+      <div class="xd-flex-center xd-reveal" style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:${textAlignMap[align] === 'center' ? 'center' : textAlignMap[align] === 'right' ? 'flex-end' : 'flex-start'}">
+        ${btn1Text ? `<a href="${attr(btn1Link)}" class="xd-btn xd-btn-white" style="display:inline-block;padding:.75rem 2rem;font-size:.875rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;background:${showTextBox ? '#121212' : '#fff'};color:${showTextBox ? '#fff' : '#121212'};border-radius:var(--btn-radius,0)">${txt(btn1Text)}</a>` : ''}
+        ${btn2Text ? `<a href="${attr(btn2Link)}" class="xd-btn xd-btn-outline-white" style="display:inline-block;padding:.75rem 2rem;font-size:.875rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;background:transparent;color:${attr(contentColor)};border:1px solid currentColor;border-radius:var(--btn-radius,0)">${txt(btn2Text)}</a>` : ''}
       </div>
     </div>
   </div>
@@ -539,7 +605,13 @@ function renderHero(c: Record<string, unknown>): string {
 
 function renderFeatures(c: Record<string, unknown>): string {
   const items   = (c.items as Array<Record<string, unknown>>) || [];
-  const colsCls = items.length <= 2 ? 'xd-grid-2' : items.length === 4 ? 'xd-grid-4' : 'xd-grid-3';
+  const colsN   = Number(c.columns_desktop || c.columns) || (items.length <= 2 ? 2 : items.length === 4 ? 4 : 3);
+  const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
+  const colAlign = (c.column_alignment as string) || 'center';
+  const imgWidth = (c.image_width as string) || 'full';
+  const imgRatio = (c.image_ratio as string) || 'adapt';
+  const ratioStyle = imgRatio === 'square' ? 'aspect-ratio:1;object-fit:cover;' : imgRatio === 'portrait' ? 'aspect-ratio:2/3;object-fit:cover;' : '';
+  const imgMaxW = imgWidth === 'small' ? 'max-width:120px;' : imgWidth === 'medium' ? 'max-width:200px;' : '';
   return `
 <section class="xd-section">
 <div class="xd-container">
@@ -548,12 +620,19 @@ function renderFeatures(c: Record<string, unknown>): string {
     ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
   </div>
   <div class="${colsCls}">
-    ${items.map(item => `
-    <div class="xd-feature-card xd-reveal">
-      <div class="xd-feature-icon">${item.icon ? `<span class="material-icons" aria-hidden="true">${txt(item.icon as string)}</span>` : ''}</div>
+    ${items.map(item => {
+      const desc = (item.text as string) || (item.description as string) || '';
+      const hasImage = !!(item.image as string);
+      const linkLabel = item.link_label as string || '';
+      const link = item.link as string || '#';
+      return `
+    <div class="xd-feature-card xd-reveal" style="text-align:${colAlign}">
+      ${hasImage ? `<img src="${attr(item.image as string)}" alt="${attr(item.title as string || '')}" loading="lazy" decoding="async" style="width:100%;${imgMaxW}${ratioStyle}border-radius:var(--br);margin-bottom:1rem${colAlign === 'center' ? ';margin-inline:auto' : ''}">` : (item.icon ? `<div class="xd-feature-icon"><span class="material-icons" aria-hidden="true">${txt(item.icon as string)}</span></div>` : '')}
       <h3>${txt(item.title as string)}</h3>
-      <p>${txt(item.description as string)}</p>
-    </div>`).join('')}
+      <p>${txt(desc)}</p>
+      ${linkLabel ? `<a href="${attr(link)}" style="font-weight:600;color:var(--c-primary);margin-top:.5rem;display:inline-block">${txt(linkLabel)}</a>` : ''}
+    </div>`;
+    }).join('')}
   </div>
 </div>
 </section>`;
@@ -594,7 +673,7 @@ function skeletonCard(): string {
 
 function renderProducts(c: Record<string, unknown>): string {
   const prods   = (c.selectedProducts as Array<Record<string, unknown>>) || [];
-  const colsN   = Number(c.columns) || 3;
+  const colsN   = Number(c.columns_desktop || c.columns) || 3;
   const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
   // If no products selected, show skeleton cards — runtime will hydrate with live data
   const cards = prods.length > 0
@@ -604,8 +683,8 @@ function renderProducts(c: Record<string, unknown>): string {
 <section class="xd-section">
 <div class="xd-container">
   <div class="xd-section-head">
-    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Products')}</h2>
-    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
+    <h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string) || 'Products')}</h2>
+    ${(c.description || c.subtitle) ? `<p class="xd-lead xd-reveal">${txt((c.description as string) || (c.subtitle as string))}</p>` : ''}
   </div>
   <div class="${colsCls}" data-xd-grid>${cards}
   </div>
@@ -668,8 +747,8 @@ function renderDeals(c: Record<string, unknown>, sectionId: string): string {
 }
 
 function renderCollections(c: Record<string, unknown>): string {
-  const cols    = (c.selectedCollections as Array<Record<string, unknown>>) || [];
-  const colsN   = Number(c.columns) || 3;
+  const cols    = (c.selectedCollections as Array<Record<string, unknown>>) || (c.items as Array<Record<string, unknown>>) || [];
+  const colsN   = Number(c.columns_desktop || c.columns) || 3;
   const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
   return `
 <section class="xd-section">
@@ -700,10 +779,10 @@ function renderTestimonials(c: Record<string, unknown>): string {
   const items   = (c.items as Array<Record<string, unknown>>) || [];
   const colsCls = items.length <= 2 ? 'xd-grid-2' : 'xd-grid-3';
   return `
-<section class="xd-section" style="background:#f9fafb">
+<section class="xd-section">
 <div class="xd-container">
   <div class="xd-section-head">
-    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'What Customers Say')}</h2>
+    <h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string) || 'What Customers Say')}</h2>
   </div>
   <div class="${colsCls}">
     ${items.map(t => `
@@ -723,30 +802,40 @@ function renderTestimonials(c: Record<string, unknown>): string {
 function renderCTA(c: Record<string, unknown>): string {
   const bg  = attr(c.backgroundColor as string || '#27491F');
   const clr = attr(c.textColor        as string || '#ffffff');
+  const title = (c.heading as string) || (c.title as string) || 'Ready to Get Started?';
+  const sub   = (c.text as string) || (c.subtitle as string) || '';
+  const btn1  = (c.button_label as string) || (c.buttonText as string) || '';
+  const btn1L = (c.button_link as string) || (c.buttonLink as string) || '#';
+  const btn2  = (c.button_label_2 as string) || (c.secondaryButtonText as string) || '';
+  const btn2L = (c.button_link_2 as string) || (c.secondaryButtonLink as string) || '#';
   return `
 <section class="xd-cta" style="background:${bg};color:${clr}">
 <div class="xd-container">
-  <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(c.title as string || 'Ready to Get Started?')}</h2>
-  ${c.subtitle ? `<p class="xd-lead xd-reveal" style="opacity:.9;margin-inline:auto;margin-bottom:2rem">${txt(c.subtitle as string)}</p>` : ''}
+  <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(title)}</h2>
+  ${sub ? `<p class="xd-lead xd-reveal" style="opacity:.9;margin-inline:auto;margin-bottom:2rem">${txt(sub)}</p>` : ''}
   <div class="xd-flex-center xd-reveal">
-    ${c.buttonText ? `<a href="${attr(c.buttonLink as string, '#')}" class="xd-btn xd-btn-white">${txt(c.buttonText as string)}</a>` : ''}
-    ${c.secondaryButtonText ? `<a href="${attr(c.secondaryButtonLink as string, '#')}" class="xd-btn xd-btn-outline-white">${txt(c.secondaryButtonText as string)}</a>` : ''}
+    ${btn1 ? `<a href="${attr(btn1L)}" class="xd-btn xd-btn-white">${txt(btn1)}</a>` : ''}
+    ${btn2 ? `<a href="${attr(btn2L)}" class="xd-btn xd-btn-outline-white">${txt(btn2)}</a>` : ''}
   </div>
 </div>
 </section>`;
 }
 
 function renderAbout(c: Record<string, unknown>): string {
-  const rev = (c.imagePosition as string) === 'left' ? ' reverse' : '';
+  const rev = ((c.desktop_image_placement as string) || (c.imagePosition as string)) === 'left' ? ' reverse' : '';
+  const title = (c.heading as string) || (c.title as string) || 'About Us';
+  const body = (c.text as string) || (c.content as string) || '';
+  const btn = (c.button_label as string) || (c.buttonText as string) || '';
+  const btnLink = (c.button_link as string) || (c.buttonLink as string) || '#';
   return `
 <section class="xd-section">
 <div class="xd-container">
   <div class="xd-split${rev}">
-    ${c.image ? `<img class="xd-split-img xd-reveal" src="${attr(c.image as string)}" alt="${attr(c.imageAlt as string || c.title as string || '')}" loading="lazy" decoding="async">` : ''}
+    ${c.image ? `<img class="xd-split-img xd-reveal" src="${attr(c.image as string)}" alt="${attr(c.imageAlt as string || title || '')}" loading="lazy" decoding="async">` : ''}
     <div class="xd-reveal">
-      <h2 class="xd-h2" style="margin-bottom:1rem">${txt(c.title as string || 'About Us')}</h2>
-      <p style="opacity:.8;line-height:1.8;margin-bottom:1.5rem">${txt(c.content as string)}</p>
-      ${c.buttonText ? `<a href="${attr(c.buttonLink as string, '#')}" class="xd-btn xd-btn-primary">${txt(c.buttonText as string)}</a>` : ''}
+      <h2 class="xd-h2" style="margin-bottom:1rem">${txt(title)}</h2>
+      <p style="opacity:.8;line-height:1.8;margin-bottom:1.5rem">${txt(body)}</p>
+      ${btn ? `<a href="${attr(btnLink)}" class="xd-btn xd-btn-primary">${txt(btn)}</a>` : ''}
     </div>
   </div>
 </div>
@@ -760,8 +849,8 @@ function renderContact(c: Record<string, unknown>): string {
 <section class="xd-section">
 <div class="xd-container">
   <div class="xd-section-head">
-    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Contact Us')}</h2>
-    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
+    <h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string) || 'Contact Us')}</h2>
+    ${(c.text || c.subtitle) ? `<p class="xd-lead xd-reveal">${txt((c.text as string) || (c.subtitle as string))}</p>` : ''}
   </div>
   <div class="${hasInfo ? 'xd-contact-grid' : ''}">
     <div>
@@ -787,14 +876,15 @@ function renderContact(c: Record<string, unknown>): string {
 
 function renderGallery(c: Record<string, unknown>): string {
   const images = (c.images as Array<Record<string, unknown>>) || [];
+  const heading = (c.heading as string) || (c.title as string) || '';
   return `
 <section class="xd-section">
 <div class="xd-container">
-  ${c.title ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string)}</h2>${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}</div>` : ''}
+  ${heading ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(heading)}</h2>${(c.text || c.subtitle) ? `<p class="xd-lead xd-reveal">${txt((c.text as string) || (c.subtitle as string))}</p>` : ''}</div>` : ''}
   <div class="xd-gallery-grid">
     ${images.map(img => `
     <div class="xd-gallery-item xd-reveal">
-      <img src="${attr(img.url as string)}" alt="${attr(img.alt as string || img.caption as string || '')}" loading="lazy" decoding="async">
+      <img src="${attr((img.image as string) || (img.url as string))}" alt="${attr(img.alt as string || img.caption as string || '')}" loading="lazy" decoding="async">
     </div>`).join('')}
   </div>
 </div>
@@ -832,16 +922,21 @@ function renderPricing(c: Record<string, unknown>): string {
 }
 
 function renderFAQ(c: Record<string, unknown>): string {
-  const items = (c.items as Array<Record<string, unknown>>) || [];
+  const items = (c.faqs as Array<Record<string, unknown>>) || (c.items as Array<Record<string, unknown>>) || [];
+  const heading = (c.heading as string) || (c.title as string) || 'FAQ';
   return `
 <section class="xd-section">
 <div class="xd-container" style="max-width:780px">
-  <div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'FAQ')}</h2></div>
-  ${items.map((q, i) => `
+  <div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(heading)}</h2></div>
+  ${items.map((q, i) => {
+    const question = (q.heading as string) || (q.question as string) || '';
+    const answer = (q.content as string) || (q.answer as string) || '';
+    return `
   <details class="xd-faq-item xd-reveal"${i === 0 ? ' open' : ''}>
-    <summary>${txt(q.question as string)}<span class="xd-faq-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></summary>
-    <p class="xd-faq-answer">${txt(q.answer as string)}</p>
-  </details>`).join('')}
+    <summary>${txt(question)}<span class="xd-faq-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></span></summary>
+    <p class="xd-faq-answer">${txt(answer)}</p>
+  </details>`;
+  }).join('')}
 </div>
 </section>`;
 }
@@ -849,9 +944,9 @@ function renderFAQ(c: Record<string, unknown>): string {
 function renderStats(c: Record<string, unknown>): string {
   const statItems = (c.stats as Array<Record<string, unknown>>) || [];
   return `
-<section class="xd-section" style="background:#f9fafb">
+<section class="xd-section">
 <div class="xd-container">
-  ${c.title ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string)}</h2></div>` : ''}
+  ${(c.heading || c.title) ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string))}</h2></div>` : ''}
   <div class="xd-stats-grid">
     ${statItems.map(s => `
     <div class="xd-stat-card xd-reveal">
@@ -889,39 +984,50 @@ function renderTeam(c: Record<string, unknown>): string {
 
 function renderServices(c: Record<string, unknown>): string {
   const services = (c.services as Array<Record<string, unknown>>) || [];
+  const heading = (c.heading as string) || (c.title as string) || 'Our Services';
   return `
 <section class="xd-section">
 <div class="xd-container">
   <div class="xd-section-head">
-    <h2 class="xd-h2 xd-reveal">${txt(c.title as string || 'Our Services')}</h2>
-    ${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}
+    <h2 class="xd-h2 xd-reveal">${txt(heading)}</h2>
+    ${(c.text || c.subtitle) ? `<p class="xd-lead xd-reveal">${txt((c.text as string) || (c.subtitle as string))}</p>` : ''}
   </div>
   <div class="xd-grid-3">
-    ${services.map(s => `
+    ${services.map(s => {
+      const sTitle = (s.heading as string) || (s.title as string) || '';
+      const sDesc = (s.text as string) || (s.description as string) || '';
+      const sImg = s.image as string || '';
+      const sCap = s.caption as string || '';
+      const sBtn = (s.button_label as string) || '';
+      const sBtnLink = (s.button_link as string) || (s.link as string) || '#';
+      return `
     <div class="xd-service-card xd-reveal">
-      <div class="xd-service-icon">${s.icon ? `<span class="material-icons" aria-hidden="true">${txt(s.icon as string)}</span>` : ''}</div>
+      ${sImg ? `<img src="${attr(sImg)}" alt="${attr(sTitle)}" loading="lazy" decoding="async" style="width:100%;border-radius:var(--br);margin-bottom:1rem">` : (s.icon ? `<div class="xd-service-icon"><span class="material-icons" aria-hidden="true">${txt(s.icon as string)}</span></div>` : '')}
       <div class="xd-service-body">
-        <h3>${txt(s.title as string)}</h3>
-        <p>${txt(s.description as string)}</p>
-        ${s.link ? `<a href="${attr(s.link as string)}" style="font-weight:600;color:var(--c-primary);margin-top:.5rem;display:inline-block">Learn more →</a>` : ''}
+        ${sCap ? `<p style="font-size:.85rem;opacity:.6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem">${txt(sCap)}</p>` : ''}
+        <h3>${txt(sTitle)}</h3>
+        <p>${txt(sDesc)}</p>
+        ${sBtn ? `<a href="${attr(sBtnLink)}" style="font-weight:600;color:var(--c-primary);margin-top:.5rem;display:inline-block">${txt(sBtn)}</a>` : (s.link ? `<a href="${attr(sBtnLink)}" style="font-weight:600;color:var(--c-primary);margin-top:.5rem;display:inline-block">Learn more →</a>` : '')}
       </div>
-    </div>`).join('')}
+    </div>`;
+    }).join('')}
   </div>
 </div>
 </section>`;
 }
 
 function renderVideo(c: Record<string, unknown>): string {
-  const url      = c.videoUrl     as string || '';
-  const thumb    = c.thumbnailUrl as string || '';
+  const url      = (c.video_url as string) || (c.videoUrl as string) || '';
+  const thumb    = (c.cover_image as string) || (c.thumbnailUrl as string) || '';
   const autoplay = !!c.autoplay;
   const embedUrl = buildEmbedUrl(url, autoplay);
   const showThumb = thumb && !autoplay;
+  const heading  = (c.heading as string) || (c.title as string) || '';
 
   return `
 <section class="xd-section">
 <div class="xd-container">
-  ${c.title ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(c.title as string)}</h2>${c.subtitle ? `<p class="xd-lead xd-reveal">${txt(c.subtitle as string)}</p>` : ''}</div>` : ''}
+  ${heading ? `<div class="xd-section-head"><h2 class="xd-h2 xd-reveal">${txt(heading)}</h2>${(c.text || c.subtitle) ? `<p class="xd-lead xd-reveal">${txt((c.text as string) || (c.subtitle as string))}</p>` : ''}</div>` : ''}
   <div class="xd-video-wrap xd-reveal">
     ${showThumb
       ? `<div class="xd-video-thumb" data-src="${attr(embedUrl)}" role="button" tabindex="0" aria-label="Play video">
@@ -977,12 +1083,14 @@ function renderPartners(c: Record<string, unknown>): string {
 function renderNewsletter(c: Record<string, unknown>): string {
   const bg  = attr(c.backgroundColor as string || '#27491F');
   const clr = attr(c.textColor        as string || '#ffffff');
-  const successMsg = txt(c.successMessage as string || "You're subscribed! 🎉");
+  const successMsg = txt(c.successMessage as string || "You're subscribed!");
+  const heading = (c.heading as string) || (c.title as string) || 'Stay in the Loop';
+  const sub = (c.paragraph as string) || (c.subtitle as string) || '';
   return `
 <section class="xd-section" style="background:${bg};color:${clr};text-align:center">
 <div class="xd-container">
-  <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(c.title as string || 'Stay in the Loop')}</h2>
-  ${c.subtitle ? `<p class="xd-lead xd-reveal" style="opacity:.85;margin-inline:auto">${txt(c.subtitle as string)}</p>` : ''}
+  <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(heading)}</h2>
+  ${sub ? `<p class="xd-lead xd-reveal" style="opacity:.85;margin-inline:auto">${txt(sub)}</p>` : ''}
   <form class="xd-newsletter-form xd-reveal" novalidate>
     <input class="xd-newsletter-input" type="email" placeholder="${attr(c.placeholder as string || 'Enter your email')}" required autocomplete="email">
     <button class="xd-btn xd-btn-white" type="submit">${txt(c.buttonText as string || 'Subscribe')}</button>
@@ -1219,6 +1327,29 @@ export function renderSite(site: ISite, pageSlug?: string): string {
   }
   _btnRadius = theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px';
 
+  // ── Animation style from theme ─────────────────────────────────
+  const animStyle = (theme.animationStyle as string) || 'fade-up';
+  const animDuration = Number(theme.animationDuration) || 400;
+  const revealOnScroll = theme.revealOnScroll !== false && theme.revealOnScroll !== 'false';
+  // Build animation override CSS: if not fade-up (default), override .xd-reveal
+  let animOverrideCss = '';
+  if (!revealOnScroll || animStyle === 'none') {
+    animOverrideCss = '.xd-reveal{opacity:1!important;translate:none!important;scale:1!important;transition:none!important}';
+  } else if (animStyle !== 'fade-up') {
+    const animMap: Record<string, string> = {
+      'fade-in': `opacity:0;transition:opacity ${animDuration}ms ease`,
+      'slide-left': `opacity:0;translate:-40px 0;transition:opacity ${animDuration}ms ease,translate ${animDuration}ms ease`,
+      'slide-right': `opacity:0;translate:40px 0;transition:opacity ${animDuration}ms ease,translate ${animDuration}ms ease`,
+      'zoom-in': `opacity:0;scale:.92;transition:opacity ${animDuration}ms ease,scale ${animDuration}ms ease`,
+    };
+    if (animMap[animStyle]) {
+      animOverrideCss = `@media(prefers-reduced-motion:no-preference){.xd-reveal{${animMap[animStyle]}}.xd-reveal.xd-visible{opacity:1;translate:0 0;scale:1}}`;
+    }
+  } else if (animDuration !== 600) {
+    // Custom duration for default fade-up
+    animOverrideCss = `@media(prefers-reduced-motion:no-preference){.xd-reveal{transition-duration:${animDuration}ms}}`;
+  }
+
   // ── CSS variables from theme ─────────────────────────────────────
   // Support both the old key names (theme.*Color) and new ThemeContext names (theme.color*)
   const themeVars = `:root{
@@ -1341,7 +1472,7 @@ ${seo.ogImage ? `<meta name="twitter:image" content="${attr(seo.ogImage)}">` : '
 ${fontLink}
 ${materialIconsLink}
 ${analyticsHead}
-<style>${themeVars}${BASE_CSS}${customCss ? '\n/* Custom CSS */\n' + customCss : ''}</style>
+<style>${themeVars}${BASE_CSS}${animOverrideCss ? '\n' + animOverrideCss : ''}${customCss ? '\n/* Custom CSS */\n' + customCss : ''}</style>
 </head>
 <body>
 ${bodySections}
