@@ -214,11 +214,11 @@ ul,ol{list-style:none}
 .xd-btn-outline-white:hover{background:#fff;color:var(--c-primary)}
 .xd-btn-sm{padding:.5rem 1.25rem;font-size:.875rem}
 .xd-btn-full{width:100%;display:flex}
-.xd-announce{background:var(--c-primary);color:#fff;text-align:center;
+.xd-announce{background:var(--scheme-bg,var(--c-primary));color:var(--scheme-text,#fff);text-align:center;
   padding:.6rem 3rem;font-size:.9rem;font-weight:500;position:relative;z-index:100}
-.xd-announce a{color:#fff;text-decoration:underline}
+.xd-announce a{color:inherit;text-decoration:underline}
 .xd-announce-close{position:absolute;right:1rem;top:50%;translate:0 -50%;
-  background:none;border:none;color:#fff;font-size:1.4rem;line-height:1;padding:.25rem .5rem}
+  background:none;border:none;color:inherit;font-size:1.4rem;line-height:1;padding:.25rem .5rem}
 .xd-nav{position:relative;z-index:90;display:flex;align-items:center;
   justify-content:space-between;gap:1rem;padding:.875rem clamp(1rem,4vw,2rem)}
 .xd-nav-sticky{position:sticky;top:0;backdrop-filter:blur(12px)}
@@ -459,12 +459,14 @@ function renderBanner(c: Record<string, unknown>): string {
 
 function renderNavbar(c: Record<string, unknown>): string {
   const menuItems = (c.menuItems as Array<Record<string, unknown>>) || [];
-  const bgColor   = attr(c.backgroundColor as string || '#ffffff');
-  const txtColor  = attr(c.textColor        as string || '#171817');
+  // Navbar keeps its own bg/text colors (not purely scheme-driven) since it's a unique section
+  const bgColor   = attr(c.backgroundColor as string || '');
+  const txtColor  = attr(c.textColor        as string || '');
   const sticky    = c.sticky !== false;
 
+  const clrAttr = txtColor ? ` style="color:${txtColor}"` : '';
   const menuHtml = menuItems.map(item =>
-    `<li><a href="${attr(item.link as string || '#')}" style="color:${txtColor}">${txt(item.label as string)}${item.badge ? ` <span style="background:var(--c-primary);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:999px">${txt(item.badge as string)}</span>` : ''}</a></li>`
+    `<li><a href="${attr(item.link as string || '#')}"${clrAttr}>${txt(item.label as string)}${item.badge ? ` <span style="background:var(--c-primary);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:999px">${txt(item.badge as string)}</span>` : ''}</a></li>`
   ).join('');
 
   const mobileHtml = menuItems.map(item =>
@@ -472,17 +474,17 @@ function renderNavbar(c: Record<string, unknown>): string {
   ).join('');
 
   return `
-<header style="background:${bgColor}">
-<nav class="xd-nav${sticky ? ' xd-nav-sticky' : ''}" style="background:${bgColor}">
-  <a href="/" class="xd-nav-logo" style="color:${txtColor}">
+<header${bgColor ? ` style="background:${bgColor}"` : ''}>
+<nav class="xd-nav${sticky ? ' xd-nav-sticky' : ''}"${bgColor ? ` style="background:${bgColor}"` : ''}>
+  <a href="/" class="xd-nav-logo"${txtColor ? ` style="color:${txtColor}"` : ''}>
     ${c.logo ? `<img src="${attr(c.logo as string)}" alt="${attr(c.logoText as string || 'Logo')}" loading="eager" height="40">` : ''}
     <span>${txt(c.logoText as string || 'Store')}</span>
   </a>
   <ul class="xd-nav-menu" role="list">${menuHtml}</ul>
   <div class="xd-nav-actions">
-    ${c.showSearch ? `<button class="xd-nav-icon" aria-label="Search" style="color:${txtColor}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>` : ''}
-    ${c.showCart !== false ? `<a href="${attr(c.cartUrl as string || '#')}" class="xd-nav-icon" aria-label="Cart (${attr(c.cartCount as string || '0')} items)" style="color:${txtColor}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>${c.cartCount ? `<span class="xd-nav-badge">${txt(c.cartCount)}</span>` : ''}</a>` : ''}
-    <button class="xd-mobile-toggle" aria-label="Open menu" style="color:${txtColor}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    ${c.showSearch ? `<button class="xd-nav-icon" aria-label="Search"${clrAttr}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>` : ''}
+    ${c.showCart !== false ? `<a href="${attr(c.cartUrl as string || '#')}" class="xd-nav-icon" aria-label="Cart (${attr(c.cartCount as string || '0')} items)"${clrAttr}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>${c.cartCount ? `<span class="xd-nav-badge">${txt(c.cartCount)}</span>` : ''}</a>` : ''}
+    <button class="xd-mobile-toggle" aria-label="Open menu"${clrAttr}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   </div>
 </nav>
 <div id="xd-mobile-menu" class="xd-mobile-menu" role="dialog" aria-modal="true" aria-label="Navigation menu">
@@ -800,8 +802,6 @@ function renderTestimonials(c: Record<string, unknown>): string {
 }
 
 function renderCTA(c: Record<string, unknown>): string {
-  const bg  = attr(c.backgroundColor as string || '#27491F');
-  const clr = attr(c.textColor        as string || '#ffffff');
   const title = (c.heading as string) || (c.title as string) || 'Ready to Get Started?';
   const sub   = (c.text as string) || (c.subtitle as string) || '';
   const btn1  = (c.button_label as string) || (c.buttonText as string) || '';
@@ -809,9 +809,9 @@ function renderCTA(c: Record<string, unknown>): string {
   const btn2  = (c.button_label_2 as string) || (c.secondaryButtonText as string) || '';
   const btn2L = (c.button_link_2 as string) || (c.secondaryButtonLink as string) || '#';
   return `
-<section class="xd-cta" style="background:${bg};color:${clr}">
+<section class="xd-cta">
 <div class="xd-container">
-  <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(title)}</h2>
+  <h2 class="xd-h2 xd-reveal">${txt(title)}</h2>
   ${sub ? `<p class="xd-lead xd-reveal" style="opacity:.9;margin-inline:auto;margin-bottom:2rem">${txt(sub)}</p>` : ''}
   <div class="xd-flex-center xd-reveal">
     ${btn1 ? `<a href="${attr(btn1L)}" class="xd-btn xd-btn-white">${txt(btn1)}</a>` : ''}
@@ -822,20 +822,29 @@ function renderCTA(c: Record<string, unknown>): string {
 }
 
 function renderAbout(c: Record<string, unknown>): string {
-  const rev = ((c.desktop_image_placement as string) || (c.imagePosition as string)) === 'left' ? ' reverse' : '';
-  const title = (c.heading as string) || (c.title as string) || 'About Us';
+  // Dawn uses layout: 'image_first' | 'text_first'; legacy uses imagePosition: 'left'/'right'
+  const layout = (c.layout as string) || '';
+  const isTextFirst = layout === 'text_first' || (c.imagePosition as string) === 'left';
+  const rev = isTextFirst ? ' reverse' : '';
+  const title = (c.heading as string) || (c.title as string) || '';
+  const caption = (c.caption as string) || '';
   const body = (c.text as string) || (c.content as string) || '';
   const btn = (c.button_label as string) || (c.buttonText as string) || '';
   const btnLink = (c.button_link as string) || (c.buttonLink as string) || '#';
+  const headingSize = (c.heading_size as string) || 'h1';
+  const hSizeMap: Record<string, string> = { h0: '3.5rem', h1: '3rem', h2: '2.25rem', h3: '1.875rem', h4: '1.5rem', h5: '1.25rem' };
+  const hSize = hSizeMap[headingSize] || hSizeMap.h1;
+  const contentAlign = (c.content_alignment as string) || 'left';
   return `
 <section class="xd-section">
 <div class="xd-container">
   <div class="xd-split${rev}">
     ${c.image ? `<img class="xd-split-img xd-reveal" src="${attr(c.image as string)}" alt="${attr(c.imageAlt as string || title || '')}" loading="lazy" decoding="async">` : ''}
-    <div class="xd-reveal">
-      <h2 class="xd-h2" style="margin-bottom:1rem">${txt(title)}</h2>
-      <p style="opacity:.8;line-height:1.8;margin-bottom:1.5rem">${txt(body)}</p>
-      ${btn ? `<a href="${attr(btnLink)}" class="xd-btn xd-btn-primary">${txt(btn)}</a>` : ''}
+    <div class="xd-reveal" style="text-align:${contentAlign}">
+      ${caption ? `<p style="font-size:.85rem;opacity:.6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">${txt(caption)}</p>` : ''}
+      ${title ? `<h2 class="xd-h2" style="margin-bottom:1rem;font-size:${hSize}">${txt(title)}</h2>` : ''}
+      ${body ? `<p style="opacity:.8;line-height:1.8;margin-bottom:1.5rem">${txt(body)}</p>` : ''}
+      ${btn ? `<a href="${attr(btnLink)}" class="xd-btn xd-btn-primary" style="border-radius:var(--btn-radius,8px)">${txt(btn)}</a>` : ''}
     </div>
   </div>
 </div>
@@ -1045,14 +1054,12 @@ function renderVideo(c: Record<string, unknown>): string {
 }
 
 function renderCountdown(c: Record<string, unknown>, sectionId: string): string {
-  const bg    = attr(c.backgroundColor as string || '#27491F');
-  const clr   = attr(c.textColor        as string || '#ffffff');
   const cdId  = `xd-cd-${sectionId}`;
   return `
-<section class="xd-section" style="background:${bg};color:${clr};text-align:center">
+<section class="xd-section" style="text-align:center">
 <div class="xd-container xd-countdown-wrap">
   <div class="xd-section-head">
-    <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(c.title as string || 'Sale Ends In')}</h2>
+    <h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string) || 'Sale Ends In')}</h2>
     ${c.subtitle ? `<p class="xd-lead xd-reveal" style="opacity:.85">${txt(c.subtitle as string)}</p>` : ''}
   </div>
   <div class="xd-countdown xd-reveal" id="${cdId}"
@@ -1081,21 +1088,19 @@ function renderPartners(c: Record<string, unknown>): string {
 }
 
 function renderNewsletter(c: Record<string, unknown>): string {
-  const bg  = attr(c.backgroundColor as string || '#27491F');
-  const clr = attr(c.textColor        as string || '#ffffff');
   const successMsg = txt(c.successMessage as string || "You're subscribed!");
   const heading = (c.heading as string) || (c.title as string) || 'Stay in the Loop';
   const sub = (c.paragraph as string) || (c.subtitle as string) || '';
   return `
-<section class="xd-section" style="background:${bg};color:${clr};text-align:center">
+<section class="xd-section" style="text-align:center">
 <div class="xd-container">
-  <h2 class="xd-h2 xd-reveal" style="color:${clr}">${txt(heading)}</h2>
+  <h2 class="xd-h2 xd-reveal">${txt(heading)}</h2>
   ${sub ? `<p class="xd-lead xd-reveal" style="opacity:.85;margin-inline:auto">${txt(sub)}</p>` : ''}
   <form class="xd-newsletter-form xd-reveal" novalidate>
     <input class="xd-newsletter-input" type="email" placeholder="${attr(c.placeholder as string || 'Enter your email')}" required autocomplete="email">
-    <button class="xd-btn xd-btn-white" type="submit">${txt(c.buttonText as string || 'Subscribe')}</button>
+    <button class="xd-btn xd-btn-primary" type="submit">${txt(c.buttonText as string || 'Subscribe')}</button>
   </form>
-  <p class="xd-form-success" style="color:${clr}">${successMsg}</p>
+  <p class="xd-form-success">${successMsg}</p>
 </div>
 </section>`;
 }
@@ -1135,8 +1140,6 @@ function renderImageComparison(c: Record<string, unknown>): string {
 }
 
 function renderFooter(c: Record<string, unknown>, siteName: string): string {
-  const bg      = attr(c.backgroundColor as string || '#1a1a1a');
-  const clr     = attr(c.textColor        as string || '#ffffff');
   const layout  = c.layout   as string || 'classic';
   const columns = (c.columns as Array<Record<string, unknown>>) || [];
   const social  = (c.socialLinks as Array<Record<string, unknown>>) || [];
@@ -1158,7 +1161,7 @@ function renderFooter(c: Record<string, unknown>, siteName: string): string {
   if (layout === 'minimal') {
     const policyLinks = (c.policyLinks as Array<Record<string, unknown>>) || [];
     return `
-<footer style="background:${bg};color:${clr}">
+<footer
 <div class="xd-container xd-footer-minimal">
   <strong style="font-size:1.1rem">${txt(c.logoText as string || siteName)}</strong>
   <nav class="xd-footer-policy">${policyLinks.map(l => `<a href="${attr(l.link as string, '#')}">${txt(l.label as string)}</a>`).join('')}</nav>
@@ -1169,7 +1172,7 @@ function renderFooter(c: Record<string, unknown>, siteName: string): string {
   }
 
   return `
-<footer style="background:${bg};color:${clr}">
+<footer
 <div class="xd-container xd-footer">
   <div class="xd-footer-grid" style="border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:2.5rem;margin-bottom:2rem">
     <div>
