@@ -48,7 +48,7 @@ const PublishModal = ({ open, onClose, onPublish, siteId, siteName, currentStatu
   const defaultUrl = getDefaultPublishedSiteUrl(siteId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-xl w-full max-w-md shadow-xl">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-primary">Publish Website</h2>

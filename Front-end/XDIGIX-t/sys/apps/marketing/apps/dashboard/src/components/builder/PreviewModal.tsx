@@ -14,7 +14,7 @@ const PreviewModal = ({ open, onClose, sections, siteId }: Props) => {
   const sortedSections = [...sections].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl w-full max-w-7xl h-[90vh] flex flex-col">
         <div className="h-16 border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
           <h2 className="text-lg font-semibold text-primary">Website Preview</h2>

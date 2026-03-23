@@ -9,6 +9,32 @@ import { buildSectionManifestEntry } from '../../../registry/serverSectionRegist
  */
 let _sfBase = '';
 
+/* ── Color Scheme support ────────────────────────────────────────── */
+interface ColorScheme {
+  id: string;
+  name: string;
+  background: string;
+  backgroundGradient: string;
+  text: string;
+  solidButtonBg: string;
+  solidButtonLabel: string;
+  outlineButton: string;
+  shadow: string;
+}
+
+const DEFAULT_COLOR_SCHEMES: ColorScheme[] = [
+  { id: 'scheme-1', name: 'Scheme 1', background: '#FFFFFF', backgroundGradient: '', text: '#121212', solidButtonBg: '#121212', solidButtonLabel: '#FFFFFF', outlineButton: '#121212', shadow: '#121212' },
+  { id: 'scheme-2', name: 'Scheme 2', background: '#F3F3F3', backgroundGradient: '', text: '#121212', solidButtonBg: '#121212', solidButtonLabel: '#FFFFFF', outlineButton: '#121212', shadow: '#121212' },
+  { id: 'scheme-3', name: 'Scheme 3', background: '#242833', backgroundGradient: '', text: '#FFFFFF', solidButtonBg: '#FFFFFF', solidButtonLabel: '#000000', outlineButton: '#FFFFFF', shadow: '#121212' },
+  { id: 'scheme-4', name: 'Scheme 4', background: '#121212', backgroundGradient: '', text: '#FFFFFF', solidButtonBg: '#FFFFFF', solidButtonLabel: '#121212', outlineButton: '#FFFFFF', shadow: '#121212' },
+  { id: 'scheme-5', name: 'Scheme 5', background: '#3B3F8C', backgroundGradient: '', text: '#FFFFFF', solidButtonBg: '#FFFFFF', solidButtonLabel: '#3B3F8C', outlineButton: '#FFFFFF', shadow: '#121212' },
+];
+
+/** Set by renderSite — resolved color schemes for the current site */
+let _colorSchemes: ColorScheme[] = DEFAULT_COLOR_SCHEMES;
+/** Set by renderSite — button border-radius from theme */
+let _btnRadius = '8px';
+
 /* ─────────────────────────────────────────────────────────────────────
    UTILITY HELPERS
 ───────────────────────────────────────────────────────────────────── */
@@ -51,7 +77,7 @@ function sanitizeCss(raw: unknown): string {
 function getSectionData(sec: ISection): Record<string, unknown> {
   const d = sec.data as Record<string, unknown> | undefined | null;
   if (d && typeof d === 'object' && Object.keys(d).length > 0) return d;
-  const c = (sec as Record<string, unknown>).content as Record<string, unknown> | undefined | null;
+  const c = (sec as unknown as Record<string, unknown>).content as Record<string, unknown> | undefined | null;
   if (c && typeof c === 'object') return c;
   return {};
 }
@@ -1107,6 +1133,40 @@ function renderSection(sec: ISection, siteName: string): string {
     case 'footer':       html = renderFooter(c, siteName); break;
     default:             return `<!-- section "${attr(sec.type)}" not rendered -->`;
   }
+
+  // ── Apply color scheme styling ──────────────────────────────────
+  // Sections that have their own bg handling (hero has image, divider is transparent)
+  const skipSchemeBg = ['hero', 'divider', 'slideshow'].includes(sec.type);
+  const schemeId = c.color_scheme as string | undefined;
+  if (schemeId) {
+    const scheme = _colorSchemes.find(s => s.id === schemeId);
+    if (scheme) {
+      // Build CSS custom properties for scheme colors
+      const cssVars = [
+        `--scheme-bg:${attr(scheme.background)}`,
+        `--scheme-text:${attr(scheme.text)}`,
+        `--scheme-btn-bg:${attr(scheme.solidButtonBg)}`,
+        `--scheme-btn-label:${attr(scheme.solidButtonLabel)}`,
+        `--scheme-outline-btn:${attr(scheme.outlineButton)}`,
+        `--scheme-shadow:${attr(scheme.shadow)}`,
+        `--btn-radius:${_btnRadius}`,
+      ].join(';');
+
+      // Apply scheme background and text color
+      const sectionStyle = sec.style as Record<string, unknown> | undefined;
+      const hasManualBg = sectionStyle?.backgroundColor || sectionStyle?.backgroundImage;
+      const bgStyle = (!skipSchemeBg && !hasManualBg)
+        ? (scheme.backgroundGradient
+            ? `background:${attr(scheme.backgroundGradient)};`
+            : `background-color:${attr(scheme.background)};`)
+        : '';
+      const textStyle = `color:${attr(scheme.text)};`;
+
+      // Wrap the section HTML in a div with scheme styles
+      html = `<div style="${cssVars};${bgStyle}${textStyle}">${html}</div>`;
+    }
+  }
+
   return addSectionAttrs(html, sec.id, sec.type);
 }
 
@@ -1142,6 +1202,23 @@ export function renderSite(site: ISite, pageSlug?: string): string {
     canonical:   (pageSeo.canonical   || '') as string,
   };
 
+  // ── Resolve color schemes from theme ────────────────────────────
+  const rawSchemes = theme.colorSchemes;
+  if (rawSchemes) {
+    let parsed: unknown = rawSchemes;
+    if (typeof parsed === 'string') {
+      try { parsed = JSON.parse(parsed); } catch { parsed = null; }
+    }
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      _colorSchemes = parsed as ColorScheme[];
+    } else {
+      _colorSchemes = DEFAULT_COLOR_SCHEMES;
+    }
+  } else {
+    _colorSchemes = DEFAULT_COLOR_SCHEMES;
+  }
+  _btnRadius = theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px';
+
   // ── CSS variables from theme ─────────────────────────────────────
   // Support both the old key names (theme.*Color) and new ThemeContext names (theme.color*)
   const themeVars = `:root{
@@ -1151,7 +1228,24 @@ export function renderSite(site: ISite, pageSlug?: string): string {
   --c-bg:${attr((theme.backgroundColor   || theme.colorBg        || '#ffffff') as string)};
   --c-text:${attr((theme.textColor        || theme.colorText      || '#171817') as string)};
   --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
-  --br:${theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px'};
+  --br:${_btnRadius};
+  --btn-radius:${_btnRadius};
+}
+/* Color scheme buttons — inherit scheme CSS vars when set */
+[style*="--scheme-btn-bg"] .xd-btn,
+[style*="--scheme-btn-bg"] .xd-cta-btn,
+[style*="--scheme-btn-bg"] button[class*="btn"],
+[style*="--scheme-btn-bg"] a[class*="btn"] {
+  background-color: var(--scheme-btn-bg, var(--c-primary)) !important;
+  color: var(--scheme-btn-label, #fff) !important;
+  border-radius: var(--btn-radius, 8px) !important;
+}
+[style*="--scheme-outline-btn"] .xd-btn-outline,
+[style*="--scheme-outline-btn"] a[class*="outline"] {
+  background: transparent !important;
+  color: var(--scheme-outline-btn, var(--c-primary)) !important;
+  border-color: var(--scheme-outline-btn, var(--c-primary)) !important;
+  border-radius: var(--btn-radius, 8px) !important;
 }`;
 
   // ── Font loading ─────────────────────────────────────────────────
