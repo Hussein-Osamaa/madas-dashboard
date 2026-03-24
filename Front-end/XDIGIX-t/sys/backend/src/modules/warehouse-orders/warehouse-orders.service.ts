@@ -62,9 +62,8 @@ export async function listFulfillmentOrders(opts: ListOrdersOptions = {}): Promi
     filter['data.fulfillment.status'] = statusVal;
   }
 
-  const orderByField = 'data.date';
   const docs = await FirestoreDoc.find(filter)
-    .sort({ [orderByField]: -1 })
+    .sort({ 'data.metadata.createdAt': -1, 'data.date': -1, createdAt: -1 })
     .lean();
 
   const out: FulfillmentOrderPayload[] = [];

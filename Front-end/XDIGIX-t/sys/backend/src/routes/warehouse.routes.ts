@@ -133,6 +133,33 @@ router.patch(
   }
 );
 
+/** DELETE /warehouse/orders - Bulk delete orders (ADMIN only). Body: { orderIds: string[], businessIds?: string[] } */
+router.delete(
+  '/orders',
+  [body('orderIds').isArray({ min: 1 })],
+  async (req: Request, res: Response) => {
+    const allowedApps = (req.accountPayload as { allowedApps?: string[] } | undefined)?.allowedApps ?? [];
+    if (!allowedApps.includes('ADMIN')) {
+      res.status(403).json({ error: 'Admin access required' });
+      return;
+    }
+    const errs = require('express-validator').validationResult(req);
+    if (!errs.isEmpty()) {
+      res.status(400).json({ error: errs.array()[0]?.msg, details: errs.array() });
+      return;
+    }
+    try {
+      const { orderIds } = req.body as { orderIds: string[] };
+      const { FirestoreDoc } = await import('../schemas/document.schema');
+      const result = await FirestoreDoc.deleteMany({ docId: { $in: orderIds }, coll: 'orders' });
+      emitWarehouseUpdate(getIo(), { type: 'orders', businessId: '*' });
+      res.json({ success: true, deletedCount: result.deletedCount });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  }
+);
+
 /** GET /warehouse/orders/:orderId - Get single order (query businessId) */
 router.get('/orders/:orderId', async (req: Request, res: Response) => {
   try {

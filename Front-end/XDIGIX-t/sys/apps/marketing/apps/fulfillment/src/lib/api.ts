@@ -755,6 +755,14 @@ export async function scanOrderBarcode(
   });
 }
 
+/** Delete fulfillment orders (ADMIN only). */
+export async function deleteFulfillmentOrders(orderIds: string[]): Promise<{ deletedCount: number }> {
+  return fetchApi<{ deletedCount: number }>('/warehouse/orders', {
+    method: 'DELETE',
+    body: JSON.stringify({ orderIds }),
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Weekly Audit Scan
 // ---------------------------------------------------------------------------
