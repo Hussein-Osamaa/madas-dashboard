@@ -196,6 +196,11 @@ export default function InventoryPage() {
   const [returnProgress, setReturnProgress] = useState<{ done: number; total: number } | null>(null);
   const returnInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-submit barcode scan after a pause (mobile scanners don't always send Enter)
+  const restockScanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const returnScanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const SCAN_DEBOUNCE_MS = 300; // barcode scanners type fast, 300ms pause = done
+
   // Live multi-user restock session state
   const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
   const [liveJoinCode, setLiveJoinCode] = useState('');
@@ -1369,9 +1374,23 @@ export default function InventoryPage() {
               ref={restockInputRef}
               type="text"
               value={restockScanInput}
-              onChange={(e) => setRestockScanInput(e.target.value)}
-              onKeyDown={handleRestockScanKeyDown}
-              placeholder="Scan barcode or type and press Enter..."
+              onChange={(e) => {
+                const val = e.target.value;
+                setRestockScanInput(val);
+                // Auto-submit after scanner pause (mobile scanners don't send Enter)
+                if (restockScanTimerRef.current) clearTimeout(restockScanTimerRef.current);
+                if (val.trim().length >= 3) {
+                  restockScanTimerRef.current = setTimeout(() => handleRestockScan(val), SCAN_DEBOUNCE_MS);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (restockScanTimerRef.current) clearTimeout(restockScanTimerRef.current);
+                  handleRestockScan(restockScanInput);
+                }
+              }}
+              placeholder="Scan barcode..."
               autoFocus
               className="w-full pl-11 pr-4 py-3 rounded-lg border-2 border-emerald-500/40 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-base font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
             />
@@ -1528,9 +1547,22 @@ export default function InventoryPage() {
                 ref={returnInputRef}
                 type="text"
                 value={returnScanInput}
-                onChange={(e) => setReturnScanInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleReturnScan(returnScanInput); } }}
-                placeholder="Scan barcode to return..."
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setReturnScanInput(val);
+                  if (returnScanTimerRef.current) clearTimeout(returnScanTimerRef.current);
+                  if (val.trim().length >= 3) {
+                    returnScanTimerRef.current = setTimeout(() => handleReturnScan(val), SCAN_DEBOUNCE_MS);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (returnScanTimerRef.current) clearTimeout(returnScanTimerRef.current);
+                    handleReturnScan(returnScanInput);
+                  }
+                }}
+                placeholder="Scan barcode..."
                 autoFocus
                 className="w-full pl-11 pr-4 py-3 rounded-lg border border-amber-500/30 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-lg font-mono"
               />
