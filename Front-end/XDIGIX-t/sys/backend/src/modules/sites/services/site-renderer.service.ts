@@ -279,6 +279,8 @@ ul,ol{list-style:none}
 .xd-product-card:hover .xd-product-img-wrap img{scale:1.05}
 .xd-product-badge{position:absolute;top:.75rem;left:.75rem;background:#ef4444;color:#fff;
   font-size:.75rem;font-weight:700;padding:.25rem .625rem;border-radius:999px}
+.xd-badge-sold-out{background:#6b7280}
+.xd-btn-disabled{background:#d1d5db;color:#6b7280;cursor:not-allowed}
 .xd-product-body{padding:1rem;flex:1;display:flex;flex-direction:column;gap:.5rem}
 .xd-product-name{font-weight:600;font-size:.95rem;line-height:1.4;flex:1}
 .xd-product-price{font-weight:800;color:var(--c-primary);font-size:1.1rem}
@@ -644,19 +646,29 @@ function productCard(p: Record<string, unknown>, ctaLabel: string): string {
   const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
   const display = p.sellingPrice || p.salePrice || p.price;
   const detailHref = `${_sfBase}/products/${attr(p.id as string)}`;
+  // Stock check
+  const stockMap = (p.stock ?? {}) as Record<string, number>;
+  const totalStock = Object.values(stockMap).reduce((s, v) => s + (Number(v) || 0), 0);
+  const outOfStock = totalStock <= 0;
+  const badgeHtml = outOfStock
+    ? '<span class="xd-product-badge xd-badge-sold-out">Sold Out</span>'
+    : onSale ? '<span class="xd-product-badge">Sale</span>' : '';
+  const btnHtml = outOfStock
+    ? `<span class="xd-btn xd-btn-sm xd-product-btn xd-btn-full xd-btn-disabled" style="opacity:.5;pointer-events:none;cursor:not-allowed">Sold Out</span>`
+    : `<a href="${attr(p.link as string, detailHref)}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
+           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
+           data-xd-product-name="${attr(p.name as string)}"
+           data-xd-price="${attr(String(p.price || 0))}">${ctaLabel}</a>`;
   return `
     <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
       <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
         <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
-        ${onSale ? '<span class="xd-product-badge">Sale</span>' : ''}
+        ${badgeHtml}
       </a>
       <div class="xd-product-body">
         <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
-        ${display ? `<div><span class="xd-product-price">${txt(display)} SAR</span>${onSale ? `<span class="xd-product-compare">${txt(p.price)} SAR</span>` : ''}</div>` : ''}
-        <a href="${attr(p.link as string, detailHref)}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
-           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
-           data-xd-product-name="${attr(p.name as string)}"
-           data-xd-price="${attr(String(p.price || 0))}">${ctaLabel}</a>
+        ${display ? `<div><span class="xd-product-price">${txt(display)} SAR</span>${onSale && !outOfStock ? `<span class="xd-product-compare">${txt(p.price)} SAR</span>` : ''}</div>` : ''}
+        ${btnHtml}
       </div>
     </div>`;
 }

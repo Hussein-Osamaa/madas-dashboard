@@ -650,6 +650,16 @@ export async function fetchFulfillmentStatus(): Promise<FulfillmentStatusRespons
   return fetchApi<FulfillmentStatusResponse>(`/client/warehouse/fulfillment-status${qs}`);
 }
 
+/** Send an order to the warehouse fulfillment pipeline. */
+export async function sendOrderToFulfillment(orderId: string): Promise<{ success: boolean; orderId: string }> {
+  const cid = getClientIdParam();
+  const qs = cid ? `?clientId=${encodeURIComponent(cid)}` : '';
+  return fetchApi<{ success: boolean; orderId: string }>(`/client/warehouse/send-to-fulfillment${qs}`, {
+    method: 'POST',
+    body: JSON.stringify({ orderId }),
+  });
+}
+
 export type UpdateLinkedProductImagePricingPayload = {
   images?: string[];
   price?: number;

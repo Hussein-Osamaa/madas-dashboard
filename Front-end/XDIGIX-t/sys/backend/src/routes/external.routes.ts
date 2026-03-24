@@ -51,6 +51,33 @@ router.post(
     const businessId = ctx!.businessId;
 
     try {
+      // Stock availability check — reject if any item is out of stock
+      const { FirestoreDoc } = await import('../schemas/document.schema');
+      const outOfStock: string[] = [];
+      for (const item of items) {
+        const doc = await FirestoreDoc.findOne(
+          { businessId, coll: 'products', docId: item.productId },
+          { 'data.stock': 1, 'data.name': 1 },
+        ).lean();
+        const data = (doc as { data?: Record<string, unknown> })?.data ?? {};
+        const stockMap = (data.stock ?? {}) as Record<string, number>;
+        const sizeKey = item.size || Object.keys(stockMap)[0] || '';
+        const available = sizeKey
+          ? (Number(stockMap[sizeKey]) || 0)
+          : Object.values(stockMap).reduce((s, v) => s + (Number(v) || 0), 0);
+        if (available < item.quantity) {
+          outOfStock.push(`${(data.name as string) || item.productId}${item.size ? ` (${item.size})` : ''}: ${available} available`);
+        }
+      }
+      if (outOfStock.length > 0) {
+        res.status(400).json({
+          error: 'Some items are out of stock',
+          code: 'external/out_of_stock',
+          outOfStock,
+        });
+        return;
+      }
+
       const orderData: Record<string, unknown> = {
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity, size: i.size })),
         status: 'pending',

@@ -110,7 +110,15 @@ router.get('/:tenantId/products', catalogLimiter, async (req: Request, res: Resp
     FirestoreDoc.countDocuments(filter),
   ]);
 
-  const products = docs.map(d => ({ id: d.docId, ...stripMeta(d as unknown as Record<string, unknown>), ...((d as {data?: Record<string, unknown>}).data || {}) }));
+  const products = docs.map(d => {
+    const raw = { id: d.docId, ...stripMeta(d as unknown as Record<string, unknown>), ...((d as {data?: Record<string, unknown>}).data || {}) } as Record<string, unknown>;
+    // Compute total stock for storefront availability
+    const stockMap = (raw.stock ?? {}) as Record<string, number>;
+    const totalStock = Object.values(stockMap).reduce((s, v) => s + (Number(v) || 0), 0);
+    raw.totalStock = totalStock;
+    raw.inStock = totalStock > 0;
+    return raw;
+  });
 
   res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
   res.json({
@@ -243,6 +251,26 @@ router.post('/:tenantId/cart/add', cartLimiter, async (req: Request, res: Respon
   if (!productId || !name || price === undefined) {
     res.status(400).json({ error: 'productId, name, and price are required' });
     return;
+  }
+
+  // Stock availability check — prevent adding out-of-stock items
+  try {
+    const productDoc = await FirestoreDoc.findOne(
+      { businessId: biz.businessId, coll: 'products', docId: productId },
+      { 'data.stock': 1 },
+    ).lean();
+    const stockMap = ((productDoc as { data?: { stock?: Record<string, unknown> } })?.data?.stock ?? {}) as Record<string, number>;
+    const sizeKey = variantId || Object.keys(stockMap)[0] || '';
+    const totalStock = sizeKey
+      ? (Number(stockMap[sizeKey]) || 0)
+      : Object.values(stockMap).reduce((s, v) => s + (Number(v) || 0), 0);
+    const requestedQty = quantity ?? 1;
+    if (totalStock < requestedQty) {
+      res.status(400).json({ error: 'Out of stock', code: 'OUT_OF_STOCK', available: totalStock });
+      return;
+    }
+  } catch {
+    // If stock check fails, allow the add (don't block sales on stock check errors)
   }
 
   const cart = await addToCart(

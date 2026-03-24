@@ -19,6 +19,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Order, OrderDraft, OrderStatus } from '../../services/ordersService';
 import { createScanLog } from '../../services/scanLogsService';
 import { createBostaDelivery } from '../../services/bostaService';
+import { sendOrderToFulfillment } from '../../lib/backend-adapter';
+import { useFulfillmentSubscription } from '../../hooks/useFulfillmentSubscription';
 import { Product } from '../../services/productsService';
 
 /** Convert backend/Firestore date (Date, string, number, Timestamp) to Date or null. */
@@ -131,6 +133,8 @@ const OrdersPage = () => {
   const [selectedOrderForBosta, setSelectedOrderForBosta] = useState<Order | null>(null);
   const [bostaAddress, setBostaAddress] = useState({ address: '', city: '', district: '', floor: '', apartment: '', building: '' });
   const [courierDetailModal, setCourierDetailModal] = useState<Order | null>(null);
+  const [sendingToFulfillment, setSendingToFulfillment] = useState<string | null>(null);
+  const { subscribed: isFulfillmentSubscribed } = useFulfillmentSubscription(!!businessId);
   const [scanResult, setScanResult] = useState<{
     productName: string;
     type: 'order' | 'return';
@@ -1093,6 +1097,19 @@ ${JSON.stringify(bostaData, null, 2)}
     });
   };
 
+  const handleSendToFulfillment = async (order: Order) => {
+    try {
+      setSendingToFulfillment(order.id);
+      await sendOrderToFulfillment(order.id);
+      // Refresh orders to pick up the fulfillmentSynced flag
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    } catch (e) {
+      alert((e as Error).message || 'Failed to send order to fulfillment');
+    } finally {
+      setSendingToFulfillment(null);
+    }
+  };
+
   const openBostaModal = (order: Order) => {
     setSelectedOrderForBosta(order);
 
@@ -1718,6 +1735,24 @@ ${JSON.stringify(bostaData, null, 2)}
                               {order.bostaTrackingNumber.slice(-8)}
                               <span className="material-icons text-[10px]">open_in_new</span>
                             </a>
+                          )}
+                          {isFulfillmentSubscribed && !order.fulfillmentSynced && order.status === 'pending' && (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs text-indigo-600 transition-colors hover:bg-indigo-100 disabled:opacity-60"
+                              onClick={() => handleSendToFulfillment(order)}
+                              disabled={sendingToFulfillment === order.id}
+                              title="Send to warehouse fulfillment"
+                            >
+                              <span className="material-icons text-sm">local_shipping</span>
+                              {sendingToFulfillment === order.id ? 'Sending...' : 'Fulfillment'}
+                            </button>
+                          )}
+                          {isFulfillmentSubscribed && order.fulfillmentSynced && (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 border border-indigo-200 px-2 py-1 text-xs text-indigo-600">
+                              <span className="material-icons text-sm">check_circle</span>
+                              Sent
+                            </span>
                           )}
                           <button
                             type="button"
