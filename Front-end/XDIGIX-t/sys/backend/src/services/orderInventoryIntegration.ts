@@ -17,26 +17,30 @@ import { FirestoreDoc } from '../schemas/document.schema';
 type OrderItem = { productId: string; quantity: number; size?: string };
 
 /**
- * Adjust product data.stock for a specific size.
- * delta < 0 = deduct (order placed), delta > 0 = restore (cancel/return).
+ * Adjust product data.reservedStock for a specific size.
+ * delta > 0 = reserve more (order placed), delta < 0 = release (cancel/return).
+ * Does NOT touch data.stock — warehouse staff sees real physical stock.
  */
 async function adjustProductStock(clientId: string, items: OrderItem[], delta: 1 | -1): Promise<void> {
   for (const item of items) {
     if (!item.productId || !item.quantity) continue;
     const doc = await FirestoreDoc.findOne(
       { businessId: clientId, coll: 'products', docId: item.productId },
-      { 'data.stock': 1 },
+      { 'data.stock': 1, 'data.reservedStock': 1 },
     ).lean();
     if (!doc) continue;
-    const stockMap = (((doc as { data?: Record<string, unknown> }).data ?? {}).stock ?? {}) as Record<string, number>;
+    const data = (doc as { data?: Record<string, unknown> }).data ?? {};
+    const stockMap = (data.stock ?? {}) as Record<string, number>;
+    const reservedMap = (data.reservedStock ?? {}) as Record<string, number>;
     const stockKeys = Object.keys(stockMap);
     const sizeKey = item.size || (stockKeys.length === 1 ? stockKeys[0] : '');
-    if (!sizeKey) continue; // Can't determine which size to adjust
-    const current = Number(stockMap[sizeKey]) || 0;
-    const updated = Math.max(0, current + (item.quantity * delta));
+    if (!sizeKey) continue;
+    const currentReserved = Number(reservedMap[sizeKey]) || 0;
+    // delta = -1 means order created → increase reserved; delta = +1 means cancel/return → decrease reserved
+    const updated = Math.max(0, currentReserved - (item.quantity * delta));
     await FirestoreDoc.updateOne(
       { businessId: clientId, coll: 'products', docId: item.productId },
-      { $set: { [`data.stock.${sizeKey}`]: updated } },
+      { $set: { [`data.reservedStock.${sizeKey}`]: updated } },
     );
   }
 }

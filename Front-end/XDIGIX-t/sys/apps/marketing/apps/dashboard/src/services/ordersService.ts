@@ -150,12 +150,15 @@ export const createOrder = async (businessId: string, payload: Omit<OrderDraft, 
         if (productSnap.exists()) {
           const data = productSnap.data();
           const stock: Record<string, number> = data.stock ?? {};
+          const reserved: Record<string, number> = data.reservedStock ?? {};
           const stockKeys = Object.keys(stock);
           const sizeKey = size || (stockKeys.length === 1 ? stockKeys[0] : '');
           if (sizeKey) {
-            const available = stock[sizeKey] ?? 0;
+            const physical = stock[sizeKey] ?? 0;
+            const alreadyReserved = reserved[sizeKey] ?? 0;
+            const available = physical - alreadyReserved;
             if (available < (item.quantity || 1)) {
-              throw new Error(`${item.name || item.productId} (${sizeKey}) — only ${available} in stock`);
+              throw new Error(`${item.name || item.productId} (${sizeKey}) — only ${available} available`);
             }
           }
         }

@@ -193,6 +193,11 @@ export const deleteProduct = async (businessId: string, productId: string) => {
 };
 
 // Decrease stock when an order is placed
+/**
+ * Reserve stock for an order — does NOT modify data.stock (warehouse sees real physical stock).
+ * Instead increments data.reservedStock[size] so storefront/client knows what's unavailable.
+ * Available = stock[size] - reservedStock[size]
+ */
 export const decreaseProductStock = async (
   businessId: string,
   productId: string,
@@ -209,36 +214,36 @@ export const decreaseProductStock = async (
 
   const productData = productSnap.data();
   const stock: Record<string, number> = productData.stock ?? {};
+  const reserved: Record<string, number> = productData.reservedStock ?? {};
   const stockKeys = Object.keys(stock);
-  // Use provided size, or if only one size exists use that, otherwise skip
   const sizeKey = size || (stockKeys.length === 1 ? stockKeys[0] : '');
   if (!sizeKey) {
-    console.warn(`[productsService] No size specified and product ${productId} has multiple sizes — skipping stock deduction`);
+    console.warn(`[productsService] No size specified and product ${productId} has multiple sizes — skipping`);
     return;
   }
 
-  const currentStock = stock[sizeKey] ?? 0;
-  if (currentStock <= 0) {
-    console.warn(`[productsService] Product ${productId} size ${sizeKey} is already out of stock`);
+  const physical = stock[sizeKey] ?? 0;
+  const alreadyReserved = reserved[sizeKey] ?? 0;
+  const available = physical - alreadyReserved;
+
+  if (available <= 0) {
     throw new Error(`${productData.name || productId} (${sizeKey}) is out of stock`);
   }
-  if (currentStock < quantity) {
-    throw new Error(`${productData.name || productId} (${sizeKey}) only has ${currentStock} in stock`);
+  if (available < quantity) {
+    throw new Error(`${productData.name || productId} (${sizeKey}) only has ${available} available`);
   }
 
-  const newStock = Math.max(0, currentStock - quantity);
-  const updatedStock = { ...stock, [sizeKey]: newStock };
+  const updatedReserved = { ...reserved, [sizeKey]: alreadyReserved + quantity };
 
   await updateDoc(productRef, {
-    stock: updatedStock,
-    sizeVariants: buildSizeVariants(updatedStock, productData.sizeBarcodes ?? {}),
+    reservedStock: updatedReserved,
     updatedAt: serverTimestamp()
   });
 
-  console.log(`[productsService] Decreased stock for ${productId} (${sizeKey}): ${currentStock} -> ${newStock}`);
+  console.log(`[productsService] Reserved ${quantity} of ${productId} (${sizeKey}): available ${available} -> ${available - quantity}`);
 };
 
-// Restore stock when an order is cancelled or returned
+// Release reserved stock when order is cancelled or returned
 export const restoreProductStock = async (
   businessId: string,
   productId: string,
@@ -255,6 +260,7 @@ export const restoreProductStock = async (
 
   const productData = productSnap.data();
   const stock: Record<string, number> = productData.stock ?? {};
+  const reserved: Record<string, number> = productData.reservedStock ?? {};
   const stockKeys = Object.keys(stock);
   const sizeKey = size || (stockKeys.length === 1 ? stockKeys[0] : '');
   if (!sizeKey) {
@@ -262,14 +268,11 @@ export const restoreProductStock = async (
     return;
   }
 
-  const currentStock = stock[sizeKey] ?? 0;
-  const newStock = currentStock + quantity;
+  const alreadyReserved = reserved[sizeKey] ?? 0;
+  const updatedReserved = { ...reserved, [sizeKey]: Math.max(0, alreadyReserved - quantity) };
 
-  const updatedStock = { ...stock, [sizeKey]: newStock };
-  
   await updateDoc(productRef, {
-    stock: updatedStock,
-    sizeVariants: buildSizeVariants(updatedStock, productData.sizeBarcodes ?? {}),
+    reservedStock: updatedReserved,
     updatedAt: serverTimestamp()
   });
   

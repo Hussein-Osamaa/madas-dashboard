@@ -646,10 +646,11 @@ function productCard(p: Record<string, unknown>, ctaLabel: string): string {
   const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
   const display = p.sellingPrice || p.salePrice || p.price;
   const detailHref = `${_sfBase}/products/${attr(p.id as string)}`;
-  // Stock check
+  // Stock check: available = physical stock - reserved
   const stockMap = (p.stock ?? {}) as Record<string, number>;
-  const totalStock = Object.values(stockMap).reduce((s, v) => s + (Number(v) || 0), 0);
-  const outOfStock = totalStock <= 0;
+  const reservedMap = (p.reservedStock ?? {}) as Record<string, number>;
+  const totalAvailable = Object.keys(stockMap).reduce((s, k) => s + Math.max(0, (Number(stockMap[k]) || 0) - (Number(reservedMap[k]) || 0)), 0);
+  const outOfStock = totalAvailable <= 0;
   const badgeHtml = outOfStock
     ? '<span class="xd-product-badge xd-badge-sold-out">Sold Out</span>'
     : onSale ? '<span class="xd-product-badge">Sale</span>' : '';

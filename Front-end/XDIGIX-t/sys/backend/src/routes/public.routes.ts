@@ -112,11 +112,14 @@ router.get('/:tenantId/products', catalogLimiter, async (req: Request, res: Resp
 
   const products = docs.map(d => {
     const raw = { id: d.docId, ...stripMeta(d as unknown as Record<string, unknown>), ...((d as {data?: Record<string, unknown>}).data || {}) } as Record<string, unknown>;
-    // Compute total stock for storefront availability
+    // Compute available stock = physical stock - reserved (pending orders)
     const stockMap = (raw.stock ?? {}) as Record<string, number>;
-    const totalStock = Object.values(stockMap).reduce((s, v) => s + (Number(v) || 0), 0);
-    raw.totalStock = totalStock;
-    raw.inStock = totalStock > 0;
+    const reservedMap = (raw.reservedStock ?? {}) as Record<string, number>;
+    const totalAvailable = Object.keys(stockMap).reduce((s, k) => s + Math.max(0, (Number(stockMap[k]) || 0) - (Number(reservedMap[k]) || 0)), 0);
+    raw.totalStock = totalAvailable;
+    raw.inStock = totalAvailable > 0;
+    // Don't expose reservedStock to public API
+    delete raw.reservedStock;
     return raw;
   });
 
@@ -257,16 +260,18 @@ router.post('/:tenantId/cart/add', cartLimiter, async (req: Request, res: Respon
   try {
     const productDoc = await FirestoreDoc.findOne(
       { businessId: biz.businessId, coll: 'products', docId: productId },
-      { 'data.stock': 1 },
+      { 'data.stock': 1, 'data.reservedStock': 1 },
     ).lean();
-    const stockMap = ((productDoc as { data?: { stock?: Record<string, unknown> } })?.data?.stock ?? {}) as Record<string, number>;
+    const pData = (productDoc as { data?: Record<string, unknown> })?.data ?? {};
+    const stockMap = (pData.stock ?? {}) as Record<string, number>;
+    const reservedMap = (pData.reservedStock ?? {}) as Record<string, number>;
     const sizeKey = variantId || Object.keys(stockMap)[0] || '';
-    const totalStock = sizeKey
-      ? (Number(stockMap[sizeKey]) || 0)
-      : Object.values(stockMap).reduce((s, v) => s + (Number(v) || 0), 0);
+    const available = sizeKey
+      ? (Number(stockMap[sizeKey]) || 0) - (Number(reservedMap[sizeKey]) || 0)
+      : Object.keys(stockMap).reduce((s, k) => s + Math.max(0, (Number(stockMap[k]) || 0) - (Number(reservedMap[k]) || 0)), 0);
     const requestedQty = quantity ?? 1;
-    if (totalStock < requestedQty) {
-      res.status(400).json({ error: 'Out of stock', code: 'OUT_OF_STOCK', available: totalStock });
+    if (available < requestedQty) {
+      res.status(400).json({ error: 'Out of stock', code: 'OUT_OF_STOCK', available: Math.max(0, available) });
       return;
     }
   } catch {

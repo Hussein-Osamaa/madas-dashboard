@@ -57,14 +57,15 @@ router.post(
       for (const item of items) {
         const doc = await FirestoreDoc.findOne(
           { businessId, coll: 'products', docId: item.productId },
-          { 'data.stock': 1, 'data.name': 1 },
+          { 'data.stock': 1, 'data.reservedStock': 1, 'data.name': 1 },
         ).lean();
         const data = (doc as { data?: Record<string, unknown> })?.data ?? {};
         const stockMap = (data.stock ?? {}) as Record<string, number>;
+        const reservedMap = (data.reservedStock ?? {}) as Record<string, number>;
         const sizeKey = item.size || Object.keys(stockMap)[0] || '';
         const available = sizeKey
-          ? (Number(stockMap[sizeKey]) || 0)
-          : Object.values(stockMap).reduce((s, v) => s + (Number(v) || 0), 0);
+          ? Math.max(0, (Number(stockMap[sizeKey]) || 0) - (Number(reservedMap[sizeKey]) || 0))
+          : Object.keys(stockMap).reduce((s, k) => s + Math.max(0, (Number(stockMap[k]) || 0) - (Number(reservedMap[k]) || 0)), 0);
         if (available < item.quantity) {
           outOfStock.push(`${(data.name as string) || item.productId}${item.size ? ` (${item.size})` : ''}: ${available} available`);
         }
