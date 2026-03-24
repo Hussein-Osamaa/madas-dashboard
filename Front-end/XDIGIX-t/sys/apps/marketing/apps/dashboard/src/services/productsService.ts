@@ -201,31 +201,44 @@ export const decreaseProductStock = async (
 ) => {
   const productRef = doc(db, 'businesses', businessId, 'products', productId);
   const productSnap = await getDoc(productRef);
-  
+
   if (!productSnap.exists()) {
     console.error(`[productsService] Product ${productId} not found`);
     return;
   }
-  
+
   const productData = productSnap.data();
-  const stock = productData.stock ?? {};
-  const sizeKey = size || 'default';
-  
+  const stock: Record<string, number> = productData.stock ?? {};
+  const stockKeys = Object.keys(stock);
+  // Use provided size, or if only one size exists use that, otherwise skip
+  const sizeKey = size || (stockKeys.length === 1 ? stockKeys[0] : '');
+  if (!sizeKey) {
+    console.warn(`[productsService] No size specified and product ${productId} has multiple sizes — skipping stock deduction`);
+    return;
+  }
+
   const currentStock = stock[sizeKey] ?? 0;
+  if (currentStock <= 0) {
+    console.warn(`[productsService] Product ${productId} size ${sizeKey} is already out of stock`);
+    throw new Error(`${productData.name || productId} (${sizeKey}) is out of stock`);
+  }
+  if (currentStock < quantity) {
+    throw new Error(`${productData.name || productId} (${sizeKey}) only has ${currentStock} in stock`);
+  }
+
   const newStock = Math.max(0, currentStock - quantity);
-  
   const updatedStock = { ...stock, [sizeKey]: newStock };
-  
+
   await updateDoc(productRef, {
     stock: updatedStock,
     sizeVariants: buildSizeVariants(updatedStock, productData.sizeBarcodes ?? {}),
     updatedAt: serverTimestamp()
   });
-  
+
   console.log(`[productsService] Decreased stock for ${productId} (${sizeKey}): ${currentStock} -> ${newStock}`);
 };
 
-// Restore stock when an order is cancelled
+// Restore stock when an order is cancelled or returned
 export const restoreProductStock = async (
   businessId: string,
   productId: string,
@@ -234,19 +247,24 @@ export const restoreProductStock = async (
 ) => {
   const productRef = doc(db, 'businesses', businessId, 'products', productId);
   const productSnap = await getDoc(productRef);
-  
+
   if (!productSnap.exists()) {
     console.error(`[productsService] Product ${productId} not found`);
     return;
   }
-  
+
   const productData = productSnap.data();
-  const stock = productData.stock ?? {};
-  const sizeKey = size || 'default';
-  
+  const stock: Record<string, number> = productData.stock ?? {};
+  const stockKeys = Object.keys(stock);
+  const sizeKey = size || (stockKeys.length === 1 ? stockKeys[0] : '');
+  if (!sizeKey) {
+    console.warn(`[productsService] No size specified for restore on ${productId} — skipping`);
+    return;
+  }
+
   const currentStock = stock[sizeKey] ?? 0;
   const newStock = currentStock + quantity;
-  
+
   const updatedStock = { ...stock, [sizeKey]: newStock };
   
   await updateDoc(productRef, {

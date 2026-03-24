@@ -29,7 +29,9 @@ async function adjustProductStock(clientId: string, items: OrderItem[], delta: 1
     ).lean();
     if (!doc) continue;
     const stockMap = (((doc as { data?: Record<string, unknown> }).data ?? {}).stock ?? {}) as Record<string, number>;
-    const sizeKey = item.size || Object.keys(stockMap)[0] || '_default';
+    const stockKeys = Object.keys(stockMap);
+    const sizeKey = item.size || (stockKeys.length === 1 ? stockKeys[0] : '');
+    if (!sizeKey) continue; // Can't determine which size to adjust
     const current = Number(stockMap[sizeKey]) || 0;
     const updated = Math.max(0, current + (item.quantity * delta));
     await FirestoreDoc.updateOne(

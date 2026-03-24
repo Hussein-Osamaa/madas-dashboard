@@ -53,6 +53,8 @@ export type Order = {
     name: string;
     quantity: number;
     price: number;
+    size?: string;
+    image?: string;
   }>;
   // Delivery options
   allowOpenPackage?: boolean;
@@ -136,31 +138,54 @@ export const getOrder = async (businessId: string, orderId: string): Promise<Ord
 };
 
 export const createOrder = async (businessId: string, payload: Omit<OrderDraft, 'id'>): Promise<string> => {
-  const now = serverTimestamp();
-  const dateValue = payload.date ?? new Date();
-  const docRef = await addDoc(ordersCollection(businessId), {
-    ...payload,
-    date: dateValue,
-    createdAt: now,
-    updatedAt: now
-  });
-  
-  // Decrease stock for each item in the order
+  // Check stock availability BEFORE creating the order
   if (payload.items && payload.items.length > 0) {
-    console.log('[ordersService] Decreasing stock for order items:', payload.items);
     for (const item of payload.items) {
       if (item.productId) {
-        try {
-          // Extract size from the item if present (could be in item.size or parsed from productId)
-          const size = (item as { size?: string }).size;
-          await decreaseProductStock(businessId, item.productId, size, item.quantity || 1);
-        } catch (error) {
-          console.error(`[ordersService] Failed to decrease stock for product ${item.productId}:`, error);
+        const size = item.size;
+        // decreaseProductStock will throw if out of stock
+        // We do a dry check first by reading stock
+        const productRef = doc(db, 'businesses', businessId, 'products', item.productId);
+        const productSnap = await getDoc(productRef);
+        if (productSnap.exists()) {
+          const data = productSnap.data();
+          const stock: Record<string, number> = data.stock ?? {};
+          const stockKeys = Object.keys(stock);
+          const sizeKey = size || (stockKeys.length === 1 ? stockKeys[0] : '');
+          if (sizeKey) {
+            const available = stock[sizeKey] ?? 0;
+            if (available < (item.quantity || 1)) {
+              throw new Error(`${item.name || item.productId} (${sizeKey}) — only ${available} in stock`);
+            }
+          }
         }
       }
     }
   }
-  
+
+  const now = serverTimestamp();
+  const dateValue = payload.date ?? new Date();
+  const docRef = await addDoc(ordersCollection(businessId), {
+    ...payload,
+    status: 'pending',
+    date: dateValue,
+    createdAt: now,
+    updatedAt: now
+  });
+
+  // Deduct stock for each item
+  if (payload.items && payload.items.length > 0) {
+    for (const item of payload.items) {
+      if (item.productId) {
+        try {
+          await decreaseProductStock(businessId, item.productId, item.size, item.quantity || 1);
+        } catch (error) {
+          console.error(`[ordersService] Failed to decrease stock for ${item.productId}:`, error);
+        }
+      }
+    }
+  }
+
   return docRef.id;
 };
 
