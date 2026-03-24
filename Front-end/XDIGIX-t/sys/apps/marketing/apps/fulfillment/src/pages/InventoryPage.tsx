@@ -184,6 +184,18 @@ export default function InventoryPage() {
   const [restockReport, setRestockReport] = useState<RestockReport | null>(null);
   const restockInputRef = useRef<HTMLInputElement>(null);
 
+  // Return session state (temporary — scan products to add back to stock)
+  const [returnSession, setReturnSession] = useState<{
+    active: boolean;
+    entries: Map<string, RestockEntry>;
+    totalScans: number;
+  } | null>(null);
+  const [returnScanInput, setReturnScanInput] = useState('');
+  const [returnLastScan, setReturnLastScan] = useState<{ barcode: string; matched: boolean; detail: string } | null>(null);
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
+  const [returnProgress, setReturnProgress] = useState<{ done: number; total: number } | null>(null);
+  const returnInputRef = useRef<HTMLInputElement>(null);
+
   // Live multi-user restock session state
   const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
   const [liveJoinCode, setLiveJoinCode] = useState('');
@@ -487,6 +499,108 @@ export default function InventoryPage() {
     setRestockSession(null);
     setRestockLastScan(null);
     setShowRestockConfirm(false);
+  };
+
+  // ─── Return Session Handlers ───────────────────────────────────────
+  const handleStartReturn = () => {
+    setReturnSession({ active: true, entries: new Map(), totalScans: 0 });
+    setReturnLastScan(null);
+    setReturnScanInput('');
+    setTimeout(() => returnInputRef.current?.focus(), 100);
+  };
+
+  const handleReturnScan = (barcode: string) => {
+    if (!returnSession || !barcode.trim()) return;
+    const bc = barcode.trim();
+    const match = barcodeToProduct.get(bc);
+
+    setReturnSession((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, totalScans: prev.totalScans + 1, entries: new Map(prev.entries) };
+      if (match) {
+        const key = `${match.productId}::${match.size}`;
+        const existing = next.entries.get(key);
+        if (existing) {
+          next.entries.set(key, { ...existing, count: existing.count + 1 });
+        } else {
+          next.entries.set(key, {
+            productId: match.productId,
+            productName: match.productName,
+            size: match.size,
+            barcode: bc,
+            count: 1,
+          });
+        }
+      }
+      return next;
+    });
+
+    setReturnLastScan({
+      barcode: bc,
+      matched: !!match,
+      detail: match ? `${match.productName} – ${match.size}` : 'No matching product found',
+    });
+    setReturnScanInput('');
+    returnInputRef.current?.focus();
+  };
+
+  const handleCancelReturn = () => {
+    if (returnSession && returnSession.totalScans > 0) {
+      if (!window.confirm('Cancel return session? All scanned data will be lost.')) return;
+    }
+    setReturnSession(null);
+    setReturnLastScan(null);
+  };
+
+  const handleFinishReturn = async () => {
+    if (!returnSession || returnSession.entries.size === 0 || !selectedClientId) return;
+    setReturnSubmitting(true);
+    setReturnProgress(null);
+    setError('');
+
+    try {
+      // Build updates: add scanned counts to existing stock
+      const updates: { productId: string; stock: Record<string, number> }[] = [];
+      const productStockMap = new Map<string, Record<string, number>>();
+
+      // Group scanned entries by product
+      returnSession.entries.forEach((entry) => {
+        let stockUpdate = productStockMap.get(entry.productId);
+        if (!stockUpdate) {
+          // Start from existing stock
+          const existingProduct = products.find((p) => p.id === entry.productId);
+          stockUpdate = { ...(existingProduct?.stock ?? {}) };
+          productStockMap.set(entry.productId, stockUpdate);
+        }
+        stockUpdate[entry.size] = (stockUpdate[entry.size] ?? 0) + entry.count;
+      });
+
+      productStockMap.forEach((stock, productId) => {
+        updates.push({ productId, stock });
+      });
+
+      const result = await bulkUpdateStock(
+        selectedClientId,
+        updates,
+        (done, total) => setReturnProgress({ done, total })
+      );
+
+      // Refresh products
+      const res = await listProducts(selectedClientId);
+      setProducts(res.products || []);
+
+      const totalReturned = Array.from(returnSession.entries.values()).reduce((s, e) => s + e.count, 0);
+
+      setReturnSession(null);
+      setReturnLastScan(null);
+      setSaveSuccessMessage(`Returned ${totalReturned} items to stock (${result.succeeded} products updated)`);
+      setTimeout(() => setSaveSuccessMessage(''), 5000);
+    } catch (err) {
+      setError(`Return failed: ${(err as Error).message}`);
+    } finally {
+      setReturnSubmitting(false);
+      setReturnProgress(null);
+    }
   };
 
   const handleFinishRestock = async () => {
@@ -1106,7 +1220,7 @@ export default function InventoryPage() {
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" />
           </div>
-          {isAdmin && selectedClientId && !restockSession && (
+          {isAdmin && selectedClientId && !restockSession && !returnSession && (
             <button
               type="button"
               onClick={handleStartRestock}
@@ -1115,6 +1229,17 @@ export default function InventoryPage() {
             >
               <ScanBarcode className="w-5 h-5" />
               Restock
+            </button>
+          )}
+          {selectedClientId && !restockSession && !returnSession && (
+            <button
+              type="button"
+              onClick={handleStartReturn}
+              disabled={loadingProducts || products.length === 0}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RotateCcw className="w-5 h-5" />
+              Return
             </button>
           )}
           {/* Join existing session */}
@@ -1341,6 +1466,104 @@ export default function InventoryPage() {
                     <span className="text-gray-500 dark:text-gray-400 font-mono text-xs">({wh.code})</span>
                   )}
                 </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Return Session */}
+      {returnSession && (
+        <div className="mb-8 rounded-xl border-2 border-amber-500/50 bg-amber-500/5 dark:bg-amber-500/10 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-500/20">
+                <RotateCcw className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Return Session</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Scan products to add back to stock</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (returnSession.entries.size === 0) {
+                    alert('No items scanned yet.');
+                    return;
+                  }
+                  handleFinishReturn();
+                }}
+                disabled={returnSubmitting || returnSession.entries.size === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {returnSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {returnProgress ? `${returnProgress.done}/${returnProgress.total}` : 'Applying...'}
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Finish Return
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelReturn}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+
+          {/* Scan input */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative flex-1">
+              <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-500" />
+              <input
+                ref={returnInputRef}
+                type="text"
+                value={returnScanInput}
+                onChange={(e) => setReturnScanInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleReturnScan(returnScanInput); } }}
+                placeholder="Scan barcode to return..."
+                autoFocus
+                className="w-full pl-11 pr-4 py-3 rounded-lg border border-amber-500/30 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-lg font-mono"
+              />
+            </div>
+            <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/20 min-w-[100px] justify-center">
+              <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">{returnSession.totalScans}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">scans</span>
+            </div>
+          </div>
+
+          {/* Last scan feedback */}
+          {returnLastScan && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-sm ${returnLastScan.matched ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-red-500/10 text-red-700 dark:text-red-400'}`}>
+              {returnLastScan.matched ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+              <span className="font-mono text-xs">{returnLastScan.barcode}</span>
+              <span>→</span>
+              <span>{returnLastScan.detail}</span>
+            </div>
+          )}
+
+          {/* Scanned items */}
+          {returnSession.entries.size > 0 && (
+            <div className="space-y-1 max-h-60 overflow-y-auto">
+              {Array.from(returnSession.entries.values())
+                .sort((a, b) => a.productName.localeCompare(b.productName))
+                .map((entry) => (
+                <div key={`${entry.productId}::${entry.size}`} className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/50 dark:bg-gray-800/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{entry.productName}</span>
+                    <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium">{entry.size}</span>
+                  </div>
+                  <span className="text-lg font-bold text-amber-600 dark:text-amber-400">+{entry.count}</span>
+                </div>
               ))}
             </div>
           )}
