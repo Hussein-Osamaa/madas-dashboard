@@ -1,12 +1,11 @@
 /**
  * HTTP client for the Zammit REST API (https://api.zammit.shop/api/v2).
- * Handles authentication, token management, and order fetching.
  *
- * Discovery: Zammit's dashboard is a Quasar SPA that talks to a hidden REST API.
- * Endpoints reverse-engineered from the JS bundle:
- *   POST /api/v2/authentication/email   → login
- *   GET  /api/v2/purchases              → list orders (with includes for relations)
- *   GET  /api/v2/purchases/:id          → single order detail
+ * IMPORTANT: The list endpoint (/purchases) returns purchaseProducts WITHOUT
+ * name, variantName, image fields. Only the detail endpoint (/purchases/:id)
+ * returns full product data. So we:
+ * 1. Use the list endpoint to discover new order IDs
+ * 2. Fetch each new order individually for full product details
  */
 
 import { config } from '../../config';
@@ -14,6 +13,7 @@ import { logger } from '../../utils/logger';
 import type {
   ZammitLoginResponse,
   ZammitPurchasesResponse,
+  ZammitPurchaseDetailResponse,
   ZammitPurchase,
 } from './types';
 
@@ -22,14 +22,20 @@ const API_PREFIX = '/api/v2';
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-/** Default includes for purchase list — fetches related customer, address, and products in one call */
-const PURCHASE_INCLUDES = JSON.stringify([
-  { relation: 'purchase_products' },
+/** Minimal includes for list (just to get IDs and basic status) */
+const LIST_INCLUDES = JSON.stringify([
   { relation: 'customer' },
   { relation: 'address' },
 ]);
 
-/** Delay between API calls to avoid rate-limiting (ms) */
+/** Full includes for detail endpoint (gets product names, images, variants) */
+const DETAIL_INCLUDES = JSON.stringify([
+  { relation: 'purchase_products' },
+  { relation: 'customer' },
+  { relation: 'address' },
+  { relation: 'discount' },
+]);
+
 const REQUEST_DELAY_MS = 300;
 
 function sleep(ms: number): Promise<void> {
@@ -48,10 +54,6 @@ export class ZammitApiClient {
 
   // ── Authentication ────────────────────────────────────────────
 
-  /**
-   * Login to Zammit and store the access token.
-   * @throws Error if credentials are invalid or Zammit is unreachable.
-   */
   async login(): Promise<ZammitLoginResponse> {
     const url = `${API_BASE}${API_PREFIX}/authentication/email`;
 
@@ -92,8 +94,7 @@ export class ZammitApiClient {
   // ── Orders ────────────────────────────────────────────────────
 
   /**
-   * Fetch a page of purchases (orders) from Zammit, newest first.
-   * Includes: customer, address, purchase_products in each record.
+   * Fetch a page of purchases (list endpoint — basic data only, NO product names).
    */
   async fetchPurchasesPage(page: number, limit = 25): Promise<ZammitPurchasesResponse> {
     this.requireToken();
@@ -101,7 +102,7 @@ export class ZammitApiClient {
     const params = new URLSearchParams({
       page: String(page),
       limit: String(limit),
-      includes: PURCHASE_INCLUDES,
+      includes: LIST_INCLUDES,
       order: JSON.stringify({ id: 'desc' }),
     });
 
@@ -110,9 +111,7 @@ export class ZammitApiClient {
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      if (res.status === 401) {
-        throw new Error('Zammit session expired (401)');
-      }
+      if (res.status === 401) throw new Error('Zammit session expired (401)');
       throw new Error(`Zammit fetch purchases failed: HTTP ${res.status} — ${text.slice(0, 200)}`);
     }
 
@@ -120,22 +119,47 @@ export class ZammitApiClient {
   }
 
   /**
-   * Fetch all new purchases (not yet synced).
-   * Paginates from newest to oldest. Stops when it hits a page where all orders are already synced.
+   * Fetch a single purchase with FULL details (product names, images, variants).
+   * This is the only way to get product names from Zammit.
+   */
+  async fetchPurchaseDetail(purchaseId: number): Promise<ZammitPurchase> {
+    this.requireToken();
+
+    const params = new URLSearchParams({
+      includes: DETAIL_INCLUDES,
+    });
+
+    const url = `${API_BASE}${API_PREFIX}/purchases/${purchaseId}?${params.toString()}`;
+    const res = await this.authenticatedGet(url);
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      if (res.status === 401) throw new Error('Zammit session expired (401)');
+      throw new Error(`Zammit fetch purchase #${purchaseId} failed: HTTP ${res.status} — ${text.slice(0, 200)}`);
+    }
+
+    const json = (await res.json()) as ZammitPurchaseDetailResponse;
+    return json.data;
+  }
+
+  /**
+   * Fetch all new purchases with FULL product details.
    *
-   * @param syncedIds - Set of Zammit purchase IDs that have already been imported.
-   * @param maxPages - Safety limit to prevent infinite pagination.
-   * @returns Array of new (unseen) purchases, newest first.
+   * Strategy:
+   * 1. Use the list endpoint to paginate and find new order IDs
+   * 2. For each new order, fetch full details individually (to get product names)
+   * 3. Stop paginating when all orders on a page are already synced
    */
   async fetchNewPurchases(
     syncedIds: Set<string>,
     maxPages = 20
   ): Promise<ZammitPurchase[]> {
-    const newPurchases: ZammitPurchase[] = [];
+    const newPurchaseIds: number[] = [];
     let page = 1;
 
+    // Phase 1: Discover new order IDs from list endpoint
     while (page <= maxPages) {
-      logger.debug('Zammit API: fetching purchases page', { page: String(page) });
+      logger.debug('Zammit API: scanning page for new orders', { page: String(page) });
 
       const response = await this.fetchPurchasesPage(page, 25);
       const purchases = response.data;
@@ -144,42 +168,66 @@ export class ZammitApiClient {
 
       let allSynced = true;
       for (const purchase of purchases) {
-        // Skip drafts and abandoned carts
         if (purchase.status === 'draft') continue;
 
         const purchaseId = String(purchase.id);
         if (!syncedIds.has(purchaseId)) {
-          newPurchases.push(purchase);
+          newPurchaseIds.push(purchase.id);
           allSynced = false;
         }
       }
 
-      // If every order on this page was already synced, stop — older pages will be too
       if (allSynced) {
-        logger.debug('Zammit API: all orders on page already synced, stopping', {
-          page: String(page),
-        });
+        logger.debug('Zammit API: all orders on page already synced, stopping', { page: String(page) });
         break;
       }
 
-      // If we've reached the last page, stop
       if (page >= response.metadata.totalPages) break;
 
       page++;
       await sleep(REQUEST_DELAY_MS);
     }
 
+    if (newPurchaseIds.length === 0) {
+      logger.info('Zammit API: no new orders found');
+      return [];
+    }
+
+    // Phase 2: Fetch FULL details for each new order (gets product names)
+    logger.info('Zammit API: fetching full details for new orders', {
+      count: String(newPurchaseIds.length),
+    });
+
+    const fullPurchases: ZammitPurchase[] = [];
+    for (const id of newPurchaseIds) {
+      try {
+        const detail = await this.fetchPurchaseDetail(id);
+        fullPurchases.push(detail);
+        logger.debug('Zammit API: fetched order detail', {
+          orderId: String(id),
+          products: String(detail.purchaseProducts?.length || 0),
+        });
+      } catch (err) {
+        logger.error('Zammit API: failed to fetch order detail', {
+          orderId: String(id),
+          error: (err as Error).message,
+        });
+        // Skip this order — it will be retried next sync
+      }
+      await sleep(REQUEST_DELAY_MS);
+    }
+
     logger.info('Zammit API: fetch complete', {
-      newOrders: String(newPurchases.length),
+      discovered: String(newPurchaseIds.length),
+      fetched: String(fullPurchases.length),
       pagesScanned: String(page),
     });
 
-    return newPurchases;
+    return fullPurchases;
   }
 
   /**
-   * Test credentials by attempting login. Does not store the token.
-   * @returns true if login succeeds, error message otherwise.
+   * Test credentials by attempting login.
    */
   static async testCredentials(
     email: string,
