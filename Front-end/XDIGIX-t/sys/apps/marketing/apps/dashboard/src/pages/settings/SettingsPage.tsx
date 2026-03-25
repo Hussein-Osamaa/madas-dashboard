@@ -84,6 +84,7 @@ const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
   const [sidebarSearch, setSidebarSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [currency, setCurrency] = useState<string>('USD');
   const [fiscalYearStart, setFiscalYearStart] = useState<string>('january');
   const [businessNameInput, setBusinessNameInput] = useState<string>('');
@@ -170,6 +171,7 @@ const SettingsPage = () => {
       return;
     }
     setActiveSection(item.id);
+    setMobileSidebarOpen(false);
   };
 
   if (loading || rbacLoading) {
@@ -715,26 +717,58 @@ const SettingsPage = () => {
         </div>
       }
     >
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-3">
-          <div className="flex items-center space-x-3">
+      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+        {/* ── Header (fixed) ── */}
+        <header className="flex-shrink-0 border-b border-gray-200 bg-white px-4 sm:px-6 py-3 z-20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <span className="material-icons text-gray-600 text-xl">arrow_back</span>
+              </button>
+              <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
+            </div>
+            {/* Mobile menu toggle */}
             <button
               type="button"
-              onClick={() => navigate('/')}
-              className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <span className="material-icons text-gray-600 text-xl">arrow_back</span>
+              <span className="material-icons text-gray-600 text-xl">
+                {mobileSidebarOpen ? 'close' : 'menu'}
+              </span>
             </button>
-            <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
           </div>
-        </div>
+        </header>
 
-        <div className="flex min-h-[calc(100vh-57px)]">
-          {/* Left Sidebar */}
-          <aside className="w-[280px] flex-shrink-0 bg-[#f6f6f7] border-r border-gray-200 flex flex-col">
+        {/* ── Body: sidebar + content, each scrolls independently ── */}
+        <div className="flex flex-1 min-h-0 relative">
+
+          {/* Mobile overlay */}
+          {mobileSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/30 z-30 lg:hidden"
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+          )}
+
+          {/* ── Left Sidebar (sticky, scrolls independently) ── */}
+          <aside
+            className={`
+              ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+              lg:translate-x-0
+              fixed lg:static inset-y-0 left-0 z-40 lg:z-0
+              w-[280px] flex-shrink-0 bg-[#f6f6f7] border-r border-gray-200
+              flex flex-col h-full lg:h-auto
+              transition-transform duration-200 ease-in-out
+              pt-[57px] lg:pt-0
+            `}
+          >
             {/* Store info */}
-            <div className="px-4 pt-5 pb-3">
+            <div className="flex-shrink-0 px-4 pt-5 pb-3">
               <h2 className="text-sm font-semibold text-gray-900 truncate">
                 {businessNameInput || businessName || 'My Store'}
               </h2>
@@ -742,21 +776,21 @@ const SettingsPage = () => {
             </div>
 
             {/* Search */}
-            <div className="px-3 pb-2">
+            <div className="flex-shrink-0 px-3 pb-2">
               <div className="relative">
                 <span className="material-icons absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input
                   type="text"
                   value={sidebarSearch}
                   onChange={(e) => setSidebarSearch(e.target.value)}
-                  placeholder="Search"
+                  placeholder="Search settings..."
                   className="w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 />
               </div>
             </div>
 
-            {/* Menu items */}
-            <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+            {/* Menu items — this is the only scrollable part of the sidebar */}
+            <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-1 space-y-0.5 scrollbar-thin">
               {filteredMenuItems.map((item) => {
                 const isActive = activeSection === item.id && !item.route;
                 return (
@@ -773,17 +807,20 @@ const SettingsPage = () => {
                     <span className={`material-icons text-lg ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
                       {item.icon}
                     </span>
-                    <span className="truncate">{item.label}</span>
+                    <span className="truncate flex-1">{item.label}</span>
+                    {item.comingSoon && (
+                      <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Soon</span>
+                    )}
                     {item.route && (
-                      <span className="material-icons text-gray-400 text-sm ml-auto">open_in_new</span>
+                      <span className="material-icons text-gray-400 text-sm">open_in_new</span>
                     )}
                   </button>
                 );
               })}
             </nav>
 
-            {/* User info at bottom */}
-            <div className="border-t border-gray-200 px-4 py-3 flex items-center space-x-3">
+            {/* User info (pinned to bottom) */}
+            <div className="flex-shrink-0 border-t border-gray-200 px-4 py-3 flex items-center space-x-3">
               <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
                 <span className="material-icons text-gray-600 text-base">person</span>
               </div>
@@ -796,9 +833,22 @@ const SettingsPage = () => {
             </div>
           </aside>
 
-          {/* Right content area */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-            {renderContent()}
+          {/* ── Right content area (scrolls independently) ── */}
+          <main className="flex-1 min-h-0 overflow-y-auto">
+            {/* Mobile breadcrumb */}
+            <div className="lg:hidden px-4 pt-3 pb-1">
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+              >
+                <span className="material-icons text-sm">chevron_left</span>
+                Settings
+              </button>
+            </div>
+            <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
+              {renderContent()}
+            </div>
           </main>
         </div>
       </div>
