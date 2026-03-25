@@ -1,12 +1,14 @@
 /**
- * Maps a Zammit purchase (API response) to the XDIGIX internal order format.
+ * Maps a Zammit purchase to XDIGIX order format with intelligent product matching.
  *
- * Product Matching:
- * - Looks up XDIGIX products by name to find the real productId.
- * - Strips labels like "(XDF)", "(XDigix)", etc. from XDIGIX product names for comparison.
- * - Matches on: normalized product name + size variant.
- * - If matched: uses real productId, image, and price from XDIGIX catalog.
- * - If unmatched: falls back to empty productId (shows as "Unknown Product").
+ * Product Matching Strategy (priority order):
+ * 1. EXACT name match (after stripping labels like "(XDF)") + size
+ * 2. Searches BOTH own products AND linked inventory (XDF) products
+ * 3. NO substring/fuzzy matching — exact only to prevent wrong matches
+ *
+ * Customer Data:
+ * - Stored inline on the order document (customerName, customerContact, etc.)
+ * - No duplicate customer records created in the customers collection
  */
 
 import type { ZammitPurchase, ZammitPurchaseProduct } from './types';
@@ -17,11 +19,16 @@ import { logger } from '../../utils/logger';
 export interface XdigixProduct {
   docId: string;
   name: string;
+  sku?: string;
+  barcode?: string;
   price: number;
   sellingPrice?: number;
   images?: string[];
   stock: Record<string, number>;
   reservedStock?: Record<string, number>;
+  sizeBarcodes?: Record<string, string>;
+  /** Which business owns this product (for linked inventory) */
+  businessId?: string;
 }
 
 export interface MatchedItem {
@@ -31,61 +38,59 @@ export interface MatchedItem {
   price: number;
   size: string;
   image: string;
-  matched: boolean; // true if matched to XDIGIX catalog
+  matched: boolean;
 }
 
 // ── Name Normalization ────────────────────────────────────────────
 
+/** Labels to strip from XDIGIX product names before comparing */
+const LABEL_PATTERNS = [
+  /\s*\(XDF\)\s*/gi,
+  /\s*\(XDigix\)\s*/gi,
+  /\s*\(XDIGIX\)\s*/gi,
+  /\s*\(XDIGIX-FULFILLMENT\)\s*/gi,
+  /\s*\(fulfillment\)\s*/gi,
+];
+
 /**
- * Remove common labels/suffixes from product names for comparison.
- * e.g. "Nike Dunk Low Cacao Wow (XDF)" → "nike dunk low cacao wow"
+ * Normalize a product name for comparison.
+ * Strips labels, lowercases, collapses whitespace.
  */
 function normalizeName(name: string): string {
-  return name
-    .replace(/\s*\(XDF\)\s*/gi, ' ')
-    .replace(/\s*\(XDigix\)\s*/gi, ' ')
-    .replace(/\s*\(XDIGIX\)\s*/gi, ' ')
-    .replace(/\s*\(fulfillment\)\s*/gi, ' ')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
-}
-
-/**
- * Check if two product names are a match (fuzzy).
- * Handles cases where Zammit has "adidas Campus 00s Core Black"
- * and XDIGIX has "adidas Campus 00s Core Black (XDF)".
- */
-function namesMatch(zammitName: string, xdigixName: string): boolean {
-  const a = normalizeName(zammitName);
-  const b = normalizeName(xdigixName);
-
-  // Exact match after normalization
-  if (a === b) return true;
-
-  // One contains the other (handles partial name differences)
-  if (a.includes(b) || b.includes(a)) return true;
-
-  return false;
+  let cleaned = name;
+  for (const pattern of LABEL_PATTERNS) {
+    cleaned = cleaned.replace(pattern, ' ');
+  }
+  return cleaned.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 // ── Product Matching ──────────────────────────────────────────────
 
 /**
- * Match a Zammit purchase product to an XDIGIX catalog product.
- * Matches by name similarity + size availability.
+ * Match a Zammit product to the XDIGIX catalog.
+ *
+ * Strategy: EXACT normalized name match + size.
+ * No substring matching — prevents wrong matches like
+ * "Nike Campus" matching "Nike Campus White" when the order is for "Nike Campus Black".
  */
 function matchProduct(
   zammitProduct: ZammitPurchaseProduct,
   catalog: XdigixProduct[]
 ): { product: XdigixProduct; size: string } | null {
-  const zName = zammitProduct.name || '';
-  const zSize = zammitProduct.variantName || zammitProduct.values?.[0] || '';
+  const zName = normalizeName(zammitProduct.name || '');
+  const zSize = (zammitProduct.variantName || zammitProduct.values?.[0] || '').trim();
 
-  for (const xProduct of catalog) {
-    if (!namesMatch(zName, xProduct.name)) continue;
+  if (!zName) return null;
 
-    // Check if the product has the requested size in stock
+  // Find all products with an exact normalized name match
+  const nameMatches = catalog.filter((xp) => normalizeName(xp.name) === zName);
+
+  if (nameMatches.length === 0) {
+    return null;
+  }
+
+  // Among name matches, find the one with the right size
+  for (const xProduct of nameMatches) {
     const stockKeys = Object.keys(xProduct.stock || {});
 
     if (zSize) {
@@ -93,20 +98,29 @@ function matchProduct(
       if (stockKeys.includes(zSize)) {
         return { product: xProduct, size: zSize };
       }
-      // Try case-insensitive size match
+      // Case-insensitive size match
       const matchedSize = stockKeys.find(
         (k) => k.toLowerCase() === zSize.toLowerCase()
       );
       if (matchedSize) {
         return { product: xProduct, size: matchedSize };
       }
-    } else if (stockKeys.length > 0) {
-      // No size specified — match product with first available size
-      return { product: xProduct, size: stockKeys[0] };
     } else {
-      // No sizes at all — still a name match
-      return { product: xProduct, size: '' };
+      // No size specified — return the product with first size
+      return { product: xProduct, size: stockKeys[0] || '' };
     }
+  }
+
+  // Name matched but no size match — still return the first name match without size
+  // (better than "Unknown Product", at least the product is identified)
+  if (nameMatches.length > 0) {
+    logger.warn('Zammit mapper: name matched but size not found in stock', {
+      zammitName: zammitProduct.name,
+      zammitSize: zSize,
+      xdigixName: nameMatches[0].name,
+      availableSizes: Object.keys(nameMatches[0].stock || {}).join(', '),
+    });
+    return { product: nameMatches[0], size: zSize };
   }
 
   return null;
@@ -132,14 +146,6 @@ function mapPaymentStatus(payment: string): string {
 
 // ── Main Mapper ───────────────────────────────────────────────────
 
-/**
- * Map a Zammit purchase to XDIGIX order format.
- * Attempts to match each line item to the XDIGIX product catalog.
- *
- * @param purchase - Zammit API purchase object
- * @param catalog - Array of XDIGIX products for this business (pre-loaded)
- * @returns { orderData, matchedItems } — order document + info about which items were matched
- */
 export function mapZammitPurchaseToOrder(
   purchase: ZammitPurchase,
   catalog: XdigixProduct[] = []
@@ -178,6 +184,13 @@ export function mapZammitPurchaseToOrder(
         zammitSize: pp.variantName || '',
         zammitPurchaseId: String(purchase.id),
       });
+    } else if (match) {
+      logger.debug('Zammit mapper: product matched', {
+        zammitName: pp.name,
+        xdigixDocId: match.product.docId,
+        xdigixName: match.product.name,
+        size: match.size,
+      });
     }
 
     matchedItems.push(item);
@@ -191,14 +204,11 @@ export function mapZammitPurchaseToOrder(
     };
   });
 
-  // Compute productCount (sum of all item quantities)
   const productCount = items.reduce((sum, item) => sum + item.quantity, 0);
-
-  // COD amount: if cash on delivery, customer pays total on delivery
   const isCOD = purchase.paymentType === 'cash_on_delivery';
 
   const orderData: Record<string, unknown> = {
-    // ── Customer info (stored inline on order — no separate customer record) ──
+    // ── Customer info (inline on order — no separate customer record) ──
     customerName: customer?.name || address?.name || '',
     customerContact: customer?.phoneNumber || address?.phoneNumber || '',
     customerEmail: customer?.email || '',
@@ -210,7 +220,7 @@ export function mapZammitPurchaseToOrder(
     items,
     productCount,
 
-    // ── Pricing (matching Order type fields exactly) ──
+    // ── Pricing ──
     total: purchase.total || 0,
     shippingFees: purchase.shippingFee || 0,
     discount: purchase.discountValue || 0,
@@ -237,7 +247,7 @@ export function mapZammitPurchaseToOrder(
     externalOrderId: String(purchase.id),
     notes: purchase.notes || '',
 
-    // ── Metadata (extra Zammit fields for debugging) ──
+    // ── Metadata ──
     metadata: {
       importedFrom: 'zammit',
       zammitPurchaseId: purchase.id,
