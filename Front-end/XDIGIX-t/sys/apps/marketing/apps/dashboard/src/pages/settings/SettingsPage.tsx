@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 const AnalyticsPage = lazy(() => import('./AnalyticsPage'));
 const ShippingPage = lazy(() => import('./ShippingPage'));
 const PaymentsPage = lazy(() => import('./PaymentsPage'));
+const ZammitSyncPage = lazy(() => import('./ZammitSyncPage'));
 
 type SettingsSection =
   | 'general'
@@ -38,7 +39,8 @@ type SettingsSection =
   | 'metafields'
   | 'languages'
   | 'customer-privacy'
-  | 'policies';
+  | 'policies'
+  | 'zammit-sync';
 
 type SidebarMenuItem = {
   id: SettingsSection;
@@ -591,6 +593,15 @@ const SettingsPage = () => {
           </div>
         );
 
+      case 'zammit-sync':
+        return (
+          <div className="w-full">
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><span className="material-icons text-2xl text-gray-300 animate-spin">progress_activity</span></div>}>
+              <ZammitSyncPage />
+            </Suspense>
+          </div>
+        );
+
       case 'integrations':
         return (
           <div className="w-full">
@@ -658,6 +669,23 @@ const SettingsPage = () => {
                         <h3 className="font-semibold text-gray-900 text-sm mb-0.5">Payment Methods</h3>
                         <p className="text-xs text-gray-500">
                           Stripe, Paymob, Fawry, InstaPay, Vodafone Cash, and bank transfers.
+                        </p>
+                      </div>
+                      <span className="material-icons text-gray-400 text-lg">chevron_right</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('zammit-sync')}
+                      className="flex items-start space-x-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-gray-400 hover:shadow-sm transition-all text-left"
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <span className="material-icons text-purple-600 text-xl">sync</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm mb-0.5">Zammit Sync</h3>
+                        <p className="text-xs text-gray-500">
+                          Import orders automatically from your Zammit store.
                         </p>
                       </div>
                       <span className="material-icons text-gray-400 text-lg">chevron_right</span>

@@ -10,6 +10,7 @@ import restockRoutes from './restock.routes';
 import clientWarehouseRoutes from './client-warehouse.routes';
 import staffRoutes from './staff.routes';
 import externalRoutes from './external.routes';
+import zammitRoutes from './zammit.routes';
 import bostaRoutes from './bosta.routes';
 import shippingRoutes from './shipping/index';
 import sitesRoutes from './sites.routes';
@@ -23,6 +24,7 @@ router.get('/health', (_req, res) => {
 });
 
 router.use('/external', externalRoutes);
+router.use('/zammit', zammitRoutes);
 router.use('/auth', authRoutes);
 router.use('/staff', staffRoutes);
 router.use('/', clientsRoutes);

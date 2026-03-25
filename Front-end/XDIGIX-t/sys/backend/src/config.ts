@@ -50,4 +50,12 @@ export const config = {
     /** Require HTTPS in production for external routes */
     requireHttps: process.env.EXTERNAL_API_REQUIRE_HTTPS !== 'false' && process.env.NODE_ENV === 'production',
   },
+
+  /** Zammit integration */
+  zammit: {
+    /** 64-char hex string (32 bytes) for AES-256-GCM encryption of stored credentials */
+    encryptionKey: process.env.ZAMMIT_ENCRYPTION_KEY || '',
+    /** Zammit API base URL */
+    apiBaseUrl: process.env.ZAMMIT_API_BASE_URL || 'https://api.zammit.shop',
+  },
 };
