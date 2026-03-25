@@ -191,27 +191,32 @@ export function mapZammitPurchaseToOrder(
     };
   });
 
+  // Compute productCount (sum of all item quantities)
+  const productCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // COD amount: if cash on delivery, customer pays total on delivery
+  const isCOD = purchase.paymentType === 'cash_on_delivery';
+
   const orderData: Record<string, unknown> = {
-    // Customer info
+    // ── Customer info (stored inline on order — no separate customer record) ──
     customerName: customer?.name || address?.name || '',
     customerContact: customer?.phoneNumber || address?.phoneNumber || '',
     customerEmail: customer?.email || '',
 
-    // Order status
+    // ── Order status ──
     status: mapOrderStatus(purchase.status, purchase.fulfillment),
 
-    // Items
+    // ── Items ──
     items,
+    productCount,
 
-    // Pricing
-    subtotal: purchase.subtotal || 0,
+    // ── Pricing (matching Order type fields exactly) ──
     total: purchase.total || 0,
-    shippingFee: purchase.shippingFee || 0,
-    discountValue: purchase.discountValue || 0,
-    currency: purchase.currency || 'EGP',
-    codFee: purchase.codFee || 0,
+    shippingFees: purchase.shippingFee || 0,
+    discount: purchase.discountValue || 0,
+    codAmount: isCOD ? (purchase.total || 0) : 0,
 
-    // Shipping address
+    // ── Shipping address ──
     shippingAddress: address
       ? {
           address: address.addressLine1 || '',
@@ -220,41 +225,39 @@ export function mapZammitPurchaseToOrder(
           building: address.building || '',
           floor: address.floor || '',
           apartment: address.apartment || '',
-          country: address.country || 'Egypt',
         }
       : undefined,
 
-    // Fulfillment
-    fulfillment: {
-      status: purchase.fulfillment || 'unfulfilled',
-    },
-
-    // Payment
-    paymentType: purchase.paymentType || '',
+    // ── Payment ──
     paymentStatus: mapPaymentStatus(purchase.payment),
 
-    // Source tracking
+    // ── Source tracking ──
     source: 'zammit',
     channel: purchase.channel || 'online_store',
     externalOrderId: String(purchase.id),
+    notes: purchase.notes || '',
 
-    // Metadata
+    // ── Metadata (extra Zammit fields for debugging) ──
     metadata: {
       importedFrom: 'zammit',
       zammitPurchaseId: purchase.id,
       zammitStatus: purchase.status,
       zammitFulfillment: purchase.fulfillment,
       zammitPayment: purchase.payment,
+      zammitPaymentType: purchase.paymentType,
       zammitCreatedAt: purchase.createdAt,
       zammitActivatedAt: purchase.activatedAt,
       zammitCourier: purchase.courier,
       zammitCourierTrackingId: purchase.courierTrackingId,
-      zammitNotes: purchase.notes,
       zammitCompanyId: purchase.companyId,
+      zammitCurrency: purchase.currency,
+      zammitSubtotal: purchase.subtotal,
+      zammitShippingFee: purchase.shippingFee,
+      zammitCodFee: purchase.codFee,
       syncedAt: new Date().toISOString(),
     },
 
-    // Timestamps
+    // ── Timestamps ──
     date: purchase.activatedAt || purchase.createdAt,
     createdAt: new Date(),
     updatedAt: new Date(),
