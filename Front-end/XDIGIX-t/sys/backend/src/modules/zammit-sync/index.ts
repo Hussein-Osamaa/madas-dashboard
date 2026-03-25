@@ -6,7 +6,7 @@
  */
 
 export { ZammitApiClient } from './zammit-api-client';
-export { mapZammitPurchaseToOrder } from './zammit-order-mapper';
+export { mapZammitPurchaseToOrder, type XdigixProduct } from './zammit-order-mapper';
 export { syncZammitOrders } from './zammit-sync.service';
 export { startZammitSyncCron } from './zammit-scheduler.service';
 export type { SyncResult, ZammitPurchase, ZammitLoginResponse } from './types';
