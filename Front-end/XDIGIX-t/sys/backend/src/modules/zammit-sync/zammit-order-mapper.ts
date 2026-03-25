@@ -158,10 +158,15 @@ export function mapZammitPurchaseToOrder(
   const items = (purchase.purchaseProducts || []).map((pp) => {
     const match = catalog.length > 0 ? matchProduct(pp, catalog) : null;
 
+    // Build display name with size (same as OrderModal's expandedProducts: "Nike Dunk 39")
+    const zSize = pp.variantName || (pp.values?.[0] ?? '');
+    const baseName = match ? (pp.name || match.product.name) : (pp.name || 'Unknown Product');
+    const displayName = zSize ? `${baseName} ${zSize}` : baseName;
+
     const item: MatchedItem = match
       ? {
           productId: match.product.docId,
-          name: pp.name || match.product.name,
+          name: displayName,
           quantity: pp.quantity || 1,
           price: pp.priceAtPurchase || pp.unitPriceWithAddons || match.product.sellingPrice || match.product.price || 0,
           size: match.size,
@@ -170,10 +175,10 @@ export function mapZammitPurchaseToOrder(
         }
       : {
           productId: '',
-          name: pp.name || 'Unknown Product',
+          name: displayName,
           quantity: pp.quantity || 1,
           price: pp.priceAtPurchase || pp.unitPriceWithAddons || 0,
-          size: pp.variantName || (pp.values?.[0] ?? ''),
+          size: zSize,
           image: pp.image || '',
           matched: false,
         };
