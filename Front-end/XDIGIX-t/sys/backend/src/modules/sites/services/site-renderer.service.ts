@@ -201,8 +201,8 @@ ul,ol{list-style:none}
 .xd-section-head .xd-h2{margin-bottom:.75rem}
 .xd-section-head .xd-lead{margin-inline:auto}
 .xd-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
-  padding:.75rem 1.75rem;border-radius:var(--br);font-weight:600;font-size:1rem;
-  border:2px solid transparent;transition:all .25s;text-decoration:none;white-space:nowrap;cursor:pointer}
+  padding:var(--btn-padding,.75rem 1.5rem);border-radius:var(--br);font-weight:600;font-size:1rem;
+  box-shadow:var(--btn-shadow,none);border:2px solid transparent;transition:all .25s;text-decoration:none;white-space:nowrap;cursor:pointer}
 .xd-btn:active{transform:scale(.97)}
 .xd-btn-primary{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
 .xd-btn-primary:hover{filter:brightness(1.12)}
@@ -448,14 +448,43 @@ ul,ol{list-style:none}
 ───────────────────────────────────────────────────────────────────── */
 
 function renderBanner(c: Record<string, unknown>): string {
-  if (!c.text) return '';
-  const link = c.link as string;
+  // Support both flat text and blocks (items array) with multiple announcements
+  const items = (c.items as Array<Record<string, unknown>>) || [];
+  const announcements: Array<{ text: string; link?: string }> = [];
+
+  if (items.length > 0) {
+    for (const item of items) {
+      const t = (item.text as string) || '';
+      if (t) announcements.push({ text: t, link: item.link as string });
+    }
+  }
+  if (announcements.length === 0 && c.text) {
+    announcements.push({ text: c.text as string, link: c.link as string });
+  }
+  if (announcements.length === 0) return '';
+
+  const dismissBtn = c.dismissible !== false ? `<button class="xd-announce-close" aria-label="Dismiss">×</button>` : '';
+
+  if (announcements.length === 1) {
+    const a = announcements[0];
+    return `
+<div class="xd-announce" role="alert">
+  ${a.link
+    ? `<a href="${attr(a.link)}">${txt(a.text)}${c.linkText ? ` &nbsp;→&nbsp; ${txt(c.linkText as string)}` : ''}</a>`
+    : txt(a.text)}
+  ${dismissBtn}
+</div>`;
+  }
+
+  // Multiple announcements — render as marquee-like or cycling
+  const inner = announcements.map(a => a.link
+    ? `<a href="${attr(a.link)}">${txt(a.text)}</a>`
+    : `<span>${txt(a.text)}</span>`
+  ).join('<span style="margin:0 2rem;opacity:.3">•</span>');
   return `
 <div class="xd-announce" role="alert">
-  ${link
-    ? `<a href="${attr(link)}">${txt(c.text as string)}${c.linkText ? ` &nbsp;→&nbsp; ${txt(c.linkText as string)}` : ''}</a>`
-    : txt(c.text as string)}
-  ${c.dismissible !== false ? `<button class="xd-announce-close" aria-label="Dismiss">×</button>` : ''}
+  <div class="xd-announce-scroll">${inner}</div>
+  ${dismissBtn}
 </div>`;
 }
 
@@ -467,13 +496,27 @@ function renderNavbar(c: Record<string, unknown>): string {
   const sticky    = c.sticky !== false;
 
   const clrAttr = txtColor ? ` style="color:${txtColor}"` : '';
-  const menuHtml = menuItems.map(item =>
-    `<li><a href="${attr(item.link as string || '#')}"${clrAttr}>${txt(item.label as string)}${item.badge ? ` <span style="background:var(--c-primary);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:999px">${txt(item.badge as string)}</span>` : ''}</a></li>`
-  ).join('');
+  const menuHtml = menuItems.map(item => {
+    const href = attr((item.url as string) || (item.link as string) || '#');
+    return `<li><a href="${href}"${clrAttr}>${txt(item.label as string)}${item.badge ? ` <span style="background:var(--c-primary);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:999px">${txt(item.badge as string)}</span>` : ''}</a></li>`;
+  }).join('');
 
-  const mobileHtml = menuItems.map(item =>
-    `<a href="${attr(item.link as string || '#')}">${txt(item.label as string)}</a>`
-  ).join('');
+  const mobileHtml = menuItems.map(item => {
+    const href = attr((item.url as string) || (item.link as string) || '#');
+    return `<a href="${href}">${txt(item.label as string)}</a>`;
+  }).join('');
+
+  // Icon URLs — default to standard storefront paths
+  const cartUrl     = attr(c.cartUrl as string || '/cart');
+  const wishlistUrl = attr(c.wishlistUrl as string || '/favorites');
+  const userIconUrl = attr(c.userIconUrl as string || '/account');
+
+  // SVG icons
+  const searchSvg   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+  const cartSvg     = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+  const wishlistSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+  const userSvg     = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const menuSvg     = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
 
   return `
 <header${bgColor ? ` style="background:${bgColor}"` : ''}>
@@ -484,9 +527,11 @@ function renderNavbar(c: Record<string, unknown>): string {
   </a>
   <ul class="xd-nav-menu" role="list">${menuHtml}</ul>
   <div class="xd-nav-actions">
-    ${c.showSearch ? `<button class="xd-nav-icon" aria-label="Search"${clrAttr}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>` : ''}
-    ${c.showCart !== false ? `<a href="${attr(c.cartUrl as string || '#')}" class="xd-nav-icon" aria-label="Cart (${attr(c.cartCount as string || '0')} items)"${clrAttr}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>${c.cartCount ? `<span class="xd-nav-badge">${txt(c.cartCount)}</span>` : ''}</a>` : ''}
-    <button class="xd-mobile-toggle" aria-label="Open menu"${clrAttr}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    ${c.showSearch ? `<button class="xd-nav-icon" aria-label="Search"${clrAttr}>${searchSvg}</button>` : ''}
+    ${c.showWishlist ? `<a href="${wishlistUrl}" class="xd-nav-icon" aria-label="Wishlist"${clrAttr}>${wishlistSvg}</a>` : ''}
+    ${c.showCart !== false ? `<a href="${cartUrl}" class="xd-nav-icon xd-cart-icon" aria-label="Cart"${clrAttr}>${cartSvg}<span class="xd-nav-badge" style="display:none"></span></a>` : ''}
+    ${c.showUserIcon ? `<a href="${userIconUrl}" class="xd-nav-icon" aria-label="Account"${clrAttr}>${userSvg}</a>` : ''}
+    <button class="xd-mobile-toggle" aria-label="Open menu"${clrAttr}>${menuSvg}</button>
   </div>
 </nav>
 <div id="xd-mobile-menu" class="xd-mobile-menu" role="dialog" aria-modal="true" aria-label="Navigation menu">
@@ -776,11 +821,11 @@ function renderCollections(c: Record<string, unknown>): string {
     ${cols.map(col => `
     <a href="${attr(col.url as string || col.link as string || '#')}" class="xd-reveal" data-item-id="${attr(col.id as string || col.slug as string)}" style="display:block;text-decoration:none;color:inherit">
       <div style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:var(--br);background:#f5f5f5">
-        <img src="${attr(col.image as string, 'https://placehold.co/400/27491F/fff?text=Collection')}" alt="${attr(col.name as string)}"
+        <img src="${attr(col.image as string, 'https://placehold.co/400/27491F/fff?text=Collection')}" alt="${attr((col.name as string) || (col.collection as string) || '')}"
              loading="lazy" decoding="async" width="400" height="400"
              style="width:100%;height:100%;object-fit:cover;transition:scale .4s">
         <div style="position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:1rem">
-          <strong style="font-size:1.2rem;font-weight:700">${txt(col.name as string)}</strong>
+          <strong style="font-size:1.2rem;font-weight:700">${txt((col.name as string) || (col.collection as string) || '')}</strong>
           ${col.productCount ? `<span style="font-size:.85rem;opacity:.85;margin-top:.25rem">${txt(col.productCount)} items</span>` : ''}
         </div>
       </div>
@@ -815,20 +860,31 @@ function renderTestimonials(c: Record<string, unknown>): string {
 }
 
 function renderCTA(c: Record<string, unknown>): string {
-  const title = (c.heading as string) || (c.title as string) || 'Ready to Get Started?';
-  const sub   = (c.text as string) || (c.subtitle as string) || '';
-  const btn1  = (c.button_label as string) || (c.buttonText as string) || '';
-  const btn1L = (c.button_link as string) || (c.buttonLink as string) || '#';
-  const btn2  = (c.button_label_2 as string) || (c.secondaryButtonText as string) || '';
-  const btn2L = (c.button_link_2 as string) || (c.secondaryButtonLink as string) || '#';
+  // Support both blocks format and flat fields
+  const blocks = (c.blocks as Array<Record<string, unknown>>) || [];
+  let title = (c.heading as string) || (c.title as string) || '';
+  let sub = (c.text as string) || (c.subtitle as string) || '';
+  let btn1 = (c.button_label as string) || (c.buttonText as string) || '';
+  let btn1L = (c.button_link as string) || (c.buttonLink as string) || '#';
+  let btn2 = (c.button_label_2 as string) || (c.secondaryButtonText as string) || '';
+  let btn2L = (c.button_link_2 as string) || (c.secondaryButtonLink as string) || '#';
+  for (const block of blocks) {
+    if (block.type === 'heading') title = title || (block.text as string) || '';
+    if (block.type === 'text') sub = sub || (block.text as string) || '';
+    if (block.type === 'button' || block.type === 'buttons') {
+      btn1 = btn1 || (block.button_label_1 as string) || (block.label as string) || '';
+      btn1L = (block.button_link_1 as string) || (block.link as string) || btn1L;
+    }
+  }
+  if (!title) title = 'Ready to Get Started?';
   return `
 <section class="xd-cta">
 <div class="xd-container">
   <h2 class="xd-h2 xd-reveal">${txt(title)}</h2>
   ${sub ? `<p class="xd-lead xd-reveal" style="opacity:.9;margin-inline:auto;margin-bottom:2rem">${txt(sub)}</p>` : ''}
   <div class="xd-flex-center xd-reveal">
-    ${btn1 ? `<a href="${attr(btn1L)}" class="xd-btn xd-btn-white">${txt(btn1)}</a>` : ''}
-    ${btn2 ? `<a href="${attr(btn2L)}" class="xd-btn xd-btn-outline-white">${txt(btn2)}</a>` : ''}
+    ${btn1 ? `<a href="${attr(btn1L)}" class="xd-btn" style="display:inline-block;padding:.75rem 2rem;font-weight:500;text-decoration:none;border-radius:var(--btn-radius,8px);background:var(--scheme-btn-bg,#fff);color:var(--scheme-btn-label,#121212)">${txt(btn1)}</a>` : ''}
+    ${btn2 ? `<a href="${attr(btn2L)}" class="xd-btn" style="display:inline-block;padding:.75rem 2rem;font-weight:500;text-decoration:none;border-radius:var(--btn-radius,8px);background:transparent;color:var(--scheme-outline-btn,currentColor);border:1px solid currentColor">${txt(btn2)}</a>` : ''}
   </div>
 </div>
 </section>`;
@@ -839,11 +895,23 @@ function renderAbout(c: Record<string, unknown>): string {
   const layout = (c.layout as string) || '';
   const isTextFirst = layout === 'text_first' || (c.imagePosition as string) === 'left';
   const rev = isTextFirst ? ' reverse' : '';
-  const title = (c.heading as string) || (c.title as string) || '';
-  const caption = (c.caption as string) || '';
-  const body = (c.text as string) || (c.content as string) || '';
-  const btn = (c.button_label as string) || (c.buttonText as string) || '';
-  const btnLink = (c.button_link as string) || (c.buttonLink as string) || '#';
+
+  // Support both blocks format and flat fields
+  const blocks = (c.blocks as Array<Record<string, unknown>>) || [];
+  let title = (c.heading as string) || (c.title as string) || '';
+  let caption = (c.caption as string) || '';
+  let body = (c.text as string) || (c.content as string) || '';
+  let btn = (c.button_label as string) || (c.buttonText as string) || '';
+  let btnLink = (c.button_link as string) || (c.buttonLink as string) || '#';
+  for (const block of blocks) {
+    if (block.type === 'heading') title = title || (block.text as string) || '';
+    if (block.type === 'caption') caption = caption || (block.text as string) || '';
+    if (block.type === 'text') body = body || (block.text as string) || '';
+    if (block.type === 'button') {
+      btn = btn || (block.label as string) || (block.button_label as string) || '';
+      btnLink = (block.link as string) || (block.button_link as string) || btnLink;
+    }
+  }
   const headingSize = (c.heading_size as string) || 'h1';
   const hSizeMap: Record<string, string> = { h0: '3.5rem', h1: '3rem', h2: '2.25rem', h3: '1.875rem', h4: '1.5rem', h5: '1.25rem' };
   const hSize = hSizeMap[headingSize] || hSizeMap.h1;
@@ -932,9 +1000,14 @@ function renderPricing(c: Record<string, unknown>): string {
     <div class="xd-pricing-card${p.highlighted ? ' featured' : ''} xd-reveal">
       ${p.highlighted ? '<div class="xd-pricing-badge">Most Popular</div>' : ''}
       <h3 class="xd-h3">${txt(p.name as string)}</h3>
-      <div><span class="xd-pricing-price">${txt(c.currency as string)}${txt(p.price as string)}</span><span class="xd-pricing-period">/${txt(c.billingPeriod as string || 'month')}</span></div>
+      <div><span class="xd-pricing-price">${txt(c.currency as string)}${txt(p.price as string)}</span><span class="xd-pricing-period">${(() => { const bp = (c.billingPeriod as string) || 'month'; return bp.startsWith('/') ? txt(bp) : '/' + txt(bp); })()}</span></div>
       <ul class="xd-pricing-features">
-        ${((p.features as string[]) || []).map(f => `<li>${txt(f)}</li>`).join('')}
+        ${(() => {
+          const f = p.features;
+          if (Array.isArray(f)) return f.map((item: string) => `<li>${txt(item)}</li>`).join('');
+          if (typeof f === 'string') return f.split('\n').filter(Boolean).map(line => `<li>${txt(line)}</li>`).join('');
+          return '';
+        })()}
       </ul>
       <a href="#" class="xd-btn ${p.highlighted ? 'xd-btn-primary' : 'xd-btn-secondary'} xd-btn-full">${txt(p.buttonText as string || 'Get Started')}</a>
     </div>`).join('')}
@@ -1100,6 +1173,48 @@ function renderPartners(c: Record<string, unknown>): string {
 </section>`;
 }
 
+function renderSlideshow(c: Record<string, unknown>): string {
+  const slides = (c.slides as Array<Record<string, unknown>>) || [];
+  if (slides.length === 0) return '<!-- slideshow: no slides -->';
+  const height = (c.slide_height as string) || 'medium';
+  const heightCls = height === 'full' ? 'min-height:100vh' : height === 'large' ? 'min-height:600px' : height === 'small' ? 'min-height:300px' : 'min-height:450px';
+  const autoplay = c.autoplay !== false;
+  const speed = Number(c.autoplay_speed) || 5;
+  const showArrows = c.show_arrows !== false;
+  const showDots = c.show_dots !== false;
+
+  const slidesHtml = slides.map((slide, i) => {
+    const bgImg = slide.image as string || '';
+    const heading = slide.heading as string || '';
+    const sub = slide.subheading as string || '';
+    const btnText = slide.button_label as string || '';
+    const btnLink = slide.button_link as string || '#';
+    const overlay = Number(slide.overlay_opacity) || 0;
+    const pos = (slide.content_position as string) || 'middle-center';
+    const align = (slide.text_alignment as string) || 'center';
+    const [vPos, hPos] = pos.includes('-') ? pos.split('-') : ['middle', 'center'];
+    const justifyMap: Record<string, string> = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
+    const alignMap: Record<string, string> = { left: 'flex-start', center: 'center', right: 'flex-end' };
+    return `
+    <div class="xd-slide${i === 0 ? ' active' : ''}" style="${heightCls};position:relative;overflow:hidden;${i > 0 ? 'display:none;' : ''}">
+      ${bgImg ? `<img src="${attr(bgImg)}" alt="${attr(heading)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async">` : ''}
+      ${overlay > 0 ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,${(overlay / 100).toFixed(2)})"></div>` : ''}
+      <div style="position:relative;z-index:2;display:flex;flex-direction:column;justify-content:${justifyMap[vPos] || 'center'};align-items:${alignMap[hPos] || 'center'};text-align:${align};${heightCls};padding:3rem 2rem;color:#fff">
+        ${heading ? `<h2 class="xd-h1" style="font-weight:bold;margin-bottom:.75rem">${txt(heading)}</h2>` : ''}
+        ${sub ? `<p style="font-size:1.125rem;opacity:.85;margin-bottom:1.5rem;max-width:36rem">${txt(sub)}</p>` : ''}
+        ${btnText ? `<a href="${attr(btnLink)}" class="xd-btn xd-btn-primary" style="border-radius:var(--btn-radius,8px)">${txt(btnText)}</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+<section class="xd-slideshow" data-autoplay="${autoplay}" data-speed="${speed}">
+  <div class="xd-slides">${slidesHtml}</div>
+  ${showArrows ? `<button class="xd-slide-prev" aria-label="Previous slide">‹</button><button class="xd-slide-next" aria-label="Next slide">›</button>` : ''}
+  ${showDots ? `<div class="xd-slide-dots">${slides.map((_, i) => `<button class="xd-slide-dot${i === 0 ? ' active' : ''}" data-slide="${i}" aria-label="Slide ${i + 1}"></button>`).join('')}</div>` : ''}
+</section>`;
+}
+
 function renderNewsletter(c: Record<string, unknown>): string {
   const successMsg = txt(c.successMessage as string || "You're subscribed!");
   const heading = (c.heading as string) || (c.title as string) || 'Stay in the Loop';
@@ -1156,7 +1271,7 @@ function renderFooter(c: Record<string, unknown>, siteName: string): string {
   const layout  = c.layout   as string || 'classic';
   const columns = (c.columns as Array<Record<string, unknown>>) || [];
   const social  = (c.socialLinks as Array<Record<string, unknown>>) || [];
-  const copyright = txt(c.copyrightText as string || `\u00A9 ${new Date().getFullYear()} ${siteName}`);
+  const copyright = txt((c.copyrightText as string) || (c.copyright as string) || `\u00A9 ${new Date().getFullYear()} ${siteName}`);
 
   const socialBg: Record<string, string> = {
     instagram:'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
@@ -1187,19 +1302,31 @@ function renderFooter(c: Record<string, unknown>, siteName: string): string {
   return `
 <footer
 <div class="xd-container xd-footer">
-  <div class="xd-footer-grid" style="border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:2.5rem;margin-bottom:2rem">
+  <div class="xd-footer-grid" style="border-bottom:1px solid color-mix(in srgb, currentColor 15%, transparent);padding-bottom:2.5rem;margin-bottom:2rem">
     <div>
       ${c.logo ? `<img src="${attr(c.logo as string)}" alt="${attr(c.logoText as string || siteName)}" style="max-height:48px;max-width:160px;object-fit:contain;margin-bottom:.75rem" loading="lazy">` : ''}
       <strong style="font-size:1.2rem;display:block;margin-bottom:.5rem">${txt(c.logoText as string || siteName)}</strong>
       ${c.tagline ? `<p style="opacity:.6;font-size:.9rem;line-height:1.6;max-width:280px">${txt(c.tagline as string)}</p>` : ''}
     </div>
-    ${columns.map(col => `
+    ${columns.map(col => {
+      const colTitle = (col.title as string) || (col.heading as string) || '';
+      // Support both links array (legacy) and menu textarea (registry: "Label | url\nLabel | url")
+      let linksHtml = '';
+      const linksArr = col.links as Array<Record<string, unknown>> | undefined;
+      if (linksArr && Array.isArray(linksArr)) {
+        linksHtml = linksArr.map(l => `<a href="${attr(l.link as string || l.url as string, '#')}">${txt(l.label as string)}</a>`).join('');
+      } else if (col.menu && typeof col.menu === 'string') {
+        linksHtml = (col.menu as string).split('\n').filter(Boolean).map(line => {
+          const [label, url] = line.split('|').map(s => s.trim());
+          return `<a href="${attr(url || '#')}">${txt(label || '')}</a>`;
+        }).join('');
+      }
+      return `
     <div>
-      <p class="xd-footer-col-title">${txt(col.title as string)}</p>
-      <nav class="xd-footer-links">
-        ${((col.links as Array<Record<string, unknown>>) || []).map(l => `<a href="${attr(l.link as string, '#')}">${txt(l.label as string)}</a>`).join('')}
-      </nav>
-    </div>`).join('')}
+      <p class="xd-footer-col-title">${txt(colTitle)}</p>
+      <nav class="xd-footer-links">${linksHtml}</nav>
+    </div>`;
+    }).join('')}
   </div>
   <div class="xd-footer-bottom">
     <span style="font-size:.85rem;opacity:.45">${copyright}</span>
@@ -1254,9 +1381,18 @@ function renderSection(sec: ISection, siteName: string): string {
     case 'newsletter':   html = renderNewsletter(c);   break;
     case 'divider':      html = renderDivider(c);      break;
     case 'imageComparison': html = renderImageComparison(c); break;
+    case 'slideshow':    html = renderSlideshow(c); break;
     case 'footer':       html = renderFooter(c, siteName); break;
     default:             return `<!-- section "${attr(sec.type)}" not rendered -->`;
   }
+
+  // ── Apply padding ──────────────────────────────────────────────
+  const padTop = c.padding_top as number | undefined;
+  const padBot = c.padding_bottom as number | undefined;
+  const padStyle = [
+    padTop != null ? `padding-top:${padTop}px` : '',
+    padBot != null ? `padding-bottom:${padBot}px` : '',
+  ].filter(Boolean).join(';');
 
   // ── Apply color scheme styling ──────────────────────────────────
   // Sections that have their own bg handling (hero has image, divider is transparent)
@@ -1286,9 +1422,12 @@ function renderSection(sec: ISection, siteName: string): string {
         : '';
       const textStyle = `color:${attr(scheme.text)};`;
 
-      // Wrap the section HTML in a div with scheme styles
-      html = `<div style="${cssVars};${bgStyle}${textStyle}">${html}</div>`;
+      // Wrap the section HTML in a div with scheme + padding styles
+      html = `<div style="${cssVars};${bgStyle}${textStyle}${padStyle ? padStyle + ';' : ''}">${html}</div>`;
     }
+  } else if (padStyle) {
+    // No scheme but padding specified — wrap with padding only
+    html = `<div style="${padStyle}">${html}</div>`;
   }
 
   return addSectionAttrs(html, sec.id, sec.type);
@@ -1342,6 +1481,10 @@ export function renderSite(site: ISite, pageSlug?: string): string {
     _colorSchemes = DEFAULT_COLOR_SCHEMES;
   }
   _btnRadius = theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px';
+  const btnShadowMap: Record<string, string> = { none: 'none', small: '0 1px 2px rgba(0,0,0,.08)', medium: '0 2px 8px rgba(0,0,0,.12)', large: '0 4px 16px rgba(0,0,0,.16)' };
+  const btnPadMap: Record<string, string> = { small: '0.5rem 1rem', medium: '0.75rem 1.5rem', large: '1rem 2rem' };
+  const _btnShadow = btnShadowMap[(theme.buttonShadow as string) || 'none'] || 'none';
+  const _btnPadding = btnPadMap[(theme.buttonPadding as string) || 'medium'] || '0.75rem 1.5rem';
 
   // ── Animation style from theme ─────────────────────────────────
   const animStyle = (theme.animationStyle as string) || 'fade-up';
@@ -1377,6 +1520,8 @@ export function renderSite(site: ISite, pageSlug?: string): string {
   --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
   --br:${_btnRadius};
   --btn-radius:${_btnRadius};
+  --btn-shadow:${_btnShadow};
+  --btn-padding:${_btnPadding};
 }
 /* Color scheme buttons — inherit scheme CSS vars when set */
 [style*="--scheme-btn-bg"] .xd-btn,

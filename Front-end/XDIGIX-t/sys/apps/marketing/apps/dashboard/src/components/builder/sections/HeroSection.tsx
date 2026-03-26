@@ -156,7 +156,7 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
     const mobileTextAlign = mobileAlignMap[mobileContentAlignment] || '';
 
     return (
-      <div className={`relative w-full ${heightMap[imageHeight] || heightMap.medium}`}
+      <div className={`relative w-full flex flex-col ${heightMap[imageHeight] || heightMap.medium}`}
         style={{
           backgroundColor: !displayImage && !slideData?.backgroundImage ? (bg || '#121212') : undefined,
           ...style,
@@ -190,7 +190,7 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
         )}
 
         {/* Positioning container — flex-col fills the whole slide area */}
-        <div className={`relative z-10 flex flex-col ${posClasses} w-full h-full px-8 sm:px-16 py-12`}>
+        <div className={`relative z-10 flex flex-col ${posClasses} w-full flex-1 px-8 sm:px-16 py-12`}>
           <div className={`max-w-2xl ${textAlign} ${mobileTextAlign} ${
             showTextBox || mobileShowContainer
               ? `${showTextBox ? 'md:bg-white/90 md:backdrop-blur-sm md:p-6' : ''} ${mobileShowContainer ? 'max-md:bg-white/90 max-md:backdrop-blur-sm max-md:p-5' : ''}`

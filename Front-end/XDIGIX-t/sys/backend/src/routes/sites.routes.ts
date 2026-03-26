@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { centralJwtMiddleware } from '../middleware/central-jwt.middleware';
 import { tenantMiddleware } from '../middleware/tenant.middleware';
 import { Site } from '../schemas/site.schema';
@@ -68,9 +69,24 @@ const router = Router();
 router.use(centralJwtMiddleware);
 router.use(tenantMiddleware);
 
+/** Slugify a brand/site name into a valid subdomain label */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')  // non-alphanumeric → dash
+    .replace(/^-+|-+$/g, '')       // trim leading/trailing dashes
+    .slice(0, 63) || 'store';      // max label length
+}
+
 function getDefaultSiteUrl(siteId: string): string {
   const base = process.env.SITE_BASE_URL || 'https://xdigix-os-production.up.railway.app';
   return `${base}/site/${siteId}`;
+}
+
+function getSubdomainUrl(subdomain: string): string {
+  const rootDomain = process.env.SITE_ROOT_DOMAIN || 'xdigix.com';
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  return `${protocol}://${subdomain}.${rootDomain}`;
 }
 
 /* ── List sites for business ──────────────────────────────────── */
@@ -194,18 +210,55 @@ router.post('/:id/publish', async (req: Request, res: Response) => {
       { $set: { status: 'draft', isActive: false, unpublishedAt: new Date() } }
     );
 
-    const siteUrl = getDefaultSiteUrl(req.params.id);
+    // Generate subdomain from site name (e.g. "Madas" → madas.xdigix.com)
+    const rootDomain = process.env.SITE_ROOT_DOMAIN || 'xdigix.com';
+    let subdomain = slugify(current.name);
+    // Ensure uniqueness: check if subdomain is taken by another tenant
+    const existingDomain = await Domain.findOne({
+      domain: `${subdomain}.${rootDomain}`,
+      tenantId: { $ne: req.tenantId },
+    }).lean();
+    if (existingDomain) {
+      // Append short hash to make unique
+      subdomain = `${subdomain}-${crypto.randomBytes(3).toString('hex')}`;
+    }
 
-    // Publish this site
+    const subdomainFull = `${subdomain}.${rootDomain}`;
+    const subdomainUrl = getSubdomainUrl(subdomain);
+    const fallbackUrl = getDefaultSiteUrl(req.params.id);
+
+    // Upsert the subdomain Domain record for this tenant
+    await Domain.findOneAndUpdate(
+      { tenantId: req.tenantId, rootDomain, isSubdomain: true },
+      {
+        $set: {
+          siteId: req.params.id,
+          domain: subdomainFull,
+          rootDomain,
+          isSubdomain: true,
+          status: 'active',
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          tenantId: req.tenantId,
+          verificationToken: crypto.randomBytes(16).toString('hex'),
+          failureCount: 0,
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // Publish this site — publicUrl is the subdomain, url is fallback
     const site = await Site.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenantId },
-      { $set: { status: 'published', isActive: true, publishedAt: new Date(), url: siteUrl, publicUrl: siteUrl } },
+      { $set: { status: 'published', isActive: true, publishedAt: new Date(), url: fallbackUrl, publicUrl: subdomainUrl, slug: subdomain } },
       { new: true }
     ).lean();
 
     // Reroute all custom domains for this business to this site
     await Domain.updateMany(
-      { tenantId: req.tenantId },
+      { tenantId: req.tenantId, isSubdomain: { $ne: true } },
       { $set: { siteId: req.params.id, updatedAt: new Date() } }
     );
 

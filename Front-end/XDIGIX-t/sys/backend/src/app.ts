@@ -17,6 +17,7 @@ import {
   renderProductDetailPage,
 } from './modules/sites/services/site-renderer.service';
 import { Site } from './schemas/site.schema';
+import { Domain } from './schemas/domain.schema';
 import { Business } from './schemas/business.schema';
 import { FirestoreDoc } from './schemas/document.schema';
 
@@ -214,6 +215,60 @@ export function createApp(): Express {
       if (!product) { res.status(404).send('<h1>404 — Product not found</h1>'); return; }
       sendPage(res, renderProductDetailPage(site as any, product));
     } catch { res.status(500).send('<h1>Error</h1>'); }
+  });
+
+  // ── Subdomain-based storefront resolution ─────────────────────
+  // Handles requests like madas.xdigix.com → find domain → serve site
+  const SITE_ROOT_DOMAIN = process.env.SITE_ROOT_DOMAIN || 'xdigix.com';
+  app.use(async (req: Request, res: Response, next) => {
+    const host = (req.hostname || req.headers.host || '').split(':')[0]; // strip port
+    // Only handle *.xdigix.com subdomains (not the root domain itself, not /api paths)
+    if (!host.endsWith(`.${SITE_ROOT_DOMAIN}`) || req.path.startsWith('/api')) {
+      return next();
+    }
+    const subdomain = host.replace(`.${SITE_ROOT_DOMAIN}`, '');
+    if (!subdomain || subdomain === 'www' || subdomain === 'api' || subdomain === 'dashboard') {
+      return next();
+    }
+    try {
+      // Look up domain record
+      const domainRecord = await Domain.findOne({ domain: host, status: 'active' }).lean();
+      if (!domainRecord) {
+        // Try by slug directly
+        const site = await Site.findOne({ slug: subdomain, status: 'published' }).lean();
+        if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
+        const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
+        const html = renderSite(site as any, pageSlug);
+        sendPage(res, html);
+        return;
+      }
+      const site = await Site.findOne({ _id: domainRecord.siteId }).lean();
+      if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
+      const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
+      // Handle product pages under subdomain
+      if (req.path === '/products' || req.path.startsWith('/products/')) {
+        const productId = req.path.split('/products/')[1];
+        if (productId) {
+          // Product detail
+          const product = await fetchProduct(site.tenantId, productId);
+          if (!product) { res.status(404).send('<h1>404 — Product not found</h1>'); return; }
+          const html = renderProductDetailPage(site as any, product as any);
+          sendPage(res, html);
+          return;
+        }
+        // All products
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const search = (req.query.search as string) || '';
+        const { products, total } = await fetchProducts(site.tenantId, page, search);
+        const html = renderAllProductsPage(site as any, products as any[], page, total);
+        sendPage(res, html);
+        return;
+      }
+      const html = renderSite(site as any, pageSlug);
+      sendPage(res, html);
+    } catch (err) {
+      res.status(500).send('<h1>Error rendering site</h1>');
+    }
   });
 
   // Storefront: serve published site by ID at /site/:id

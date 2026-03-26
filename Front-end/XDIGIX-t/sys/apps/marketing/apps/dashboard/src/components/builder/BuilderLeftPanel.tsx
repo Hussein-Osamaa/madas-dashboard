@@ -505,7 +505,6 @@ function PanelContent({
   onEditBlockTargetConsumed,
 }: PanelProps) {
   const nav = useBuilderNav();
-  const [ssTab, setSsTab] = useState<'content' | 'style'>('content');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
@@ -559,7 +558,7 @@ function PanelContent({
     if (!block || !blockSchema) {
       onSelectSection(sectionId);
       nav.pushSection(sectionId, entry.label ?? section.type);
-      setSsTab('content');
+  
       onEditBlockTargetConsumed?.();
       return;
     }
@@ -567,7 +566,7 @@ function PanelContent({
     onSelectSection(sectionId);
     nav.pushSection(sectionId, entry.label ?? section.type);
     nav.pushBlock(blockSchema.type, blockSchema.singularLabel ?? blockSchema.label, blockIndex);
-    setSsTab('content');
+
     onEditBlockTargetConsumed?.();
   }, [editBlockTarget]);
 
@@ -575,7 +574,7 @@ function PanelContent({
     const entry = SECTION_REGISTRY[section.type as SectionType];
     nav.pushSection(section.id, entry?.label ?? section.type);
     onSelectSection(section.id);
-    setSsTab('content');
+
   }, [nav.pushSection, onSelectSection]);
 
   const handleBlockClick = useCallback((section: Section, blockSchema: BlockSchema, blockIndex: number) => {
@@ -665,40 +664,108 @@ function PanelContent({
       </div>
 
       {/* ── OUTLINE VIEW ── */}
-      {nav.current.view === 'outline' && (
-        <div className="flex-1 overflow-y-auto py-2">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-              {sections.map((section) => (
-                <SortableSectionRow
-                  key={section.id}
-                  section={section}
-                  isSelected={selectedSectionId === section.id}
-                  isExpanded={expandedSections.has(section.id)}
-                  onToggleExpand={() => toggleExpand(section.id)}
-                  onSelect={() => handleSelectSection(section)}
-                  onDelete={() => setConfirmDialog({ message: 'Are you sure you want to delete this section?', onConfirm: () => { onDeleteSection(section.id); setConfirmDialog(null); } })}
-                  onToggleVisibility={onToggleSectionVisibility ? () => onToggleSectionVisibility(section.id) : undefined}
-                  onBlockClick={(schema, idx) => handleBlockClick(section, schema, idx)}
-                  onBlockDelete={(dk, idx) => setConfirmDialog({ message: 'Are you sure you want to delete this block?', onConfirm: () => { handleBlockDelete(section, dk, idx); setConfirmDialog(null); } })}
-                  onBlockAdd={(schema) => handleBlockAdd(section, schema)}
-                  onBlocksReorder={(dk, oldIdx, newIdx) => handleBlocksReorder(section, dk, oldIdx, newIdx)}
-                  selectedBlockKey={nav.current.view === 'block' && selectedSectionId === section.id ? nav.current.blockKey : undefined}
-                  selectedBlockIndex={nav.current.view === 'block' && selectedSectionId === section.id ? nav.current.blockIndex : undefined}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-          {/* Add section */}
-          <button
-            onClick={onOpenAddSheet}
-            className="mx-3.5 mt-1.5 mb-3 flex items-center gap-2 w-[calc(100%-28px)] px-3 py-2.5 border border-dashed border-[#e5e7eb] rounded-lg text-[#27491F] text-xs hover:border-[#27491F] hover:text-[#27491F] hover:bg-[#e8f0e6] transition-all"
-          >
-            <Plus size={13} />
-            Add section
-          </button>
-        </div>
-      )}
+      {nav.current.view === 'outline' && (() => {
+        const HEADER_TYPES: Set<string> = new Set(['banner', 'navbar']);
+        const FOOTER_TYPES: Set<string> = new Set(['footer']);
+
+        const headerSections = sections.filter(s => HEADER_TYPES.has(s.type));
+        const bodySections = sections.filter(s => !HEADER_TYPES.has(s.type) && !FOOTER_TYPES.has(s.type));
+        const footerSections = sections.filter(s => FOOTER_TYPES.has(s.type));
+
+        const handleGroupDragEnd = (group: Section[]) => (event: DragEndEvent) => {
+          const { active, over } = event;
+          if (!over || active.id === over.id) return;
+          const oldIndex = group.findIndex(s => s.id === active.id);
+          const newIndex = group.findIndex(s => s.id === over.id);
+          if (oldIndex < 0 || newIndex < 0) return;
+          const reordered = arrayMove(group, oldIndex, newIndex);
+          // Rebuild full sections array preserving group order
+          const newSections = [
+            ...headerSections.map(s => reordered.find(r => r.id === s.id) ?? s),
+            ...bodySections.map(s => reordered.find(r => r.id === s.id) ?? s),
+            ...footerSections.map(s => reordered.find(r => r.id === s.id) ?? s),
+          ].filter((s, i, arr) => arr.findIndex(x => x.id === s.id) === i);
+          // Replace with correct reordered group
+          const finalSections = [
+            ...(group === headerSections ? reordered : headerSections),
+            ...(group === bodySections ? reordered : bodySections),
+            ...(group === footerSections ? reordered : footerSections),
+          ];
+          onReorderSections(finalSections);
+        };
+
+        const renderSectionRow = (section: Section) => (
+          <SortableSectionRow
+            key={section.id}
+            section={section}
+            isSelected={selectedSectionId === section.id}
+            isExpanded={expandedSections.has(section.id)}
+            onToggleExpand={() => toggleExpand(section.id)}
+            onSelect={() => handleSelectSection(section)}
+            onDelete={() => setConfirmDialog({ message: 'Are you sure you want to delete this section?', onConfirm: () => { onDeleteSection(section.id); setConfirmDialog(null); } })}
+            onToggleVisibility={onToggleSectionVisibility ? () => onToggleSectionVisibility(section.id) : undefined}
+            onBlockClick={(schema, idx) => handleBlockClick(section, schema, idx)}
+            onBlockDelete={(dk, idx) => setConfirmDialog({ message: 'Are you sure you want to delete this block?', onConfirm: () => { handleBlockDelete(section, dk, idx); setConfirmDialog(null); } })}
+            onBlockAdd={(schema) => handleBlockAdd(section, schema)}
+            onBlocksReorder={(dk, oldIdx, newIdx) => handleBlocksReorder(section, dk, oldIdx, newIdx)}
+            selectedBlockKey={nav.current.view === 'block' && selectedSectionId === section.id ? nav.current.blockKey : undefined}
+            selectedBlockIndex={nav.current.view === 'block' && selectedSectionId === section.id ? nav.current.blockIndex : undefined}
+          />
+        );
+
+        const GroupLabel = ({ label, icon }: { label: string; icon: string }) => (
+          <div className="flex items-center gap-2 px-3.5 pt-3 pb-1.5">
+            <span className="material-icons text-[#9ca3af]" style={{ fontSize: '14px' }}>{icon}</span>
+            <span className="text-[10px] font-semibold text-[#9ca3af] uppercase tracking-[.8px]">{label}</span>
+            <div className="flex-1 h-px bg-[#e5e7eb]" />
+          </div>
+        );
+
+        return (
+          <div className="flex-1 overflow-y-auto py-1">
+            {/* ── Header group ── */}
+            {headerSections.length > 0 && (
+              <>
+                <GroupLabel label="Header" icon="vertical_align_top" />
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGroupDragEnd(headerSections)}>
+                  <SortableContext items={headerSections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                    {headerSections.map(renderSectionRow)}
+                  </SortableContext>
+                </DndContext>
+              </>
+            )}
+
+            {/* ── Body group ── */}
+            <GroupLabel label="Body" icon="view_agenda" />
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGroupDragEnd(bodySections)}>
+              <SortableContext items={bodySections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                {bodySections.map(renderSectionRow)}
+              </SortableContext>
+            </DndContext>
+            {/* Add section — body only */}
+            <button
+              onClick={onOpenAddSheet}
+              className="mx-3.5 mt-1.5 mb-2 flex items-center gap-2 w-[calc(100%-28px)] px-3 py-2.5 border border-dashed border-[#e5e7eb] rounded-lg text-[#27491F] text-xs hover:border-[#27491F] hover:text-[#27491F] hover:bg-[#e8f0e6] transition-all"
+            >
+              <Plus size={13} />
+              Add section
+            </button>
+
+            {/* ── Footer group ── */}
+            {footerSections.length > 0 && (
+              <>
+                <GroupLabel label="Footer" icon="vertical_align_bottom" />
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGroupDragEnd(footerSections)}>
+                  <SortableContext items={footerSections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                    {footerSections.map(renderSectionRow)}
+                  </SortableContext>
+                </DndContext>
+              </>
+            )}
+            <div className="h-3" />
+          </div>
+        );
+      })()}
 
       {/* ── SECTION SETTINGS VIEW ── */}
       {nav.current.view === 'section' && selectedSection && (
@@ -721,24 +788,6 @@ function PanelContent({
             })()}
           </div>
 
-          {/* Content / Style tabs */}
-          <div className="flex border-b border-[#e5e7eb] flex-shrink-0 px-3.5">
-            {(['content', 'style'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSsTab(tab)}
-                className={clsx(
-                  'flex-1 py-2.5 text-center text-xs font-medium capitalize border-b-2 -mb-px transition-all',
-                  ssTab === tab
-                    ? 'text-[#27491F] border-[#27491F]'
-                    : 'text-[#6b7280] border-transparent hover:text-[#111827]'
-                )}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
           {/* SectionEditor rendered in embedded mode */}
           <div className="flex-1 overflow-y-auto">
             <SectionEditor
@@ -749,7 +798,7 @@ function PanelContent({
               businessId={businessId}
               siteId={siteId}
               embedded={true}
-              activeTabOverride={ssTab === 'content' ? 'content' : 'style'}
+              activeTabOverride="content"
             />
           </div>
         </div>
