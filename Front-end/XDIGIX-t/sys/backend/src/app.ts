@@ -225,7 +225,7 @@ export function createApp(): Express {
   });
 
   // Storefront sub-pages: cart, favorites, account (by site ID)
-  app.get('/site/:id/:page(cart|favorites|account)', async (req: Request, res: Response) => {
+  app.get('/site/:id/:page(cart|favorites|account|signin|signup)', async (req: Request, res: Response) => {
     try {
       const site = await resolveStorefront(req.params.id);
       if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
@@ -235,7 +235,7 @@ export function createApp(): Express {
   });
 
   // Storefront sub-pages: cart, favorites, account (by slug)
-  app.get('/:slug([a-z0-9-]+)/:page(cart|favorites|account)', async (req: Request, res: Response) => {
+  app.get('/:slug([a-z0-9-]+)/:page(cart|favorites|account|signin|signup)', async (req: Request, res: Response) => {
     try {
       const site = await resolveStorefront(req.params.slug, true);
       if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
@@ -271,7 +271,7 @@ export function createApp(): Express {
 
       const sdOpts = { subdomain: true };
       // Handle storefront sub-pages under subdomain
-      const subPage = req.path.match(/^\/(cart|favorites|account)$/)?.[1];
+      const subPage = req.path.match(/^\/(cart|favorites|account|signin|signup)$/)?.[1];
       if (subPage) {
         const html = renderSite(site, subPage, sdOpts);
         sendPage(res, html);

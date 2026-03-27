@@ -530,7 +530,7 @@ function renderNavbar(c: Record<string, unknown>): string {
     ${c.showSearch ? `<button class="xd-nav-icon" aria-label="Search"${clrAttr}>${searchSvg}</button>` : ''}
     ${c.showWishlist ? `<a href="${wishlistUrl}" class="xd-nav-icon" aria-label="Wishlist"${clrAttr}>${wishlistSvg}</a>` : ''}
     ${c.showCart !== false ? `<a href="${cartUrl}" class="xd-nav-icon xd-cart-icon" aria-label="Cart"${clrAttr}>${cartSvg}<span class="xd-nav-badge" style="display:none"></span></a>` : ''}
-    ${c.showUserIcon ? `<a href="${userIconUrl}" class="xd-nav-icon xd-account-toggle" aria-label="Account"${clrAttr}><span class="xd-when-logged-out" style="font-size:.875rem;font-weight:600;white-space:nowrap">Sign in</span><span class="xd-when-logged-in" style="display:none">${userSvg}</span></a>` : ''}
+    ${c.showUserIcon ? `<a href="${_sfBase}/signin" class="xd-nav-icon xd-account-toggle xd-when-logged-out" aria-label="Sign in"${clrAttr} style="font-size:.875rem;font-weight:600;white-space:nowrap;text-decoration:none">Sign in</a><a href="${userIconUrl}" class="xd-nav-icon xd-account-toggle xd-when-logged-in" aria-label="Account"${clrAttr} style="display:none">${userSvg}</a>` : ''}
     <button class="xd-mobile-toggle" aria-label="Open menu"${clrAttr}>${menuSvg}</button>
   </div>
 </nav>
@@ -1471,9 +1471,99 @@ function renderStorefrontPage(pageSlug: string, siteName: string): string {
     <div style="background:#f9fafb;border-radius:var(--br,8px);padding:2rem;text-align:center">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <p style="font-size:1.1rem;margin-bottom:1rem">Sign in to view your orders and manage your account</p>
-      <a href="/" class="xd-btn" style="display:inline-block">Back to Store</a>
+      <a href="/signin" class="xd-btn" style="display:inline-block">Sign In</a>
     </div>
   </div>
+</section>`;
+  }
+  if (pageSlug === 'signin') {
+    return `
+<section style="max-width:440px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+  <div style="text-align:center;margin-bottom:2rem">
+    <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:.5rem">Welcome Back</h1>
+    <p style="opacity:.6;font-size:.95rem">Sign in to your account</p>
+  </div>
+  <form id="xd-signin-form" style="display:flex;flex-direction:column;gap:1rem" onsubmit="return false">
+    <div id="xd-signin-error" style="display:none;background:#fef2f2;color:#dc2626;padding:.75rem 1rem;border-radius:var(--br,8px);font-size:.875rem"></div>
+    <div style="display:flex;flex-direction:column;gap:.35rem">
+      <label for="xd-signin-email" style="font-size:.875rem;font-weight:600">Email</label>
+      <input id="xd-signin-email" type="email" required placeholder="you@example.com"
+        style="padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br,8px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+        onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.35rem">
+      <label for="xd-signin-password" style="font-size:.875rem;font-weight:600">Password</label>
+      <input id="xd-signin-password" type="password" required placeholder="Enter your password" minlength="6"
+        style="padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br,8px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+        onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+    </div>
+    <button type="submit" class="xd-btn" style="width:100%;padding:.85rem;font-size:1rem;font-weight:700;cursor:pointer;margin-top:.5rem">Sign In</button>
+    <p style="text-align:center;font-size:.9rem;opacity:.7;margin-top:.5rem">
+      Don&rsquo;t have an account? <a href="/signup" style="color:var(--c-primary);font-weight:600;text-decoration:none">Create one</a>
+    </p>
+  </form>
+</section>`;
+  }
+  if (pageSlug === 'signup') {
+    return `
+<section style="max-width:440px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+  <div style="text-align:center;margin-bottom:2rem">
+    <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:.5rem">Create Account</h1>
+    <p style="opacity:.6;font-size:.95rem">Join ${siteName} today</p>
+  </div>
+  <form id="xd-signup-form" style="display:flex;flex-direction:column;gap:1rem" onsubmit="return false">
+    <div id="xd-signup-error" style="display:none;background:#fef2f2;color:#dc2626;padding:.75rem 1rem;border-radius:var(--br,8px);font-size:.875rem"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div style="display:flex;flex-direction:column;gap:.35rem">
+        <label for="xd-signup-first" style="font-size:.875rem;font-weight:600">First Name</label>
+        <input id="xd-signup-first" type="text" required placeholder="First name"
+          style="padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br,8px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+          onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+          onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.35rem">
+        <label for="xd-signup-last" style="font-size:.875rem;font-weight:600">Last Name</label>
+        <input id="xd-signup-last" type="text" required placeholder="Last name"
+          style="padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br,8px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+          onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+          onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.35rem">
+      <label for="xd-signup-email" style="font-size:.875rem;font-weight:600">Email</label>
+      <input id="xd-signup-email" type="email" required placeholder="you@example.com"
+        style="padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br,8px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+        onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.35rem">
+      <label for="xd-signup-phone" style="font-size:.875rem;font-weight:600">Phone Number</label>
+      <input id="xd-signup-phone" type="tel" placeholder="+20 XXX XXX XXXX"
+        style="padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br,8px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+        onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.35rem">
+      <label for="xd-signup-password" style="font-size:.875rem;font-weight:600">Password</label>
+      <input id="xd-signup-password" type="password" required placeholder="At least 6 characters" minlength="6"
+        style="padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br,8px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+        onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.35rem">
+      <label for="xd-signup-confirm" style="font-size:.875rem;font-weight:600">Confirm Password</label>
+      <input id="xd-signup-confirm" type="password" required placeholder="Confirm your password" minlength="6"
+        style="padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:var(--br,8px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+        onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+    </div>
+    <button type="submit" class="xd-btn" style="width:100%;padding:.85rem;font-size:1rem;font-weight:700;cursor:pointer;margin-top:.5rem">Create Account</button>
+    <p style="text-align:center;font-size:.9rem;opacity:.7;margin-top:.5rem">
+      Already have an account? <a href="/signin" style="color:var(--c-primary);font-weight:600;text-decoration:none">Sign in</a>
+    </p>
+  </form>
 </section>`;
   }
   return '<section style="min-height:60vh;padding:4rem;text-align:center"><h1>Page not found</h1></section>';
@@ -1492,7 +1582,7 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   const currency    = 'SAR';
 
   // ── Storefront special pages (cart, account, favorites) ────────
-  const STOREFRONT_PAGES = new Set(['cart', 'favorites', 'account']);
+  const STOREFRONT_PAGES = new Set(['cart', 'favorites', 'account', 'signin', 'signup']);
   if (pageSlug && STOREFRONT_PAGES.has(pageSlug)) {
     // Set _sfBase for navbar links
     const storefrontBase = opts?.subdomain
