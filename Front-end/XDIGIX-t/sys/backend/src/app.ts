@@ -269,10 +269,11 @@ export function createApp(): Express {
       }
       if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
 
+      const sdOpts = { subdomain: true };
       // Handle storefront sub-pages under subdomain
       const subPage = req.path.match(/^\/(cart|favorites|account)$/)?.[1];
       if (subPage) {
-        const html = renderSite(site, subPage);
+        const html = renderSite(site, subPage, sdOpts);
         sendPage(res, html);
         return;
       }
@@ -281,19 +282,19 @@ export function createApp(): Express {
         if (productId) {
           const product = await fetchProduct(site.tenantId, productId);
           if (!product) { res.status(404).send('<h1>404 — Product not found</h1>'); return; }
-          const html = renderProductDetailPage(site, product as any);
+          const html = renderProductDetailPage(site, product as any, sdOpts);
           sendPage(res, html);
           return;
         }
         const page = Math.max(1, parseInt(req.query.page as string) || 1);
         const search = (req.query.search as string) || '';
         const { products, total } = await fetchProducts(site.tenantId, page, search);
-        const html = renderAllProductsPage(site, products as any[], page, total);
+        const html = renderAllProductsPage(site, products as any[], page, total, sdOpts);
         sendPage(res, html);
         return;
       }
       // Homepage
-      const html = renderSite(site);
+      const html = renderSite(site, undefined, sdOpts);
       sendPage(res, html);
     } catch (err) {
       res.status(500).send('<h1>Error rendering site</h1>');

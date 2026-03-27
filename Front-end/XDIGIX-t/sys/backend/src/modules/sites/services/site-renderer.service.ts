@@ -1436,7 +1436,7 @@ function renderSection(sec: ISection, siteName: string): string {
 /* ─────────────────────────────────────────────────────────────────────
    MAIN RENDER FUNCTION
 ───────────────────────────────────────────────────────────────────── */
-export function renderSite(site: ISite, pageSlug?: string): string {
+export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: boolean }): string {
   const { settings, name } = site;
   const globalSeo   = (settings?.seo as Record<string, unknown>) || {};
   const theme       = (settings?.theme as Record<string, unknown>) || {};
@@ -1564,9 +1564,11 @@ export function renderSite(site: ISite, pageSlug?: string): string {
 
   // ── xd-manifest (storefront runtime reads this for live hydration) ──
   const apiBase = (process.env.PUBLIC_API_BASE ?? '/api/public').replace(/\/$/, '');
-  const storefrontBase = (site as unknown as Record<string, unknown>).slug
-    ? `/${(site as unknown as Record<string, unknown>).slug}`
-    : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+  const storefrontBase = opts?.subdomain
+    ? ''
+    : (site as unknown as Record<string, unknown>).slug
+      ? `/${(site as unknown as Record<string, unknown>).slug}`
+      : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
   _sfBase = storefrontBase;
 
   const manifestSections = sortedSections.flatMap(s => {
@@ -1765,9 +1767,11 @@ function pageShell(
   --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
   --br:${theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px'};
 }`;
-  const storefrontBase = (site as unknown as Record<string, unknown>).slug
-    ? `/${(site as unknown as Record<string, unknown>).slug}`
-    : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+  const storefrontBase = opts?.subdomain
+    ? ''
+    : (site as unknown as Record<string, unknown>).slug
+      ? `/${(site as unknown as Record<string, unknown>).slug}`
+      : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
   _sfBase = storefrontBase;
   const safeJson  = (obj: unknown) => JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
   const apiBase   = (process.env.PUBLIC_API_BASE ?? '/api/public').replace(/\/$/, '');
@@ -1838,10 +1842,13 @@ export function renderAllProductsPage(
   products: ProductData[],
   total = 0,
   page  = 1,
+  opts?: { subdomain?: boolean },
 ): string {
-  const sfBase = (site as unknown as Record<string, unknown>).slug
-    ? `/${(site as unknown as Record<string, unknown>).slug}`
-    : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+  const sfBase = opts?.subdomain
+    ? ''
+    : (site as unknown as Record<string, unknown>).slug
+      ? `/${(site as unknown as Record<string, unknown>).slug}`
+      : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
 
   const cards = products.map(p => {
     const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
@@ -1911,10 +1918,12 @@ export function renderAllProductsPage(
 /**
  * Render a single product detail page.
  */
-export function renderProductDetailPage(site: ISite, product: ProductData): string {
-  const sfBase = (site as unknown as Record<string, unknown>).slug
-    ? `/${(site as unknown as Record<string, unknown>).slug}`
-    : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+export function renderProductDetailPage(site: ISite, product: ProductData, opts?: { subdomain?: boolean }): string {
+  const sfBase = opts?.subdomain
+    ? ''
+    : (site as unknown as Record<string, unknown>).slug
+      ? `/${(site as unknown as Record<string, unknown>).slug}`
+      : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
 
   const name      = txt(product.name as string || 'Product');
   const price     = product.sellingPrice || product.salePrice || product.price;
