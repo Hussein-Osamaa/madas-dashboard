@@ -491,7 +491,7 @@ const ThemePanel = ({ onClose, onSave }: Props) => {
     saveTimer.current = setTimeout(() => onSave?.(next), 800);
   }, [theme, updateTheme, onSave]);
 
-  const [openAccordion, setOpenAccordion] = useState<string | null>('Logo');
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
   const fontOptions = FONT_OPTIONS.map(f => ({ value: f, label: f }));
 
   return (

@@ -39,8 +39,8 @@ const NewsletterSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock
             className="flex-1 px-4 py-3 border text-sm bg-transparent outline-none min-w-0"
             style={{ borderColor: 'currentColor', color: 'inherit', opacity: 1 }} />
           <button type="submit"
-            className="px-6 py-3 text-sm tracking-wider transition-colors flex-shrink-0 flex items-center gap-1"
-            style={{ backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}>
+            className="text-sm tracking-wider transition-colors flex-shrink-0 flex items-center gap-1"
+            style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}>
             <span className="material-icons text-sm">arrow_forward</span>
           </button>
         </form>

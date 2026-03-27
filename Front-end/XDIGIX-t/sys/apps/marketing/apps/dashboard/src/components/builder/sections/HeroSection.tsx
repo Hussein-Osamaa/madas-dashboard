@@ -227,20 +227,20 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                 return wrapBlock(idx, 'buttons',
                   <div className={`flex flex-wrap gap-3 ${btnJustify} ${mobileContentAlignment === 'center' ? 'max-md:justify-center' : mobileContentAlignment === 'right' ? 'max-md:justify-end' : 'max-md:justify-start'}`}>
                     {b1Text && (
-                      <a href={b1Link} className={`inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-colors ${
+                      <a href={b1Link} className={`inline-block text-sm font-medium tracking-wider uppercase transition-colors ${
                         bSec1
                           ? 'border border-current bg-transparent'
                           : showTextBox ? 'bg-[#121212] text-white' : 'bg-white text-[#121212]'
-                      }`} style={bSec1 ? { color: showTextBox ? '#121212' : txt } : {}}>
+                      }`} style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', ...(bSec1 ? { color: showTextBox ? '#121212' : txt } : {}) }}>
                         {b1Text}
                       </a>
                     )}
                     {b2Text && (
-                      <a href={b2Link} className={`inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-colors ${
+                      <a href={b2Link} className={`inline-block text-sm font-medium tracking-wider uppercase transition-colors ${
                         bSec2
                           ? 'border border-current bg-transparent'
                           : showTextBox ? 'bg-[#121212] text-white' : 'bg-white text-[#121212]'
-                      }`} style={bSec2 ? { color: showTextBox ? '#121212' : txt } : {}}>
+                      }`} style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', ...(bSec2 ? { color: showTextBox ? '#121212' : txt } : {}) }}>
                         {b2Text}
                       </a>
                     )}
@@ -261,8 +261,11 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                       />
                       {btnLabel && (
                         <button
-                          className="px-6 py-3 text-sm font-medium tracking-wider uppercase flex-shrink-0"
+                          className="text-sm font-medium tracking-wider uppercase flex-shrink-0"
                           style={{
+                            padding: 'var(--btn-padding, 0.75rem 1.5rem)',
+                            borderRadius: 'var(--btn-radius, 8px)',
+                            boxShadow: 'var(--btn-shadow, none)',
                             backgroundColor: (showTextBox || mobileShowContainer) ? '#121212' : '#fff',
                             color: (showTextBox || mobileShowContainer) ? '#fff' : '#121212',
                           }}
@@ -287,7 +290,8 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                   <p className="text-base md:text-lg mb-6 opacity-80" style={{ color: txt }}>{d.subtitle}</p>
                 )}
                 {d.buttonText && (
-                  <a href={d.buttonLink || '#'} className={`inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase bg-white text-[#121212]`}>
+                  <a href={d.buttonLink || '#'} className="inline-block text-sm font-medium tracking-wider uppercase bg-white text-[#121212]"
+                    style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)' }}>
                     {d.buttonText}
                   </a>
                 )}

@@ -32,6 +32,8 @@ export function createApp(): Express {
     'https://xdigix-os.vercel.app',
     'https://xdigix-os-xdigix.vercel.app',
     'https://dist-xdigix.vercel.app',
+    'https://xdigix.com',
+    'https://www.xdigix.com',
   ];
   const envOrigins = (config.cors.origin || '')
     .split(',')
@@ -67,6 +69,11 @@ export function createApp(): Express {
           /^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming) ||
           /^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming.replace(/\/$/, ''))
         ) {
+          callback(null, incoming);
+          return;
+        }
+        // Allow any *.xdigix.com subdomain (published storefront sites)
+        if (/^https:\/\/[a-z0-9-]+\.xdigix\.com$/.test(incoming)) {
           callback(null, incoming);
           return;
         }
@@ -217,6 +224,26 @@ export function createApp(): Express {
     } catch { res.status(500).send('<h1>Error</h1>'); }
   });
 
+  // Storefront sub-pages: cart, favorites, account (by site ID)
+  app.get('/site/:id/:page(cart|favorites|account)', async (req: Request, res: Response) => {
+    try {
+      const site = await resolveStorefront(req.params.id);
+      if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
+      const html = renderSite(site as any, req.params.page);
+      sendPage(res, html);
+    } catch { res.status(500).send('<h1>Error</h1>'); }
+  });
+
+  // Storefront sub-pages: cart, favorites, account (by slug)
+  app.get('/:slug([a-z0-9-]+)/:page(cart|favorites|account)', async (req: Request, res: Response) => {
+    try {
+      const site = await resolveStorefront(req.params.slug, true);
+      if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
+      const html = renderSite(site as any, req.params.page);
+      sendPage(res, html);
+    } catch { res.status(500).send('<h1>Error</h1>'); }
+  });
+
   // ── Subdomain-based storefront resolution ─────────────────────
   // Handles requests like madas.xdigix.com → find domain → serve site
   const SITE_ROOT_DOMAIN = process.env.SITE_ROOT_DOMAIN || 'xdigix.com';
@@ -245,7 +272,13 @@ export function createApp(): Express {
       const site = await Site.findOne({ _id: domainRecord.siteId }).lean();
       if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
       const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
-      // Handle product pages under subdomain
+      // Handle storefront sub-pages under subdomain
+      const subPage = req.path.match(/^\/(cart|favorites|account)$/)?.[1];
+      if (subPage) {
+        const html = renderSite(site as any, subPage);
+        sendPage(res, html);
+        return;
+      }
       if (req.path === '/products' || req.path.startsWith('/products/')) {
         const productId = req.path.split('/products/')[1];
         if (productId) {

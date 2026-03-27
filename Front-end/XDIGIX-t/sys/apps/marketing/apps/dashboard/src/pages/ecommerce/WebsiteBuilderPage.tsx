@@ -80,7 +80,7 @@ async function sitesApi<T>(method: string, path: string, body?: unknown): Promis
    Types
 ────────────────────────────────────────────────────────────── */
 type Site = {
-  id: string; name: string; description?: string;
+  id: string; name: string; themeName?: string; description?: string;
   status: 'draft' | 'published';
   createdAt?: string; updatedAt?: string;
   url?: string; publicUrl?: string; customDomain?: string;
@@ -240,7 +240,8 @@ type SiteCardProps = {
   onDelete: () => void; onDuplicate: () => void; onSettings: () => void;
 };
 function SiteCard({ site, t, publishing, unpublishing, deleting, onEdit, onPublish, onUnpublish, onDelete, onDuplicate, onSettings }: SiteCardProps) {
-  const [col1, col2] = getSiteGradient(site.name);
+  const displayName = site.themeName || site.name;
+  const [col1, col2] = getSiteGradient(displayName);
   const isLive        = site.status === 'published';
   const busyPublish   = publishing   === site.id;
   const busyUnpublish = unpublishing === site.id;
@@ -266,7 +267,7 @@ function SiteCard({ site, t, publishing, unpublishing, deleting, onEdit, onPubli
         <div style={{ position:'absolute', width:120, height:120, borderRadius:'50%', background:'rgba(255,255,255,.1)', top:-30, right:-20 }} />
         <div style={{ position:'absolute', width:80, height:80, borderRadius:'50%', background:'rgba(255,255,255,.07)', bottom:-20, left:10 }} />
         <div style={{ width:52, height:52, borderRadius:14, background:'rgba(255,255,255,.22)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, fontWeight:800, color:'#fff', backdropFilter:'blur(8px)', border:'2px solid rgba(255,255,255,.3)', position:'relative', zIndex:1, letterSpacing:-1 }}>
-          {site.name.charAt(0).toUpperCase()}
+          {displayName.charAt(0).toUpperCase()}
         </div>
         {isLive && (
           <div style={{ position:'absolute', top:10, right:10, background:'#16a34a', color:'#fff', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:5 }}>
@@ -284,7 +285,7 @@ function SiteCard({ site, t, publishing, unpublishing, deleting, onEdit, onPubli
       {/* Body */}
       <div style={{ padding:'16px 18px 14px', flex:1, display:'flex', flexDirection:'column', gap:10 }}>
         <div>
-          <h3 style={{ fontSize:15, fontWeight:700, color:t.textPrimary, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</h3>
+          <h3 style={{ fontSize:15, fontWeight:700, color:t.textPrimary, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{displayName}</h3>
           {site.description && (
             <p style={{ fontSize:12, color:t.textSecond, margin:'3px 0 0', lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{site.description}</p>
           )}
@@ -415,11 +416,11 @@ const WebsiteBuilderPage = () => {
 
   useEffect(() => { setLoading(true); void loadSites().finally(() => setLoading(false)); }, [loadSites]);
 
-  const handleCreateSite = async (siteData: { name: string; description?: string }) => {
+  const handleCreateSite = async (siteData: { name: string; themeName: string; description?: string }) => {
     try {
-      const res = await sitesApi<{ id: string }>('POST', '', { name: siteData.name, description: siteData.description || '' });
+      const res = await sitesApi<{ id: string }>('POST', '', { name: siteData.name, themeName: siteData.themeName, description: siteData.description || '' });
       setShowCreate(false);
-      showToast(`"${siteData.name}" created!`, 'success');
+      showToast(`"${siteData.themeName}" created!`, 'success');
       navigate(`/ecommerce/builder?siteId=${res.id}`);
     } catch { showToast('Failed to create site', 'error'); }
   };
@@ -458,7 +459,7 @@ const WebsiteBuilderPage = () => {
   const handleSettings = (siteId: string) => navigate(`/ecommerce/builder?siteId=${siteId}&openPanel=settings`);
 
   const publishedCount = sites.filter(s => s.status === 'published').length;
-  const filtered = search.trim() ? sites.filter(s => s.name.toLowerCase().includes(search.toLowerCase())) : sites;
+  const filtered = search.trim() ? sites.filter(s => (s.themeName || s.name).toLowerCase().includes(search.toLowerCase())) : sites;
 
   const infoCards = [
     { icon:'rocket_launch', color:'#8b5cf6', bg:isDark ? 'rgba(124,58,237,.15)' : '#f5f3ff', border:isDark ? 'rgba(124,58,237,.3)' : '#ddd6fe', title:'How publishing works', body:'Only one site can be live at a time. Publishing a site automatically unpublishes others.' },

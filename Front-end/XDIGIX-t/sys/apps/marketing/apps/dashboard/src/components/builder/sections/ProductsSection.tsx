@@ -96,8 +96,8 @@ const ProductsSection = ({ data, style }: Props) => {
                 )}
                 {showAddToCart && (
                   <button
-                    className="mt-2 w-full py-2.5 border text-xs font-medium tracking-wider uppercase transition-colors"
-                    style={{ borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)' }}>
+                    className="mt-2 w-full border text-xs font-medium tracking-wider uppercase transition-colors"
+                    style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)' }}>
                     Add to cart
                   </button>
                 )}

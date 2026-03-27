@@ -67,6 +67,7 @@ export interface ISite extends Document {
   tenantId: string;
   businessId: string;
   name: string;
+  themeName?: string;
   description?: string;
   status: 'draft' | 'published';
   sections: ISection[];         // legacy flat list (home page)
@@ -125,6 +126,7 @@ const SiteSchema = new Schema<ISite>(
     tenantId:     { type: String, required: true, index: true },
     businessId:   { type: String, required: true, index: true },
     name:         { type: String, required: true },
+    themeName:    { type: String, default: '' },
     description:  { type: String, default: '' },
     status:       { type: String, enum: ['draft', 'published'], default: 'draft', index: true },
     sections:     { type: [SectionSchema], default: [] },

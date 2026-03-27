@@ -107,13 +107,14 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   const businessId = req.businessId || req.tenantId;
   if (!businessId) { res.status(400).json({ error: 'businessId required' }); return; }
-  const { name, description, settings } = req.body as Record<string, unknown>;
+  const { name, themeName, description, settings } = req.body as Record<string, unknown>;
   if (!name) { res.status(400).json({ error: 'name required' }); return; }
   try {
     const site = await Site.create({
       tenantId: req.tenantId,
       businessId,
       name,
+      themeName: themeName || name,
       description: description || '',
       status: 'draft',
       sections: [],

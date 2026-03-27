@@ -1,30 +1,33 @@
 import { useState, FormEvent } from 'react';
+import { useBusiness } from '../../contexts/BusinessContext';
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onCreate: (siteData: { name: string; description?: string }) => Promise<void>;
+  onCreate: (siteData: { name: string; themeName: string; description?: string }) => Promise<void>;
 };
 
 const CreateSiteModal = ({ open, onClose, onCreate }: Props) => {
-  const [name, setName] = useState('');
+  const { businessName } = useBusiness();
+  const [themeName, setThemeName] = useState('');
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!name.trim()) {
-      alert('Please enter a site name');
+    if (!themeName.trim()) {
+      alert('Please enter a theme name');
       return;
     }
 
     setCreating(true);
     try {
       await onCreate({
-        name: name.trim(),
-        description: description.trim() || undefined
+        name: businessName || 'My Store',
+        themeName: themeName.trim(),
+        description: description.trim() || undefined,
       });
-      setName('');
+      setThemeName('');
       setDescription('');
     } catch (error) {
       console.error('Failed to create site:', error);
@@ -53,13 +56,13 @@ const CreateSiteModal = ({ open, onClose, onCreate }: Props) => {
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-madas-text/80 mb-2">
-              Site Name <span className="text-red-500">*</span>
+              Theme Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="My Store"
+              value={themeName}
+              onChange={(e) => setThemeName(e.target.value)}
+              placeholder="e.g. Dawn, Starter, Classic"
               disabled={creating}
               required
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
@@ -82,7 +85,7 @@ const CreateSiteModal = ({ open, onClose, onCreate }: Props) => {
 
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
             <p className="text-sm text-blue-800">
-              <strong>Note:</strong> After creating the site, the website builder will open in a new tab where you can start designing your website.
+              <strong>Note:</strong> The site will be created as <strong>{businessName || 'your brand'}</strong>. After creating, the website builder will open in a new tab.
             </p>
           </div>
         </form>
@@ -99,7 +102,7 @@ const CreateSiteModal = ({ open, onClose, onCreate }: Props) => {
           <button
             type="submit"
             onClick={handleSubmit}
-            disabled={creating || !name.trim()}
+            disabled={creating || !themeName.trim()}
             className="flex-1 rounded-lg bg-primary text-white px-4 py-3 text-sm font-semibold hover:bg-[#1f3c19] transition-colors disabled:opacity-60 shadow-md"
           >
             {creating ? (
@@ -118,4 +121,3 @@ const CreateSiteModal = ({ open, onClose, onCreate }: Props) => {
 };
 
 export default CreateSiteModal;
-

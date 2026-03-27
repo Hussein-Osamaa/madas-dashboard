@@ -82,11 +82,15 @@ const CTASection = ({ data, style, isSelected = false, onEditBlock, onDeleteBloc
         )}
         {buttonLabel && wrapBlock(buttonIdx, 'button',
           <a href={buttonLink}
-            className="inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-colors border"
-            style={buttonSecondary
-              ? { borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)', backgroundColor: 'transparent' }
-              : { backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)', borderColor: 'var(--scheme-btn-bg, #121212)' }
-            }>
+            className="inline-block text-sm font-medium tracking-wider uppercase transition-colors border"
+            style={{
+              padding: 'var(--btn-padding, 0.75rem 1.5rem)',
+              borderRadius: 'var(--btn-radius, 8px)',
+              boxShadow: 'var(--btn-shadow, none)',
+              ...(buttonSecondary
+                ? { borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)', backgroundColor: 'transparent' }
+                : { backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)', borderColor: 'var(--scheme-btn-bg, #121212)' }),
+            }}>
             {buttonLabel}
           </a>
         )}

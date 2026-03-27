@@ -166,16 +166,18 @@ const ProductInfoSection = ({ data, style, isSelected = false, onEditBlock, onDe
           <div className="flex flex-col gap-2 mb-6">
             {productAvailable ? (
               <>
-                <button className="w-full py-3 px-6 border border-current text-sm font-medium tracking-wider uppercase transition-colors hover:opacity-80">
+                <button className="w-full border border-current text-sm font-medium tracking-wider uppercase transition-colors hover:opacity-80"
+                  style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)' }}>
                   Add to cart
                 </button>
-                <button className="w-full py-3 px-6 text-sm font-medium tracking-wider uppercase transition-colors text-white"
-                  style={{ backgroundColor: 'var(--scheme-btn-bg, #121212)' }}>
+                <button className="w-full text-sm font-medium tracking-wider uppercase transition-colors text-white"
+                  style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', backgroundColor: 'var(--scheme-btn-bg, #121212)' }}>
                   Buy it now
                 </button>
               </>
             ) : (
-              <button className="w-full py-3 px-6 bg-gray-200 text-gray-500 text-sm font-medium tracking-wider uppercase cursor-not-allowed" disabled>
+              <button className="w-full bg-gray-200 text-gray-500 text-sm font-medium tracking-wider uppercase cursor-not-allowed"
+                style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)' }} disabled>
                 Sold out
               </button>
             )}

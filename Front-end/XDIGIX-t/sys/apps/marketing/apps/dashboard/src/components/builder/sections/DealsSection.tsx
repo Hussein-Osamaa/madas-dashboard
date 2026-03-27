@@ -63,8 +63,8 @@ const DealsSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }: P
           <button className="px-3 py-2 transition-colors">+</button>
         </div>
       </div>
-      <button className="w-full py-3 text-sm font-medium tracking-wider uppercase transition-colors"
-        style={{ backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}>
+      <button className="w-full text-sm font-medium tracking-wider uppercase transition-colors"
+        style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}>
         Add to cart
       </button>
     </div>

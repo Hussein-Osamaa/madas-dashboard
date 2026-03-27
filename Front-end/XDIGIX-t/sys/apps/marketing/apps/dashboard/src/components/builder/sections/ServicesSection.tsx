@@ -77,8 +77,8 @@ const ServicesSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }
                 <p className="text-sm leading-relaxed mb-4" style={{ opacity: 0.75 }}>{stripHtml(service.description || '')}</p>
                 {(service.button_label || service.link) && (
                   <a href={service.button_link || service.link || '#'}
-                    className="inline-block px-6 py-2.5 border text-xs font-medium tracking-wider uppercase transition-colors self-start"
-                    style={{ borderColor: 'var(--scheme-outline-btn, currentColor)', color: 'var(--scheme-outline-btn, currentColor)' }}>
+                    className="inline-block border text-xs font-medium tracking-wider uppercase transition-colors self-start"
+                    style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', borderColor: 'var(--scheme-outline-btn, currentColor)', color: 'var(--scheme-outline-btn, currentColor)' }}>
                     {service.button_label || 'Learn more'}
                   </a>
                 )}

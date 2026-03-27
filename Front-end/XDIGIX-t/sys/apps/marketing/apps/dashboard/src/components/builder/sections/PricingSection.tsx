@@ -54,11 +54,15 @@ const PricingSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }:
                 ))}
               </ul>
               <button
-                className="w-full py-3 text-sm font-medium tracking-wider uppercase transition-colors border"
-                style={plan.highlighted
-                  ? { backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)', borderColor: 'var(--scheme-btn-bg, #121212)' }
-                  : { borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)', backgroundColor: 'transparent' }
-                }>
+                className="w-full text-sm font-medium tracking-wider uppercase transition-colors border"
+                style={{
+                  padding: 'var(--btn-padding, 0.75rem 1.5rem)',
+                  borderRadius: 'var(--btn-radius, 8px)',
+                  boxShadow: 'var(--btn-shadow, none)',
+                  ...(plan.highlighted
+                    ? { backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)', borderColor: 'var(--scheme-btn-bg, #121212)' }
+                    : { borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)', backgroundColor: 'transparent' }),
+                }}>
                 {plan.buttonText || 'Choose plan'}
               </button>
             </div>

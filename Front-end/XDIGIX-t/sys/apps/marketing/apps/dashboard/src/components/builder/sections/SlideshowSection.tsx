@@ -176,12 +176,12 @@ const SlideshowSection = ({ data, style, isSelected = false, onEditBlock, onDele
             {slide.button_label && (
               <a
                 href={slide.button_link || '#'}
-                className={`inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-all duration-300 ${
+                className={`inline-block text-sm font-medium tracking-wider uppercase transition-all duration-300 ${
                   slide.button_style === 'outline'
                     ? 'border-2 border-white text-white hover:bg-white hover:text-black'
                     : 'bg-white text-black hover:bg-white/90'
                 }`}
-                style={{ borderRadius: 'var(--btn-radius, 8px)' }}
+                style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)' }}
               >
                 {slide.button_label}
               </a>

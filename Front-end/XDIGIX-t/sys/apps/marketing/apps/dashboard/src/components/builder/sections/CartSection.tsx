@@ -52,8 +52,8 @@ const CartSection = ({ data, style }: Props) => {
           <h1 className="text-2xl md:text-3xl font-bold mb-6">{emptyMessage}</h1>
           <a
             href={emptyButtonLink}
-            className="inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-colors"
-            style={{ backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}
+            className="inline-block text-sm font-medium tracking-wider uppercase transition-colors"
+            style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}
           >
             {emptyButtonText}
           </a>
@@ -145,8 +145,8 @@ const CartSection = ({ data, style }: Props) => {
               <span className="text-lg font-bold">{formatPrice(subtotal)}</span>
             </div>
             <button
-              className="w-full py-3 px-6 text-sm font-medium tracking-wider uppercase transition-colors rounded"
-              style={{ backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}
+              className="w-full text-sm font-medium tracking-wider uppercase transition-colors"
+              style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }}
             >
               Check out
             </button>

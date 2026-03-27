@@ -506,10 +506,10 @@ function renderNavbar(c: Record<string, unknown>): string {
     return `<a href="${href}">${txt(item.label as string)}</a>`;
   }).join('');
 
-  // Icon URLs — default to standard storefront paths
-  const cartUrl     = attr(c.cartUrl as string || '/cart');
-  const wishlistUrl = attr(c.wishlistUrl as string || '/favorites');
-  const userIconUrl = attr(c.userIconUrl as string || '/account');
+  // Icon URLs — default to storefront-relative paths (using _sfBase for /site/:id prefix)
+  const cartUrl     = attr(c.cartUrl as string || `${_sfBase}/cart`);
+  const wishlistUrl = attr(c.wishlistUrl as string || `${_sfBase}/favorites`);
+  const userIconUrl = attr(c.userIconUrl as string || `${_sfBase}/account`);
 
   // SVG icons
   const searchSvg   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';

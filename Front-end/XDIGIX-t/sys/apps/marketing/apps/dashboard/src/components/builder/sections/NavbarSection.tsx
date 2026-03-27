@@ -139,9 +139,9 @@ const NavbarSection = ({ data, style, siteId: propSiteId }: Props) => {
   }, []);
 
   const baseUrl = siteId ? `/site/${siteId}` : '#';
-  const defaultCartUrl = cartUrl || (siteId ? `${baseUrl}/cart` : '#');
-  const defaultWishlistUrl = wishlistUrl || (siteId ? `${baseUrl}/favorites` : '#');
-  const defaultUserIconUrl = userIconUrl || (siteId ? `${baseUrl}/profile` : '#');
+  const defaultCartUrl = (cartUrl && cartUrl !== '#') ? cartUrl : (siteId ? `${baseUrl}/cart` : '#');
+  const defaultWishlistUrl = (wishlistUrl && wishlistUrl !== '#') ? wishlistUrl : (siteId ? `${baseUrl}/favorites` : '#');
+  const defaultUserIconUrl = (userIconUrl && userIconUrl !== '#') ? userIconUrl : (siteId ? `${baseUrl}/account` : '#');
 
   const processLink = (link: string, collectionId?: string): string => {
     if (collectionId && siteId) {

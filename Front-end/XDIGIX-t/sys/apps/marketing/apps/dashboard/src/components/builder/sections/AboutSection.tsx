@@ -106,11 +106,15 @@ const AboutSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBl
       {buttonLabel && wrapBlock(buttonIdx, 'button',
         <div>
           <a href={buttonLink}
-            className="inline-block px-8 py-3 text-sm font-medium tracking-wider uppercase transition-colors"
-            style={buttonSecondary
-              ? { borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--scheme-outline-btn, currentColor)', color: 'var(--scheme-outline-btn, currentColor)', backgroundColor: 'transparent' }
-              : { backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }
-            }>
+            className="inline-block text-sm font-medium tracking-wider uppercase transition-colors"
+            style={{
+              padding: 'var(--btn-padding, 0.75rem 1.5rem)',
+              borderRadius: 'var(--btn-radius, 8px)',
+              boxShadow: 'var(--btn-shadow, none)',
+              ...(buttonSecondary
+                ? { borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--scheme-outline-btn, currentColor)', color: 'var(--scheme-outline-btn, currentColor)', backgroundColor: 'transparent' }
+                : { backgroundColor: 'var(--scheme-btn-bg, #121212)', color: 'var(--scheme-btn-label, #fff)' }),
+            }}>
             {buttonLabel}
           </a>
         </div>
