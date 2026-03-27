@@ -103,7 +103,7 @@ const CollectionSelect: React.FC<{ value: string; onChange: (v: string) => void;
         <div className="px-3 py-2.5 text-sm border border-amber-200 rounded-lg bg-amber-50">
           <p className="text-amber-800 mb-1">No collections found</p>
           <p className="text-xs text-amber-600">Create collections in your inventory to display them here.</p>
-          <a href="/inventory/collections" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-1.5 text-xs font-medium text-amber-700 hover:text-amber-900 underline">
+          <a href="/dashboard/inventory/collections" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-1.5 text-xs font-medium text-amber-700 hover:text-amber-900 underline">
             <span className="material-icons" style={{ fontSize: '14px' }}>add_circle_outline</span>
             Create collection
           </a>
