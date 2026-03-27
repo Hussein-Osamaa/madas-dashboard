@@ -1251,6 +1251,7 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
     ],
     defaultData: {
       title: 'Featured Products',
+      collection: '',
       heading_size: 'h1',
       columns_desktop: 4,
       show_view_all: true,
@@ -1270,6 +1271,7 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
     },
     settings: {
       title: { type: 'text', label: 'Heading', placeholder: 'Featured collection' },
+      collection: { type: 'text', label: 'Collection', placeholder: 'e.g. New Arrivals, Best Sellers, Summer Sale' },
       heading_size: { type: 'select', label: 'Heading size', options: HEADING_SIZE_OPTIONS, defaultValue: 'h1' },
       columns_desktop: {
         type: 'range',
