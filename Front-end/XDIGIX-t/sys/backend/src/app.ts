@@ -258,46 +258,42 @@ export function createApp(): Express {
       return next();
     }
     try {
-      // Look up domain record
+      // Look up domain record OR slug-based site
       const domainRecord = await Domain.findOne({ domain: host, status: 'active' }).lean();
-      if (!domainRecord) {
+      let site: any = null;
+      if (domainRecord) {
+        site = await Site.findOne({ _id: domainRecord.siteId }).lean();
+      } else {
         // Try by slug directly
-        const site = await Site.findOne({ slug: subdomain, status: 'published' }).lean();
-        if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
-        const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
-        const html = renderSite(site as any, pageSlug);
-        sendPage(res, html);
-        return;
+        site = await Site.findOne({ slug: subdomain, status: 'published' }).lean();
       }
-      const site = await Site.findOne({ _id: domainRecord.siteId }).lean();
       if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
-      const pageSlug = typeof req.query.page === 'string' ? req.query.page : undefined;
+
       // Handle storefront sub-pages under subdomain
       const subPage = req.path.match(/^\/(cart|favorites|account)$/)?.[1];
       if (subPage) {
-        const html = renderSite(site as any, subPage);
+        const html = renderSite(site, subPage);
         sendPage(res, html);
         return;
       }
       if (req.path === '/products' || req.path.startsWith('/products/')) {
         const productId = req.path.split('/products/')[1];
         if (productId) {
-          // Product detail
           const product = await fetchProduct(site.tenantId, productId);
           if (!product) { res.status(404).send('<h1>404 — Product not found</h1>'); return; }
-          const html = renderProductDetailPage(site as any, product as any);
+          const html = renderProductDetailPage(site, product as any);
           sendPage(res, html);
           return;
         }
-        // All products
         const page = Math.max(1, parseInt(req.query.page as string) || 1);
         const search = (req.query.search as string) || '';
         const { products, total } = await fetchProducts(site.tenantId, page, search);
-        const html = renderAllProductsPage(site as any, products as any[], page, total);
+        const html = renderAllProductsPage(site, products as any[], page, total);
         sendPage(res, html);
         return;
       }
-      const html = renderSite(site as any, pageSlug);
+      // Homepage
+      const html = renderSite(site);
       sendPage(res, html);
     } catch (err) {
       res.status(500).send('<h1>Error rendering site</h1>');
