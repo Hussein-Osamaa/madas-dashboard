@@ -140,7 +140,12 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
 
   const renderContent = (slideData?: any) => {
     const bg = slideData?.backgroundColor || d.backgroundColor || '';
-    const txt = slideData?.textColor || d.textColor || '#FFFFFF';
+    // Use color scheme CSS vars when available, fallback to data-level or defaults
+    const schemeText = 'var(--scheme-text, #FFFFFF)';
+    const schemeBtnBg = 'var(--scheme-btn-bg, #FFFFFF)';
+    const schemeBtnLabel = 'var(--scheme-btn-label, #121212)';
+    const schemeOutlineBtn = 'var(--scheme-outline-btn, currentColor)';
+    const txt = slideData?.textColor || d.textColor || schemeText;
     const hasSecondImage = !slideData && image2;
 
     // Button alignment derived from text alignment
@@ -158,7 +163,7 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
     return (
       <div className={`relative w-full flex flex-col ${heightMap[imageHeight] || heightMap.medium}`}
         style={{
-          backgroundColor: !displayImage && !slideData?.backgroundImage ? (bg || '#121212') : undefined,
+          backgroundColor: !displayImage && !slideData?.backgroundImage ? (bg || 'var(--scheme-bg, #121212)') : undefined,
           ...style,
           ...getAnimationStyle(),
         }}
@@ -227,20 +232,30 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                 return wrapBlock(idx, 'buttons',
                   <div className={`flex flex-wrap gap-3 ${btnJustify} ${mobileContentAlignment === 'center' ? 'max-md:justify-center' : mobileContentAlignment === 'right' ? 'max-md:justify-end' : 'max-md:justify-start'}`}>
                     {b1Text && (
-                      <a href={b1Link} className={`inline-block text-sm font-medium tracking-wider uppercase transition-colors ${
-                        bSec1
-                          ? 'border border-current bg-transparent'
-                          : showTextBox ? 'bg-[#121212] text-white' : 'bg-white text-[#121212]'
-                      }`} style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', ...(bSec1 ? { color: showTextBox ? '#121212' : txt } : {}) }}>
+                      <a href={b1Link} className="inline-block text-sm font-medium tracking-wider uppercase transition-colors"
+                        style={{
+                          padding: 'var(--btn-padding, 0.75rem 1.5rem)',
+                          borderRadius: 'var(--btn-radius, 8px)',
+                          boxShadow: 'var(--btn-shadow, none)',
+                          ...(bSec1
+                            ? { backgroundColor: 'transparent', color: schemeOutlineBtn, border: `1px solid ${schemeOutlineBtn}` }
+                            : { backgroundColor: schemeBtnBg, color: schemeBtnLabel }
+                          ),
+                        }}>
                         {b1Text}
                       </a>
                     )}
                     {b2Text && (
-                      <a href={b2Link} className={`inline-block text-sm font-medium tracking-wider uppercase transition-colors ${
-                        bSec2
-                          ? 'border border-current bg-transparent'
-                          : showTextBox ? 'bg-[#121212] text-white' : 'bg-white text-[#121212]'
-                      }`} style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', ...(bSec2 ? { color: showTextBox ? '#121212' : txt } : {}) }}>
+                      <a href={b2Link} className="inline-block text-sm font-medium tracking-wider uppercase transition-colors"
+                        style={{
+                          padding: 'var(--btn-padding, 0.75rem 1.5rem)',
+                          borderRadius: 'var(--btn-radius, 8px)',
+                          boxShadow: 'var(--btn-shadow, none)',
+                          ...(bSec2
+                            ? { backgroundColor: 'transparent', color: schemeOutlineBtn, border: `1px solid ${schemeOutlineBtn}` }
+                            : { backgroundColor: schemeBtnBg, color: schemeBtnLabel }
+                          ),
+                        }}>
                         {b2Text}
                       </a>
                     )}
@@ -256,7 +271,7 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                       <input
                         type="email"
                         placeholder={placeholder}
-                        className="flex-1 px-4 py-3 text-sm border border-white/30 bg-white/10 backdrop-blur-sm text-white placeholder:text-white/60 focus:outline-none focus:ring-1 focus:ring-white/50"
+                        className="flex-1 px-4 py-3 text-sm border border-white/30 bg-white/10 backdrop-blur-sm placeholder:text-white/60 focus:outline-none focus:ring-1 focus:ring-white/50"
                         style={{ color: (showTextBox || mobileShowContainer) ? '#121212' : txt, borderColor: (showTextBox || mobileShowContainer) ? '#d1d5db' : undefined, backgroundColor: (showTextBox || mobileShowContainer) ? '#fff' : undefined }}
                       />
                       {btnLabel && (
@@ -266,8 +281,8 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                             padding: 'var(--btn-padding, 0.75rem 1.5rem)',
                             borderRadius: 'var(--btn-radius, 8px)',
                             boxShadow: 'var(--btn-shadow, none)',
-                            backgroundColor: (showTextBox || mobileShowContainer) ? '#121212' : '#fff',
-                            color: (showTextBox || mobileShowContainer) ? '#fff' : '#121212',
+                            backgroundColor: schemeBtnBg,
+                            color: schemeBtnLabel,
                           }}
                         >
                           {btnLabel}
@@ -290,8 +305,8 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                   <p className="text-base md:text-lg mb-6 opacity-80" style={{ color: txt }}>{d.subtitle}</p>
                 )}
                 {d.buttonText && (
-                  <a href={d.buttonLink || '#'} className="inline-block text-sm font-medium tracking-wider uppercase bg-white text-[#121212]"
-                    style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)' }}>
+                  <a href={d.buttonLink || '#'} className="inline-block text-sm font-medium tracking-wider uppercase"
+                    style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', backgroundColor: schemeBtnBg, color: schemeBtnLabel }}>
                     {d.buttonText}
                   </a>
                 )}
