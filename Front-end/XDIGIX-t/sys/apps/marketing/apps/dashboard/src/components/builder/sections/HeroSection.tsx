@@ -140,13 +140,12 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
 
   const renderContent = (slideData?: any) => {
     const bg = slideData?.backgroundColor || d.backgroundColor || '';
-    // Color scheme: text inherits from the wrapper div set by SectionRenderer
-    // Only override if a slide has explicit textColor
+    // Color scheme: use CSS vars set by the SectionRenderer wrapper
+    const schemeText = 'var(--scheme-text, #FFFFFF)';
     const schemeBtnBg = 'var(--scheme-btn-bg, #FFFFFF)';
     const schemeBtnLabel = 'var(--scheme-btn-label, #121212)';
     const schemeOutlineBtn = 'var(--scheme-outline-btn, currentColor)';
-    // Use 'inherit' to pick up scheme color from parent wrapper; only override for slide-specific color
-    const txt = slideData?.textColor || 'inherit';
+    const txt = schemeText;
     const hasSecondImage = !slideData && image2;
 
     // Button alignment derived from text alignment
@@ -208,7 +207,7 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                 const hSize = block.heading_size || 'h1';
                 return wrapBlock(idx, 'heading',
                   <h2 className={`${headingSizeMap[hSize] || headingSizeMap.h1} font-bold leading-tight mb-3`}
-                    style={{ color: (showTextBox || mobileShowContainer) ? '#121212' : txt }}>
+                    style={{ color: txt }}>
                     {h}
                   </h2>
                 );
@@ -218,7 +217,7 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                 if (!t) return null;
                 return wrapBlock(idx, 'text',
                   <p className="text-base md:text-lg mb-6 opacity-80"
-                    style={{ color: (showTextBox || mobileShowContainer) ? '#121212' : txt }}>
+                    style={{ color: txt }}>
                     {t}
                   </p>
                 );
@@ -273,7 +272,7 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
                         type="email"
                         placeholder={placeholder}
                         className="flex-1 px-4 py-3 text-sm border border-white/30 bg-white/10 backdrop-blur-sm placeholder:text-white/60 focus:outline-none focus:ring-1 focus:ring-white/50"
-                        style={{ color: (showTextBox || mobileShowContainer) ? '#121212' : txt, borderColor: (showTextBox || mobileShowContainer) ? '#d1d5db' : undefined, backgroundColor: (showTextBox || mobileShowContainer) ? '#fff' : undefined }}
+                        style={{ color: txt }}
                       />
                       {btnLabel && (
                         <button
