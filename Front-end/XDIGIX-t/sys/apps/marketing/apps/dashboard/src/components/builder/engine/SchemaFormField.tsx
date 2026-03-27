@@ -8,6 +8,8 @@ import SelectField from '../editors/shared/SelectField';
 import ToggleField from '../editors/shared/ToggleField';
 import NumberField from '../editors/shared/NumberField';
 import { useTheme, DEFAULT_COLOR_SCHEMES } from '../../../contexts/ThemeContext';
+import { useCollections } from '../../../hooks/useCollections';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface Props {
   fieldKey: string;
@@ -80,6 +82,56 @@ const ColorSchemeSelect: React.FC<{ value: string; onChange: (v: string) => void
   );
 };
 
+/* ── Collection picker ──────────────────────────────────────────────── */
+const CollectionSelect: React.FC<{ value: string; onChange: (v: string) => void; label: string; helpText?: string }> = ({ value, onChange, label, helpText }) => {
+  const { user } = useAuth();
+  const { collections, isLoading } = useCollections(user?.businessId);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-1">
+        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
+        <div className="px-3 py-2 text-sm text-gray-400 border border-gray-200 rounded-lg bg-gray-50">Loading collections...</div>
+      </div>
+    );
+  }
+
+  if (!collections || collections.length === 0) {
+    return (
+      <div className="space-y-1">
+        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
+        <div className="px-3 py-2.5 text-sm border border-amber-200 rounded-lg bg-amber-50">
+          <p className="text-amber-800 mb-1">No collections found</p>
+          <p className="text-xs text-amber-600">Create collections in your inventory to display them here.</p>
+          <a href="/inventory/collections" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-1.5 text-xs font-medium text-amber-700 hover:text-amber-900 underline">
+            <span className="material-icons" style={{ fontSize: '14px' }}>add_circle_outline</span>
+            Create collection
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
+      <select
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary cursor-pointer"
+      >
+        <option value="">All products</option>
+        {collections.map((col: any) => (
+          <option key={col.id || col.name} value={col.name || col.title}>
+            {col.name || col.title}
+          </option>
+        ))}
+      </select>
+      {helpText && <p className="text-xs text-gray-400">{helpText}</p>}
+    </div>
+  );
+};
+
 const SchemaFormField: React.FC<Props> = ({
   fieldKey,
   schema,
@@ -98,6 +150,18 @@ const SchemaFormField: React.FC<Props> = ({
   const strVal = (value ?? schema.defaultValue ?? '') as string;
   const numVal = (value ?? schema.defaultValue ?? 0) as number;
   const boolVal = (value ?? schema.defaultValue ?? false) as boolean;
+
+  // Special field: collection picker
+  if (fieldKey === 'collection' && (schema.type === 'text' || schema.type === 'select')) {
+    return (
+      <CollectionSelect
+        label={schema.label}
+        value={strVal}
+        onChange={(v) => onChange(v)}
+        helpText={schema.helpText}
+      />
+    );
+  }
 
   switch (schema.type) {
     case 'text':

@@ -140,12 +140,13 @@ const HeroSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlo
 
   const renderContent = (slideData?: any) => {
     const bg = slideData?.backgroundColor || d.backgroundColor || '';
-    // Use color scheme CSS vars when available, fallback to data-level or defaults
-    const schemeText = 'var(--scheme-text, #FFFFFF)';
+    // Color scheme: text inherits from the wrapper div set by SectionRenderer
+    // Only override if a slide has explicit textColor
     const schemeBtnBg = 'var(--scheme-btn-bg, #FFFFFF)';
     const schemeBtnLabel = 'var(--scheme-btn-label, #121212)';
     const schemeOutlineBtn = 'var(--scheme-outline-btn, currentColor)';
-    const txt = slideData?.textColor || d.textColor || schemeText;
+    // Use 'inherit' to pick up scheme color from parent wrapper; only override for slide-specific color
+    const txt = slideData?.textColor || 'inherit';
     const hasSecondImage = !slideData && image2;
 
     // Button alignment derived from text alignment
