@@ -132,15 +132,15 @@ const SiteSchema = new Schema<ISite>(
     sections:     { type: [SectionSchema], default: [] },
     pages:        { type: [SitePageSchema], default: [] },
     settings: {
-      theme: {
-        primaryColor:   { type: String, default: '#27491F' },
-        secondaryColor: { type: String, default: '#F0CAE1' },
-        accentColor:    { type: String, default: '#f59e0b' },
-        backgroundColor:{ type: String, default: '#FFFFFF' },
-        textColor:      { type: String, default: '#171817' },
-        fontFamily:     { type: String, default: 'Inter' },
-        borderRadius:   { type: String, default: 'rounded' },
-      },
+      theme: { type: Schema.Types.Mixed, default: {
+        primaryColor: '#27491F',
+        secondaryColor: '#F0CAE1',
+        accentColor: '#f59e0b',
+        backgroundColor: '#FFFFFF',
+        textColor: '#171817',
+        fontFamily: 'Inter',
+        borderRadius: 'rounded',
+      } },
       seo: {
         title:       { type: String, default: '' },
         description: { type: String, default: '' },
