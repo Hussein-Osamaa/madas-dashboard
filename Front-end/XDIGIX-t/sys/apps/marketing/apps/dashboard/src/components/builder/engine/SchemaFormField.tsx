@@ -9,7 +9,7 @@ import ToggleField from '../editors/shared/ToggleField';
 import NumberField from '../editors/shared/NumberField';
 import { useTheme, DEFAULT_COLOR_SCHEMES } from '../../../contexts/ThemeContext';
 import { useCollections } from '../../../hooks/useCollections';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useBusiness } from '../../../contexts/BusinessContext';
 
 interface Props {
   fieldKey: string;
@@ -84,8 +84,8 @@ const ColorSchemeSelect: React.FC<{ value: string; onChange: (v: string) => void
 
 /* ── Collection picker ──────────────────────────────────────────────── */
 const CollectionSelect: React.FC<{ value: string; onChange: (v: string) => void; label: string; helpText?: string }> = ({ value, onChange, label, helpText }) => {
-  const { user } = useAuth();
-  const { collections, isLoading } = useCollections(user?.businessId);
+  const { businessId } = useBusiness();
+  const { collections, isLoading } = useCollections(businessId);
 
   if (isLoading) {
     return (
