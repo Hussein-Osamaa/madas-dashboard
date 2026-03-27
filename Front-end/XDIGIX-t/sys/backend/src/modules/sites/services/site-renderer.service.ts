@@ -530,7 +530,7 @@ function renderNavbar(c: Record<string, unknown>): string {
     ${c.showSearch ? `<button class="xd-nav-icon" aria-label="Search"${clrAttr}>${searchSvg}</button>` : ''}
     ${c.showWishlist ? `<a href="${wishlistUrl}" class="xd-nav-icon" aria-label="Wishlist"${clrAttr}>${wishlistSvg}</a>` : ''}
     ${c.showCart !== false ? `<a href="${cartUrl}" class="xd-nav-icon xd-cart-icon" aria-label="Cart"${clrAttr}>${cartSvg}<span class="xd-nav-badge" style="display:none"></span></a>` : ''}
-    ${c.showUserIcon ? `<a href="${userIconUrl}" class="xd-nav-icon" aria-label="Account"${clrAttr}>${userSvg}</a>` : ''}
+    ${c.showUserIcon ? `<a href="${userIconUrl}" class="xd-nav-icon xd-account-toggle" aria-label="Account"${clrAttr}><span class="xd-when-logged-out" style="font-size:.875rem;font-weight:600;white-space:nowrap">Sign in</span><span class="xd-when-logged-in" style="display:none">${userSvg}</span></a>` : ''}
     <button class="xd-mobile-toggle" aria-label="Open menu"${clrAttr}>${menuSvg}</button>
   </div>
 </nav>
@@ -1810,7 +1810,9 @@ function extractShell(site: ISite): { navbar: string; footer: string } {
   let footer = '';
   const sections = site.sections || [];
   for (const s of sections) {
-    if (s.type === 'navbar' || s.type === 'banner') {
+    if (s.type === 'banner') {
+      navbar += addSectionAttrs(renderBanner(getSectionData(s)), s.id, s.type);
+    } else if (s.type === 'navbar') {
       navbar += addSectionAttrs(renderNavbar(getSectionData(s)), s.id, s.type);
     }
     if (s.type === 'footer') {
@@ -1896,9 +1898,9 @@ ${extraMeta}
 .xd-pd-meta{font-size:.85rem;opacity:.55;display:flex;flex-direction:column;gap:.3rem}
 </style>
 </head>
-<body>
+<body style="display:flex;flex-direction:column;min-height:100vh;margin:0">
 ${navbar}
-${bodyHtml}
+<main style="flex:1">${bodyHtml}</main>
 ${footer}
 <script defer>${STOREFRONT_RUNTIME_JS}</script>
 </body>
