@@ -1434,6 +1434,52 @@ function renderSection(sec: ISection, siteName: string): string {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
+   STOREFRONT SPECIAL PAGES (Cart, Wishlist, Account)
+───────────────────────────────────────────────────────────────────── */
+function renderStorefrontPage(pageSlug: string, siteName: string): string {
+  if (pageSlug === 'cart') {
+    return `
+<section style="max-width:900px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+  <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1.5rem">Shopping Cart</h1>
+  <div id="xd-cart-container">
+    <div style="text-align:center;padding:3rem 0;opacity:.6">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <p style="font-size:1.1rem">Your cart is empty</p>
+      <a href="/" class="xd-btn" style="margin-top:1rem;display:inline-block">Continue Shopping</a>
+    </div>
+  </div>
+</section>`;
+  }
+  if (pageSlug === 'favorites') {
+    return `
+<section style="max-width:900px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+  <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1.5rem">Wishlist</h1>
+  <div id="xd-wishlist-container">
+    <div style="text-align:center;padding:3rem 0;opacity:.6">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <p style="font-size:1.1rem">Your wishlist is empty</p>
+      <a href="/" class="xd-btn" style="margin-top:1rem;display:inline-block">Browse Products</a>
+    </div>
+  </div>
+</section>`;
+  }
+  if (pageSlug === 'account') {
+    return `
+<section style="max-width:600px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+  <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1.5rem">My Account</h1>
+  <div id="xd-account-container">
+    <div style="background:#f9fafb;border-radius:var(--br,8px);padding:2rem;text-align:center">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <p style="font-size:1.1rem;margin-bottom:1rem">Sign in to view your orders and manage your account</p>
+      <a href="/" class="xd-btn" style="display:inline-block">Back to Store</a>
+    </div>
+  </div>
+</section>`;
+  }
+  return '<section style="min-height:60vh;padding:4rem;text-align:center"><h1>Page not found</h1></section>';
+}
+
+/* ─────────────────────────────────────────────────────────────────────
    MAIN RENDER FUNCTION
 ───────────────────────────────────────────────────────────────────── */
 export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: boolean }): string {
@@ -1444,6 +1490,31 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   const settingsAny = settings as unknown as Record<string, unknown>;
   const customCss   = sanitizeCss(settingsAny?.customCss);
   const currency    = 'SAR';
+
+  // ── Storefront special pages (cart, account, favorites) ────────
+  const STOREFRONT_PAGES = new Set(['cart', 'favorites', 'account']);
+  if (pageSlug && STOREFRONT_PAGES.has(pageSlug)) {
+    // Set _sfBase for navbar links
+    const storefrontBase = opts?.subdomain
+      ? ''
+      : (site as unknown as Record<string, unknown>).slug
+        ? `/${(site as unknown as Record<string, unknown>).slug}`
+        : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+    _sfBase = storefrontBase;
+    // Resolve color schemes for navbar/footer rendering
+    const rawSchemes = theme.colorSchemes;
+    if (rawSchemes) {
+      let parsed: unknown = rawSchemes;
+      if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch { parsed = null; } }
+      if (Array.isArray(parsed) && parsed.length > 0) { _colorSchemes = parsed as ColorScheme[]; }
+      else { _colorSchemes = DEFAULT_COLOR_SCHEMES; }
+    } else { _colorSchemes = DEFAULT_COLOR_SCHEMES; }
+    _btnRadius = theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px';
+
+    const pageTitle = pageSlug === 'cart' ? 'Cart' : pageSlug === 'favorites' ? 'Wishlist' : 'Account';
+    const bodyHtml = renderStorefrontPage(pageSlug, txt(name));
+    return pageShell(site, pageTitle, bodyHtml, '', opts);
+  }
 
   // ── Resolve page ────────────────────────────────────────────────
   let activeSections = site.sections || [];
@@ -1755,6 +1826,7 @@ function pageShell(
   title: string,
   bodyHtml: string,
   extraMeta = '',
+  opts?: { subdomain?: boolean },
 ): string {
   const { settings, name } = site;
   const theme   = (settings?.theme as Record<string, unknown>) || {};
@@ -1912,7 +1984,7 @@ export function renderAllProductsPage(
 </div>
 </section>`;
 
-  return pageShell(site, 'All Products', body);
+  return pageShell(site, 'All Products', body, '', opts);
 }
 
 /**
@@ -2029,5 +2101,5 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
     `<meta name="description" content="${attr(String(product.description || '').slice(0, 160))}">
 <meta property="og:type" content="product">
 <meta property="og:title" content="${attr(String(product.name || ''))}">
-${mainImg ? `<meta property="og:image" content="${attr(mainImg)}">` : ''}`);
+${mainImg ? `<meta property="og:image" content="${attr(mainImg)}">` : ''}`, opts);
 }
