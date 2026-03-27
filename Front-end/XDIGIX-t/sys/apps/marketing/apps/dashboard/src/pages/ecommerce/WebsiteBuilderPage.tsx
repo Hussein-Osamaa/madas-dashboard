@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSiteModal from '../../components/ecommerce/CreateSiteModal';
 import { useDarkMode } from '../../contexts/DarkModeContext';
+import { useBusiness } from '../../contexts/BusinessContext';
 
 /* ──────────────────────────────────────────────────────────────
    Theme tokens — keyed by isDark
@@ -63,8 +64,10 @@ function getToken() {
     || localStorage.getItem('warehouse_access_token') || '';
 }
 
-async function sitesApi<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}/api/sites${path}`, {
+async function sitesApi<T>(method: string, path: string, body?: unknown, businessId?: string): Promise<T> {
+  const sep = path.includes('?') ? '&' : '?';
+  const bizQuery = businessId ? `${sep}businessId=${encodeURIComponent(businessId)}` : '';
+  const res = await fetch(`${API_BASE}/api/sites${path}${bizQuery}`, {
     method,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
@@ -377,6 +380,7 @@ function SiteCard({ site, t, publishing, unpublishing, deleting, onEdit, onPubli
 ────────────────────────────────────────────────────────────── */
 const WebsiteBuilderPage = () => {
   const { isDark } = useDarkMode();
+  const { businessId: ctxBusinessId } = useBusiness();
   const t = tokens(isDark);
   const navigate = useNavigate();
   const [sites, setSites]               = useState<Site[]>([]);
@@ -409,16 +413,16 @@ const WebsiteBuilderPage = () => {
 
   const loadSites = useCallback(async () => {
     try {
-      const data = await sitesApi<SiteListResponse>('GET', '');
+      const data = await sitesApi<SiteListResponse>('GET', '', undefined, ctxBusinessId);
       setSites(data.sites.map(s => ({ ...s, id: s.id || String(s._id) })));
     } catch { showToast('Failed to load sites — check connection', 'error'); }
-  }, []);
+  }, [ctxBusinessId]);
 
   useEffect(() => { setLoading(true); void loadSites().finally(() => setLoading(false)); }, [loadSites]);
 
   const handleCreateSite = async (siteData: { name: string; themeName: string; description?: string }) => {
     try {
-      const res = await sitesApi<{ id: string }>('POST', '', { name: siteData.name, themeName: siteData.themeName, description: siteData.description || '' });
+      const res = await sitesApi<{ id: string }>('POST', '', { name: siteData.name, themeName: siteData.themeName, description: siteData.description || '' }, ctxBusinessId);
       setShowCreate(false);
       showToast(`"${siteData.themeName}" created!`, 'success');
       navigate(`/ecommerce/builder?siteId=${res.id}`);
@@ -428,7 +432,7 @@ const WebsiteBuilderPage = () => {
   const handleDeleteSite = async (siteId: string, name: string) => {
     if (!await showConfirm(`Delete "<strong>${name}</strong>"? This cannot be undone.`, 'Delete', true, isDark)) return;
     setDeleting(siteId);
-    try { await sitesApi('DELETE', `/${siteId}`); setSites(prev => prev.filter(s => s.id !== siteId)); showToast('Site deleted', 'success'); }
+    try { await sitesApi('DELETE', `/${siteId}`, undefined, ctxBusinessId); setSites(prev => prev.filter(s => s.id !== siteId)); showToast('Site deleted', 'success'); }
     catch { showToast('Failed to delete site', 'error'); }
     finally { setDeleting(null); }
   };
@@ -436,7 +440,7 @@ const WebsiteBuilderPage = () => {
   const handlePublishSite = async (siteId: string) => {
     setPublishing(siteId);
     try {
-      const updated = await sitesApi<Site>('POST', `/${siteId}/publish`);
+      const updated = await sitesApi<Site>('POST', `/${siteId}/publish`, undefined, ctxBusinessId);
       setSites(prev => prev.map(s => s.id === siteId ? { ...s, status:'published' as const, url:updated.url, publicUrl:updated.publicUrl, updatedAt:updated.updatedAt } : { ...s, status:'draft' as const }));
       showToast('🚀 Site is now live!', 'success');
     } catch (e) { showToast((e as Error).message || 'Failed to publish', 'error'); }
@@ -446,13 +450,13 @@ const WebsiteBuilderPage = () => {
   const handleUnpublishSite = async (siteId: string) => {
     if (!await showConfirm('Take this site offline? Visitors will no longer see it.', 'Take Down', false, isDark)) return;
     setUnpublishing(siteId);
-    try { await sitesApi('POST', `/${siteId}/unpublish`); setSites(prev => prev.map(s => s.id === siteId ? { ...s, status:'draft' as const, url:undefined } : s)); showToast('Site taken offline', 'info'); }
+    try { await sitesApi('POST', `/${siteId}/unpublish`, undefined, ctxBusinessId); setSites(prev => prev.map(s => s.id === siteId ? { ...s, status:'draft' as const, url:undefined } : s)); showToast('Site taken offline', 'info'); }
     catch { showToast('Failed to unpublish', 'error'); }
     finally { setUnpublishing(null); }
   };
 
   const handleDuplicateSite = async (site: Site) => {
-    try { await sitesApi('POST', `/${site.id}/duplicate`); await loadSites(); showToast(`"${site.name}" duplicated`, 'success'); }
+    try { await sitesApi('POST', `/${site.id}/duplicate`, undefined, ctxBusinessId); await loadSites(); showToast(`"${site.themeName || site.name}" duplicated`, 'success'); }
     catch { showToast('Failed to duplicate', 'error'); }
   };
 
