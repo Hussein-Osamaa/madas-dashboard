@@ -8,6 +8,7 @@ import { buildSectionManifestEntry } from '../../../registry/serverSectionRegist
  * through every render-function signature.
  */
 let _sfBase = '';
+let _themeData: Record<string, unknown> = {};
 
 /* ── Color Scheme support ────────────────────────────────────────── */
 interface ColorScheme {
@@ -1267,23 +1268,44 @@ function renderImageComparison(c: Record<string, unknown>): string {
 </section>`;
 }
 
-function renderFooter(c: Record<string, unknown>, siteName: string): string {
+function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: Record<string, unknown>): string {
   const layout  = c.layout   as string || 'classic';
   const columns = (c.columns as Array<Record<string, unknown>>) || [];
-  const social  = (c.socialLinks as Array<Record<string, unknown>>) || [];
   const copyright = txt((c.copyrightText as string) || (c.copyright as string) || `\u00A9 ${new Date().getFullYear()} ${siteName}`);
 
-  const socialBg: Record<string, string> = {
-    instagram:'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
-    tiktok:'#000',facebook:'#1877f2',x:'#000',twitter:'#000',
-    whatsapp:'#25d366',youtube:'#ff0000',linkedin:'#0a66c2',
+  // Social media SVG icons
+  const socialSvgs: Record<string, string> = {
+    instagram: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>',
+    twitter: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+    tiktok: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 005.58 2.17V2.44a4.85 4.85 0 01-.01 4.25z"/></svg>',
+    facebook: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>',
+    youtube: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
+    snapchat: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12.959-.289.276-.155.515-.126.63-.068.156.076.373.263.373.544 0 .303-.193.584-.882.807-.67.214-1.308.345-1.636.466-.18.067-.306.183-.354.358-.048.176-.006.364.098.528.648 1.023 1.45 1.885 2.382 2.564.407.296.839.512 1.282.64.296.087.462.201.528.396.065.186-.024.422-.263.638-.435.398-1.168.48-1.545.522-.12.014-.21.019-.312.029-.023.002-.046.003-.07.005-.058.07-.17.217-.357.46l-.045.063c-.116.16-.157.345-.115.535.044.196.225.396.553.492 1.07.318 2.198.738 2.3 1.58.02.18-.035.336-.17.472a1.11 1.11 0 01-.543.276c-.485.148-1.076.227-1.76.234-.286.003-.604.026-.804.072-.199.045-.39.16-.574.405-.292.39-.545.88-1.015 1.14-.45.247-.933.237-1.29.237-.037 0-.072 0-.108-.002a3.09 3.09 0 01-.435-.055c-.39-.067-.778-.194-1.2-.33a4.57 4.57 0 00-1.143-.312c-.086-.009-.179-.013-.282-.013-.37 0-.671.078-1.06.189-.39.11-.84.254-1.425.34-.177.027-.338.04-.478.04-.35 0-.66-.064-.93-.16-.44-.156-.776-.399-.951-.654-.135-.196-.286-.36-.48-.42-.2-.06-.52-.08-.82-.08-.694-.01-1.285-.086-1.76-.234a1.11 1.11 0 01-.543-.276c-.135-.136-.192-.293-.17-.472.1-.843 1.228-1.263 2.3-1.58.327-.097.508-.297.552-.492.042-.19.001-.375-.115-.535l-.045-.063c-.187-.243-.3-.39-.357-.46-.024-.002-.046-.003-.07-.005-.102-.01-.192-.015-.312-.029-.376-.042-1.11-.124-1.545-.522-.24-.216-.328-.452-.263-.638.066-.195.232-.31.528-.396.443-.128.875-.344 1.282-.64.932-.68 1.734-1.541 2.382-2.564.104-.164.146-.352.098-.528-.048-.175-.174-.291-.354-.358-.328-.12-.966-.252-1.636-.466-.69-.223-.882-.504-.882-.807 0-.281.217-.468.373-.544.116-.058.354-.087.63.068.3.17.659.273.959.29.199 0 .326-.046.401-.091-.008-.165-.018-.33-.03-.51l-.003-.06c-.104-1.628-.23-3.654.3-4.847C7.853 1.07 11.21.793 12.2.793h.006z"/></svg>',
   };
-  const socialLbl: Record<string, string> = {
-    instagram:'IG',tiktok:'TT',facebook:'f',x:'X',twitter:'X',whatsapp:'W',youtube:'YT',linkedin:'in',
-  };
-  const socialHtml = social.map(s => {
+
+  // Build social HTML from theme settings (only show icons that have links)
+  const themeSocials: Array<{ platform: string; url: string }> = [];
+  if (themeData) {
+    if (themeData.socialInstagram) themeSocials.push({ platform: 'instagram', url: String(themeData.socialInstagram) });
+    if (themeData.socialTwitter)   themeSocials.push({ platform: 'twitter', url: String(themeData.socialTwitter) });
+    if (themeData.socialTiktok)    themeSocials.push({ platform: 'tiktok', url: String(themeData.socialTiktok) });
+    if (themeData.socialFacebook)  themeSocials.push({ platform: 'facebook', url: String(themeData.socialFacebook) });
+    if (themeData.socialYoutube)   themeSocials.push({ platform: 'youtube', url: String(themeData.socialYoutube) });
+    if (themeData.socialSnapchat)  themeSocials.push({ platform: 'snapchat', url: String(themeData.socialSnapchat) });
+  }
+  // Also support legacy socialLinks from section data
+  const legacySocial = (c.socialLinks as Array<Record<string, unknown>>) || [];
+  for (const s of legacySocial) {
     const p = String(s.platform || '').toLowerCase();
-    return `<a href="${attr(s.link as string)}" class="xd-footer-social-btn" target="_blank" rel="noopener noreferrer" aria-label="${attr(s.platform as string)}" style="background:${attr(socialBg[p] || '#333')};color:#fff">${socialLbl[p] || '🔗'}</a>`;
+    const url = String(s.link || s.url || '');
+    if (url && !themeSocials.some(ts => ts.platform === p)) {
+      themeSocials.push({ platform: p, url });
+    }
+  }
+
+  const socialHtml = themeSocials.map(s => {
+    const svg = socialSvgs[s.platform] || '';
+    return `<a href="${attr(s.url)}" class="xd-footer-social-btn" target="_blank" rel="noopener noreferrer" aria-label="${attr(s.platform)}" style="opacity:.7;transition:opacity .2s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">${svg}</a>`;
   }).join('');
 
   if (layout === 'minimal') {
@@ -1382,7 +1404,7 @@ function renderSection(sec: ISection, siteName: string): string {
     case 'divider':      html = renderDivider(c);      break;
     case 'imageComparison': html = renderImageComparison(c); break;
     case 'slideshow':    html = renderSlideshow(c); break;
-    case 'footer':       html = renderFooter(c, siteName); break;
+    case 'footer':       html = renderFooter(c, siteName, _themeData); break;
     default:             return `<!-- section "${attr(sec.type)}" not rendered -->`;
   }
 
@@ -1576,6 +1598,7 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   const { settings, name } = site;
   const globalSeo   = (settings?.seo as Record<string, unknown>) || {};
   const theme       = (settings?.theme as Record<string, unknown>) || {};
+  _themeData = theme;
   const analytics   = settings?.analytics;
   const settingsAny = settings as unknown as Record<string, unknown>;
   const customCss   = sanitizeCss(settingsAny?.customCss);
@@ -1906,7 +1929,7 @@ function extractShell(site: ISite): { navbar: string; footer: string } {
       navbar += addSectionAttrs(renderNavbar(getSectionData(s)), s.id, s.type);
     }
     if (s.type === 'footer') {
-      footer += addSectionAttrs(renderFooter(getSectionData(s), siteName), s.id, s.type);
+      footer += addSectionAttrs(renderFooter(getSectionData(s), siteName, _themeData), s.id, s.type);
     }
   }
   return { navbar, footer };
@@ -1922,6 +1945,7 @@ function pageShell(
 ): string {
   const { settings, name } = site;
   const theme   = (settings?.theme as Record<string, unknown>) || {};
+  _themeData = theme;
   const themeVars = `:root{
   --c-primary:${attr((theme.primaryColor   || theme.colorPrimary   || '#27491F') as string)};
   --c-secondary:${attr((theme.secondaryColor || theme.colorSecondary || '#F0CAE1') as string)};
