@@ -210,33 +210,58 @@ function matchBarcodeToProduct(
   products: ProductForScan[]
 ): { productId: string; matchedSize?: string } | null {
   const normalized = normalizeBarcode(barcode);
+
+  function matchesField(field: string): boolean {
+    const f = (field || '').toLowerCase();
+    return f === barcode || normalizeBarcode(f) === normalized;
+  }
+
   for (const p of products) {
-    const pb = (p.barcode || '').toLowerCase();
-    const pmain = (p.mainBarcode || '').toLowerCase();
-    const psku = (p.sku || '').toLowerCase();
-    if (
-      pb === barcode ||
-      normalizeBarcode(pb) === normalized ||
-      pmain === barcode ||
-      normalizeBarcode(pmain) === normalized ||
-      psku === barcode ||
-      normalizeBarcode(psku) === normalized
-    ) {
+    // Check main barcode, mainBarcode, and SKU
+    if (matchesField(p.barcode || '') || matchesField(p.mainBarcode || '') || matchesField(p.sku || '')) {
       return { productId: p.id };
     }
+    // Check size-specific barcodes
     if (p.sizeBarcodes && typeof p.sizeBarcodes === 'object') {
       for (const [size, sb] of Object.entries(p.sizeBarcodes)) {
-        const s = (sb || '').toLowerCase();
-        if (s === barcode || normalizeBarcode(s) === normalized) return { productId: p.id, matchedSize: size };
+        if (matchesField(sb || '')) return { productId: p.id, matchedSize: size };
       }
     }
+    // Check size variant barcodes
     if (p.sizeVariants && typeof p.sizeVariants === 'object') {
       for (const [size, variant] of Object.entries(p.sizeVariants)) {
-        const vb = ((variant as { barcode?: string })?.barcode || '').toLowerCase();
-        if (vb === barcode || normalizeBarcode(vb) === normalized) return { productId: p.id, matchedSize: size };
+        const vb = (variant as { barcode?: string })?.barcode || '';
+        if (matchesField(vb)) return { productId: p.id, matchedSize: size };
       }
     }
   }
+
+  // Fallback: try parsing barcode as "{barcode}-{size}" format
+  // e.g. "581154668995-38" → base barcode "581154668995", size "38"
+  const hyphenIdx = barcode.lastIndexOf('-');
+  if (hyphenIdx > 0) {
+    const basePart = barcode.slice(0, hyphenIdx);
+    const sizePart = barcode.slice(hyphenIdx + 1);
+    const normalizedBase = normalizeBarcode(basePart);
+
+    for (const p of products) {
+      const pb = normalizeBarcode(p.barcode || '');
+      const pmain = normalizeBarcode(p.mainBarcode || '');
+      const psku = normalizeBarcode(p.sku || '');
+      if (pb === normalizedBase || pmain === normalizedBase || psku === normalizedBase) {
+        return { productId: p.id, matchedSize: sizePart };
+      }
+      // Also check if any sizeBarcodes entry matches the base part
+      if (p.sizeBarcodes && typeof p.sizeBarcodes === 'object') {
+        for (const [size, sb] of Object.entries(p.sizeBarcodes)) {
+          if (normalizeBarcode(sb || '') === normalizedBase) {
+            return { productId: p.id, matchedSize: sizePart };
+          }
+        }
+      }
+    }
+  }
+
   return null;
 }
 

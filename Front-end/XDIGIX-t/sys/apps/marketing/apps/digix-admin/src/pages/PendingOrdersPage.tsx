@@ -221,11 +221,33 @@ export default function PendingOrdersPage() {
           normalizeBarcode(productSku) === normalizedBarcode;
         
         if (matchesMain || foundSize) {
-          matchingProducts.push({ 
-            id: productDoc.id, 
+          matchingProducts.push({
+            id: productDoc.id,
             data: productData,
             matchedSize: foundSize
           });
+        }
+
+        // Fallback: try parsing barcode as "{barcode}-{size}" format
+        // e.g. "581154668995-38" → base "581154668995", size "38"
+        if (!matchesMain && !foundSize) {
+          const hyphenIdx = barcode.lastIndexOf('-');
+          if (hyphenIdx > 0) {
+            const basePart = barcode.slice(0, hyphenIdx);
+            const sizePart = barcode.slice(hyphenIdx + 1);
+            const normalizedBase = normalizeBarcode(basePart);
+            const baseMatches =
+              normalizeBarcode(productBarcode) === normalizedBase ||
+              normalizeBarcode(productMainBarcode) === normalizedBase ||
+              normalizeBarcode(productSku) === normalizedBase;
+            if (baseMatches) {
+              matchingProducts.push({
+                id: productDoc.id,
+                data: productData,
+                matchedSize: sizePart
+              });
+            }
+          }
         }
       }
     } catch (error) {
