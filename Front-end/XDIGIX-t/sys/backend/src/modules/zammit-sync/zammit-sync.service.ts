@@ -316,11 +316,17 @@ export async function syncZammitOrders(
         // Match products
         const { orderData, matchedItems } = mapZammitPurchaseToOrder(purchase, catalog);
 
-        // Ensure customer exists (dedup by phone)
-        await ensureCustomer(businessId, tenantId, purchase);
-
-        // Create the order
+        // Create the order FIRST — customer handling must never block this
         const result = await addDocument(`businesses/${businessId}/orders`, orderData, tenantId);
+
+        // Then handle customer dedup (non-blocking — errors here don't affect the order)
+        try {
+          await ensureCustomer(businessId, tenantId, purchase);
+        } catch (custErr) {
+          logger.warn('Zammit sync: customer handling failed (order still created)', {
+            ...logMeta, zammitId: purchaseId, error: (custErr as Error).message,
+          });
+        }
 
         // Reserve stock for matched products
         const matchedOrderItems = matchedItems
