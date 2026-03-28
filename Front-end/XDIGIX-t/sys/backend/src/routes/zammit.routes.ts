@@ -250,6 +250,37 @@ router.get('/sync/logs', async (req: Request, res: Response) => {
   }
 });
 
+// ── POST /api/zammit/sync/reset ──────────────────────────────────
+// Clears syncedOrderIds so the next sync retries all Zammit orders.
+// Use this when failed orders were incorrectly marked as synced.
+
+router.post('/sync/reset', async (req: Request, res: Response) => {
+  const businessId = req.businessId;
+  if (!businessId) {
+    res.status(400).json({ error: 'businessId is required' });
+    return;
+  }
+
+  try {
+    const result = await ZammitIntegration.findOneAndUpdate(
+      { businessId },
+      { $set: { syncedOrderIds: [], lastSyncStatus: 'idle', lastSyncError: '' } },
+      { new: true }
+    );
+
+    if (!result) {
+      res.status(404).json({ error: 'Zammit integration not configured' });
+      return;
+    }
+
+    logger.info('Zammit sync: reset syncedOrderIds', { businessId });
+    res.json({ success: true, message: 'Sync state reset. Next sync will re-check all Zammit orders.' });
+  } catch (err) {
+    logger.error('Zammit sync reset: failed', { businessId, error: (err as Error).message });
+    res.status(500).json({ error: 'Failed to reset sync state' });
+  }
+});
+
 // ── PATCH /api/zammit/config/toggle ─────────────────────────────
 
 router.patch('/config/toggle', async (req: Request, res: Response) => {

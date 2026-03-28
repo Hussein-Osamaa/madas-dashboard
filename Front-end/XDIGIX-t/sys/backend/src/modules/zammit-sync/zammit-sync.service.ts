@@ -292,8 +292,26 @@ export async function syncZammitOrders(
     const newSyncedIds: string[] = [];
     let created = 0;
 
+    // Pre-load existing zammit order IDs to prevent duplicates after a sync reset
+    const { FirestoreDoc } = await import('../../schemas/document.schema');
+    const existingZammitOrders = await FirestoreDoc.find(
+      { businessId, coll: 'orders', 'data.zammitPurchaseId': { $exists: true } },
+      { 'data.zammitPurchaseId': 1 },
+    ).lean();
+    const existingZammitIds = new Set(
+      existingZammitOrders.map((d: Record<string, unknown>) => String(((d as { data?: Record<string, unknown> }).data?.zammitPurchaseId) || ''))
+    );
+
     for (const purchase of newPurchases) {
       const purchaseId = String(purchase.id);
+
+      // Skip if this Zammit order already exists in the dashboard (prevents duplicates after reset)
+      if (existingZammitIds.has(purchaseId)) {
+        newSyncedIds.push(purchaseId);
+        logger.debug('Zammit sync: order already exists in dashboard, skipping', { ...logMeta, zammitId: purchaseId });
+        continue;
+      }
+
       try {
         // Match products
         const { orderData, matchedItems } = mapZammitPurchaseToOrder(purchase, catalog);
@@ -335,7 +353,7 @@ export async function syncZammitOrders(
         const msg = `Failed to create order #${purchaseId}: ${(err as Error).message}`;
         errors.push(msg);
         logger.error('Zammit sync: order creation failed', { ...logMeta, zammitId: purchaseId, error: msg });
-        newSyncedIds.push(purchaseId);
+        // Don't add to syncedIds — failed orders should be retried on next sync
       }
     }
 

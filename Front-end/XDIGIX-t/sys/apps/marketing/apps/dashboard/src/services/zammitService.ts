@@ -136,6 +136,10 @@ export async function triggerZammitSync(): Promise<ZammitSyncResult> {
   return apiRequest('/zammit/sync/trigger', { method: 'POST' });
 }
 
+export async function resetZammitSync(): Promise<{ success: boolean; message: string }> {
+  return apiRequest('/zammit/sync/reset', { method: 'POST' });
+}
+
 export async function getZammitSyncStatus(): Promise<ZammitSyncStatus> {
   return apiRequest('/zammit/sync/status');
 }

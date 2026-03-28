@@ -7,6 +7,7 @@ import {
   triggerZammitSync,
   toggleZammitEnabled,
   getZammitSyncLogs,
+  resetZammitSync,
   type ZammitConfig,
   type ZammitSyncLogEntry,
 } from '../../services/zammitService';
@@ -143,6 +144,18 @@ export default function ZammitSyncPage() {
     }
   };
 
+  const handleResetSync = async () => {
+    if (!confirm('Reset sync state? This will clear the list of synced order IDs so the next sync re-checks all Zammit orders. Existing orders in your dashboard will NOT be deleted.')) return;
+    setMessage(null);
+    try {
+      const result = await resetZammitSync();
+      setMessage({ type: 'success', text: result.message || 'Sync state reset. Run "Sync Now" to re-import missing orders.' });
+      await loadConfig();
+    } catch (err) {
+      setMessage({ type: 'error', text: (err as Error).message });
+    }
+  };
+
   const handleLoadLogs = async () => {
     setShowLogs((prev) => !prev);
     if (!showLogs) {
@@ -267,6 +280,15 @@ export default function ZammitSyncPage() {
             >
               <span className="material-icons text-sm">history</span>
               {showLogs ? 'Hide Logs' : 'View Logs'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleResetSync}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100"
+            >
+              <span className="material-icons text-sm">restart_alt</span>
+              Reset Sync
             </button>
           </div>
         </div>
