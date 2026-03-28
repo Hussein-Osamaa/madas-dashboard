@@ -21,6 +21,7 @@ import { createScanLog } from '../../services/scanLogsService';
 import { createBostaDelivery } from '../../services/bostaService';
 import { sendOrderToFulfillment } from '../../lib/backend-adapter';
 import { useFulfillmentSubscription } from '../../hooks/useFulfillmentSubscription';
+import { dedupZammitOrders } from '../../services/zammitService';
 import { Product } from '../../services/productsService';
 
 /** Convert backend/Firestore date (Date, string, number, Timestamp) to Date or null. */
@@ -1315,6 +1316,23 @@ ${JSON.stringify(bostaData, null, 2)}
           >
             <span className="material-icons text-base text-current">history</span>
             Scan Log
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 transition-colors hover:bg-red-100"
+            onClick={async () => {
+              if (!confirm('Remove duplicate Zammit orders? Keeps the oldest copy of each order.')) return;
+              try {
+                const result = await dedupZammitOrders();
+                alert(result.message);
+                queryClient.invalidateQueries({ queryKey: ['orders'] });
+              } catch (err) {
+                alert('Failed: ' + (err as Error).message);
+              }
+            }}
+          >
+            <span className="material-icons text-base">delete_sweep</span>
+            Remove Duplicates
           </button>
           <button
             type="button"
