@@ -8,6 +8,7 @@ import {
   toggleZammitEnabled,
   getZammitSyncLogs,
   resetZammitSync,
+  dedupZammitOrders,
   type ZammitConfig,
   type ZammitSyncLogEntry,
 } from '../../services/zammitService';
@@ -141,6 +142,18 @@ export default function ZammitSyncPage() {
       setMessage({ type: 'error', text: (err as Error).message });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDedup = async () => {
+    if (!confirm('Remove duplicate Zammit orders? This keeps the oldest copy of each order and deletes the rest.')) return;
+    setMessage(null);
+    try {
+      const result = await dedupZammitOrders();
+      setMessage({ type: 'success', text: result.message });
+      await loadConfig();
+    } catch (err) {
+      setMessage({ type: 'error', text: (err as Error).message });
     }
   };
 
@@ -280,6 +293,15 @@ export default function ZammitSyncPage() {
             >
               <span className="material-icons text-sm">history</span>
               {showLogs ? 'Hide Logs' : 'View Logs'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDedup}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100"
+            >
+              <span className="material-icons text-sm">delete_sweep</span>
+              Remove Duplicates
             </button>
 
             <button

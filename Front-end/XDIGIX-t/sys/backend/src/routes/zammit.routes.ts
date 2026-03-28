@@ -281,6 +281,86 @@ router.post('/sync/reset', async (req: Request, res: Response) => {
   }
 });
 
+// ── POST /api/zammit/sync/dedup ──────────────────────────────────
+// Removes duplicate Zammit orders, keeping the oldest one per zammitPurchaseId.
+
+router.post('/sync/dedup', async (req: Request, res: Response) => {
+  const businessId = req.businessId;
+  if (!businessId) {
+    res.status(400).json({ error: 'businessId is required' });
+    return;
+  }
+
+  try {
+    const { FirestoreDoc } = await import('../schemas/document.schema');
+
+    // Find all zammit orders
+    const zammitOrders = await FirestoreDoc.find(
+      { businessId, coll: 'orders', 'data.zammitPurchaseId': { $exists: true } },
+      { docId: 1, 'data.zammitPurchaseId': 1, 'data.createdAt': 1, createdAt: 1 },
+    ).sort({ createdAt: 1 }).lean();
+
+    // Group by zammitPurchaseId
+    const groups = new Map<string, Array<{ _id: unknown; docId: string }>>();
+    for (const order of zammitOrders) {
+      const data = (order as Record<string, unknown>).data as Record<string, unknown> | undefined;
+      const zammitId = String(data?.zammitPurchaseId || '');
+      if (!zammitId) continue;
+
+      if (!groups.has(zammitId)) groups.set(zammitId, []);
+      groups.get(zammitId)!.push({
+        _id: (order as Record<string, unknown>)._id,
+        docId: (order as { docId: string }).docId,
+      });
+    }
+
+    // Delete duplicates (keep first = oldest)
+    let deletedCount = 0;
+    const deletedIds: string[] = [];
+    for (const [zammitId, docs] of groups) {
+      if (docs.length <= 1) continue;
+      // Keep the first (oldest), delete the rest
+      const toDelete = docs.slice(1);
+      for (const dup of toDelete) {
+        await FirestoreDoc.deleteOne({ _id: dup._id });
+        deletedIds.push(dup.docId);
+        deletedCount++;
+      }
+      logger.info('Zammit dedup: removed duplicates', {
+        businessId,
+        zammitPurchaseId: zammitId,
+        kept: docs[0].docId,
+        removed: toDelete.map((d) => d.docId).join(', '),
+      });
+    }
+
+    // Rebuild syncedOrderIds from remaining orders
+    const remaining = await FirestoreDoc.find(
+      { businessId, coll: 'orders', 'data.zammitPurchaseId': { $exists: true } },
+      { 'data.zammitPurchaseId': 1 },
+    ).lean();
+    const validIds = remaining.map((d: Record<string, unknown>) =>
+      String(((d as { data?: Record<string, unknown> }).data?.zammitPurchaseId) || '')
+    ).filter(Boolean);
+
+    await ZammitIntegration.updateOne(
+      { businessId },
+      { $set: { syncedOrderIds: validIds } }
+    );
+
+    logger.info('Zammit dedup: complete', { businessId, deletedCount: String(deletedCount), rebuiltSyncedIds: String(validIds.length) });
+    res.json({
+      success: true,
+      deletedCount,
+      remainingOrders: remaining.length,
+      message: `Removed ${deletedCount} duplicate order(s). Sync state rebuilt with ${validIds.length} synced IDs.`,
+    });
+  } catch (err) {
+    logger.error('Zammit dedup: failed', { businessId, error: (err as Error).message });
+    res.status(500).json({ error: 'Dedup failed: ' + (err as Error).message });
+  }
+});
+
 // ── PATCH /api/zammit/config/toggle ─────────────────────────────
 
 router.patch('/config/toggle', async (req: Request, res: Response) => {

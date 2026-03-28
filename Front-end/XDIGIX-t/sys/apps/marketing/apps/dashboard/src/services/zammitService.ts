@@ -140,6 +140,10 @@ export async function resetZammitSync(): Promise<{ success: boolean; message: st
   return apiRequest('/zammit/sync/reset', { method: 'POST' });
 }
 
+export async function dedupZammitOrders(): Promise<{ success: boolean; deletedCount: number; remainingOrders: number; message: string }> {
+  return apiRequest('/zammit/sync/dedup', { method: 'POST' });
+}
+
 export async function getZammitSyncStatus(): Promise<ZammitSyncStatus> {
   return apiRequest('/zammit/sync/status');
 }
