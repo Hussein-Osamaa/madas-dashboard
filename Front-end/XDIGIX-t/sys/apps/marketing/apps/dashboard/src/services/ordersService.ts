@@ -6,8 +6,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
-  query,
   serverTimestamp,
   updateDoc
 } from '../lib/firebase';
@@ -123,8 +121,11 @@ const normalizeOrder = (id: string, data: FirestoreOrder): Order => {
 };
 
 export const fetchOrders = async (businessId: string): Promise<Order[]> => {
-  const q = query(ordersCollection(businessId), orderBy('date', 'desc'));
-  const snapshot = await getDocs(q);
+  // Don't use orderBy('date') — Firestore silently excludes docs where the
+  // field is missing/null, which drops orders created without a date field
+  // (e.g. Zammit sync, POS, external imports). Sorting is done client-side
+  // in the useOrders hook instead.
+  const snapshot = await getDocs(ordersCollection(businessId));
   return snapshot.docs.map((docSnap) => normalizeOrder(docSnap.id, docSnap.data() as FirestoreOrder));
 };
 
