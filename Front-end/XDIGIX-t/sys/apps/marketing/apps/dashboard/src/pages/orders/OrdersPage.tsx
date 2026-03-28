@@ -1384,13 +1384,33 @@ ${JSON.stringify(bostaData, null, 2)}
               </option>
             ))}
           </select>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
-            placeholder="Filter by date"
-          />
+          <div className="flex items-center gap-1.5">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(event) => setStartDate(event.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
+              title="From date"
+            />
+            <span className="text-xs text-madas-text/40">to</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(event) => setEndDate(event.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
+              title="To date"
+            />
+            {(startDate || endDate) && (
+              <button
+                type="button"
+                onClick={() => { setStartDate(''); setEndDate(''); }}
+                className="p-1 rounded hover:bg-gray-200 transition-colors"
+                title="Clear date filter"
+              >
+                <span className="material-icons text-sm text-madas-text/50">close</span>
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {selectedOrders.size > 0 && (

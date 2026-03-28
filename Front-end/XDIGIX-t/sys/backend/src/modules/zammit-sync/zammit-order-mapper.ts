@@ -67,11 +67,26 @@ function normalizeName(name: string): string {
 // ── Product Matching ──────────────────────────────────────────────
 
 /**
+ * Try to pick the right size from a matched product.
+ */
+function resolveSize(
+  xProduct: XdigixProduct,
+  zSize: string
+): string {
+  const stockKeys = Object.keys(xProduct.stock || {});
+  if (!zSize) return stockKeys[0] || '';
+  if (stockKeys.includes(zSize)) return zSize;
+  const ci = stockKeys.find((k) => k.toLowerCase() === zSize.toLowerCase());
+  return ci || zSize;
+}
+
+/**
  * Match a Zammit product to the XDIGIX catalog.
  *
- * Strategy: EXACT normalized name match + size.
- * No substring matching — prevents wrong matches like
- * "Nike Campus" matching "Nike Campus White" when the order is for "Nike Campus Black".
+ * Strategy (priority order):
+ * 1. SKU match (most reliable — unique identifier)
+ * 2. Barcode match (variant barcode from Zammit → product barcode or sizeBarcodes)
+ * 3. Exact normalized name match + size
  */
 function matchProduct(
   zammitProduct: ZammitPurchaseProduct,
@@ -79,10 +94,42 @@ function matchProduct(
 ): { product: XdigixProduct; size: string } | null {
   const zName = normalizeName(zammitProduct.name || '');
   const zSize = (zammitProduct.variantName || zammitProduct.values?.[0] || '').trim();
+  const zSku = (zammitProduct.sku || '').trim().toLowerCase();
+  const zBarcode = (zammitProduct.variant?.barCode || '').trim().toLowerCase();
 
+  // ── 1. SKU match ──────────────────────────────────────────────
+  if (zSku) {
+    for (const xp of catalog) {
+      if ((xp.sku || '').trim().toLowerCase() === zSku) {
+        logger.debug('Zammit mapper: matched by SKU', { sku: zSku, xdigixDocId: xp.docId });
+        return { product: xp, size: resolveSize(xp, zSize) };
+      }
+    }
+  }
+
+  // ── 2. Barcode match ──────────────────────────────────────────
+  if (zBarcode) {
+    for (const xp of catalog) {
+      // Check main barcode
+      if ((xp.barcode || '').trim().toLowerCase() === zBarcode) {
+        logger.debug('Zammit mapper: matched by barcode', { barcode: zBarcode, xdigixDocId: xp.docId });
+        return { product: xp, size: resolveSize(xp, zSize) };
+      }
+      // Check size-specific barcodes
+      if (xp.sizeBarcodes && typeof xp.sizeBarcodes === 'object') {
+        for (const [size, sb] of Object.entries(xp.sizeBarcodes)) {
+          if ((sb || '').trim().toLowerCase() === zBarcode) {
+            logger.debug('Zammit mapper: matched by sizeBarcode', { barcode: zBarcode, size, xdigixDocId: xp.docId });
+            return { product: xp, size };
+          }
+        }
+      }
+    }
+  }
+
+  // ── 3. Name match ─────────────────────────────────────────────
   if (!zName) return null;
 
-  // Find all products with an exact normalized name match
   const nameMatches = catalog.filter((xp) => normalizeName(xp.name) === zName);
 
   if (nameMatches.length === 0) {
@@ -91,39 +138,21 @@ function matchProduct(
 
   // Among name matches, find the one with the right size
   for (const xProduct of nameMatches) {
+    const size = resolveSize(xProduct, zSize);
     const stockKeys = Object.keys(xProduct.stock || {});
-
-    if (zSize) {
-      // Exact size match
-      if (stockKeys.includes(zSize)) {
-        return { product: xProduct, size: zSize };
-      }
-      // Case-insensitive size match
-      const matchedSize = stockKeys.find(
-        (k) => k.toLowerCase() === zSize.toLowerCase()
-      );
-      if (matchedSize) {
-        return { product: xProduct, size: matchedSize };
-      }
-    } else {
-      // No size specified — return the product with first size
-      return { product: xProduct, size: stockKeys[0] || '' };
+    if (!zSize || stockKeys.some((k) => k.toLowerCase() === zSize.toLowerCase())) {
+      return { product: xProduct, size };
     }
   }
 
-  // Name matched but no size match — still return the first name match without size
-  // (better than "Unknown Product", at least the product is identified)
-  if (nameMatches.length > 0) {
-    logger.warn('Zammit mapper: name matched but size not found in stock', {
-      zammitName: zammitProduct.name,
-      zammitSize: zSize,
-      xdigixName: nameMatches[0].name,
-      availableSizes: Object.keys(nameMatches[0].stock || {}).join(', '),
-    });
-    return { product: nameMatches[0], size: zSize };
-  }
-
-  return null;
+  // Name matched but no size match — still return the first name match
+  logger.warn('Zammit mapper: name matched but size not found in stock', {
+    zammitName: zammitProduct.name,
+    zammitSize: zSize,
+    xdigixName: nameMatches[0].name,
+    availableSizes: Object.keys(nameMatches[0].stock || {}).join(', '),
+  });
+  return { product: nameMatches[0], size: zSize };
 }
 
 // ── Status Mapping ────────────────────────────────────────────────
