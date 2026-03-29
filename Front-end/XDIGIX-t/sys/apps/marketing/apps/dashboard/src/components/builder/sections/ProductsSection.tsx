@@ -101,8 +101,11 @@ const ProductsSection = ({ data, style }: Props) => {
   const isMinimal = cardStyle === 'minimal';
 
   const cardWrapperCls = isCard
-    ? 'bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow'
+    ? 'rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-shadow'
     : '';
+  const cardWrapperStyle: React.CSSProperties = isCard
+    ? { background: 'var(--scheme-bg, #fff)', borderColor: 'color-mix(in srgb, var(--scheme-text, #121212) 12%, transparent)' }
+    : {};
 
   const imgContainerCls = isCard
     ? `overflow-hidden ${ratioMap[imageRatio] || 'aspect-[3/4]'}`
@@ -118,7 +121,7 @@ const ProductsSection = ({ data, style }: Props) => {
       key={product.id || index}
       href="#"
       className={`group block ${cardWrapperCls} ${layout === 'carousel' ? 'flex-shrink-0 snap-start' : ''}`}
-      style={layout === 'carousel' ? { width: `calc((100% - ${(columnsDesktop - 1) * 24}px) / ${columnsDesktop})`, minWidth: '200px' } : undefined}
+      style={layout === 'carousel' ? { ...cardWrapperStyle, width: `calc((100% - ${(columnsDesktop - 1) * 24}px) / ${columnsDesktop})`, minWidth: '200px' } : cardWrapperStyle}
     >
       {/* Product image */}
       <div className={`${imgContainerCls} relative`} style={imgRadiusStyle}>
@@ -138,7 +141,7 @@ const ProductsSection = ({ data, style }: Props) => {
           </div>
         )}
         {showPrice && (
-          <p className="text-sm font-semibold" style={{ color: 'var(--c-primary, #121212)' }}>
+          <p className="text-sm font-semibold" style={{ color: 'var(--scheme-text, var(--c-primary, #121212))' }}>
             {product.onSale || product.salePrice ? (
               <>
                 <span className="text-red-600 mr-2">{formatPrice(product.salePrice ?? product.sellingPrice ?? product.price)}</span>
@@ -152,12 +155,12 @@ const ProductsSection = ({ data, style }: Props) => {
         {showAddToCart && (
           isCard ? (
             <button
-              className="mt-2 w-full text-xs font-medium tracking-wider uppercase transition-colors text-white"
-              style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', background: 'var(--c-primary, #121212)' }}>
+              className="mt-2 w-full text-xs font-medium tracking-wider uppercase transition-colors"
+              style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'min(var(--btn-radius, 8px), 8px)', background: 'var(--scheme-btn-bg, var(--c-primary, #121212))', color: 'var(--scheme-btn-label, #fff)' }}>
               Add to cart
             </button>
           ) : isMinimal ? (
-            <button className="mt-1 text-sm font-semibold underline" style={{ color: 'var(--c-primary, #121212)' }}>
+            <button className="mt-1 text-sm font-semibold underline" style={{ color: 'var(--scheme-text, var(--c-primary, #121212))' }}>
               Add to cart
             </button>
           ) : (

@@ -314,7 +314,7 @@ ul,ol{list-style:none}
 .xd-card-card .xd-product-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
 .xd-card-card .xd-product-img-wrap{border-radius:0;background:transparent}
 .xd-card-card .xd-product-body{padding:.75rem}
-.xd-card-card .xd-product-btn{border:none;background:var(--c-primary);color:#fff;border-radius:min(var(--btn-radius,8px),8px);width:100%}
+.xd-card-card .xd-product-btn{border:none;background:var(--scheme-btn-bg,var(--c-primary));color:var(--scheme-btn-label,#fff);border-radius:min(var(--btn-radius,8px),8px);width:100%}
 .xd-card-card .xd-product-btn:hover{opacity:.9}
 .xd-card-minimal .xd-product-card{background:transparent}
 .xd-card-minimal .xd-product-card:hover{translate:none}
