@@ -56,16 +56,21 @@ router.get('/documents/*', async (req: Request, res: Response) => {
     return;
   }
   const tenantId = req.tenantId;
-  const doc = await getDocument(path, tenantId);
-  if (!doc) {
-    if (isOptionalDocument(path)) {
-      res.json({ id: '', data: {} });
+  try {
+    const doc = await getDocument(path, tenantId);
+    if (!doc) {
+      if (isOptionalDocument(path)) {
+        res.json({ id: '', data: {} });
+        return;
+      }
+      res.status(404).json({ error: 'Document not found', code: 'firestore/not-found' });
       return;
     }
-    res.status(404).json({ error: 'Document not found', code: 'firestore/not-found' });
-    return;
+    res.json({ id: doc.id, data: doc.data });
+  } catch (err) {
+    console.error('[firestore/get] Error:', (err as Error).message);
+    res.status(500).json({ error: (err as Error).message, code: 'firestore/internal' });
   }
-  res.json({ id: doc.id, data: doc.data });
 });
 
 router.post('/query', async (req: Request, res: Response) => {
@@ -81,8 +86,13 @@ router.post('/query', async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Path and tenant required', code: 'firestore/invalid-path' });
     return;
   }
-  const docs = await queryCollection(path, req.tenantId || '', constraints);
-  res.json({ docs: docs.map((d) => ({ id: d.id, data: d.data })) });
+  try {
+    const docs = await queryCollection(path, req.tenantId || '', constraints);
+    res.json({ docs: docs.map((d) => ({ id: d.id, data: d.data })) });
+  } catch (err) {
+    console.error('[firestore/query] Error:', (err as Error).message);
+    res.status(500).json({ error: (err as Error).message, code: 'firestore/internal' });
+  }
 });
 
 router.post('/documents/*', async (req: Request, res: Response) => {

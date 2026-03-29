@@ -174,7 +174,9 @@ export async function queryCollection(
     const whereClauses = constraints.filter((c) => c.type === 'where');
     for (const w of whereClauses) {
       if (w.field && w.op === '==' && w.value !== undefined) {
-        filter[w.field] = w.value;
+        // Map _id or id to uid — user IDs aren't ObjectIds
+        const field = (w.field === '_id' || w.field === 'id') ? 'uid' : w.field;
+        filter[field] = w.value;
       }
     }
     let q = User.find(filter).select('-passwordHash').lean();
