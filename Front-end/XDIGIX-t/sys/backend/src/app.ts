@@ -28,6 +28,10 @@ import { FirestoreDoc } from './schemas/document.schema';
 export function createApp(): Express {
   const app = express();
 
+  // Trust first proxy (Railway, Vercel, Render, etc.) so express-rate-limit
+  // can read the real client IP from X-Forwarded-For without crashing.
+  app.set('trust proxy', 1);
+
   const KNOWN_ORIGINS = [
     'https://xdigix-os.vercel.app',
     'https://xdigix-os-xdigix.vercel.app',
