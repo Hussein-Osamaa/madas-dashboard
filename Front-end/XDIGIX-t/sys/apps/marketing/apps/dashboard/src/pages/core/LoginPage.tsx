@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { auth, signInWithEmailAndPassword, sendPasswordResetEmail } from '../../lib/backend';
-// FirebaseError replaced with generic error type
-type FirebaseError = Error & { code?: string };
 import { useAuth } from '../../contexts/AuthContext';
 
 type FormErrors = {
@@ -57,9 +55,10 @@ const LoginPage = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleFirebaseError = (error: FirebaseError) => {
+  const handleFirebaseError = (error: any) => {
     let errorMessage = 'Invalid email or password';
-    switch (error.code) {
+    const code = (error as any)?.code;
+    switch (code) {
       case 'auth/user-not-found':
         errorMessage = 'No account found with this email';
         break;
@@ -109,12 +108,11 @@ const LoginPage = () => {
       setResetEmailSent(true);
     } catch (error) {
       console.error('Password reset error:', error);
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/user-not-found') {
-          setErrors({ email: 'No account found with this email' });
-        } else {
-          setErrors({ email: 'Failed to send reset email. Please try again.' });
-        }
+      const code = (error as any)?.code;
+      if (code === 'auth/user-not-found') {
+        setErrors({ email: 'No account found with this email' });
+      } else if (code) {
+        setErrors({ email: 'Failed to send reset email. Please try again.' });
       } else {
         setErrors({ email: 'An error occurred. Please try again.' });
       }
@@ -142,11 +140,7 @@ const LoginPage = () => {
     } catch (error) {
       console.error('Login error:', error);
       setStatus('idle');
-      if (error instanceof FirebaseError) {
-        handleFirebaseError(error);
-      } else {
-        setErrors((prev) => ({ ...prev, password: 'Login failed. Please try again.' }));
-      }
+      handleFirebaseError(error);
     }
   };
 

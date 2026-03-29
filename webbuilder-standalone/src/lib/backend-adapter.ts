@@ -1,7 +1,7 @@
 /**
  * Firebase Compatibility Adapter
  * Mirrors Firebase API but calls our Node.js + MongoDB backend.
- * Set VITE_API_BACKEND_URL to the API root only, e.g. https://your-backend.up.railway.app/api
+ * Set NEXT_PUBLIC_API_BACKEND_URL to the API root only, e.g. https://your-backend.up.railway.app/api
  * (We normalize so the base never includes paths like /auth/me, which would cause doubled URLs.)
  */
 
