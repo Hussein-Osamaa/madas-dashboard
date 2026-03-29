@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from 'react';
 import { useAuth } from './AuthContext';
@@ -106,7 +107,7 @@ const BusinessProvider = ({ children }: Props) => {
     incomingLinkRequests: [],
     outgoingLinkRequests: []
   });
-  const [retryCount, setRetryCount] = useState(0);
+  const retryCountRef = useRef(0);
   const MAX_RETRIES = 3;
 
   const storeUserData = useCallback((payload: Record<string, unknown>) => {
@@ -385,6 +386,7 @@ const BusinessProvider = ({ children }: Props) => {
       };
 
       storeUserData(payload);
+      retryCountRef.current = 0; // Reset retry counter on success
 
       setState({
         loading: false,
@@ -406,10 +408,10 @@ const BusinessProvider = ({ children }: Props) => {
       console.error('[BusinessProvider] Failed to resolve business context', error);
       
       // Retry on network errors (including QUIC errors)
-      if (retryCount < MAX_RETRIES) {
-        console.log(`[BusinessProvider] Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
-        setRetryCount(prev => prev + 1);
-        await delay(1000 * (retryCount + 1)); // Exponential backoff: 1s, 2s, 3s
+      if (retryCountRef.current < MAX_RETRIES) {
+        retryCountRef.current += 1;
+        console.log(`[BusinessProvider] Retrying... (${retryCountRef.current}/${MAX_RETRIES})`);
+        await delay(1000 * retryCountRef.current); // Exponential backoff: 1s, 2s, 3s
         return resolveBusiness(true);
       }
       
@@ -432,7 +434,7 @@ const BusinessProvider = ({ children }: Props) => {
       
       setState({ loading: false, noAccess: true });
     }
-  }, [storeUserData, user, retryCount, authLoading, getCachedUserData]);
+  }, [storeUserData, user, authLoading, getCachedUserData]);
 
   useEffect(() => {
     void resolveBusiness();

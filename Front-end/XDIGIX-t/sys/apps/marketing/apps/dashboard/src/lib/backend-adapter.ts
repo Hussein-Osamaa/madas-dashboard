@@ -514,7 +514,10 @@ export function onSnapshot(
   onError?: (err: Error) => void
 ) {
   let active = true;
+  const MIN_INTERVAL = 10_000;  // 10s base polling
+  const MAX_INTERVAL = 60_000;  // 60s cap on errors
   const poll = async () => {
+    let interval = MIN_INTERVAL;
     while (active) {
       try {
         const path = q.path || '';
@@ -528,10 +531,12 @@ export function onSnapshot(
           data: () => d.data as Record<string, unknown>
         }));
         onNext({ docs });
+        interval = MIN_INTERVAL; // reset on success
       } catch (err) {
         onError?.(err as Error);
+        interval = Math.min(interval * 2, MAX_INTERVAL); // backoff on error
       }
-      await new Promise((r) => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, interval));
     }
   };
   poll();
