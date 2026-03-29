@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { DealsSectionData } from '../../../types/builder';
+import { useTheme } from '../../../contexts/ThemeContext';
 import BlockWrapper from '../BlockWrapper';
 
 type Props = { data: DealsSectionData; style?: React.CSSProperties; isSelected?: boolean; onEditBlock?: (dataKey: string, blockIndex: number) => void; onDeleteBlock?: (dataKey: string, blockIndex: number) => void };
@@ -8,6 +9,7 @@ const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1551028719-00167b16eac
 
 const DealsSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }: Props) => {
   const d = (data ?? {}) as Record<string, any>;
+  const { theme } = useTheme();
 
   const title = d.title || 'Featured product';
   const headingSize = d.heading_size ?? 'h1';
@@ -25,8 +27,11 @@ const DealsSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }: P
     hxl: 'text-5xl md:text-6xl',
   };
 
+  const currency = theme.currency || 'SAR';
+  const currencyPosition = theme.currencyPosition || 'prefix';
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+    const num = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price);
+    return currencyPosition === 'suffix' ? `${num} ${currency}` : `${currency} ${num}`;
   };
 
   const imageSection = (

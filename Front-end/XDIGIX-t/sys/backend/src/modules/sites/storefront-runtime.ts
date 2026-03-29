@@ -437,6 +437,27 @@ if(typeof IntersectionObserver!=='undefined'){
   document.querySelectorAll('.xd-reveal').forEach(function(el){revealObserver.observe(el);});
 }
 
+/* ── 21b. Product Carousel ────────────────────────────────────────── */
+document.querySelectorAll('[data-xd-carousel]').forEach(function(carousel){
+  var cols=parseInt(carousel.getAttribute('data-xd-cols')||'4',10);
+  carousel.style.setProperty('--xd-cols',''+cols);
+  var wrap=carousel.parentElement;
+  var prevBtn=wrap?wrap.parentElement&&wrap.parentElement.querySelector('[data-xd-carousel-prev]'):null;
+  if(!prevBtn){var head=wrap&&wrap.previousElementSibling;if(head){prevBtn=head.querySelector('[data-xd-carousel-prev]');}}
+  var nextBtn=wrap?wrap.parentElement&&wrap.parentElement.querySelector('[data-xd-carousel-next]'):null;
+  if(!nextBtn){var head2=wrap&&wrap.previousElementSibling;if(head2){nextBtn=head2.querySelector('[data-xd-carousel-next]');}}
+  function updateArrows(){
+    if(prevBtn)prevBtn.disabled=carousel.scrollLeft<5;
+    if(nextBtn)nextBtn.disabled=carousel.scrollLeft+carousel.clientWidth>=carousel.scrollWidth-5;
+  }
+  carousel.addEventListener('scroll',updateArrows,{passive:true});
+  updateArrows();
+  var cardEl=carousel.querySelector('.xd-product-card');
+  var cardW=cardEl?cardEl.offsetWidth+24:280;
+  if(prevBtn)prevBtn.addEventListener('click',function(){carousel.scrollBy({left:-cardW,behavior:'smooth'});});
+  if(nextBtn)nextBtn.addEventListener('click',function(){carousel.scrollBy({left:cardW,behavior:'smooth'});});
+});
+
 /* ── 22. Slideshow ─────────────────────────────────────────────────── */
 document.querySelectorAll('.xd-slideshow').forEach(function(ss){
   var slides=ss.querySelectorAll('.xd-slide');

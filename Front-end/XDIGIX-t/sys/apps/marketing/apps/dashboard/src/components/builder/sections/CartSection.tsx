@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 type Props = {
   data: Record<string, any>;
@@ -14,6 +15,7 @@ const DEMO_ITEMS = [
 
 const CartSection = ({ data, style }: Props) => {
   const d = (data ?? {}) as Record<string, any>;
+  const { theme } = useTheme();
 
   const title = d.title || 'Your cart';
   const emptyMessage = d.empty_message || 'Your cart is empty';
@@ -41,8 +43,12 @@ const CartSection = ({ data, style }: Props) => {
 
   const subtotal = items.reduce((sum, item) => sum + item.price * (quantities[item.id] || item.quantity), 0);
 
-  const formatPrice = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  const currency = theme.currency || 'SAR';
+  const currencyPosition = theme.currencyPosition || 'prefix';
+  const formatPrice = (n: number) => {
+    const num = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    return currencyPosition === 'suffix' ? `${num} ${currency}` : `${currency} ${num}`;
+  };
 
   // Empty cart state
   if (items.length === 0) {

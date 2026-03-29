@@ -1,4 +1,5 @@
 import { memo, useState, Fragment } from 'react';
+import { useTheme } from '../../../contexts/ThemeContext';
 import BlockWrapper from '../BlockWrapper';
 
 type Props = {
@@ -13,8 +14,16 @@ const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1523275335684-37898b6b
 
 const ProductInfoSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBlock }: Props) => {
   const d = (data ?? {}) as Record<string, any>;
+  const { theme } = useTheme();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+
+  const _currency = theme.currency || 'SAR';
+  const _currPos = theme.currencyPosition || 'prefix';
+  const formatPrice = (price: number) => {
+    const num = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price);
+    return _currPos === 'suffix' ? `${num} ${_currency}` : `${_currency} ${num}`;
+  };
 
   // Product data (from preview product or defaults)
   const productName = d.product_name || 'Sample Product';
@@ -61,11 +70,11 @@ const ProductInfoSection = ({ data, style, isSelected = false, onEditBlock, onDe
         return wrapBlock(idx, 'price',
           <div className="flex items-baseline gap-3 mb-4">
             <span className="text-xl font-semibold">
-              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(productPrice)}
+              {formatPrice(productPrice)}
             </span>
             {productComparePrice > 0 && productComparePrice > productPrice && (
               <span className="text-sm line-through opacity-50">
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(productComparePrice)}
+                {formatPrice(productComparePrice)}
               </span>
             )}
             {productComparePrice > productPrice && (
@@ -285,7 +294,7 @@ const ProductInfoSection = ({ data, style, isSelected = false, onEditBlock, onDe
                 <h1 className="text-2xl md:text-3xl font-bold mb-1">{productName}</h1>
                 <div className="flex items-baseline gap-3 mb-4">
                   <span className="text-xl font-semibold">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(productPrice)}
+                    {formatPrice(productPrice)}
                   </span>
                 </div>
                 <div className="prose prose-sm max-w-none mb-6 text-sm leading-relaxed opacity-80">

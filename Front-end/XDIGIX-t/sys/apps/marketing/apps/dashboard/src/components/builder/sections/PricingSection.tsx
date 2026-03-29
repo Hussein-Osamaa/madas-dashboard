@@ -1,15 +1,17 @@
 import { memo } from 'react';
 import { PricingSectionData } from '../../../types/builder';
+import { useTheme } from '../../../contexts/ThemeContext';
 import BlockWrapper from '../BlockWrapper';
 
 type Props = { data: PricingSectionData; style?: React.CSSProperties; isSelected?: boolean; onEditBlock?: (dataKey: string, blockIndex: number) => void; onDeleteBlock?: (dataKey: string, blockIndex: number) => void };
 
 const PricingSection = ({ data, style, isSelected, onEditBlock, onDeleteBlock }: Props) => {
   const d = (data ?? {}) as Record<string, any>;
+  const { theme } = useTheme();
 
   const title = d.title || 'Pricing';
   const subtitle = d.subtitle || '';
-  const currency = d.currency || '$';
+  const currency = d.currency || theme.currency || 'SAR';
   const billingPeriod = d.billingPeriod || '/month';
   const paddingTop = d.padding_top ?? 36;
   const paddingBottom = d.padding_bottom ?? 36;

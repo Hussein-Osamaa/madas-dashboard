@@ -83,6 +83,21 @@ function getSectionData(sec: ISection): Record<string, unknown> {
   return {};
 }
 
+/** Format a price with the site's currency setting from theme. */
+function formatCurrency(price: unknown): string {
+  const num = Number(price);
+  if (isNaN(num)) return String(price ?? '');
+  const formatted = num.toFixed(2);
+  const currency = ((_themeData.currency as string) || 'SAR').toUpperCase();
+  const position = ((_themeData.currencyPosition as string) || 'prefix');
+  return position === 'suffix' ? `${formatted} ${currency}` : `${currency} ${formatted}`;
+}
+
+/** Get the raw currency code from theme data. */
+function getCurrencyCode(): string {
+  return ((_themeData.currency as string) || 'SAR').toUpperCase();
+}
+
 /** Build star SVGs for ratings (1–5). */
 function stars(count: number): string {
   const n = Math.min(5, Math.max(0, Math.round(count)));
@@ -272,24 +287,32 @@ ul,ol{list-style:none}
 .xd-feature-icon .material-icons{font-size:1.75rem;color:var(--c-primary)}
 .xd-feature-card h3{font-size:1.1rem;font-weight:700;color:var(--c-primary);margin-bottom:.5rem}
 .xd-feature-card p{font-size:.95rem;opacity:.75;line-height:1.6}
-.xd-product-card{background:#fff;border-radius:var(--br);border:1px solid #e5e7eb;overflow:hidden;
+.xd-product-card{background:var(--scheme-bg,#fff);border-radius:var(--br);border:1px solid color-mix(in srgb,var(--scheme-text,#121212) 12%,transparent);overflow:hidden;
   display:flex;flex-direction:column;transition:box-shadow .25s,translate .25s}
 .xd-product-card:hover{box-shadow:0 12px 32px rgba(0,0,0,.1);translate:0 -3px}
-.xd-product-img-wrap{position:relative;overflow:hidden;background:#f9f9f9}
+.xd-product-img-wrap{position:relative;overflow:hidden;background:color-mix(in srgb,var(--scheme-text,#121212) 5%,var(--scheme-bg,#fff))}
 .xd-product-img-wrap img{width:100%;aspect-ratio:var(--product-img-ratio,1);object-fit:cover;transition:scale .4s}
 .xd-product-card:hover .xd-product-img-wrap img{scale:1.05}
 .xd-product-badge{position:absolute;top:.75rem;left:.75rem;background:var(--badge-color,#ef4444);color:#fff;
   font-size:.75rem;font-weight:700;padding:.25rem .625rem;border-radius:var(--badge-radius,999px)}
 .xd-badge-sold-out{background:#6b7280}
 .xd-btn-disabled{background:#d1d5db;color:#6b7280;cursor:not-allowed}
-.xd-product-body{padding:1rem;flex:1;display:flex;flex-direction:column;gap:.5rem;text-align:var(--product-text-align,left)}
-.xd-product-name{font-weight:600;font-size:.95rem;line-height:1.4;flex:1}
-.xd-product-price{font-weight:800;color:var(--c-primary);font-size:1.1rem}
+.xd-product-body{padding:1rem;flex:1;display:flex;flex-direction:column;gap:.5rem;text-align:var(--product-text-align,left);color:var(--scheme-text,var(--c-text,#121212))}
+.xd-product-name{font-weight:600;font-size:.95rem;line-height:1.4;flex:1;color:var(--scheme-text,var(--c-text,inherit))}
+.xd-product-price{font-weight:800;color:var(--scheme-text,var(--c-primary));font-size:1.1rem}
 .xd-product-compare{text-decoration:line-through;opacity:.5;font-size:.875rem;margin-left:.5rem}
 .xd-product-btn{margin-top:.5rem;padding:.625rem;font-size:.875rem;border-radius:var(--btn-radius,8px)}
-.xd-card-minimal .xd-product-card{border:none;box-shadow:none;border-radius:0}
+.xd-card-minimal .xd-product-card{border:none;box-shadow:none;border-radius:0;background:transparent}
 .xd-card-minimal .xd-product-card:hover{box-shadow:none;translate:none}
 .xd-card-card .xd-product-card{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.xd-carousel-wrap{position:relative;overflow:hidden}
+.xd-carousel{display:flex;gap:1.5rem;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:.5rem}
+.xd-carousel::-webkit-scrollbar{display:none}
+.xd-carousel>.xd-product-card{flex:0 0 calc((100% - 1.5rem * (var(--xd-cols,4) - 1)) / var(--xd-cols,4));scroll-snap-align:start;min-width:200px}
+.xd-carousel-arrows{display:flex;gap:.5rem}
+.xd-carousel-arrow{width:36px;height:36px;border-radius:50%;border:1px solid var(--scheme-text,var(--c-text,#121212));color:var(--scheme-text,var(--c-text,#121212));background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.xd-carousel-arrow:hover{background:var(--scheme-text,var(--c-text,#121212));color:var(--scheme-bg,#fff)}
+.xd-carousel-arrow:disabled{opacity:.3;pointer-events:none}
 @keyframes xd-pulse{0%,100%{opacity:1}50%{opacity:.45}}
 .xd-skel{pointer-events:none}
 .xd-skel-img{aspect-ratio:1;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200%;animation:xd-pulse 1.5s ease-in-out infinite}
@@ -728,7 +751,7 @@ function productCard(p: Record<string, unknown>, ctaLabel: string): string {
       </a>
       <div class="xd-product-body">
         <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
-        ${display ? `<div><span class="xd-product-price">${txt(display)} SAR</span>${onSale && !outOfStock ? `<span class="xd-product-compare">${txt(p.price)} SAR</span>` : ''}</div>` : ''}
+        ${display ? `<div><span class="xd-product-price">${formatCurrency(display)}</span>${onSale && !outOfStock ? `<span class="xd-product-compare">${formatCurrency(p.price)}</span>` : ''}</div>` : ''}
         ${btnHtml}
       </div>
     </div>`;
@@ -750,23 +773,41 @@ function renderProducts(c: Record<string, unknown>): string {
   const prods   = (c.selectedProducts as Array<Record<string, unknown>>) || [];
   const colsN   = Number(c.columns_desktop || c.columns) || 3;
   const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
+  const layout  = (c.layout as string) || 'grid';
   // Card style from theme (standard | card | minimal)
   const cardStyleCls = (_themeData.productCardStyle as string) === 'minimal' ? ' xd-card-minimal' : (_themeData.productCardStyle as string) === 'card' ? ' xd-card-card' : '';
   // Show/hide vendor from theme
   const showVendor = c.show_vendor ?? _themeData.productShowVendor ?? false;
+  const showViewAll = c.show_view_all !== false;
   // If no products selected, show skeleton cards — runtime will hydrate with live data
   const cards = prods.length > 0
     ? prods.map(p => productCard(p, 'Add to Cart')).join('')
     : Array.from({ length: colsN }, () => skeletonCard()).join('');
+
+  const isCarousel = layout === 'carousel';
+  const gridOrCarousel = isCarousel
+    ? `<div class="xd-carousel-wrap"><div class="xd-carousel" data-xd-carousel data-xd-cols="${colsN}">${cards}</div></div>`
+    : `<div class="${colsCls}" data-xd-grid>${cards}</div>`;
+  const arrowsHtml = isCarousel ? `
+    <div class="xd-carousel-arrows">
+      <button class="xd-carousel-arrow xd-carousel-prev" data-xd-carousel-prev aria-label="Previous"><span class="material-icons">chevron_left</span></button>
+      <button class="xd-carousel-arrow xd-carousel-next" data-xd-carousel-next aria-label="Next"><span class="material-icons">chevron_right</span></button>
+    </div>` : '';
+
   return `
 <section class="xd-section${cardStyleCls}">
 <div class="xd-container">
-  <div class="xd-section-head">
-    <h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string) || 'Products')}</h2>
-    ${(c.description || c.subtitle) ? `<p class="xd-lead xd-reveal">${txt((c.description as string) || (c.subtitle as string))}</p>` : ''}
+  <div class="xd-section-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+    <div>
+      <h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string) || 'Products')}</h2>
+      ${(c.description || c.subtitle) ? `<p class="xd-lead xd-reveal">${txt((c.description as string) || (c.subtitle as string))}</p>` : ''}
+    </div>
+    <div style="display:flex;align-items:center;gap:.75rem">
+      ${arrowsHtml}
+      ${showViewAll ? `<a href="${_sfBase}/products" class="xd-btn xd-btn-secondary xd-btn-sm">View all</a>` : ''}
+    </div>
   </div>
-  <div class="${colsCls}" data-xd-grid>${cards}
-  </div>
+  ${gridOrCarousel}
 </div>
 </section>`;
 }
@@ -789,8 +830,8 @@ function renderDeals(c: Record<string, unknown>, sectionId: string): string {
       <div class="xd-product-body">
         <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
         <div>
-          <span class="xd-product-price">${txt(p.salePrice || p.sellingPrice || p.price)} SAR</span>
-          ${p.compareAtPrice || (p.salePrice && p.price) ? `<span class="xd-product-compare">${txt(p.compareAtPrice || p.price)} SAR</span>` : ''}
+          <span class="xd-product-price">${formatCurrency(p.salePrice || p.sellingPrice || p.price)}</span>
+          ${p.compareAtPrice || (p.salePrice && p.price) ? `<span class="xd-product-compare">${formatCurrency(p.compareAtPrice || p.price)}</span>` : ''}
         </div>
         <a href="${detailHref}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
            data-xd-atc data-xd-product-id="${attr(p.id as string)}"
@@ -1703,7 +1744,7 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   const analytics   = settings?.analytics;
   const settingsAny = settings as unknown as Record<string, unknown>;
   const customCss   = sanitizeCss(settingsAny?.customCss);
-  const currency    = 'SAR';
+  const currency    = ((theme.currency as string) || 'SAR').toUpperCase();
 
   // ── Storefront special pages (cart, account, favorites) ────────
   const STOREFRONT_PAGES = new Set(['cart', 'favorites', 'account', 'signin', 'signup']);
@@ -2073,6 +2114,11 @@ function pageShell(
   const { settings, name } = site;
   const theme   = (settings?.theme as Record<string, unknown>) || {};
   _themeData = theme;
+  const _br = theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px';
+  const _bShadowMap: Record<string, string> = { none: 'none', small: '0 1px 2px rgba(0,0,0,.08)', medium: '0 2px 8px rgba(0,0,0,.12)', large: '0 4px 16px rgba(0,0,0,.16)' };
+  const _bPadMap: Record<string, string> = { small: '0.5rem 1rem', medium: '0.75rem 1.5rem', large: '1rem 2rem' };
+  const _varRadMap: Record<string, string> = { pill: '9999px', rectangle: '6px', circle: '50%' };
+  const _imgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '2/3', square: '1' };
   const themeVars = `:root{
   --c-primary:${attr((theme.primaryColor   || theme.colorPrimary   || '#27491F') as string)};
   --c-secondary:${attr((theme.secondaryColor || theme.colorSecondary || '#F0CAE1') as string)};
@@ -2080,8 +2126,17 @@ function pageShell(
   --c-bg:${attr((theme.backgroundColor   || theme.colorBg        || '#ffffff') as string)};
   --c-text:${attr((theme.textColor        || theme.colorText      || '#171817') as string)};
   --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
-  --br:${theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px'};
+  --br:${_br};
+  --btn-radius:${_br};
+  --btn-shadow:${_bShadowMap[(theme.buttonShadow as string) || 'none'] || 'none'};
+  --btn-padding:${_bPadMap[(theme.buttonPadding as string) || 'medium'] || '0.75rem 1.5rem'};
   --body-scale:${Number(theme.bodyScale || 100) / 100};
+  --variant-radius:${_varRadMap[(theme.variantStyle as string) || 'pill'] || '9999px'};
+  --product-img-ratio:${_imgRatioMap[(theme.productImageRatio as string) || 'adapt'] || 'auto'};
+  --product-text-align:${(theme.productTextAlign as string) || 'left'};
+  --media-radius:${Number(theme.mediaBorderRadius) || 0}px;
+  --badge-color:${attr((theme.saleBadgeColor as string) || '#ef4444')};
+  --badge-radius:${(theme.badgeShape as string) === 'pill' ? '999px' : '4px'};
 }
 body{font-size:calc(1rem * var(--body-scale,1))}`;
   const storefrontBase = opts?.subdomain
@@ -2092,7 +2147,7 @@ body{font-size:calc(1rem * var(--body-scale,1))}`;
   _sfBase = storefrontBase;
   const safeJson  = (obj: unknown) => JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
   const apiBase   = (process.env.PUBLIC_API_BASE ?? '/api/public').replace(/\/$/, '');
-  const manifest  = safeJson({ tenantId: site.tenantId ?? '', apiBase, storefrontBase, currency: 'SAR', sections: [] });
+  const manifest  = safeJson({ tenantId: site.tenantId ?? '', apiBase, storefrontBase, currency: getCurrencyCode(), sections: [] });
   const { navbar, footer } = extractShell(site);
   return `<!DOCTYPE html>
 <html lang="en">
@@ -2180,7 +2235,7 @@ export function renderAllProductsPage(
       </a>
       <div class="xd-product-body">
         <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
-        ${display ? `<div><span class="xd-product-price">${txt(display)} SAR</span>${onSale ? `<span class="xd-product-compare">${txt(p.price)} SAR</span>` : ''}</div>` : ''}
+        ${display ? `<div><span class="xd-product-price">${formatCurrency(display)}</span>${onSale ? `<span class="xd-product-compare">${formatCurrency(p.price)}</span>` : ''}</div>` : ''}
         <a href="${detailHref}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
            data-xd-atc data-xd-product-id="${attr(p.id as string)}"
            data-xd-product-name="${attr(p.name as string)}"
@@ -2289,7 +2344,7 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
     offers: {
       '@type': 'Offer',
       price: String(price || 0),
-      priceCurrency: 'SAR',
+      priceCurrency: getCurrencyCode(),
       availability: variants.length === 0 || Object.values(stock).some(q => q > 0)
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
@@ -2315,8 +2370,8 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
     <div class="xd-pd-info">
       <h1 class="xd-pd-name">${name}</h1>
       <div class="xd-pd-price-row">
-        <span class="xd-pd-price">${txt(price)} SAR</span>
-        ${onSale && compare ? `<span class="xd-pd-compare">${txt(compare)} SAR</span><span class="xd-pd-badge">Sale</span>` : ''}
+        <span class="xd-pd-price">${formatCurrency(price)}</span>
+        ${onSale && compare ? `<span class="xd-pd-compare">${formatCurrency(compare)}</span><span class="xd-pd-badge">Sale</span>` : ''}
       </div>
       ${desc ? `<p class="xd-pd-desc">${desc}</p>` : ''}
       ${variantHtml}
