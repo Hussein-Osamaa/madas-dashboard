@@ -39,6 +39,7 @@ const PatchSiteSchema = z.object({
   name:         z.string().min(1).max(200).optional(),
   description:  z.string().max(1000).optional(),
   sections:     z.array(SectionSchemaZ).optional(),
+  pageSections: z.record(z.string(), z.array(SectionSchemaZ)).optional(),
   pages:        z.array(PageSchemaZ).optional(),
   settings: z.object({
     theme:    z.record(z.string()).optional(),
@@ -149,7 +150,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
     return;
   }
 
-  const allowed = ['name', 'description', 'sections', 'pages', 'settings', 'customDomain'] as const;
+  const allowed = ['name', 'description', 'sections', 'pageSections', 'pages', 'settings', 'customDomain'] as const;
   const update: Record<string, unknown> = { updatedAt: new Date() };
   for (const key of allowed) {
     if ((parsed.data as Record<string, unknown>)[key] !== undefined) {

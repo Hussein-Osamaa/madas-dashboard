@@ -71,6 +71,7 @@ export interface ISite extends Document {
   description?: string;
   status: 'draft' | 'published';
   sections: ISection[];         // legacy flat list (home page)
+  pageSections: Record<string, ISection[]>;  // per-page sections map { home: [...], products: [...], cart: [...] }
   pages: ISitePage[];           // multi-page support
   settings: ISiteSettings;
   url?: string;
@@ -130,6 +131,7 @@ const SiteSchema = new Schema<ISite>(
     description:  { type: String, default: '' },
     status:       { type: String, enum: ['draft', 'published'], default: 'draft', index: true },
     sections:     { type: [SectionSchema], default: [] },
+    pageSections: { type: Schema.Types.Mixed, default: {} },
     pages:        { type: [SitePageSchema], default: [] },
     settings: {
       theme: { type: Schema.Types.Mixed, default: {

@@ -2343,7 +2343,7 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
       ? `/${(site as unknown as Record<string, unknown>).slug}`
       : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
 
-  // Find the productInfo section config from the site's pages
+  // Find the productInfo section config from pageSections or site.pages
   let pdBlocks: Array<Record<string, unknown>> = [
     { type: 'vendor' }, { type: 'title' }, { type: 'price' },
     { type: 'variant_picker', picker_type: 'pills' },
@@ -2351,14 +2351,16 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
     { type: 'description' }, { type: 'share' },
   ];
   let pdMediaWidth = 'medium';
-  const productsPage = (site.pages || []).find(p => p.slug === 'products');
-  if (productsPage?.sections?.length) {
-    const piSec = productsPage.sections.find(s => s.type === 'productInfo');
-    if (piSec) {
-      const piData = getSectionData(piSec);
-      if (Array.isArray(piData.blocks) && piData.blocks.length > 0) pdBlocks = piData.blocks as Array<Record<string, unknown>>;
-      if (piData.media_width) pdMediaWidth = piData.media_width as string;
-    }
+  // Check pageSections first (new format), then pages (legacy)
+  const siteAny = site as unknown as Record<string, unknown>;
+  const pageSectionsMap = (siteAny.pageSections as Record<string, ISection[]>) || {};
+  const productsSections = pageSectionsMap['products'] || [];
+  const piSec = productsSections.find(s => s.type === 'productInfo')
+    || (site.pages || []).flatMap(p => p.sections || []).find(s => s.type === 'productInfo');
+  if (piSec) {
+    const piData = getSectionData(piSec);
+    if (Array.isArray(piData.blocks) && piData.blocks.length > 0) pdBlocks = piData.blocks as Array<Record<string, unknown>>;
+    if (piData.media_width) pdMediaWidth = piData.media_width as string;
   }
 
   const name      = txt(product.name as string || 'Product');
