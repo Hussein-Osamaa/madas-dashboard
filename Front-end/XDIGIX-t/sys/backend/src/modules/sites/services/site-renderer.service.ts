@@ -849,28 +849,9 @@ function renderDeals(c: Record<string, unknown>, sectionId: string): string {
   const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
   const cdId    = `xd-cd-${sectionId}`;
   const endDate = attr(c.countdownEndDate as string || c.endDate as string || '');
+  const dealsCardOpts: ProductCardOpts = { showVendor: false, showRating: false, showPrice: true, showAddToCart: true };
   const cards = prods.length > 0
-    ? prods.map(p => {
-        const detailHref = `${_sfBase}/products/${attr(p.id as string)}`;
-        return `
-    <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
-      <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
-        <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Deal')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
-        <span class="xd-product-badge">Sale</span>
-      </a>
-      <div class="xd-product-body">
-        <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
-        <div>
-          <span class="xd-product-price">${formatCurrency(p.salePrice || p.sellingPrice || p.price)}</span>
-          ${p.compareAtPrice || (p.salePrice && p.price) ? `<span class="xd-product-compare">${formatCurrency(p.compareAtPrice || p.price)}</span>` : ''}
-        </div>
-        <a href="${detailHref}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
-           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
-           data-xd-product-name="${attr(p.name as string)}"
-           data-xd-price="${attr(String(p.salePrice || p.price || 0))}">Shop Now</a>
-      </div>
-    </div>`;
-      }).join('')
+    ? prods.map(p => productCard(p, 'Shop Now', dealsCardOpts)).join('')
     : Array.from({ length: colsN }, () => skeletonCard()).join('');
 
   const countdown = (c.showCountdown !== false && endDate) ? `
@@ -1406,6 +1387,12 @@ function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: 
   const columns = (c.columns as Array<Record<string, unknown>>) || [];
   const copyright = txt((c.copyrightText as string) || (c.copyright as string) || `\u00A9 ${new Date().getFullYear()} ${siteName}`);
 
+  // Toggle settings from section data
+  const showNewsletter = c.newsletter_enable !== false;
+  const showSocial     = c.show_social !== false;
+  const showPolicy     = c.show_policy !== false;
+  const showPayment    = c.payment_enable === true;
+
   // Social media SVG icons
   const socialSvgs: Record<string, string> = {
     instagram: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>',
@@ -1441,7 +1428,7 @@ function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: 
     return `<a href="${attr(s.url)}" class="xd-footer-social-btn" target="_blank" rel="noopener noreferrer" aria-label="${attr(s.platform)}" style="opacity:.7;transition:opacity .2s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">${svg}</a>`;
   }).join('');
 
-  const logoText = txt(c.logoText as string || siteName);
+  const logoText = txt(c.companyName as string || c.logoText as string || siteName);
   const tagline = txt(c.tagline as string || '');
   const borderStyle = 'border-color:color-mix(in srgb,currentColor 15%,transparent)';
 
@@ -1454,14 +1441,14 @@ function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: 
       <strong style="font-size:1.5rem;display:block;margin-bottom:.75rem">${logoText}</strong>
       ${tagline ? `<p style="font-size:.875rem;opacity:.65">${tagline}</p>` : ''}
     </div>
-    ${socialHtml ? `<div class="xd-footer-social">${socialHtml}</div>` : ''}
+    ${showSocial && socialHtml ? `<div class="xd-footer-social">${socialHtml}</div>` : ''}
   </div>
   <div style="${borderStyle};border-top-width:1px;border-top-style:solid">
     <div class="xd-container" style="padding:1rem 0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1rem;font-size:.75rem;opacity:.65">
       <span>${copyright}</span>
-      <a href="#" style="opacity:.8">Privacy policy</a>
+      ${showPolicy ? `<a href="#" style="opacity:.8">Privacy policy</a>
       <a href="#" style="opacity:.8">Terms of service</a>
-      <a href="#" style="opacity:.8">Contact</a>
+      <a href="#" style="opacity:.8">Contact</a>` : ''}
     </div>
   </div>
 </footer>`;
@@ -1496,6 +1483,16 @@ function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: 
     <div><h4 style="font-weight:600;margin-bottom:1rem">Customer Service</h4><ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem;font-size:.875rem;opacity:.65"><li><a href="#">FAQ</a></li><li><a href="#">Shipping &amp; Returns</a></li><li><a href="#">Size Guide</a></li><li><a href="#">Track Order</a></li></ul></div>`;
   }
 
+  // Payment icons HTML
+  const paymentHtml = showPayment ? `
+    <div style="margin-top:2rem;display:flex;flex-wrap:wrap;align-items:center;gap:.75rem">
+      <span style="font-size:.75rem;opacity:.5">We accept</span>
+      <span style="padding:.25rem .5rem;font-size:.75rem;border-radius:4px;border:1px solid color-mix(in srgb,currentColor 15%,transparent);opacity:.6">Visa</span>
+      <span style="padding:.25rem .5rem;font-size:.75rem;border-radius:4px;border:1px solid color-mix(in srgb,currentColor 15%,transparent);opacity:.6">Mastercard</span>
+      <span style="padding:.25rem .5rem;font-size:.75rem;border-radius:4px;border:1px solid color-mix(in srgb,currentColor 15%,transparent);opacity:.6">Apple Pay</span>
+      <span style="padding:.25rem .5rem;font-size:.75rem;border-radius:4px;border:1px solid color-mix(in srgb,currentColor 15%,transparent);opacity:.6">Mada</span>
+    </div>` : '';
+
   return `
 <footer style="width:100%;padding:0 1.5rem">
   <div style="max-width:80rem;margin:0 auto">
@@ -1505,10 +1502,10 @@ function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: 
         <div>
           <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem">${logoText}</h3>
           ${tagline ? `<p style="font-size:.875rem;opacity:.65;margin-bottom:1rem">${tagline}</p>` : ''}
-          ${socialHtml ? `<div style="display:flex;gap:.75rem">${socialHtml}</div>` : ''}
+          ${showSocial && socialHtml ? `<div style="display:flex;gap:.75rem">${socialHtml}</div>` : ''}
         </div>
         ${colsHtml}
-        <!-- Newsletter column -->
+        ${showNewsletter ? `<!-- Newsletter column -->
         <div>
           <h4 style="font-weight:600;margin-bottom:1rem">Newsletter</h4>
           <p style="font-size:.875rem;opacity:.65;margin-bottom:1rem">Subscribe to get special offers and updates.</p>
@@ -1516,16 +1513,17 @@ function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: 
             <input type="email" placeholder="Your email" style="flex:1;padding:.5rem .75rem;font-size:.875rem;border:1px solid color-mix(in srgb,currentColor 20%,transparent);border-radius:8px 0 0 8px;background:transparent;color:inherit">
             <button type="submit" style="padding:.5rem 1rem;border-radius:0 8px 8px 0;font-weight:500;font-size:.875rem;background:var(--scheme-btn-bg,var(--c-primary,#121212));color:var(--scheme-btn-label,#fff);border:none;cursor:pointer">Subscribe</button>
           </form>
-        </div>
+        </div>` : ''}
       </div>
     </div>
+    ${paymentHtml}
     <!-- Bottom bar -->
     <div style="margin-top:3rem;padding-top:2rem;${borderStyle};border-top-width:1px;border-top-style:solid;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem">
       <p style="font-size:.875rem;opacity:.65">${copyright}</p>
-      <div style="display:flex;gap:1.5rem;font-size:.875rem;opacity:.65">
+      ${showPolicy ? `<div style="display:flex;gap:1.5rem;font-size:.875rem;opacity:.65">
         <a href="#">Privacy Policy</a>
         <a href="#">Terms of Service</a>
-      </div>
+      </div>` : ''}
     </div>
   </div>
 </footer>`;
@@ -2254,26 +2252,15 @@ export function renderAllProductsPage(
       ? `/${(site as unknown as Record<string, unknown>).slug}`
       : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
 
-  const cards = products.map(p => {
-    const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
-    const display = p.sellingPrice || p.salePrice || p.price;
-    const detailHref = `${sfBase}/products/${attr(p.id as string)}`;
-    return `
-    <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
-      <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
-        <img src="${attr(p.image as string || ((p.images as string[]) || [])[0] || '', 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
-        ${onSale ? '<span class="xd-product-badge">Sale</span>' : ''}
-      </a>
-      <div class="xd-product-body">
-        <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
-        ${display ? `<div><span class="xd-product-price">${formatCurrency(display)}</span>${onSale ? `<span class="xd-product-compare">${formatCurrency(p.price)}</span>` : ''}</div>` : ''}
-        <a href="${detailHref}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
-           data-xd-atc data-xd-product-id="${attr(p.id as string)}"
-           data-xd-product-name="${attr(p.name as string)}"
-           data-xd-price="${attr(String(p.price || 0))}">Add to Cart</a>
-      </div>
-    </div>`;
-  }).join('');
+  // Reuse shared productCard() for consistent styling across all product pages
+  const showVendor = !!(_themeData.productShowVendor);
+  const cardOpts: ProductCardOpts = { showVendor, showRating: false, showPrice: true, showAddToCart: true };
+  const cardStyleCls = (_themeData.productCardStyle as string) === 'minimal' ? ' xd-card-minimal' : (_themeData.productCardStyle as string) === 'card' ? ' xd-card-card' : '';
+  // Temporarily set _sfBase for productCard links
+  const prevBase = _sfBase;
+  _sfBase = sfBase;
+  const cards = products.map(p => productCard(p as Record<string, unknown>, 'Add to Cart', cardOpts)).join('');
+  _sfBase = prevBase;
 
   const limit = 20;
   const totalPages = Math.ceil(total / limit);
@@ -2303,7 +2290,7 @@ export function renderAllProductsPage(
     </form>
   </div>
 </div>
-<section class="xd-section">
+<section class="xd-section${cardStyleCls}">
 <div class="xd-container">
   <nav class="xd-breadcrumb" aria-label="Breadcrumb">
     <a href="${sfBase}">Home</a><span>›</span><span>All Products</span>

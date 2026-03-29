@@ -409,6 +409,13 @@ export interface FooterSectionData {
   showNewsletter?: boolean;
   newsletterText?: string;
   newsletterPlaceholder?: string;
+  // Settings panel toggles
+  companyName?: string;
+  copyright?: string;
+  newsletter_enable?: boolean;
+  show_social?: boolean;
+  show_policy?: boolean;
+  payment_enable?: boolean;
 }
 
 export interface StatsSectionData {
