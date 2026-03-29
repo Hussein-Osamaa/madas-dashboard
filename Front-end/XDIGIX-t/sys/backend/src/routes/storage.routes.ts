@@ -244,7 +244,9 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
       fs.writeFileSync(localPath, buffer);
 
       // Served via express.static at /storage/files → uploads/
-      const baseUrl = `http://localhost:${config.port}`;
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+      const host = req.headers['x-forwarded-host'] || req.headers.host || `localhost:${config.port}`;
+      const baseUrl = `${protocol}://${host}`;
       const storagePath = `${tenantId}/${filename}`;
       const url = `${baseUrl}/storage/files/${storagePath}`;
 
