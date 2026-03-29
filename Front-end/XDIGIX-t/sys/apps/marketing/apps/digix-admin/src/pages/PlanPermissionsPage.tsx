@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import PermissionGuard from '../components/rbac/PermissionGuard';
-import { collection, db, getDocs, doc, updateDoc } from '../lib/firebase';
+import { collection, db, getDocs, doc, updateDoc } from '../lib/backend';
 import { Plus, Save, Search, CheckCircle, DollarSign, Package, LayoutDashboard, ShoppingCart, Box, BarChart2, FileText, Settings, CreditCard, Users, Shield, Star } from 'lucide-react';
 
 type Plan = {

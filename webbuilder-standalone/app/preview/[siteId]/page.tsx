@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { SiteRenderer } from '@/components/editor/SiteRenderer'
 import { Website } from '@/types/editor'
-import { db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { db, doc, getDoc } from '@/lib/backend'
 
 export default function PreviewPage() {
   const params = useParams()

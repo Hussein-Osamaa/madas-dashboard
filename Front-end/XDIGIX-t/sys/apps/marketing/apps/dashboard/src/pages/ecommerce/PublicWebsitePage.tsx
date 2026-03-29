@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { collection, db, query, where, getDocs, doc, getDoc } from '../../lib/firebase';
+import { collection, db, query, where, getDocs, doc, getDoc } from '../../lib/backend';
 import { exportWebsiteToHTML } from '../../utils/exportWebsite';
 import { Section } from '../../types/builder';
 import FullScreenLoader from '../../components/common/FullScreenLoader';

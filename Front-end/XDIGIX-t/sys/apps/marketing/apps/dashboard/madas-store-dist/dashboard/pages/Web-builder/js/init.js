@@ -97,8 +97,8 @@ class BuilderInitializer {
         try {
             this.utils.devLog('🔧 Initializing services...');
 
-            // Wait for Firebase to be available
-            await this.waitForFirebase();
+            // Wait for remote storage to be available
+            // await this.waitForInit(); // removed
 
             // Check if services exist and are properly initialized
             this.checkServiceAvailability();
@@ -142,29 +142,28 @@ class BuilderInitializer {
     }
 
     /**
-     * Wait for Firebase to be available
+     * Wait for initialization
      */
-    waitForFirebase() {
+    waitForInit() {
         return new Promise((resolve, reject) => {
             let attempts = 0;
             const maxAttempts = 50; // 5 seconds max wait
 
-            const checkFirebase = () => {
+            const checkInit = () => {
                 attempts++;
                 
-                // Check for Firebase and auth objects
-                if (window.firebase && window.auth && window.db) {
-                    this.utils.devLog('✅ Firebase is ready');
+                                if (false) {
+                    this.utils.devLog('✅ Ready');
                     resolve();
                 } else if (attempts >= maxAttempts) {
-                    this.utils.devError('❌ Firebase initialization timeout');
-                    reject(new Error('Firebase initialization timeout'));
+                    this.utils.devError('❌ Initialization timeout');
+                    reject(new Error('Initialization timeout'));
                 } else {
-                    setTimeout(checkFirebase, 100);
+                    setTimeout(checkInit, 100);
                 }
             };
 
-            checkFirebase();
+            checkInit();
         });
     }
 

@@ -61,32 +61,24 @@ class AuthModule {
 
     async getUserProfile(uid) {
         try {
-            const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-            const userDoc = await getDoc(doc(window.db, "users", uid));
-            
-            if (userDoc.exists()) {
-                const userData = userDoc.data();
-                console.log('👤 User profile loaded:', userData);
-                this.updateUserProfile(userData);
+            const API_BASE = window.VITE_API_BACKEND_URL || 'https://xdigix-os-production.up.railway.app/api';
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(`${API_BASE}/users/${uid}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            if (res.ok) {
+                const userData = await res.json();
+                console.log('User profile loaded:', userData);
+                this.updateUserProfile(userData.data || userData);
             }
         } catch (error) {
-            console.error('❌ Error loading user profile:', error);
+            console.error('Error loading user profile:', error);
         }
     }
 
     async getUserPermissions(uid) {
-        try {
-            const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-            const permissionsDoc = await getDoc(doc(window.db, "permissions", uid));
-            
-            if (permissionsDoc.exists()) {
-                const permissions = permissionsDoc.data();
-                console.log('🔐 User permissions loaded:', permissions);
-                this.updateUserPermissions(permissions);
-            }
-        } catch (error) {
-            console.error('❌ Error loading user permissions:', error);
-        }
+        // Permissions are handled server-side via JWT
+        console.log('User permissions managed via JWT');
     }
 
     updateUserProfile(userData) {

@@ -1,5 +1,5 @@
 import dayjs, { Dayjs } from 'dayjs';
-import { collection, doc, getDocs, query, Timestamp, where, orderBy, limit, db, setDoc } from '../lib/firebase';
+import { collection, doc, getDocs, query, Timestamp, where, orderBy, limit, db, setDoc } from '../lib/backend';
 
 type DateRange = {
   start: Dayjs;

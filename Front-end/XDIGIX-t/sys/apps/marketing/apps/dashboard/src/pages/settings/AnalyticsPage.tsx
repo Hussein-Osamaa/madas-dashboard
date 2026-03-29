@@ -3,7 +3,7 @@ import { useBusiness } from '../../contexts/BusinessContext';
 import { useRBAC } from '../../contexts/RBACContext';
 import PermissionGuard from '../../components/rbac/PermissionGuard';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
-import { doc, getDoc, setDoc, db } from '../../lib/firebase';
+import { doc, getDoc, setDoc, db } from '../../lib/backend';
 import { PixelData, PixelItem, CustomScriptItem } from '../../utils/pixelScripts';
 import MetaPixelTab from '../../components/settings/pixels/MetaPixelTab';
 import GoogleTagTab from '../../components/settings/pixels/GoogleTagTab';

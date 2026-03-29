@@ -8,7 +8,7 @@ const urlsToCache = [
   './js/dashboard-common.js',
   './js/error-fix.js',
   './js/dashboard-fix.js',
-  './firebaseConfig.js',
+  './config.js',
   './js/modules/auth.js',
   './js/modules/business.js',
   './js/modules/staff.js'

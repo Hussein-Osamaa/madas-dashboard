@@ -11,7 +11,7 @@ import Inventory from './pages/Inventory';
 import Customers from './pages/Customers';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
-import { USER_ROLES } from './firebase/auth';
+import { USER_ROLES } from './api/auth';
 
 function App() {
   return (

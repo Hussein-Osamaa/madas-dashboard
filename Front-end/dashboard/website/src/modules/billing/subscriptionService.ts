@@ -1,5 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/backend';
 import { StripeService, SubscriptionPlan, Subscription } from './stripeService';
 import { TrialService } from '@/modules/trial/trialService';
 
@@ -21,7 +20,7 @@ export interface SubscriptionData {
 export class SubscriptionService {
   /**
    * Get user's subscription data
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<SubscriptionData>
    */
   static async getSubscriptionData(uid: string): Promise<SubscriptionData> {
@@ -92,7 +91,7 @@ export class SubscriptionService {
 
   /**
    * Subscribe user to a plan
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param planId - Plan ID
    * @returns Promise<string> - Checkout session URL
    */
@@ -141,7 +140,7 @@ export class SubscriptionService {
 
   /**
    * Cancel user's subscription
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param cancelAtPeriodEnd - Whether to cancel at period end
    * @returns Promise<void>
    */
@@ -169,7 +168,7 @@ export class SubscriptionService {
 
   /**
    * Update subscription plan
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param newPlanId - New plan ID
    * @returns Promise<void>
    */
@@ -201,7 +200,7 @@ export class SubscriptionService {
 
   /**
    * Check if user can access a feature - Grant full access to all users
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param feature - Feature name
    * @returns Promise<boolean>
    */
@@ -218,7 +217,7 @@ export class SubscriptionService {
 
   /**
    * Get user's current plan
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<SubscriptionPlan | null>
    */
   static async getCurrentPlan(uid: string): Promise<SubscriptionPlan | null> {
@@ -239,7 +238,7 @@ export class SubscriptionService {
 
   /**
    * Get billing portal URL
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<string>
    */
   static async getBillingPortalUrl(uid: string): Promise<string> {
@@ -253,7 +252,7 @@ export class SubscriptionService {
 
   /**
    * Handle successful FAKE payment (DEMO MODE)
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param sessionId - Fake checkout session ID
    * @returns Promise<void>
    */
@@ -325,7 +324,7 @@ export class SubscriptionService {
 
   /**
    * Get subscription usage stats
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<Record<string, number>>
    */
   static async getUsageStats(uid: string): Promise<Record<string, number>> {

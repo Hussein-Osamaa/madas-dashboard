@@ -1,5 +1,3 @@
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { createBusiness } from "../business/createBusiness.js";
 
 /**

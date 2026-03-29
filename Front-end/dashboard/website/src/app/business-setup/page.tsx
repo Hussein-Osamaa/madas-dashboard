@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged, doc, getDoc, setDoc, serverTimestamp, auth, db } from '@/lib/backend';
 import { createBusiness } from '@/modules/business/createBusiness';
 
 export default function BusinessSetupPage() {

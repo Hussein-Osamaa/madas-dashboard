@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, db, getDoc, updateDoc, storage, ref, uploadBytes, getDownloadURL } from '../../lib/firebase';
+import { doc, db, getDoc, updateDoc, storage, ref, uploadBytes, getDownloadURL } from '../../lib/backend';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 
 type FAQItem = {

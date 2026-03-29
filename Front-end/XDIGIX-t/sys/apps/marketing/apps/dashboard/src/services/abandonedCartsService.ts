@@ -9,7 +9,7 @@ import {
   query,
   updateDoc,
   serverTimestamp
-} from '../lib/firebase';
+} from '../lib/backend';
 
 export interface AbandonedCartItem {
   productId: string;

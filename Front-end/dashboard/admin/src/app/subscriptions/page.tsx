@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, where, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, getDocs, query, orderBy, where, doc, updateDoc, serverTimestamp, db } from '@/lib/backend';
 
 interface Subscription {
   id: string;

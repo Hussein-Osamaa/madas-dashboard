@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useRBAC } from '../contexts/RBACContext';
 import PermissionGuard from '../components/rbac/PermissionGuard';
-import { collection, db, getDocs, doc, updateDoc, deleteDoc, addDoc, query, where } from '../lib/firebase';
+import { collection, db, getDocs, doc, updateDoc, deleteDoc, addDoc, query, where } from '../lib/backend';
 import type { User, Role } from '@shared/types/rbac';
 
 export default function SuperAdminUsersPage() {

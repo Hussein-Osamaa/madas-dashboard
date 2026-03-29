@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useRBAC } from '../contexts/RBACContext';
 import PermissionGuard from '../components/rbac/PermissionGuard';
-import { collection, db, getDocs, doc, updateDoc, deleteDoc, addDoc } from '../lib/firebase';
+import { collection, db, getDocs, doc, updateDoc, deleteDoc, addDoc } from '../lib/backend';
 import type { Tenant } from '@shared/types/rbac';
 
 export default function TenantsPage() {

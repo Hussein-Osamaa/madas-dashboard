@@ -10,7 +10,7 @@ import {
   limit,
   setDoc,
   db
-} from '../../lib/firebase';
+} from '../../lib/backend';
 import { trackFirestoreOperation } from '../../lib/performance';
 
 type DateRange = {

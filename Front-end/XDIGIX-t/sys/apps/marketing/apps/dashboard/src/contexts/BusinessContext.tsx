@@ -1,4 +1,4 @@
-import { collection, db, doc, getDoc, getDocs, query, where, updateDoc, arrayUnion, arrayRemove, addDoc, deleteDoc, serverTimestamp } from '../lib/firebase';
+import { collection, db, doc, getDoc, getDocs, query, where, updateDoc, arrayUnion, arrayRemove, addDoc, deleteDoc, serverTimestamp } from '../lib/backend';
 import { getDocumentByPath } from '../lib/backend-adapter';
 import {
   createContext,

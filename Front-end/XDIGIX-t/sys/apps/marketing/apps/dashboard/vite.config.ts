@@ -12,7 +12,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           'vendor-query': ['@tanstack/react-query'],
         },
       },
@@ -21,7 +20,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../../../../shared'),
-      firebase: path.resolve(__dirname, 'node_modules/firebase')
     }
   },
   server: {

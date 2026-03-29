@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
-import { auth, db, doc, getDoc, onAuthStateChanged } from '../lib/firebase';
+import { auth, db, doc, getDoc, onAuthStateChanged } from '../lib/backend';
 
 type TenantContextValue = {
   workspaceId: string;

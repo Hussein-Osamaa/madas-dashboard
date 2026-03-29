@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useCurrency } from '../../hooks/useCurrency';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
-import { collection, db, getDocs, query, limit as fbLimit } from '../../lib/firebase';
+import { collection, db, getDocs, query, limit as fbLimit } from '../../lib/backend';
 import { getPreferredPublicUrl } from '../../utils/siteUrls';
 import {
   AbandonedCart,

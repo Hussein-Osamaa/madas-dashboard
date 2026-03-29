@@ -1,14 +1,5 @@
-import { 
-  User, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { 
-  doc, 
-  getDoc 
-} from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { auth } from './backend-adapter';
+const db = {};
 
 export interface AdminUser {
   uid: string;

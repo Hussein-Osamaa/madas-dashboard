@@ -61,12 +61,10 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Import Firebase functions dynamically
-      const { createUserWithEmailAndPassword } = await import('firebase/auth');
-      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-      const { auth, db } = await import('@/lib/firebase');
+      // Use AuthService to create admin user (using backend API)
+      const { createUserWithEmailAndPassword, doc, setDoc, serverTimestamp, auth, db } = await import('@/lib/backend');
 
-      // Create user in Firebase Auth
+      // Create user via backend adapter
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -93,8 +91,8 @@ export default function LoginPage() {
 
       setError('');
       setShowCreateUser(false);
-      alert('✅ Admin user created successfully! You can now sign in.');
-      
+      alert('Admin user created successfully! You can now sign in.');
+
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Please try signing in instead.');

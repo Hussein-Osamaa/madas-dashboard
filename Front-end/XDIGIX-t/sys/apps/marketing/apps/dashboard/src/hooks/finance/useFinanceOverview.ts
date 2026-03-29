@@ -9,8 +9,8 @@ import {
   fetchTransactions
 } from '../../services/finance/financeService';
 import { getAllPartnerSummaries, fetchPayments } from '../../services/finance/profitSettlementService';
-import { collection, getDocs, query, where, orderBy, Timestamp } from '../../lib/firebase';
-import { db } from '../../lib/firebase';
+import { collection, getDocs, query, where, orderBy, Timestamp } from '../../lib/backend';
+import { db } from '../../lib/backend';
 import { useFinanceScope } from '../useFinanceScope';
 
 export type OverviewFilters = {

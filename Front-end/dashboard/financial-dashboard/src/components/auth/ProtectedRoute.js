@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { USER_ROLES } from "../../firebase/auth";
+import { USER_ROLES } from "../../api/auth";
 import LoginForm from "./LoginForm";
 import LoadingSpinner from "../common/LoadingSpinner";
 

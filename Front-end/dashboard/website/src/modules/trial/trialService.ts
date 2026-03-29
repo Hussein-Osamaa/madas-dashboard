@@ -1,5 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/backend';
 
 export interface TrialData {
   trialExpires: any; // Firestore Timestamp
@@ -22,7 +21,7 @@ export class TrialService {
 
   /**
    * Initialize trial for a new user
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param email - User's email
    * @param businessId - Associated business ID
    * @returns Promise<TrialData>
@@ -73,7 +72,7 @@ export class TrialService {
 
   /**
    * Check trial status for a user
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<UserTrialData | null>
    */
   static async checkTrialStatus(uid: string): Promise<UserTrialData | null> {
@@ -125,7 +124,7 @@ export class TrialService {
 
   /**
    * Update trial status
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param isActive - Whether trial is active
    * @returns Promise<void>
    */
@@ -164,7 +163,7 @@ export class TrialService {
 
   /**
    * Extend trial (admin function)
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param additionalDays - Days to extend trial
    * @returns Promise<void>
    */
@@ -208,7 +207,7 @@ export class TrialService {
 
   /**
    * Check if user has active subscription (non-trial)
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<boolean>
    */
   static async hasActiveSubscription(uid: string): Promise<boolean> {
@@ -233,7 +232,7 @@ export class TrialService {
 
   /**
    * Get trial days remaining
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<number>
    */
   static async getTrialDaysRemaining(uid: string): Promise<number> {

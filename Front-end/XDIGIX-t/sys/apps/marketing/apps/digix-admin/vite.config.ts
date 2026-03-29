@@ -31,7 +31,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@shared': path.resolve(__dirname, '../../../../shared'),
-      firebase: path.resolve(__dirname, 'node_modules/firebase')
     },
     preserveSymlinks: false,
     dedupe: ['react', 'react-dom']
@@ -47,8 +46,5 @@ export default defineConfig({
   preview: {
     port: 4176
   },
-  optimizeDeps: {
-    include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage']
-  }
 });
 

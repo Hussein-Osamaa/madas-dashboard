@@ -63,23 +63,11 @@ class UniversalLogout {
     }
 
     clearFirebaseAuth() {
-        // If Firebase auth is available, sign out
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().signOut().then(() => {
-                console.log('🔥 Firebase auth cleared');
-            }).catch(error => {
-                console.log('Firebase auth not available or error:', error);
-            });
-        }
-        
-        // Also check for Firebase v9+ modules
-        if (window.auth && typeof window.auth.signOut === 'function') {
-            window.auth.signOut().then(() => {
-                console.log('🔥 Firebase v9+ auth cleared');
-            }).catch(error => {
-                console.log('Firebase v9+ auth error:', error);
-            });
-        }
+        // Firebase removed - clear localStorage auth tokens
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('currentBusinessId');
+        console.log('Auth cleared');
     }
 
     clearSessionData() {

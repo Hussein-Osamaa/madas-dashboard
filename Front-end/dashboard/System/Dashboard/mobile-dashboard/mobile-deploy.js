@@ -3,16 +3,14 @@ console.log('📱 Mobile deployment script loaded');
 
 // Mobile Deployment Configuration
 const mobileDeployConfig = {
-    // Firebase Hosting Configuration
-    firebase: {
-        projectId: 'madas-store',
-        hosting: {
-            public: 'simple-website/Dashboard',
-            ignore: [
-                'firebase.json',
-                '**/.*',
-                '**/node_modules/**'
-            ],
+    // Vercel Hosting Configuration (Firebase removed)
+    vercel: {
+        public: 'simple-website/Dashboard',
+        ignore: [
+            'vercel.json',
+            '**/.*',
+            '**/node_modules/**'
+        ],
             rewrites: [
                 {
                     source: '**',
@@ -89,16 +87,13 @@ const mobileDeployConfig = {
 // Mobile Deployment Functions
 class MobileDeployer {
     constructor() {
-        this.deploymentOptions = ['firebase', 'netlify', 'vercel', 'github-pages'];
-        this.currentOption = 'firebase';
+        this.deploymentOptions = ['netlify', 'vercel', 'github-pages'];
+        this.currentOption = 'vercel';
     }
 
     // Generate deployment files
     generateDeploymentFiles() {
         console.log('🔧 Generating deployment files...');
-        
-        // Generate firebase.json
-        this.generateFirebaseConfig();
         
         // Generate netlify.toml
         this.generateNetlifyConfig();
@@ -110,17 +105,6 @@ class MobileDeployer {
         this.generateGitHubPagesConfig();
         
         console.log('✅ Deployment files generated');
-    }
-
-    // Generate Firebase configuration
-    generateFirebaseConfig() {
-        const firebaseConfig = {
-            hosting: mobileDeployConfig.firebase.hosting
-        };
-        
-        const fs = require('fs');
-        fs.writeFileSync('firebase.json', JSON.stringify(firebaseConfig, null, 2));
-        console.log('📄 firebase.json created');
     }
 
     // Generate Netlify configuration
@@ -183,32 +167,6 @@ GitHub Pages automatically provides HTTPS for custom domains.`;
         console.log('📄 GITHUB_PAGES_SETUP.md created');
     }
 
-    // Deploy to Firebase
-    async deployToFirebase() {
-        console.log('🔥 Deploying to Firebase...');
-        
-        try {
-            // Check if Firebase CLI is installed
-            const { exec } = require('child_process');
-            
-            exec('firebase --version', (error, stdout, stderr) => {
-                if (error) {
-                    console.log('❌ Firebase CLI not found. Please install it first:');
-                    console.log('npm install -g firebase-tools');
-                    return;
-                }
-                
-                console.log('✅ Firebase CLI found');
-                console.log('🚀 Run these commands to deploy:');
-                console.log('1. firebase login');
-                console.log('2. firebase init hosting');
-                console.log('3. firebase deploy');
-            });
-        } catch (error) {
-            console.error('❌ Firebase deployment error:', error);
-        }
-    }
-
     // Deploy to Netlify
     async deployToNetlify() {
         console.log('🌐 Deploying to Netlify...');
@@ -249,16 +207,6 @@ GitHub Pages automatically provides HTTPS for custom domains.`;
     // Get deployment instructions
     getDeploymentInstructions() {
         return {
-            firebase: {
-                name: 'Firebase Hosting',
-                steps: [
-                    'Install Firebase CLI: npm install -g firebase-tools',
-                    'Login: firebase login',
-                    'Initialize: firebase init hosting',
-                    'Deploy: firebase deploy'
-                ],
-                url: 'https://console.firebase.google.com'
-            },
             netlify: {
                 name: 'Netlify',
                 steps: [

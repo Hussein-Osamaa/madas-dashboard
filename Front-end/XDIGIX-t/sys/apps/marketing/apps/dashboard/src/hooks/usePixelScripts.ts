@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { doc, getDoc, db } from '../lib/firebase';
+import { doc, getDoc, db } from '../lib/backend';
 import { PixelData, generatePixelScripts } from '../utils/pixelScripts';
 
 /**

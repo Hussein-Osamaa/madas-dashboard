@@ -1,23 +1,5 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  updateDoc, 
-  query, 
-  where, 
-  orderBy,
-  limit,
-  startAfter,
-  addDoc,
-  setDoc,
-  serverTimestamp
-} from 'firebase/firestore';
-import { 
-  createUserWithEmailAndPassword,
-  updateProfile
-} from 'firebase/auth';
-import { db, auth } from './firebase';
+import { auth } from './backend-adapter';
+const db = {};
 
 export interface User {
   uid: string;

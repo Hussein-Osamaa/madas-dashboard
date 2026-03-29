@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { storage, ref, uploadBytes, getDownloadURL } from '../../lib/firebase';
+import { storage, ref, uploadBytes, getDownloadURL } from '../../lib/backend';
 import { Product } from '../../services/productsService';
 
 export type XdfImagePricingPayload = {

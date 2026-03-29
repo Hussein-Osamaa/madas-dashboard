@@ -117,14 +117,8 @@ class StorageService {
 
     async loadSavedState() {
         try {
-            // Try to load from Firebase first
-            if (this.bridge.firebase) {
-                const firebaseResult = await this.bridge.loadFromFirebase('websites', 'current');
-                if (firebaseResult.success) {
-                    this.restoreData(firebaseResult.data);
-                    console.log('✅ Data loaded from Firebase');
-                    return { success: true, source: 'firebase' };
-                }
+            // Try to load from remote storage first
+            // Remote storage not configured
             }
 
             // Fallback to localStorage
@@ -296,9 +290,7 @@ class StorageService {
             // Clear localStorage
             localStorage.removeItem(this.storageKey);
             
-            // Clear Firebase data if available
-            if (this.bridge.firebase) {
-                this.bridge.saveToFirebase('websites', 'current', {});
+                        if (false) {                 this.bridge.saveToRemote('websites', 'current', {});
             }
             
             // Reset bridge data

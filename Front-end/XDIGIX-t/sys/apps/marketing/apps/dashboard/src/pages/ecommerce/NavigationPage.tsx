@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useCollections } from '../../hooks/useCollections';
-import { doc, db, getDoc, updateDoc, collection, getDocs } from '../../lib/firebase';
+import { doc, db, getDoc, updateDoc, collection, getDocs } from '../../lib/backend';
 import {
   DndContext,
   closestCenter,

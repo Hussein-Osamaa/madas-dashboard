@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRBAC } from '../contexts/RBACContext';
 import PermissionGuard from '../components/rbac/PermissionGuard';
-import { collection, db, getDocs, query, where } from '../lib/firebase';
+import { collection, db, getDocs, query, where } from '../lib/backend';
 import {
   Building2,
   Users,
@@ -136,8 +136,7 @@ export default function SuperAdminOverviewPage() {
       // If it's a permission error, show helpful message
       if (error.code === 'permission-denied') {
         console.error('\n💡 SOLUTION:');
-        console.error('   Deploy Firestore rules from sys/firestore.rules');
-        console.error('   Go to: https://console.firebase.google.com/project/madas-store/firestore/rules');
+        console.error('   Check backend API permissions and database access rules.');
       }
     } finally {
       setLoading(false);

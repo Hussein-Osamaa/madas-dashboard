@@ -1,5 +1,4 @@
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/backend';
 
 export interface StaffInvite {
   id: string;
@@ -130,7 +129,7 @@ export class StaffInviteService {
   /**
    * Accept staff invitation
    * @param token - Invite token
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<StaffMember>
    */
   static async acceptInvite(token: string, uid: string): Promise<StaffMember> {

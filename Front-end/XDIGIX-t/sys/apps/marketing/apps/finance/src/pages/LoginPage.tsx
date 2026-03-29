@@ -5,7 +5,7 @@ import {
   browserLocalPersistence,
   setPersistence,
   signInWithEmailAndPassword
-} from '../lib/firebase';
+} from '../lib/backend';
 import dayjs from 'dayjs';
 
 const LoginPage = () => {

@@ -5,7 +5,7 @@ import { useCurrency } from '../../hooks/useCurrency';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { 
   collection, db, getDocs, addDoc, updateDoc, doc, query, where, orderBy, Timestamp, getDoc, setDoc 
-} from '../../lib/firebase';
+} from '../../lib/backend';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   BanknotesIcon,

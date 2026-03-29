@@ -24,19 +24,13 @@ exports.getAll = async (req, res, next) => {
 
 /**
  * @route   GET /api/clients/:id
- * Accepts MongoDB _id or firebaseId (for support URLs from admin).
+ * Accepts MongoDB _id.
  */
 exports.getById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    let client = null;
-    if (id.length === 24 && /^[a-f0-9]{24}$/i.test(id)) {
-      const filter = { _id: id, ...applyClientFilter(req) };
-      client = await Client.findOne(filter).lean();
-    }
-    if (!client) {
-      client = await Client.findOne({ firebaseId: id }).lean();
-    }
+    const filter = { _id: id, ...applyClientFilter(req) };
+    const client = await Client.findOne(filter).lean();
     if (!client) {
       return res.status(404).json({ success: false, message: 'Client not found' });
     }

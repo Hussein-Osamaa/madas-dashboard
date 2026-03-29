@@ -1,4 +1,4 @@
-import { addDoc, collection, db, getDocs, orderBy, query, serverTimestamp } from '../lib/firebase';
+import { addDoc, collection, db, getDocs, orderBy, query, serverTimestamp } from '../lib/backend';
 
 export type Warehouse = {
   id: string;

@@ -1,5 +1,4 @@
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/backend';
 import { TrialService } from './trialService';
 
 export interface TrialMiddlewareOptions {

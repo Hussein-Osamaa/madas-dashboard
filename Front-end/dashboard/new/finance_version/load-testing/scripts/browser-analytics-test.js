@@ -93,8 +93,8 @@ async function main() {
   await Promise.all(promises);
   
   console.log('\n✅ All users finished!');
-  console.log('\n📊 Check Analytics Dashboard:');
-  console.log('   https://console.firebase.google.com/project/madas-store/analytics');
+  console.log('\nCheck Analytics Dashboard:');
+  console.log('   Check your backend analytics endpoint for results.');
   console.log('\n   Note: It may take 5-10 minutes for data to appear\n');
 }
 

@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { collection, query, where, getDocs, db } from '@/lib/backend'
 import { Shield, LogOut, User } from 'lucide-react'
 
 interface UserData {

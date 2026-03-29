@@ -12,7 +12,7 @@ import {
   db,
   serverTimestamp,
   writeBatch
-} from '../../lib/firebase';
+} from '../../lib/backend';
 import dayjs from 'dayjs';
 
 /** Normalize Firestore/backend date (Timestamp, string, number, { seconds }) to Date. */

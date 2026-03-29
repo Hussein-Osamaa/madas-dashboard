@@ -1,11 +1,4 @@
-import { 
-  signInAnonymously, 
-  signOut, 
-  onAuthStateChanged, 
-  User,
-  updateProfile
-} from 'firebase/auth';
-import { auth } from './firebase';
+import { auth } from './backend';
 import { BusinessService } from './businessService';
 
 export class AuthService {

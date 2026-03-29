@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { signOutUser } from "../../firebase/auth";
+import { signOutUser } from "../../api/auth";
 import toast from "react-hot-toast";
 
 const Sidebar = ({ isOpen, onClose }) => {

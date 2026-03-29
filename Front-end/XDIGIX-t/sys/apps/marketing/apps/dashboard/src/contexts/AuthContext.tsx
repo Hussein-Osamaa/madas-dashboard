@@ -8,7 +8,7 @@ import {
   useRef,
   useState
 } from 'react';
-import { auth, onAuthStateChanged, signOut, retryAuth, hasStoredTokens } from '../lib/firebase';
+import { auth, onAuthStateChanged, signOut, retryAuth, hasStoredTokens } from '../lib/backend';
 import { disconnectDashboardSocket } from '../lib/realtimeSocket';
 
 export type AuthUser = { uid: string; email: string | null; displayName?: string | null; getIdToken: () => Promise<string> };
@@ -34,10 +34,10 @@ const AuthProvider = ({ children }: Props) => {
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: AuthUser | null) => {
-      if (firebaseUser) {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser: AuthUser | null) => {
+      if (currentUser) {
         retryCountRef.current = 0;
-        setUser(firebaseUser);
+        setUser(currentUser);
         setLoading(false);
       } else if (hasStoredTokens() && retryCountRef.current < MAX_AUTH_RETRIES) {
         retryCountRef.current += 1;

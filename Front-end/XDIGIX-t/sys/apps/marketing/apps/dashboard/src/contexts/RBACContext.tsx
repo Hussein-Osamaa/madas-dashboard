@@ -62,7 +62,7 @@ type Props = {
 };
 
 export const RBACProvider = ({ children }: Props) => {
-  const { user: firebaseUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const businessContext = useBusiness();
   const role = businessContext?.role;
   const plan = businessContext?.plan;
@@ -71,7 +71,7 @@ export const RBACProvider = ({ children }: Props) => {
   const [loading, setLoading] = useState(true);
 
   const loadUserData = useCallback(async () => {
-    if (!firebaseUser) {
+    if (!currentUser) {
       setUser(null);
       setPermissions([]);
       setLoading(false);
@@ -82,7 +82,7 @@ export const RBACProvider = ({ children }: Props) => {
       setLoading(true);
       
       // Validate Firebase user has required fields
-      if (!firebaseUser.uid) {
+      if (!currentUser.uid) {
         console.warn('[RBACProvider] Firebase user missing UID');
         setUser(null);
         setPermissions([]);
@@ -91,17 +91,17 @@ export const RBACProvider = ({ children }: Props) => {
       }
       
       // Get RBAC user from Firestore using Firebase UID
-      let rbacUser = await userService.getByFirebaseUid(firebaseUser.uid);
+      let rbacUser = await userService.getById(currentUser.uid);
       
       // If no RBAC user found, try to find by email (only if email exists)
-      if (!rbacUser && firebaseUser.email) {
-        rbacUser = await userService.getByEmail(firebaseUser.email);
+      if (!rbacUser && currentUser.email) {
+        rbacUser = await userService.getByEmail(currentUser.email);
       }
 
       if (!rbacUser) {
         console.warn('[RBACProvider] No RBAC user found for Firebase user', {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email
+          uid: currentUser.uid,
+          email: currentUser.email
         });
         setUser(null);
         setPermissions([]);
@@ -132,7 +132,7 @@ export const RBACProvider = ({ children }: Props) => {
     } finally {
       setLoading(false);
     }
-  }, [firebaseUser]);
+  }, [currentUser]);
 
   useEffect(() => {
     loadUserData();

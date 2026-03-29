@@ -1,6 +1,4 @@
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth, db } from '@/lib/backend';
 import { TrialService } from '@/modules/trial/trialService';
 
 export interface UserData {
@@ -20,7 +18,7 @@ export interface LoginResult {
 
 /**
  * Gets user document or creates it if missing (fail-safe)
- * @param uid - User's Firebase UID
+ * @param uid - User's ID
  * @param email - User's email
  * @returns Promise<UserData>
  */
@@ -79,10 +77,10 @@ export async function loginWithFailSafe(email: string, password: string): Promis
   try {
     console.log('Starting login process for:', email);
 
-    // 1. Authenticate with Firebase Auth
+    // 1. Authenticate with backend API
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    console.log('Firebase Auth login successful:', user.uid);
+    console.log('Login successful:', user.uid);
 
     // 2. Get or create user document (fail-safe)
     const userData = await getOrCreateUserDocument(user.uid, email);

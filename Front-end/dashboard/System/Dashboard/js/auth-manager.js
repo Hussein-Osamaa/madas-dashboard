@@ -1,15 +1,7 @@
 // Universal Authentication Manager for MADAS Dashboard
+// Firebase removed - uses localStorage session only
 class AuthManager {
     constructor() {
-        this.firebaseConfig = {
-            apiKey: "AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8",
-            authDomain: "madas-store.firebaseapp.com",
-            projectId: "madas-store",
-            storageBucket: "madas-store.firebasestorage.app",
-            messagingSenderId: "527071300010",
-            appId: "1:527071300010:web:70470e2204065b4590583d3"
-        };
-        
         this.auth = null;
         this.db = null;
         this.currentUser = null;
@@ -17,93 +9,47 @@ class AuthManager {
     }
 
     async init() {
-        console.log('🔐 AuthManager initializing...');
-        
-        // Wait for Firebase to be available
-        const checkFirebase = setInterval(() => {
-            if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
-                console.log('🔥 Firebase is ready');
-                clearInterval(checkFirebase);
-                this.initializeFirebase();
-            }
-        }, 100);
-
-        // Timeout after 5 seconds
-        setTimeout(() => {
-            clearInterval(checkFirebase);
-            console.log('⚠️ Firebase initialization timeout - using fallback');
-            this.initializeFallback();
-        }, 5000);
-    }
-
-    initializeFirebase() {
-        try {
-            const app = firebase.initializeApp(this.firebaseConfig);
-            this.auth = firebase.getAuth(app);
-            this.db = firebase.getFirestore(app);
-            
-            console.log('✅ Firebase initialized successfully');
-            this.setupAuthListener();
-        } catch (error) {
-            console.error('❌ Firebase initialization failed:', error);
-            this.initializeFallback();
-        }
+        console.log('AuthManager initializing...');
+        this.initializeFallback();
     }
 
     initializeFallback() {
-        console.log('🔄 Using fallback authentication system');
-        
+        console.log('Using localStorage authentication system');
+
         // Check localStorage for user session
         const userSession = localStorage.getItem('currentUser');
         if (userSession) {
             try {
                 this.currentUser = JSON.parse(userSession);
-                console.log('👤 User session restored from localStorage:', this.currentUser.email);
+                console.log('User session restored from localStorage:', this.currentUser.email);
                 this.updateUI();
             } catch (error) {
-                console.error('❌ Error parsing user session:', error);
+                console.error('Error parsing user session:', error);
                 this.redirectToLogin();
             }
         } else {
-            console.log('👤 No user session found');
+            console.log('No user session found');
             this.redirectToLogin();
         }
     }
 
-    setupAuthListener() {
-        if (!this.auth) return;
-
-        this.auth.onAuthStateChanged((user) => {
-            if (user) {
-                this.currentUser = user;
-                console.log('👤 User authenticated:', user.email);
-                this.saveUserSession(user);
-                this.updateUI();
-            } else {
-                console.log('👤 User not authenticated');
-                this.clearUserSession();
-                this.redirectToLogin();
-            }
-        });
-    }
-
     saveUserSession(user) {
         const session = {
-            userId: user.uid,
+            userId: user.uid || user.userId,
             email: user.email,
             displayName: user.displayName || '',
             loginTime: new Date().toISOString(),
             isAuthenticated: true
         };
-        
+
         localStorage.setItem('currentUser', JSON.stringify(session));
-        console.log('💾 User session saved');
+        console.log('User session saved');
     }
 
     clearUserSession() {
         localStorage.removeItem('currentUser');
         sessionStorage.clear();
-        console.log('🗑️ User session cleared');
+        console.log('User session cleared');
     }
 
     updateUI() {
@@ -112,7 +58,7 @@ class AuthManager {
         // Update user info elements
         const userElements = document.querySelectorAll('[data-user-email]');
         userElements.forEach(element => {
-            element.textContent = this.currentUser.email || this.currentUser.email;
+            element.textContent = this.currentUser.email || '';
         });
 
         const nameElements = document.querySelectorAll('[data-user-name]');
@@ -142,7 +88,6 @@ class AuthManager {
         let loginPath = '';
 
         if (currentPath.includes('/Dashboard/')) {
-            // If in Dashboard subdirectory
             if (currentPath.includes('/mobile-dashboard/')) {
                 loginPath = '../Login.html';
             } else {
@@ -152,22 +97,12 @@ class AuthManager {
             loginPath = '../login.html';
         }
 
-        console.log('🔄 Redirecting to login:', loginPath);
+        console.log('Redirecting to login:', loginPath);
         window.location.href = loginPath;
     }
 
     async logout() {
-        console.log('🚪 Logging out user...');
-        
-        try {
-            if (this.auth) {
-                await this.auth.signOut();
-                console.log('✅ Firebase logout successful');
-            }
-        } catch (error) {
-            console.error('❌ Firebase logout error:', error);
-        }
-
+        console.log('Logging out user...');
         this.clearUserSession();
         this.redirectToLogin();
     }
@@ -181,35 +116,14 @@ class AuthManager {
     }
 
     async getUserData() {
-        if (!this.currentUser || !this.db) {
-            return null;
-        }
-
-        try {
-            const userDoc = await firebase.firestore().collection('users').doc(this.currentUser.uid).get();
-            if (userDoc.exists()) {
-                return userDoc.data();
-            }
-        } catch (error) {
-            console.error('❌ Error fetching user data:', error);
-        }
-
-        return null;
+        return this.currentUser || null;
     }
 
     async updateUserData(data) {
-        if (!this.currentUser || !this.db) {
-            return false;
-        }
-
-        try {
-            await firebase.firestore().collection('users').doc(this.currentUser.uid).update(data);
-            console.log('✅ User data updated successfully');
-            return true;
-        } catch (error) {
-            console.error('❌ Error updating user data:', error);
-            return false;
-        }
+        if (!this.currentUser) return false;
+        Object.assign(this.currentUser, data);
+        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+        return true;
     }
 }
 
@@ -229,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    console.log('🔐 AuthManager initialized and logout buttons setup');
+    console.log('AuthManager initialized and logout buttons setup');
 });
 
-console.log('✅ Universal Authentication Manager loaded');
+console.log('Universal Authentication Manager loaded');

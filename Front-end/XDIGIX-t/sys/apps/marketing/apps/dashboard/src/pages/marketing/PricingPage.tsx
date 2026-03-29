@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, db, doc, getDocs, writeBatch } from '../../lib/firebase';
+import { collection, db, doc, getDocs, writeBatch } from '../../lib/backend';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useCurrency } from '../../hooks/useCurrency';
 import FullScreenLoader from '../../components/common/FullScreenLoader';

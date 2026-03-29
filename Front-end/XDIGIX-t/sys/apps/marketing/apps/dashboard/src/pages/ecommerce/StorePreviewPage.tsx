@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { doc, db, getDoc } from '../../lib/firebase';
+import { doc, db, getDoc } from '../../lib/backend';
 import { exportWebsiteToHTML } from '../../utils/exportWebsite';
 import { Section } from '../../types/builder';
 import FullScreenLoader from '../../components/common/FullScreenLoader';

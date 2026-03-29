@@ -32,7 +32,7 @@ class StaffModule {
         if (!window.db) return;
 
         try {
-            const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+            // Firebase removed - using backend API
             const staffSnapshot = await getDocs(collection(window.db, "staff"));
             
             this.staffData = [];
@@ -163,7 +163,7 @@ class StaffModule {
         if (!window.db) return;
 
         try {
-            const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+            // Firebase removed - using backend API
             await addDoc(collection(window.db, "staff"), staffData);
             console.log('💾 Staff data saved to Firestore');
         } catch (error) {
@@ -197,7 +197,7 @@ class StaffModule {
         if (!window.db) return;
 
         try {
-            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+            // Firebase removed - using backend API
             const staffRef = doc(window.db, "staff", staffId);
             await updateDoc(staffRef, updateData);
             console.log('💾 Staff data updated in Firestore');
@@ -228,7 +228,7 @@ class StaffModule {
         if (!window.db) return;
 
         try {
-            const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+            // Firebase removed - using backend API
             const staffRef = doc(window.db, "staff", staffId);
             await deleteDoc(staffRef);
             console.log('💾 Staff data removed from Firestore');

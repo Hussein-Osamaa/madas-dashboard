@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { doc, db, getDoc, setDoc, serverTimestamp } from '../../lib/firebase';
+import { doc, db, getDoc, setDoc, serverTimestamp } from '../../lib/backend';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 
 type CodeEditorFile = {

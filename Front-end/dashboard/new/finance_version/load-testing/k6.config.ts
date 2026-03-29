@@ -5,7 +5,7 @@ import thresholds from './config/thresholds.json';
 
 // Custom metrics
 export const errorRate = new Rate('errors');
-export const firestoreThrottleRate = new Rate('firestore_throttles');
+export const apiThrottleRate = new Rate('api_throttles');
 export const coldStartRate = new Rate('function_cold_starts');
 
 // Environment configuration
@@ -13,18 +13,15 @@ const ENV = __ENV.ENV || 'staging';
 const environments = {
   local: {
     baseUrl: __ENV.BASE_URL || 'http://localhost:3000',
-    firebaseApiKey: __ENV.FIREBASE_API_KEY || '',
-    firestoreUrl: __ENV.FIRESTORE_URL || 'http://localhost:8080/v1/projects/{{PROJECT_ID}}/databases/(default)/documents',
+    apiUrl: __ENV.API_URL || 'http://localhost:5000/api',
   },
   staging: {
-    baseUrl: __ENV.BASE_URL || 'https://{{STAGING_DOMAIN}}.web.app',
-    firebaseApiKey: __ENV.FIREBASE_API_KEY || '',
-    firestoreUrl: __ENV.FIRESTORE_URL || 'https://firestore.googleapis.com/v1/projects/{{PROJECT_ID}}/databases/(default)/documents',
+    baseUrl: __ENV.BASE_URL || 'https://{{STAGING_DOMAIN}}.vercel.app',
+    apiUrl: __ENV.API_URL || 'https://{{STAGING_API}}.vercel.app/api',
   },
   prod: {
-    baseUrl: __ENV.BASE_URL || 'https://{{PROD_DOMAIN}}.web.app',
-    firebaseApiKey: __ENV.FIREBASE_API_KEY || '',
-    firestoreUrl: __ENV.FIRESTORE_URL || 'https://firestore.googleapis.com/v1/projects/{{PROJECT_ID}}/databases/(default)/documents',
+    baseUrl: __ENV.BASE_URL || 'https://{{PROD_DOMAIN}}.vercel.app',
+    apiUrl: __ENV.API_URL || 'https://{{PROD_API}}.vercel.app/api',
   },
 };
 
@@ -73,6 +70,7 @@ export function checkEnvironment(): void {
   
   console.log(`[CONFIG] Running in ${ENV} environment`);
   console.log(`[CONFIG] Base URL: ${env.baseUrl}`);
+  console.log(`[CONFIG] API URL: ${env.apiUrl}`);
 }
 
 // Helper to log test metadata

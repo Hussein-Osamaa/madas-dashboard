@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, db, collection, getDocs } from '../lib/firebase';
+import { doc, getDoc, db, collection, getDocs } from '../lib/backend';
 import { Section } from '../types/builder';
 
 interface UseSiteSectionsResult {

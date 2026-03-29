@@ -48,7 +48,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { router } from './router';
 import { initRbacApi } from '@shared/lib/rbacService';
 import { initPermissionsApi } from '@shared/lib/permissions';
-import { db, collection, query, where, getDocs, getDoc, doc } from './lib/firebase';
+import { db, collection, query, where, getDocs, getDoc, doc } from './lib/backend';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,37 +71,7 @@ if (useBackend) {
   initRbacApi(api, db);
   initPermissionsApi(api, db);
 }
-if (typeof window !== 'undefined' && !useBackend) {
-  import('./lib/firebase').then(({ app }) => {
-    import('firebase/performance').then(({ initializePerformance, getPerformance }) => {
-      try {
-        initializePerformance(app);
-        getPerformance(app);
-        console.log('[Firebase] Performance Monitoring initialized at app startup');
-      } catch (error) {
-        console.warn('[Firebase] Performance Monitoring initialization:', error);
-      }
-    }).catch(() => {});
-    import('firebase/analytics').then(({ getAnalytics, isSupported, initializeAnalytics, logEvent }) => {
-      isSupported().then((supported) => {
-        if (supported) {
-          try {
-            let analyticsInstance;
-            try {
-              analyticsInstance = getAnalytics(app);
-            } catch {
-              initializeAnalytics(app);
-              analyticsInstance = getAnalytics(app);
-            }
-            logEvent(analyticsInstance, 'app_start', { app_name: 'MADAS Dashboard', app_version: '1.0.0' });
-          } catch (error) {
-            console.debug('[Firebase] Analytics initialization:', error);
-          }
-        }
-      }).catch(() => {});
-    }).catch(() => {});
-  }).catch(() => {});
-}
+// Performance and analytics monitoring removed (Firebase removed)
 
 ReactDOM.createRoot /* v2 */(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

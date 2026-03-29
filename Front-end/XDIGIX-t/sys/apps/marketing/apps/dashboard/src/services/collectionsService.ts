@@ -10,7 +10,7 @@ import {
   query,
   serverTimestamp,
   updateDoc
-} from '../lib/firebase';
+} from '../lib/backend';
 
 export type CollectionStatus = 'active' | 'draft' | 'archived';
 export type CollectionType = 'manual' | 'smart';

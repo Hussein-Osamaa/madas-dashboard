@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useRef } from 'react';
 import { Warehouse } from '../../hooks/useWarehouses';
 import { Product } from '../../services/productsService';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { storage, ref, uploadBytes, getDownloadURL } from '../../lib/firebase';
+import { storage, ref, uploadBytes, getDownloadURL } from '../../lib/backend';
 
 type SubVariant = {
   id: string;

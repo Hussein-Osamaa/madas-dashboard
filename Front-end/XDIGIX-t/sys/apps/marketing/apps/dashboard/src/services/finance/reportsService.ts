@@ -1,4 +1,4 @@
-import { collection, getDocs, orderBy, query, Timestamp, where, db } from '../../lib/firebase';
+import { collection, getDocs, orderBy, query, Timestamp, where, db } from '../../lib/backend';
 import dayjs from 'dayjs';
 
 type RangeFilter = { start: dayjs.Dayjs; end: dayjs.Dayjs };

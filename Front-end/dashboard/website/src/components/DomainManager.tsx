@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/backend';
 import { DomainService, CustomDomain } from '@/modules/domains/domainService';
 import { SubscriptionService } from '@/modules/billing/subscriptionService';
 

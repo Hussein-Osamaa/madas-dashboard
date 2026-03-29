@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
   query,
   where
-} from '../lib/firebase';
+} from '../lib/backend';
 import { useTenant } from './TenantProvider';
 
 type PermissionsContextValue = {

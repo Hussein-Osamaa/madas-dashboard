@@ -10,7 +10,7 @@ import {
   query,
   serverTimestamp,
   updateDoc
-} from '../lib/firebase';
+} from '../lib/backend';
 
 export type CustomerStatus = 'active' | 'inactive' | 'vip';
 

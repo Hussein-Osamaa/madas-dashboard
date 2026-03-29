@@ -58,13 +58,13 @@ type Props = {
 };
 
 export const RBACProvider = ({ children }: Props) => {
-  const { user: firebaseUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadUserData = useCallback(async () => {
-    if (!firebaseUser) {
+    if (!currentUser) {
       setUser(null);
       setPermissions([]);
       setLoading(false);
@@ -75,7 +75,7 @@ export const RBACProvider = ({ children }: Props) => {
       setLoading(true);
       
       // Validate Firebase user has required fields
-      if (!firebaseUser.uid) {
+      if (!currentUser.uid) {
         console.warn('[RBACProvider] Firebase user missing UID');
         setUser(null);
         setPermissions([]);
@@ -84,19 +84,19 @@ export const RBACProvider = ({ children }: Props) => {
       }
       
       // Super admin emails: bypass RBAC lookup and grant full access
-      const email = (firebaseUser.email || '').trim().toLowerCase();
+      const email = (currentUser.email || '').trim().toLowerCase();
       if (SUPER_ADMIN_EMAILS.some((e) => e.toLowerCase() === email)) {
         const superAdminUser: User = {
-          id: firebaseUser.uid,
+          id: currentUser.uid,
           name: 'Super Admin',
-          email: firebaseUser.email || '',
+          email: currentUser.email || '',
           type: 'super_admin',
           tenant_id: null,
           role_id: 'root',
           status: 'active',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          firebase_uid: firebaseUser.uid
+          uid: currentUser.uid
         };
         setUser(superAdminUser);
         setPermissions(['super_admin.view_analytics', 'super_admin.manage_all_tenants', 'super_admin.manage_staff', 'super_admin.manage_subscriptions', 'super_admin.manage_roles', 'super_admin.manage_permissions']);
@@ -105,17 +105,17 @@ export const RBACProvider = ({ children }: Props) => {
       }
 
       // Get RBAC user from Firestore using Firebase UID
-      let rbacUser = await userService.getByFirebaseUid(firebaseUser.uid);
+      let rbacUser = await userService.getById(currentUser.uid);
       
       // If no RBAC user found, try to find by email (only if email exists)
-      if (!rbacUser && firebaseUser.email) {
-        rbacUser = await userService.getByEmail(firebaseUser.email);
+      if (!rbacUser && currentUser.email) {
+        rbacUser = await userService.getByEmail(currentUser.email);
       }
 
       if (!rbacUser) {
         console.warn('[RBACProvider] No RBAC user found for Firebase user', {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email
+          uid: currentUser.uid,
+          email: currentUser.email
         });
         setUser(null);
         setPermissions([]);
@@ -145,7 +145,7 @@ export const RBACProvider = ({ children }: Props) => {
     } finally {
       setLoading(false);
     }
-  }, [firebaseUser]);
+  }, [currentUser]);
 
   useEffect(() => {
     loadUserData();

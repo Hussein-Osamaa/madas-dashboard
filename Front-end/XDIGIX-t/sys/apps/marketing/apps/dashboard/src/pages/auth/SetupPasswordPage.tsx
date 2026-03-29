@@ -11,7 +11,7 @@ import {
   setDoc,
   updateDoc,
   where
-} from '../../lib/firebase';
+} from '../../lib/backend';
 
 const SetupPasswordPage = () => {
   const [searchParams] = useSearchParams();

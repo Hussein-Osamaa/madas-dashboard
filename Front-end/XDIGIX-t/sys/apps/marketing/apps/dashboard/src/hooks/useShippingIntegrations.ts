@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, db } from '../lib/firebase';
+import { doc, getDoc, db } from '../lib/backend';
 
 interface BostaProvider {
   enabled: boolean;

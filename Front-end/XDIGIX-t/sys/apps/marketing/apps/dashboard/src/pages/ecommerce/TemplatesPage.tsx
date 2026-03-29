@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { collection, db, addDoc } from '../../lib/firebase';
+import { collection, db, addDoc } from '../../lib/backend';
 import { Section } from '../../types/builder';
 
 type Template = {

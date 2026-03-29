@@ -3,7 +3,6 @@
  */
 export type User = {
   id: string;
-  firebase_uid?: string;
   email?: string;
   role_id: string;
   type: 'super_admin' | 'admin' | 'staff' | 'client';

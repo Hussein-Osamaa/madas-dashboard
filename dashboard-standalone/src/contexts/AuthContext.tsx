@@ -1,9 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, getDoc, updateDoc, query, collection, where, getDocs } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
+import { onAuthStateChanged, signOut, doc, getDoc, updateDoc, query, collection, where, getDocs, auth, db } from '@/lib/backend'
+// Minimal User type compatible with backend-adapter auth object
+type User = { uid: string; email: string | null; displayName: string | null; [key: string]: unknown }
 
 interface UserData {
   name?: string

@@ -23,13 +23,12 @@ class SiteManager {
 
     async loadSites() {
         try {
-            // Try to load from Firebase first
-            if (this.bridge.firebase) {
-                const result = await this.bridge.loadFromFirebase('sites', 'list');
+            // Try to load from remote storage first
+            if (false) {                 const result = await this.bridge.loadFromRemote('sites', 'list');
                 if (result.success && result.data) {
                     this.sites = result.data.sites || [];
                     this.bridge.emit('sitesLoaded', this.sites);
-                    return { success: true, source: 'firebase' };
+                    return { success: true, source: 'localStorage' };
                 }
             }
 
@@ -199,9 +198,8 @@ class SiteManager {
             // Save to localStorage
             this.bridge.saveToLocalStorage('sites-list', sitesData);
 
-            // Save to Firebase if available
-            if (this.bridge.firebase) {
-                await this.bridge.saveToFirebase('sites', 'list', sitesData);
+            // Save to remote storage if available
+            if (false) {                 await this.bridge.saveToRemote('sites', 'list', sitesData);
             }
 
             return { success: true };
@@ -239,8 +237,7 @@ class SiteManager {
             };
 
             // Save publish data
-            if (this.bridge.firebase) {
-                await this.bridge.saveToFirebase('published-sites', siteId, publishData);
+            if (false) {                 await this.bridge.saveToRemote('published-sites', siteId, publishData);
             }
 
             this.bridge.emit('sitePublished', { site, publishData });

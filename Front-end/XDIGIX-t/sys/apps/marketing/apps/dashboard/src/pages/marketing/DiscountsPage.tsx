@@ -12,7 +12,7 @@ import {
   getDocs,
   serverTimestamp,
   updateDoc
-} from '../../lib/firebase';
+} from '../../lib/backend';
 import { useBusiness } from '../../contexts/BusinessContext';
 import { useCurrency } from '../../hooks/useCurrency';
 import FullScreenLoader from '../../components/common/FullScreenLoader';

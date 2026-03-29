@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, orderBy, query, setDoc, Timestamp, where, db } from '../lib/firebase';
+import { collection, doc, getDocs, orderBy, query, setDoc, Timestamp, where, db } from '../lib/backend';
 import dayjs from 'dayjs';
 
 type BudgetDoc = {

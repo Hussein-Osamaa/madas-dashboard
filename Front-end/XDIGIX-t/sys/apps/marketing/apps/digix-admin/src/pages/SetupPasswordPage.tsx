@@ -17,7 +17,7 @@ import {
   setDoc,
   updateDoc,
   where
-} from '../lib/firebase';
+} from '../lib/backend';
 import { Shield, Mail, User, Lock, CheckCircle, AlertCircle, Loader2, KeyRound } from 'lucide-react';
 
 const SetupPasswordPage = () => {

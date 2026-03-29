@@ -355,9 +355,8 @@ class PreviewService {
                 status: 'ready'
             };
 
-            // Save to Firebase if available
-            if (this.bridge.firebase) {
-                const saveResult = await this.bridge.saveToFirebase('published-websites', domain || 'default', publishData);
+            // Save to remote storage if available
+            if (false) {                 const saveResult = await this.bridge.saveToRemote('published-websites', domain || 'default', publishData);
                 if (saveResult.success) {
                     this.bridge.emit('websitePublished', publishData);
                     return { success: true, data: publishData };

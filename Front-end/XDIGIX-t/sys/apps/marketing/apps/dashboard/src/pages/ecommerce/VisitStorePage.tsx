@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { collection, db, getDocs, query, where } from '../../lib/firebase';
+import { collection, db, getDocs, query, where } from '../../lib/backend';
 import { getCustomDomainUrl, getDefaultPublishedSiteUrl } from '../../utils/siteUrls';
 
 type PublishedSite = {

@@ -1,5 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/backend';
 
 // Note: In production, these would be loaded from environment variables
 const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_...';
@@ -112,7 +111,7 @@ export class StripeService {
 
   /**
    * Create Stripe customer
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param email - User's email
    * @param name - User's name
    * @returns Promise<Customer>
@@ -150,7 +149,7 @@ export class StripeService {
 
   /**
    * Create FAKE subscription checkout session (DEMO MODE)
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param priceId - Stripe price ID
    * @param successUrl - Success redirect URL
    * @param cancelUrl - Cancel redirect URL
@@ -197,7 +196,7 @@ export class StripeService {
 
   /**
    * Get customer subscription
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<Subscription | null>
    */
   static async getSubscription(uid: string): Promise<Subscription | null> {
@@ -220,7 +219,7 @@ export class StripeService {
 
   /**
    * Cancel subscription
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param cancelAtPeriodEnd - Whether to cancel at period end
    * @returns Promise<void>
    */
@@ -260,7 +259,7 @@ export class StripeService {
 
   /**
    * Update payment method
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @param paymentMethodId - Stripe payment method ID
    * @returns Promise<void>
    */
@@ -285,7 +284,7 @@ export class StripeService {
 
   /**
    * Get billing portal URL
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<string>
    */
   static async getBillingPortalUrl(uid: string): Promise<string> {
@@ -307,7 +306,7 @@ export class StripeService {
 
   /**
    * Check if user has active subscription
-   * @param uid - User's Firebase UID
+   * @param uid - User's ID
    * @returns Promise<boolean>
    */
   static async hasActiveSubscription(uid: string): Promise<boolean> {

@@ -10,7 +10,7 @@ import {
   query,
   serverTimestamp,
   updateDoc
-} from '../lib/firebase';
+} from '../lib/backend';
 
 export type Product = {
   id: string;
@@ -128,7 +128,7 @@ export const fetchProducts = async (businessId: string): Promise<Product[]> => {
 };
 
 export const createProduct = async (businessId: string, payload: ProductPayload) => {
-  // Filter out undefined values to prevent Firebase errors
+  // Filter out undefined values
   const cleanPayload: Record<string, any> = {};
   
   // Copy only defined values from payload

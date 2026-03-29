@@ -14,7 +14,7 @@ import SuperAdminSidebar from '../components/layout/SuperAdminSidebar';
 
 const SuperAdminShell = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const { user: firebaseUser, loading: authLoading } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const { user: rbacUser, loading: rbacLoading, hasPermission } = useRBAC();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
@@ -37,7 +37,7 @@ const SuperAdminShell = () => {
     return <FullScreenLoader />;
   }
 
-  if (!firebaseUser) {
+  if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
 

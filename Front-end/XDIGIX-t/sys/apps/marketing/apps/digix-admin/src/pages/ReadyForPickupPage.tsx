@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import PermissionGuard from '../components/rbac/PermissionGuard';
 import { useRBAC } from '../contexts/RBACContext';
-import { collection, db, getDocs, doc, updateDoc, query, orderBy, addDoc, serverTimestamp } from '../lib/firebase';
+import { collection, db, getDocs, doc, updateDoc, query, orderBy, addDoc, serverTimestamp } from '../lib/backend';
 import {
   Package,
   Search,

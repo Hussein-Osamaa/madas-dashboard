@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/backend';
 import { SubscriptionService } from '@/modules/billing/subscriptionService';
 import { StripeService, SubscriptionPlan } from '@/modules/billing/stripeService';
 

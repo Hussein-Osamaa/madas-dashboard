@@ -1,5 +1,4 @@
-import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/backend';
 
 export interface CustomDomain {
   id: string;

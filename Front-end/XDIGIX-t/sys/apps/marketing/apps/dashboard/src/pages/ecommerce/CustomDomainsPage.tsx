@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { collection, db, getDocs, query, where, updateDoc, doc } from '../../lib/firebase';
+import { collection, db, getDocs, query, where, updateDoc, doc } from '../../lib/backend';
 import DomainModal from '../../components/ecommerce/DomainModal';
 import { getCustomDomainUrl, getDefaultPublishedSiteUrl } from '../../utils/siteUrls';
 
@@ -42,15 +42,15 @@ type Site = {
   domainProvider?: string;
   sslStatus?: 'pending' | 'active' | 'failed';
   dnsRecords?: DnsRecords;
-  firebaseSiteId?: string;
+  siteId?: string;
   slug?: string;
 };
 
-// Default fallback config - will be replaced by actual values from Firebase
-const getDefaultHostingConfig = (firebaseSiteId?: string) => ({
-  cnameTarget: `${firebaseSiteId || 'madas-sites-c3c5e'}.web.app`,
+// Default fallback config - will be replaced by actual values from backend
+const getDefaultHostingConfig = (siteId?: string) => ({
+  cnameTarget: `${siteId || 'madas-sites-c3c5e'}.web.app`,
   aRecordIP: '199.36.158.100',
-  txtRecord: `hosting-site=${firebaseSiteId || 'madas-sites-c3c5e'}`,
+  txtRecord: `hosting-site=${siteId || 'madas-sites-c3c5e'}`,
 });
 
 function isSubdomainDomain(domain: string): boolean {
@@ -64,8 +64,8 @@ function getSubdomainHost(domain: string): string {
   return parts[0] || 'www';
 }
 
-function normalizeDnsRecords(domain: string, firebaseSiteId?: string, raw?: unknown): DnsRecords {
-  const defaults = getDefaultHostingConfig(firebaseSiteId);
+function normalizeDnsRecords(domain: string, siteId?: string, raw?: unknown): DnsRecords {
+  const defaults = getDefaultHostingConfig(siteId);
   const rawAny = (raw || {}) as any;
   const isSub = isSubdomainDomain(domain);
 
@@ -217,8 +217,8 @@ const CustomDomainsPage = () => {
             domainVerifiedAt: data.domainVerifiedAt?.toDate?.() || undefined,
             domainProvider: data.domainProvider,
             sslStatus: sslStatus,
-            dnsRecords: customDomain ? normalizeDnsRecords(customDomain, data.firebaseSiteId, mergedRawDnsRecords) : undefined,
-            firebaseSiteId: data.firebaseSiteId,
+            dnsRecords: customDomain ? normalizeDnsRecords(customDomain, data.siteId, mergedRawDnsRecords) : undefined,
+            siteId: data.siteId,
             slug: data.slug,
           };
         });
@@ -644,7 +644,7 @@ const CustomDomainsPage = () => {
             </h4>
 
             {/* A Records (root domains) */}
-            {!isSub && (site.dnsRecords?.aRecords || [{ type: 'A', host: '@', value: getDefaultHostingConfig(site.firebaseSiteId).aRecordIP, id: 'a-0' }]).map((record, index) => (
+            {!isSub && (site.dnsRecords?.aRecords || [{ type: 'A', host: '@', value: getDefaultHostingConfig(site.siteId).aRecordIP, id: 'a-0' }]).map((record, index) => (
               <div key={record.id || `a-${index}`} className="bg-white rounded-xl border-2 border-green-200 overflow-hidden">
                 <div className="bg-green-50 px-4 py-2 border-b border-green-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -710,7 +710,7 @@ const CustomDomainsPage = () => {
             ))}
 
             {/* TXT Records - Dynamic */}
-            {(site.dnsRecords?.txtRecords || [{ type: 'TXT', host: '@', value: getDefaultHostingConfig(site.firebaseSiteId).txtRecord, id: 'txt-0' }]).map((record, index) => (
+            {(site.dnsRecords?.txtRecords || [{ type: 'TXT', host: '@', value: getDefaultHostingConfig(site.siteId).txtRecord, id: 'txt-0' }]).map((record, index) => (
               <div key={record.id || `txt-${index}`} className="bg-white rounded-xl border-2 border-purple-200 overflow-hidden">
                 <div className="bg-purple-50 px-4 py-2 border-b border-purple-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -785,7 +785,7 @@ const CustomDomainsPage = () => {
               };
               
               const rawCnameValue = site.dnsRecords?.cnameRecord?.value || 
-                (isSub ? getDefaultHostingConfig(site.firebaseSiteId).cnameTarget : site.customDomain);
+                (isSub ? getDefaultHostingConfig(site.siteId).cnameTarget : site.customDomain);
               
               const cnameRecord = site.dnsRecords?.cnameRecord || {
                 type: 'CNAME',

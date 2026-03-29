@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { fetchAdminApi } from '../lib/firebase';
+import { fetchAdminApi } from '../lib/backend';
 import {
   FileText,
   Search,

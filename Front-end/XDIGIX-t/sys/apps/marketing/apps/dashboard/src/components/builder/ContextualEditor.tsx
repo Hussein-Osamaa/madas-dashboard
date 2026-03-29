@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ElementType, SelectedElement, elementLabels } from '../../types/elementEditor';
 import { Section } from '../../types/builder';
 import ImageUploader from './ImageUploader';
-import { db, collection, getDocs } from '../../lib/firebase';
+import { db, collection, getDocs } from '../../lib/backend';
 
 interface Props {
   selectedElement: SelectedElement | null;

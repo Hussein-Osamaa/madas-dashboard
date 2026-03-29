@@ -1,4 +1,4 @@
-import { db, doc, getDoc } from '../lib/firebase';
+import { db, doc, getDoc } from '../lib/backend';
 import { useQuery } from '@tanstack/react-query';
 
 export type DashboardStats = {

@@ -1,16 +1,4 @@
-import { 
-  collection, 
-  doc, 
-  addDoc, 
-  setDoc, 
-  getDoc, 
-  updateDoc,
-  serverTimestamp,
-  query,
-  where,
-  getDocs
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { db } from './backend';
 
 // Business interface
 export interface Business {

@@ -7,7 +7,7 @@ import {
   useMemo,
   useState
 } from 'react';
-import { auth, onAuthStateChanged, signOut } from '../lib/firebase';
+import { auth, onAuthStateChanged, signOut } from '../lib/backend';
 
 export type AuthUser = { uid: string; email: string | null; displayName?: string | null; getIdToken: () => Promise<string> };
 
@@ -39,9 +39,9 @@ const AuthProvider = ({ children }: Props) => {
       }
     }, 10000);
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       clearTimeout(timeout);
-      setUser(firebaseUser);
+      setUser(currentUser);
       setLoading(false);
       setError(null);
     });

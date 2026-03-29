@@ -8,7 +8,7 @@ import {
   getDocs,
   serverTimestamp,
   updateDoc
-} from '../lib/firebase';
+} from '../lib/backend';
 import { decreaseProductStock, restoreProductStock } from './productsService';
 
 export type OrderStatus =

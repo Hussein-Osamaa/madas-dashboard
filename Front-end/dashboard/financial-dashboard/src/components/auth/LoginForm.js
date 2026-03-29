@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { signInUser } from "../../firebase/auth";
+import { signInUser } from "../../api/auth";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 

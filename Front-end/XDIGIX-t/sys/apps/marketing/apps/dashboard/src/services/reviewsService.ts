@@ -10,7 +10,7 @@ import {
   serverTimestamp,
   updateDoc,
   where
-} from '../lib/firebase';
+} from '../lib/backend';
 
 export type ReviewStatus = 'pending' | 'approved' | 'hidden';
 

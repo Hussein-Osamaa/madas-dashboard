@@ -1,16 +1,4 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  query,
-  where,
-  doc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase/config";
+import { db } from "../api/config";
 
 /**
  * Create a new site

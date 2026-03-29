@@ -5,7 +5,7 @@ import { Settings, ShieldAlert, Mail, LogIn, RefreshCw } from 'lucide-react';
 
 const NoAccessPage = () => {
   const { user: rbacUser } = useRBAC();
-  const { user: firebaseUser, logout } = useAuth();
+  const { user: currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const needsSetup = !rbacUser;
 
@@ -49,12 +49,12 @@ const NoAccessPage = () => {
             </ol>
           </div>
 
-          {firebaseUser && (
+          {currentUser && (
             <div className="bg-white/5 border border-white/10 rounded-xl p-5">
               <h3 className="font-semibold text-white mb-3 text-sm">Your Firebase User:</h3>
               <div className="text-sm text-gray-400 space-y-2">
-                <p><span className="text-gray-500">UID:</span> <span className="font-mono text-xs text-gray-300">{firebaseUser.uid}</span></p>
-                <p><span className="text-gray-500">Email:</span> <span className="text-gray-300">{firebaseUser.email}</span></p>
+                <p><span className="text-gray-500">UID:</span> <span className="font-mono text-xs text-gray-300">{currentUser.uid}</span></p>
+                <p><span className="text-gray-500">Email:</span> <span className="text-gray-300">{currentUser.email}</span></p>
               </div>
             </div>
           )}

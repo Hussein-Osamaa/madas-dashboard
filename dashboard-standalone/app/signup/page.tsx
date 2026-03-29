@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { setDoc, doc, collection, query, where, getDocs } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
+import { createUserWithEmailAndPassword, updateProfile, setDoc, doc, collection, query, where, getDocs, auth, db } from '@/lib/backend'
 import { Mail, Lock, Eye, EyeOff, User, Phone } from 'lucide-react'
 import { ClientOnly } from '@/components/ClientOnly'
 

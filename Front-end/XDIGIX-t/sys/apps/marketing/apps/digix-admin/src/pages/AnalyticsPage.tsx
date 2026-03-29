@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useRBAC } from '../contexts/RBACContext';
 import PermissionGuard from '../components/rbac/PermissionGuard';
-import { collection, db, getDocs, query, where } from '../lib/firebase';
+import { collection, db, getDocs, query, where } from '../lib/backend';
 
 type AnalyticsData = {
   totalClients: number;

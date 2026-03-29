@@ -1,6 +1,4 @@
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth, db } from '@/lib/backend';
 import { createBusiness } from '@/modules/business/createBusiness';
 import { TrialService } from '@/modules/trial/trialService';
 
@@ -29,7 +27,7 @@ export interface SignupResult {
 
 /**
  * Creates a user document in Firestore
- * @param uid - User's Firebase UID
+ * @param uid - User's ID
  * @param userData - User data
  * @returns Promise<void>
  */
@@ -59,14 +57,14 @@ export async function signUpOwner(signupData: SignupData): Promise<SignupResult>
   try {
     console.log('Starting owner signup process for:', signupData.email);
 
-    // 1. Create Firebase Auth user
+    // 1. Create user account
     const userCredential = await createUserWithEmailAndPassword(
       auth, 
       signupData.email, 
       signupData.password
     );
     const user = userCredential.user;
-    console.log('Firebase Auth user created:', user.uid);
+    console.log('User created:', user.uid);
 
     // 2. Generate business ID (using user's UID for simplicity)
     const businessId = user.uid;

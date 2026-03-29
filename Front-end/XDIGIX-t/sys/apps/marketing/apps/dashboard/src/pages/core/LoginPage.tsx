@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { FirebaseError } from 'firebase/app';
-import { auth, signInWithEmailAndPassword, sendPasswordResetEmail } from '../../lib/firebase';
+import { auth, signInWithEmailAndPassword, sendPasswordResetEmail } from '../../lib/backend';
+// FirebaseError replaced with generic error type
+type FirebaseError = Error & { code?: string };
 import { useAuth } from '../../contexts/AuthContext';
 
 type FormErrors = {

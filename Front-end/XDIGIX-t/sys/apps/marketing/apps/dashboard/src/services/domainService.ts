@@ -5,7 +5,7 @@
  * Provides typed interfaces for domain management operations.
  */
 
-import { auth } from '../lib/firebase';
+import { auth } from '../lib/backend';
 
 // ============================================
 // Types
@@ -82,7 +82,6 @@ export interface CustomDomain {
   verificationToken: string;
   dnsRecords: DNSRecords;
   sslStatus: 'none' | 'pending' | 'active' | 'failed';
-  firebaseHostingId?: string;
   lastCheckedAt?: Date;
   lastCheckResult?: DNSCheckResult;
   failureCount: number;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc, db } from '../../lib/firebase';
+import { doc, getDoc, setDoc, db } from '../../lib/backend';
 import FullScreenLoader from '../common/FullScreenLoader';
 
 // Legacy simple pixel data for single-pixel use cases

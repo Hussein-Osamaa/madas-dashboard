@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { collection, query, where, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc, db } from '@/lib/backend'
 import { Plus, Trash2 } from 'lucide-react'
 
 interface Todo {

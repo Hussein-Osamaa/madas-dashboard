@@ -11,7 +11,7 @@ import { useFinanceScope } from '../../hooks/useFinanceScope';
 import { formatCurrency } from '../../lib/finance/format';
 import { trackPageLoad } from '../../lib/performance';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { collection, db, getDocs, addDoc, deleteDoc, doc, query, where, orderBy, Timestamp } from '../../lib/firebase';
+import { collection, db, getDocs, addDoc, deleteDoc, doc, query, where, orderBy, Timestamp } from '../../lib/backend';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import KpiCard from '../../components/finance/KpiCard';
 

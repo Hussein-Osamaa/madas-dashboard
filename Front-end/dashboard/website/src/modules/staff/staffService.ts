@@ -1,5 +1,4 @@
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/backend';
 import { StaffMember } from './inviteService';
 
 /**

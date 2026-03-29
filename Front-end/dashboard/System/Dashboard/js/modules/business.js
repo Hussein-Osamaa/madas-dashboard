@@ -31,7 +31,7 @@ class BusinessModule {
         if (!window.db) return;
 
         try {
-            const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+            // Firebase removed - using backend API
             const businessSnapshot = await getDocs(collection(window.db, "businesses"));
             
             if (!businessSnapshot.empty) {
@@ -119,7 +119,7 @@ class BusinessModule {
         if (!window.db) return;
 
         try {
-            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+            // Firebase removed - using backend API
             const businessRef = doc(window.db, "businesses", this.businessData.id || "default");
             await updateDoc(businessRef, data);
             console.log('💾 Business data saved to Firestore');

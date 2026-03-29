@@ -3,8 +3,8 @@ import {
   onAuthStateChange,
   getUserData,
   hasPermission,
-} from "../firebase/auth";
-import { USER_ROLES } from "../firebase/auth";
+} from "../api/auth";
+import { USER_ROLES } from "../api/auth";
 
 const AuthContext = createContext();
 
@@ -23,16 +23,16 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChange(async (firebaseUser) => {
+    const unsubscribe = onAuthStateChange(async (currentUser) => {
       try {
         setLoading(true);
         setError(null);
 
-        if (firebaseUser) {
-          setUser(firebaseUser);
+        if (currentUser) {
+          setUser(currentUser);
 
           // Get additional user data from Firestore
-          const result = await getUserData(firebaseUser.uid);
+          const result = await getUserData(currentUser.uid);
           if (result.success) {
             setUserData(result.data);
           } else {

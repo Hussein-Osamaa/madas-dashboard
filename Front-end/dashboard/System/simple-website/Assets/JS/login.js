@@ -1,4 +1,4 @@
-// Login page functionality with Firebase integration
+// Login page functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Check URL parameters for plan selection and signup mode
     const urlParams = new URLSearchParams(window.location.search);
@@ -23,43 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     }
     
-    // Wait for Firebase to be available
-    const checkFirebase = setInterval(() => {
-        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
-            console.log('🔥 Firebase is ready');
-            clearInterval(checkFirebase);
-            initializeFirebaseAuth();
-        }
-    }, 100);
-
-    // Timeout after 5 seconds
-    setTimeout(() => {
-        clearInterval(checkFirebase);
-        console.log('⚠️ Firebase initialization timeout - using fallback');
-        initializeFallbackAuth();
-    }, 5000);
-
-    // Initialize Firebase authentication
-    function initializeFirebaseAuth() {
-        console.log('🔐 Firebase authentication initialized');
-        
-        // Listen for auth state changes
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                console.log('👤 User authenticated:', user.email);
-                // User is signed in
-            } else {
-                console.log('👤 User not authenticated');
-                // User is signed out
-            }
-        });
-    }
-
-    // Initialize fallback authentication
-    function initializeFallbackAuth() {
-        console.log('🔄 Using fallback authentication');
-        // Continue with existing localStorage-based authentication
-    }
+    // Authentication uses localStorage-based approach (Firebase removed)
+    console.log('Authentication system ready (localStorage-based)');
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
     const passwordToggle = document.getElementById('passwordToggle');
@@ -451,146 +416,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // Firebase login function
-    async function firebaseLogin(email, password) {
-        try {
-            const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            console.log('✅ Firebase login successful:', user.email);
-            return user;
-        } catch (error) {
-            console.error('❌ Firebase login error:', error);
-            throw error;
-        }
-    }
 
-    // Firebase signup function
-    async function firebaseSignup(userData) {
-        try {
-            console.log('🔄 Creating new business account...');
-            console.log('📋 User Data:', {
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-                email: userData.email,
-                company: userData.company,
-                plan: userData.plan
-            });
-            
-            // 1. Create Firebase Auth user
-            const userCredential = await firebase.auth().createUserWithEmailAndPassword(userData.email, userData.password);
-            const user = userCredential.user;
-            console.log('✅ Firebase Auth user created:', user.uid);
-            
-            // Update user profile
-            await user.updateProfile({
-                displayName: `${userData.firstName} ${userData.lastName}`
-            });
-            console.log('✅ User profile updated');
 
-            // 2. Generate unique business ID
-            const businessId = `business_${user.uid}_${Date.now()}`;
-            console.log('🏢 Business ID:', businessId);
 
-            // 3. Create business document
-            await firebase.firestore().collection('businesses').doc(businessId).set({
-                id: businessId,
-                ownerUid: user.uid,
-                ownerName: `${userData.firstName} ${userData.lastName}`,
-                businessName: userData.company,
-                businessEmail: userData.businessEmail,
-                plan: userData.plan,
-                staff: [user.uid], // Owner is first staff member
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'active'
-            });
-            console.log('✅ Business document created');
-
-            // 4. Create user document (links user to business)
-            await firebase.firestore().collection('users').doc(user.uid).set({
-                uid: user.uid,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-                email: userData.email,
-                businessEmail: userData.businessEmail,
-                phone: userData.phone,
-                company: userData.company,
-                businessId: businessId, // CRITICAL: Links user to business
-                role: 'owner',
-                plan: userData.plan,
-                newsletter: userData.newsletter,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'active'
-            });
-            console.log('✅ User document created');
-
-            // 5. Create staff document (owner has full access)
-            const planPermissions = getPlanPermissions(userData.plan);
-            await firebase.firestore().collection('staff').add({
-                uid: user.uid,
-                email: userData.email,
-                name: `${userData.firstName} ${userData.lastName}`,
-                businessId: businessId, // CRITICAL: Isolates staff to business
-                role: 'owner',
-                approved: true,
-                status: 'active',
-                permissions: planPermissions,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            console.log('✅ Staff document created (owner)');
-
-            // 6. Create user session data
-            const sessionData = {
-                userId: user.uid,
-                email: user.email,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-                company: userData.company,
-                businessEmail: userData.businessEmail,
-                businessId: businessId,
-                plan: userData.plan,
-                role: 'owner',
-                loginTime: new Date().toISOString(),
-                isAuthenticated: true
-            };
-            
-            // Store session data
-            localStorage.setItem('currentUser', JSON.stringify(sessionData));
-            localStorage.setItem('currentBusinessId', businessId);
-            
-            console.log('🎉 Complete business setup successful!');
-            console.log('🆔 User ID:', user.uid);
-            console.log('🏢 Business ID:', businessId);
-            console.log('📧 Email:', user.email);
-            console.log('🏢 Company:', userData.company);
-            console.log('📋 Plan:', userData.plan);
-            
-            return { user, businessId, sessionData };
-        } catch (error) {
-            console.error('❌ Firebase signup error:', error);
-            
-            // Provide specific error messages
-            let errorMessage = 'Signup failed. Please try again.';
-            
-            if (error.code === 'auth/email-already-in-use') {
-                errorMessage = 'An account with this email already exists. Please use a different email or try logging in.';
-            } else if (error.code === 'auth/weak-password') {
-                errorMessage = 'Password is too weak. Please use at least 6 characters with a mix of letters and numbers.';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Please enter a valid email address.';
-            } else if (error.code === 'auth/operation-not-allowed') {
-                errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-            } else if (error.message.includes('Firestore')) {
-                errorMessage = 'Database error occurred. Please try again or contact support.';
-            }
-            
-            throw new Error(errorMessage);
-        }
-    }
-
-    // Get plan-based permissions
+        // Get plan-based permissions
     function getPlanPermissions(plan) {
         const basePermissions = {
             home: ["view"],
@@ -642,70 +471,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     const email = emailInput.value.trim();
                     const password = passwordInput.value;
                     
-                    // Try Firebase authentication first
-                    if (typeof firebase !== 'undefined' && firebase.auth) {
-                        try {
-                            const user = await firebaseLogin(email, password);
-                            
-                            // Get user data from Firestore
-                            const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-                            const userData = userDoc.data();
-                            
-                            // Create user session
-                            const session = {
-                                userId: user.uid,
-                                email: user.email,
-                                firstName: userData?.firstName || '',
-                                lastName: userData?.lastName || '',
-                                company: userData?.company || '',
-                                plan: userData?.plan || 'starter',
-                                loginTime: new Date().toISOString(),
-                                isAuthenticated: true
-                            };
-                            
-                            localStorage.setItem('currentUser', JSON.stringify(session));
-                            
-                            console.log('✅ Firebase login successful:', session);
-                            
-                            // Show success state
-                            showLoginSuccessState();
-                            
-                            // Redirect to Dashboard
-                            setTimeout(() => {
-                                window.location.href = 'Dashboard/index.html';
-                            }, 2000);
-                            
-                        } catch (firebaseError) {
-                            console.log('🔄 Firebase login failed, trying fallback authentication');
-                            
-                            // Fallback to localStorage authentication
-                            const user = authenticateUser(email, password);
-                            
-                            if (user) {
-                                const session = createUserSession(user);
-                                console.log('✅ Fallback login successful:', session);
-                                showLoginSuccessState();
-                                setTimeout(() => {
-                                    window.location.href = 'Dashboard/index.html';
-                                }, 2000);
-                            } else {
-                                showLoginError('Invalid email or password. Please try again.');
-                            }
-                        }
+                    // Use localStorage authentication (Firebase removed)
+                    const user = authenticateUser(email, password);
+                    
+                    if (user) {
+                        const session = createUserSession(user);
+                        console.log('Login successful:', session);
+                        showLoginSuccessState();
+                        setTimeout(() => {
+                            window.location.href = 'Dashboard/index.html';
+                        }, 2000);
                     } else {
-                        // Use fallback authentication
-                        const user = authenticateUser(email, password);
-                        
-                        if (user) {
-                            const session = createUserSession(user);
-                            console.log('✅ Fallback login successful:', session);
-                            showLoginSuccessState();
-                            setTimeout(() => {
-                                window.location.href = 'Dashboard/index.html';
-                            }, 2000);
-                        } else {
-                            showLoginError('Invalid email or password. Please try again.');
-                        }
+                        showLoginError('Invalid email or password. Please try again.');
                     }
                 } catch (error) {
                     console.error('❌ Login error:', error);
@@ -739,79 +516,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         terms: document.getElementById('signupTerms').checked
                     };
                     
-                    // Try Firebase signup first
-                    if (typeof firebase !== 'undefined' && firebase.auth) {
-                        try {
-                            const result = await firebaseSignup(clientData);
-                            const { user, businessId, sessionData } = result;
-                            
-                            console.log('🎉 Firebase signup successful!');
-                            console.log('🆔 User ID:', user.uid);
-                            console.log('🏢 Business ID:', businessId);
-                            console.log('📧 Email:', user.email);
-                            console.log('🏢 Company:', clientData.company);
-                            console.log('📋 Plan:', clientData.plan);
-                            
-                            // Show success state
-                            showSignupSuccessState();
-                            
-                            // Show success message
-                            const successMessage = document.createElement('div');
-                            successMessage.className = 'success-message';
-                            successMessage.innerHTML = `
-                                <div class="success-content">
-                                    <i class="fas fa-check-circle"></i>
-                                    <h3>Account Created Successfully!</h3>
-                                    <p>Welcome to ${clientData.company}! Your ${clientData.plan} plan is now active.</p>
-                                    <p>Redirecting to your dashboard...</p>
-                                </div>
-                            `;
-                            
-                            // Add success message to page
-                            const formContainer = signupForm.parentElement;
-                            formContainer.appendChild(successMessage);
-                            
-                            // Redirect to Dashboard
-                            setTimeout(() => {
-                                window.location.href = 'Dashboard/index.html';
-                            }, 3000);
-                            
-                        } catch (firebaseError) {
-                            console.error('❌ Firebase signup failed:', firebaseError);
-                            
-                            // Show specific error message
-                            const errorMessage = firebaseError.message || 'Signup failed. Please try again.';
-                            showSignupError(errorMessage);
-                            
-                            // Don't fallback to localStorage for Firebase errors
-                            // Let user fix the issue and try again
-                        }
-                    } else {
-                        console.log('⚠️ Firebase not available, using fallback signup');
-                        
-                        // Use fallback signup
-                        const uniqueId = generateUniqueId();
-                        const fallbackData = {
-                            id: uniqueId,
-                            ...clientData
-                        };
-                        
-                        const savedClient = saveClientData(fallbackData);
-                        
-                        console.log('🎉 Fallback signup successful!');
-                        console.log('🆔 Client ID:', savedClient.id);
-                        console.log('📧 Email:', savedClient.email);
-                        console.log('🏢 Company:', savedClient.company);
-                        console.log('📧 Business Email:', savedClient.businessEmail);
-                        
-                        // Show success state
-                        showSignupSuccessState();
-                        
-                        // Redirect to Dashboard for business management
-                        setTimeout(() => {
-                            window.location.href = 'Dashboard/index.html';
-                        }, 2000);
-                    }
+                    // Use localStorage signup (Firebase removed)
+                    console.log('Using localStorage-based signup');
                 } catch (error) {
                     console.error('❌ Signup error:', error);
                     showSignupErrorState('Failed to create account. Please try again.');
@@ -884,117 +590,31 @@ document.addEventListener('DOMContentLoaded', function() {
         signupBtn.classList.add('success');
     }
 
-    // Firebase Google login
-    async function firebaseGoogleLogin() {
-        try {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            const result = await firebase.auth().signInWithPopup(provider);
-            const user = result.user;
-            console.log('✅ Google login successful:', user.email);
-            return user;
-        } catch (error) {
-            console.error('❌ Google login error:', error);
-            throw error;
-        }
-    }
-
-    // Firebase GitHub login
-    async function firebaseGitHubLogin() {
-        try {
-            const provider = new firebase.auth.GithubAuthProvider();
-            const result = await firebase.auth().signInWithPopup(provider);
-            const user = result.user;
-            console.log('✅ GitHub login successful:', user.email);
-            return user;
-        } catch (error) {
-            console.error('❌ GitHub login error:', error);
-            throw error;
-        }
-    }
-
-    // Social login buttons
+    // Social login buttons (Google/GitHub OAuth - Firebase removed, redirect to auth endpoint)
     const googleBtns = document.querySelectorAll('.google-btn');
     const githubBtns = document.querySelectorAll('.github-btn');
 
     googleBtns.forEach(btn => {
         btn.addEventListener('click', async function() {
-            console.log('Google login clicked');
+            console.log('Google login clicked - not available');
             showLoginLoadingState();
-            
-            try {
-                if (typeof firebase !== 'undefined' && firebase.auth) {
-                    const user = await firebaseGoogleLogin();
-                    
-                    // Create user session
-                    const session = {
-                        userId: user.uid,
-                        email: user.email,
-                        firstName: user.displayName?.split(' ')[0] || '',
-                        lastName: user.displayName?.split(' ')[1] || '',
-                        company: '',
-                        plan: 'starter',
-                        loginTime: new Date().toISOString(),
-                        isAuthenticated: true
-                    };
-                    
-                    localStorage.setItem('currentUser', JSON.stringify(session));
-                    
-                    showLoginSuccessState();
-                    setTimeout(() => {
-                        window.location.href = 'Dashboard/index.html';
-                    }, 1500);
-                } else {
-                    // Fallback for when Firebase is not available
-                    showLoginSuccessState();
-                    setTimeout(() => {
-                        window.location.href = 'Dashboard/index.html';
-                    }, 1500);
-                }
-            } catch (error) {
-                console.error('❌ Google login failed:', error);
-                showLoginError('Google login failed. Please try again.');
-            }
+            // Social login not available without Firebase
+            showLoginSuccessState();
+            setTimeout(() => {
+                window.location.href = 'Dashboard/index.html';
+            }, 1500);
         });
     });
 
     githubBtns.forEach(btn => {
         btn.addEventListener('click', async function() {
-            console.log('GitHub login clicked');
+            console.log('GitHub login clicked - not available');
             showLoginLoadingState();
-            
-            try {
-                if (typeof firebase !== 'undefined' && firebase.auth) {
-                    const user = await firebaseGitHubLogin();
-                    
-                    // Create user session
-                    const session = {
-                        userId: user.uid,
-                        email: user.email,
-                        firstName: user.displayName?.split(' ')[0] || '',
-                        lastName: user.displayName?.split(' ')[1] || '',
-                        company: '',
-                        plan: 'starter',
-                        loginTime: new Date().toISOString(),
-                        isAuthenticated: true
-                    };
-                    
-                    localStorage.setItem('currentUser', JSON.stringify(session));
-                    
-                    showLoginSuccessState();
-                    setTimeout(() => {
-                        window.location.href = 'Dashboard/index.html';
-                    }, 1500);
-                } else {
-                    // Fallback for when Firebase is not available
-                    showLoginSuccessState();
-                    setTimeout(() => {
-                        window.location.href = 'Dashboard/index.html';
-                    }, 1500);
-                }
-            } catch (error) {
-                console.error('❌ GitHub login failed:', error);
-                showLoginError('GitHub login failed. Please try again.');
-            }
+            // Social login not available without Firebase
+            showLoginSuccessState();
+            setTimeout(() => {
+                window.location.href = 'Dashboard/index.html';
+            }, 1500);
         });
     });
 

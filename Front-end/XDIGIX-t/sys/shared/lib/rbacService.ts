@@ -1,9 +1,6 @@
 /**
- * RBAC Firestore services (shared)
- *
- * By default uses the Firebase SDK directly.  Call `initRbacApi(api)` early
- * in the app to inject a backend-adapter-compatible API so all queries go
- * through the Node backend instead of hitting Firebase Firestore directly.
+ * RBAC services (shared) - backend-adapter only.
+ * Call `initRbacApi(api, db)` before using any service.
  */
 import type { User, Role, Permission } from '../types/rbac';
 
@@ -23,28 +20,18 @@ interface FirestoreLikeApi {
 let _api: FirestoreLikeApi | null = null;
 let _db: unknown = null;
 
-/** Inject a backend-adapter–compatible API so queries go through the backend. */
+/** Inject a backend-adapter-compatible API so queries go through the backend. */
 export function initRbacApi(api: FirestoreLikeApi, db?: unknown) {
   _api = api;
   _db = db ?? {};
 }
 
-async function lazyFirebase(): Promise<{ api: FirestoreLikeApi; db: unknown }> {
-  if (_api) return { api: _api, db: _db };
-  const { getApps } = await import('firebase/app');
-  const fb = await import('firebase/firestore');
-  const app = getApps()[0];
-  return {
-    api: {
-      collection: fb.collection,
-      query: fb.query,
-      where: fb.where,
-      getDocs: fb.getDocs,
-      getDoc: fb.getDoc,
-      doc: fb.doc,
-    },
-    db: app ? fb.getFirestore(app) : null,
-  };
+function getApi(): { api: FirestoreLikeApi; db: unknown } {
+  if (!_api) {
+    console.warn('[rbacService] Backend API not initialized. Call initRbacApi() first.');
+    return { api: null as unknown as FirestoreLikeApi, db: null };
+  }
+  return { api: _api, db: _db };
 }
 
 /* ------------------------------------------------------------------ */
@@ -52,17 +39,17 @@ async function lazyFirebase(): Promise<{ api: FirestoreLikeApi; db: unknown }> {
 /* ------------------------------------------------------------------ */
 
 export const userService = {
-  async getByFirebaseUid(uid: string): Promise<User | null> {
-    const { api, db } = await lazyFirebase();
+  async getById(uid: string): Promise<User | null> {
+    const { api, db } = getApi();
     if (!db) return null;
-    const q = api.query(api.collection(db, 'users'), api.where('firebase_uid', '==', uid));
+    const q = api.query(api.collection(db, 'users'), api.where('_id', '==', uid));
     const snap = await api.getDocs(q);
     const d = snap.docs[0];
     if (!d) return null;
     return { id: d.id, ...d.data() } as User;
   },
   async getByEmail(email: string): Promise<User | null> {
-    const { api, db } = await lazyFirebase();
+    const { api, db } = getApi();
     if (!db) return null;
     const q = api.query(api.collection(db, 'users'), api.where('email', '==', email));
     const snap = await api.getDocs(q);
@@ -71,14 +58,14 @@ export const userService = {
     return { id: d.id, ...d.data() } as User;
   },
   async getByTenantId(tenantId: string): Promise<User[]> {
-    const { api, db } = await lazyFirebase();
+    const { api, db } = getApi();
     if (!db) return [];
     const q = api.query(api.collection(db, 'users'), api.where('tenant_id', '==', tenantId));
     const snap = await api.getDocs(q);
     return snap.docs.map((d) => ({ id: d.id, ...d.data() } as User));
   },
   async getSuperAdminUsers(): Promise<User[]> {
-    const { api, db } = await lazyFirebase();
+    const { api, db } = getApi();
     if (!db) return [];
     const q = api.query(api.collection(db, 'users'), api.where('type', '==', 'super_admin'));
     const snap = await api.getDocs(q);
@@ -88,13 +75,13 @@ export const userService = {
 
 export const roleService = {
   async getAll(): Promise<Role[]> {
-    const { api, db } = await lazyFirebase();
+    const { api, db } = getApi();
     if (!db) return [];
     const snap = await api.getDocs(api.collection(db, 'roles'));
     return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Role));
   },
   async getByTenantId(tenantId: string | null): Promise<Role[]> {
-    const { api, db } = await lazyFirebase();
+    const { api, db } = getApi();
     if (!db) return [];
     const q = tenantId
       ? api.query(api.collection(db, 'roles'), api.where('tenant_id', '==', tenantId))
@@ -106,7 +93,7 @@ export const roleService = {
 
 export const permissionService = {
   async getAll(): Promise<Permission[]> {
-    const { api, db } = await lazyFirebase();
+    const { api, db } = getApi();
     if (!db) return [];
     const snap = await api.getDocs(api.collection(db, 'permissions'));
     return snap.docs.map((d) => {
@@ -118,7 +105,7 @@ export const permissionService = {
 
 export const rolePermissionService = {
   async getPermissionKeysByRoleId(roleId: string): Promise<string[]> {
-    const { api, db } = await lazyFirebase();
+    const { api, db } = getApi();
     if (!db) return [];
     const q = api.query(api.collection(db, 'role_permissions'), api.where('role_id', '==', roleId));
     const snap = await api.getDocs(q);
@@ -131,3 +118,4 @@ export const rolePermissionService = {
     return keys;
   }
 };
+

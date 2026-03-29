@@ -16,7 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useFinanceScope } from '../../hooks/useFinanceScope';
 import { trackPageLoad } from '../../lib/performance';
-import { collection, db, doc, getDocs, serverTimestamp, writeBatch } from '../../lib/firebase';
+import { collection, db, doc, getDocs, serverTimestamp, writeBatch } from '../../lib/backend';
 
 type StepKey =
   | 'products'

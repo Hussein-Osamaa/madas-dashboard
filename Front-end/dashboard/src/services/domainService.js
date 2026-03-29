@@ -1,15 +1,4 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  doc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase/config";
+import { db } from "../api/config";
 
 /**
  * Get custom domains for a user and site
@@ -46,7 +35,7 @@ export const addCustomDomain = async (domainData) => {
 
   try {
     // Generate verification token
-    const verificationToken = `firebase-verification-${Math.random()
+    const verificationToken = `verification-token-${Math.random()
       .toString(36)
       .substr(2, 9)}`;
 

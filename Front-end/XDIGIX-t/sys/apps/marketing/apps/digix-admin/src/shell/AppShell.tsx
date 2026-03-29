@@ -6,7 +6,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { signInAdmin } from '../lib/firebase';
+import { signInAdmin } from '../lib/backend';
 
 function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -79,7 +79,7 @@ import Sidebar from '../components/layout/Sidebar';
 
 const AppShell = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const { user: firebaseUser, loading: authLoading, error: authError } = useAuth();
+  const { user: currentUser, loading: authLoading, error: authError } = useAuth();
   const { user: rbacUser, loading: rbacLoading, hasPermission } = useRBAC();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
@@ -137,7 +137,7 @@ const AppShell = () => {
     );
   }
 
-  if (!firebaseUser) {
+  if (!currentUser) {
     return <SignInScreen />;
   }
 

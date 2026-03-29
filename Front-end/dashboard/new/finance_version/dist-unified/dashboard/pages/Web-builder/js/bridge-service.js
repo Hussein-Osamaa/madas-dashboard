@@ -19,8 +19,6 @@ class BridgeService {
             // Initialize data storage
             this.setupDataStorage();
             
-            // Initialize Firebase connection
-            this.setupFirebaseConnection();
             
             this.isInitialized = true;
             console.log('✅ Bridge Service initialized successfully');
@@ -77,17 +75,8 @@ class BridgeService {
         });
     }
 
-    setupFirebaseConnection() {
-        // Check if Firebase is available
-        if (typeof firebase !== 'undefined') {
-            this.firebase = firebase;
-            this.auth = firebase.auth();
-            this.db = firebase.firestore();
-            this.functions = firebase.functions();
-            console.log('✅ Firebase connection established');
-        } else {
-            console.warn('⚠️ Firebase not available, using local storage');
-        }
+    setupConnection() {
+        // Using localStorage only
     }
 
     // Data management methods
@@ -113,46 +102,13 @@ class BridgeService {
         this.eventBus.off(event, callback);
     }
 
-    // Firebase integration methods
-    async saveToFirebase(collection, documentId, data) {
-        try {
-            if (!this.firebase) {
-                throw new Error('Firebase not available');
-            }
-
-            const docRef = this.db.collection(collection).doc(documentId);
-            await docRef.set(data, { merge: true });
-            
-            this.emit('dataSaved', { collection, documentId, data });
-            return { success: true };
-        } catch (error) {
-            console.error('Error saving to Firebase:', error);
-            this.emit('saveError', error);
-            return { success: false, error: error.message };
-        }
+    // Remote storage methods (stub - not implemented)
+    async saveToRemote(_collection, _documentId, _data) {
+        return { success: false, error: 'Remote storage not configured' };
     }
 
-    async loadFromFirebase(collection, documentId) {
-        try {
-            if (!this.firebase) {
-                throw new Error('Firebase not available');
-            }
-
-            const docRef = this.db.collection(collection).doc(documentId);
-            const doc = await docRef.get();
-            
-            if (doc.exists) {
-                const data = doc.data();
-                this.emit('dataLoaded', { collection, documentId, data });
-                return { success: true, data };
-            } else {
-                return { success: false, error: 'Document not found' };
-            }
-        } catch (error) {
-            console.error('Error loading from Firebase:', error);
-            this.emit('loadError', error);
-            return { success: false, error: error.message };
-        }
+    async loadFromRemote(_collection, _documentId) {
+        return { success: false, error: 'Remote storage not configured' };
     }
 
     // Local storage methods
@@ -185,27 +141,14 @@ class BridgeService {
 
     // Authentication methods
     isAuthenticated() {
-        try {
-            if (this.firebase && this.auth) {
-                return this.auth.currentUser !== null;
-            }
-            return false;
-        } catch (error) {
-            console.warn('Authentication check failed:', error);
-            return false;
-        }
+        // Check localStorage token
+        return !!localStorage.getItem('authToken');
     }
 
     async getCurrentUser() {
-        try {
-            if (this.firebase && this.auth) {
-                return this.auth.currentUser;
-            }
-            return null;
-        } catch (error) {
-            console.warn('Get current user failed:', error);
-            return null;
-        }
+        // Return user from localStorage session
+        const session = localStorage.getItem('currentUser');
+        return session ? JSON.parse(session) : null;
     }
 
     // Canvas data collection
@@ -264,15 +207,8 @@ class BridgeService {
                 status: 'published'
             };
 
-            // Save to Firebase
+            // Save to localStorage
             const siteId = siteData.id || this.generateId();
-            const saveResult = await this.saveToFirebase('published_sites', siteId, publishData);
-            
-            if (!saveResult.success) {
-                throw new Error('Failed to save to Firebase: ' + saveResult.error);
-            }
-
-            // Also save to localStorage as backup
             this.saveToLocalStorage(`published_site_${siteId}`, publishData);
 
             // Generate public URL
@@ -304,15 +240,15 @@ class BridgeService {
                 throw new Error('No authenticated user found');
             }
 
-            // Update site status in Firebase
-            const updateResult = await this.saveToFirebase('published_sites', siteId, {
+            // Update site status in localStorage
+            const updateResult = await this.saveToRemote('published_sites', siteId, {
                 published: false,
                 unpublishedAt: new Date().toISOString(),
                 status: 'draft'
             });
 
             if (!updateResult.success) {
-                throw new Error('Failed to update Firebase: ' + updateResult.error);
+                throw new Error('Failed to update site: ' + updateResult.error);
             }
 
             // Update localStorage
@@ -345,26 +281,7 @@ class BridgeService {
                 return { success: false, error: 'No authenticated user found' };
             }
 
-            // Try to load from Firebase first
-            if (this.firebase && this.db) {
-                try {
-                    const snapshot = await this.db.collection('published_sites')
-                        .where('publishedBy', '==', currentUser.uid)
-                        .where('published', '==', true)
-                        .get();
-                    
-                    const sites = [];
-                    snapshot.forEach(doc => {
-                        sites.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    return { success: true, sites };
-                } catch (firebaseError) {
-                    console.warn('Firebase query failed, falling back to localStorage:', firebaseError);
-                }
-            }
-
-            // Fallback to localStorage
+            // Load from localStorage
             const sites = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);

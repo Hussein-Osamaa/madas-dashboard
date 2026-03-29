@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
-import { collection, db, onSnapshot, orderBy, query } from '../../lib/firebase';
+import { collection, db, onSnapshot, orderBy, query } from '../../lib/backend';
 import { useBusiness } from '../../contexts/BusinessContext';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 import { useScanLogs } from '../../hooks/useScanLogs';

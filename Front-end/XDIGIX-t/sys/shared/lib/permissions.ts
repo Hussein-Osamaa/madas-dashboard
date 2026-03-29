@@ -1,8 +1,6 @@
 /**
- * Permission helpers (shared)
- *
- * Uses the backend-adapter API when `initPermissionsApi` has been called,
- * otherwise falls back to direct Firebase Firestore SDK.
+ * Permission helpers (shared) - backend-adapter only.
+ * Call `initPermissionsApi(api, db)` before using any function.
  */
 import type { User, PermissionCheckResult } from '../types/rbac';
 
@@ -20,26 +18,18 @@ interface FirestoreLikeApi {
 let _api: FirestoreLikeApi | null = null;
 let _db: unknown = null;
 
-/** Inject a backend-adapter–compatible API so queries go through the backend. */
+/** Inject a backend-adapter-compatible API so queries go through the backend. */
 export function initPermissionsApi(api: FirestoreLikeApi, db?: unknown) {
   _api = api;
   _db = db ?? {};
 }
 
-async function lazyFirebase(): Promise<{ api: FirestoreLikeApi; db: unknown }> {
-  if (_api) return { api: _api, db: _db };
-  const { getApps } = await import('firebase/app');
-  const fb = await import('firebase/firestore');
-  const app = getApps()[0];
-  return {
-    api: {
-      collection: fb.collection,
-      query: fb.query,
-      where: fb.where,
-      getDocs: fb.getDocs,
-    },
-    db: app ? fb.getFirestore(app) : null,
-  };
+function getApi(): { api: FirestoreLikeApi; db: unknown } {
+  if (!_api) {
+    console.warn('[permissions] Backend API not initialized. Call initPermissionsApi() first.');
+    return { api: null as unknown as FirestoreLikeApi, db: null };
+  }
+  return { api: _api, db: _db };
 }
 
 /* ------------------------------------------------------------------ */
@@ -47,7 +37,7 @@ async function lazyFirebase(): Promise<{ api: FirestoreLikeApi; db: unknown }> {
 /* ------------------------------------------------------------------ */
 
 export async function getUserPermissions(roleId: string): Promise<string[]> {
-  const { api, db } = await lazyFirebase();
+  const { api, db } = getApi();
   if (!db) return [];
   try {
     const snap = await api.getDocs(

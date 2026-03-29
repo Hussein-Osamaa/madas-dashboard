@@ -8,7 +8,7 @@ import {
   query,
   updateDoc,
   where
-} from '../lib/firebase';
+} from '../lib/backend';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type DashboardTask = {

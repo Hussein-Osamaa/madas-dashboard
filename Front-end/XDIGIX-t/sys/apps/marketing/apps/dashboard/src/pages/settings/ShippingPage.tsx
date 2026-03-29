@@ -3,7 +3,7 @@ import { useBusiness } from '../../contexts/BusinessContext';
 import { useRBAC } from '../../contexts/RBACContext';
 import PermissionGuard from '../../components/rbac/PermissionGuard';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
-import { doc, getDoc, setDoc, db } from '../../lib/firebase';
+import { doc, getDoc, setDoc, db } from '../../lib/backend';
 
 type ShippingTab = 'bosta' | 'aramex' | 'dhl' | 'fedex' | 'ups' | 'local' | 'regions';
 

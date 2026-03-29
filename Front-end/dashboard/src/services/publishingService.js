@@ -1,15 +1,4 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  doc,
-  setDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase/config";
+import { db } from "../api/config";
 
 /**
  * Publish a site by copying draft data to published data

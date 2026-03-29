@@ -8,7 +8,6 @@ const User = require('../src/models/User');
 const Client = require('../src/models/Client');
 
 const EMAIL = 'hesainyt@gmail.com';
-const FIREBASE_UID = '0vgenyo12oOdU8tBwaBcYgk90d02'; // for reference
 const CLIENT_NAME_PATTERN = /madas/i;
 
 async function linkUser() {
@@ -19,7 +18,7 @@ async function linkUser() {
     const user = await User.findOne({ email: EMAIL.toLowerCase() });
     if (!user) {
       console.log('User not found:', EMAIL);
-      console.log('Run the migration first: npm run migrate:firebase');
+      console.log('Create the user first via the signup API.');
       process.exit(1);
     }
 

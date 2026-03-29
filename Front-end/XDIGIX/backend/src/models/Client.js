@@ -42,11 +42,6 @@ const clientSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    firebaseId: {
-      type: String,
-      trim: true,
-      // Original Firebase/Firestore business ID - used for support handoff from admin
-    },
     // System access - controlled from digix-admin (dashboard, finance, fulfillment, shipping)
     systemAccess: {
       dashboard: { type: Boolean, default: true },
@@ -69,6 +64,5 @@ const clientSchema = new mongoose.Schema(
 clientSchema.index({ brandName: 1 });
 clientSchema.index({ 'owner.email': 1 });
 clientSchema.index({ active: 1 });
-clientSchema.index({ firebaseId: 1 });
 
 module.exports = mongoose.model('Client', clientSchema);

@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import PermissionGuard from '../components/rbac/PermissionGuard';
 import { useRBAC } from '../contexts/RBACContext';
-import { collection, db, getDocs, doc, updateDoc, query, orderBy, addDoc, serverTimestamp, getDoc } from '../lib/firebase';
+import { collection, db, getDocs, doc, updateDoc, query, orderBy, addDoc, serverTimestamp, getDoc } from '../lib/backend';
 import {
   Clock,
   Search,

@@ -13,11 +13,6 @@
     "build:finance": "cd apps/marketing/apps/finance && npm run build",
     "build:admin": "cd apps/marketing/apps/digix-admin && npm run build",
     "build:fulfillment": "cd apps/marketing/apps/fulfillment && npm run build",
-    "deploy": "npm run build && firebase deploy",
-    "deploy:hosting": "npm run build && firebase deploy --only hosting:marketing,hosting:sites",
-    "deploy:functions": "firebase deploy --only functions",
-    "deploy:firestore": "firebase deploy --only firestore",
-    "deploy:all": "npm run build && firebase deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

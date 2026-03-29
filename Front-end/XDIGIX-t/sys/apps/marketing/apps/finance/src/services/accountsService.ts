@@ -9,7 +9,7 @@ import {
   Timestamp,
   where,
   db
-} from '../lib/firebase';
+} from '../lib/backend';
 import dayjs from 'dayjs';
 
 type AccountDoc = {

@@ -5,7 +5,7 @@ import { useDarkMode } from '../../contexts/DarkModeContext';
 import { useRBAC } from '../../contexts/RBACContext';
 import PermissionGuard from '../../components/rbac/PermissionGuard';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
-import { collection, db, doc, getDocs, addDoc, updateDoc, deleteDoc, query, where, getDoc } from '../../lib/firebase';
+import { collection, db, doc, getDocs, addDoc, updateDoc, deleteDoc, query, where, getDoc } from '../../lib/backend';
 import { getPlanPermissions } from '@shared/lib/planPermissions';
 import { useNavigate } from 'react-router-dom';
 

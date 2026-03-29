@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useFinanceScope } from '../../hooks/useFinanceScope';
-import { collection, db, getDocs, query, orderBy, where, Timestamp } from '../../lib/firebase';
+import { collection, db, getDocs, query, orderBy, where, Timestamp } from '../../lib/backend';
 import { format } from 'date-fns';
 
 function toValidDate(v: unknown): Date | null {

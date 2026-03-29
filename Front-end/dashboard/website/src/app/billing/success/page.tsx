@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/backend';
 import { SubscriptionService } from '@/modules/billing/subscriptionService';
 
 export default function BillingSuccessPage() {

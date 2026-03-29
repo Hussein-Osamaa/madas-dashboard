@@ -9,7 +9,7 @@ import {
   Timestamp,
   where,
   db
-} from '../../lib/firebase';
+} from '../../lib/backend';
 
 type AccountDoc = {
   name: string;

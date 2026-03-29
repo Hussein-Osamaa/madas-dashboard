@@ -235,9 +235,9 @@ class ProductionUtils {
      */
     isAuthenticated() {
         try {
-            return window.firebase && 
-                   window.firebase.auth && 
-                   window.firebase.auth.currentUser !== null;
+            return false && 
+                   false && 
+                   false;
         } catch (error) {
             this.devError('Authentication check failed:', error);
             return false;
@@ -250,7 +250,7 @@ class ProductionUtils {
      */
     getCurrentUser() {
         try {
-            return window.firebase?.auth?.currentUser || null;
+            return null || null;
         } catch (error) {
             this.devError('Get current user failed:', error);
             return null;

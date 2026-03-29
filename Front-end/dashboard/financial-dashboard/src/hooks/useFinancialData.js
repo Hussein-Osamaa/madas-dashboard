@@ -6,7 +6,7 @@ import {
   getExpenses,
   getInventory,
   getCustomers,
-} from "../firebase/collections";
+} from "../api/collections";
 import { calculateKPIs, getDateRange } from "../utils/calculations";
 
 export const useFinancialData = (period = "last30days") => {

@@ -13,11 +13,10 @@ import { check, sleep } from 'k6';
 const targetUsers = parseInt(__ENV.TARGET_USERS || '50');
 const duration = __ENV.DURATION || '30m';
 const rampDuration = __ENV.RAMP_DURATION || '5m';
-const baseUrl = __ENV.BASE_URL || 'https://madas-store.web.app';
-const testEmail = __ENV.TEST_USER_EMAIL || 'hesainyt@gmail.com';
-const testPassword = __ENV.TEST_USER_PASSWORD || '12341234';
-const firebaseApiKey = __ENV.FIREBASE_API_KEY || 'AIzaSyC-ls1TrvSkrw71KqmB_kHYgPoj0H550a8';
-const projectId = __ENV.FIREBASE_PROJECT_ID || 'madas-store';
+const baseUrl = __ENV.BASE_URL || 'https://madas-store.vercel.app';
+const testEmail = __ENV.TEST_USER_EMAIL || 'test@example.com';
+const testPassword = __ENV.TEST_USER_PASSWORD || 'testpassword';
+const apiUrl = __ENV.API_URL || `${baseUrl}/api`;
 
 export const options = {
   stages: [
@@ -55,27 +54,26 @@ export function setup() {
   console.log('Generating continuous traffic on MADAS Dashboard');
   console.log('========================================\n');
   
-  // Authenticate and get token
-  const authUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`;
+  // Authenticate and get token via backend API
+  const authEndpoint = `${apiUrl}/auth/login`;
   const authPayload = JSON.stringify({
     email: testEmail,
     password: testPassword,
-    returnSecureToken: true,
   });
-  
-  const authResponse = http.post(authUrl, authPayload, {
+
+  const authResponse = http.post(authEndpoint, authPayload, {
     headers: { 'Content-Type': 'application/json' },
   });
-  
+
   if (authResponse.status === 200) {
     const authData = JSON.parse(authResponse.body);
-    cachedToken = authData.idToken;
+    cachedToken = authData.token || authData.accessToken;
     // Set expiry to 55 minutes (tokens expire in 1 hour)
     tokenExpiry = Date.now() + (55 * 60 * 1000);
-    console.log('✅ Authentication successful\n');
+    console.log('Authentication successful\n');
     return { token: cachedToken };
   } else {
-    console.error('❌ Authentication failed:', authResponse.status, authResponse.body);
+    console.error('Authentication failed:', authResponse.status, authResponse.body);
     throw new Error('Failed to authenticate test user');
   }
 }

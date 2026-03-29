@@ -31,7 +31,7 @@ import {
   type PartnerSummary
 } from '../../services/finance/profitSettlementService';
 import { fetchExpenses } from '../../services/finance/expensesService';
-import { collection, getDocs, query, where, orderBy, Timestamp, db } from '../../lib/firebase';
+import { collection, getDocs, query, where, orderBy, Timestamp, db } from '../../lib/backend';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 

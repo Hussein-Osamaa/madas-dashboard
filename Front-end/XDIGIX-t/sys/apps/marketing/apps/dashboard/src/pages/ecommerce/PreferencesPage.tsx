@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useBusiness } from '../../contexts/BusinessContext';
-import { doc, db, getDoc, getDocs, updateDoc, collection, query, orderBy, storage, ref, uploadBytes, getDownloadURL } from '../../lib/firebase';
+import { doc, db, getDoc, getDocs, updateDoc, collection, query, orderBy, storage, ref, uploadBytes, getDownloadURL } from '../../lib/backend';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
 
 /* ── Types ──────────────────────────────────────────────────────── */

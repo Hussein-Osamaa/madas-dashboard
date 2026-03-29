@@ -9,7 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp
-} from '../lib/firebase';
+} from '../lib/backend';
 
 export type ScanLogType = 'order' | 'return' | 'status_update';
 

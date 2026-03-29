@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { doc, getDoc, db } from '../../lib/firebase';
+import { doc, getDoc, db } from '../../lib/backend';
 import { useWebsiteSettings } from '../../hooks/useWebsiteSettings';
 import { useSiteSections } from '../../hooks/useSiteSections';
 import FullScreenLoader from '../../components/common/FullScreenLoader';
