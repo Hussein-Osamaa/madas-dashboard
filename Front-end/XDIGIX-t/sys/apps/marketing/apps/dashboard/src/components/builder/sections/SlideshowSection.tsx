@@ -164,24 +164,42 @@ const SlideshowSection = ({ data, style, isSelected = false, onEditBlock, onDele
         <BlockWrapper dataKey="slides" blockIndex={i} blockType="slide" isSelected={isSelected} onEdit={onEditBlock ?? (() => {})} onDelete={onDeleteBlock ?? (() => {})}>
           <div className={`max-w-2xl ${textAlign}`}>
             {slide.heading && (
-              <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4">
+              <h2
+                className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4"
+                style={{ color: 'var(--scheme-text, #fff)' }}
+              >
                 {slide.heading}
               </h2>
             )}
             {slide.subheading && (
-              <p className="text-base md:text-lg text-white/80 mb-8">
+              <p
+                className="text-base md:text-lg mb-8"
+                style={{ color: 'var(--scheme-text, #fff)', opacity: 0.85 }}
+              >
                 {slide.subheading}
               </p>
             )}
             {slide.button_label && (
               <a
                 href={slide.button_link || '#'}
-                className={`inline-block text-sm font-medium tracking-wider uppercase transition-all duration-300 ${
-                  slide.button_style === 'outline'
-                    ? 'border-2 border-white text-white hover:bg-white hover:text-black'
-                    : 'bg-white text-black hover:bg-white/90'
-                }`}
-                style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)' }}
+                className="inline-block text-sm font-medium tracking-wider uppercase transition-all duration-300"
+                style={slide.button_style === 'outline'
+                  ? {
+                      padding: 'var(--btn-padding, 0.75rem 1.5rem)',
+                      borderRadius: 'var(--btn-radius, 8px)',
+                      boxShadow: 'var(--btn-shadow, none)',
+                      border: '2px solid var(--scheme-btn-bg, #fff)',
+                      color: 'var(--scheme-btn-bg, #fff)',
+                      backgroundColor: 'transparent',
+                    }
+                  : {
+                      padding: 'var(--btn-padding, 0.75rem 1.5rem)',
+                      borderRadius: 'var(--btn-radius, 8px)',
+                      boxShadow: 'var(--btn-shadow, none)',
+                      backgroundColor: 'var(--scheme-btn-bg, #fff)',
+                      color: 'var(--scheme-btn-label, #000)',
+                    }
+                }
               >
                 {slide.button_label}
               </a>
