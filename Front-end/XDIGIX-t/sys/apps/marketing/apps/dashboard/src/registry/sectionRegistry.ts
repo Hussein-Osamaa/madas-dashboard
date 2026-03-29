@@ -1257,7 +1257,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       columns_desktop: 4,
       show_view_all: true,
       image_ratio: 'adapt',
-      show_vendor: false,
       show_rating: false,
       quick_add: 'none',
       selectedProducts: [
@@ -1300,7 +1299,6 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
         ],
         defaultValue: 'adapt',
       },
-      show_vendor: { type: 'toggle', label: 'Show vendor', defaultValue: false },
       show_rating: { type: 'toggle', label: 'Show product rating', defaultValue: false },
       quick_add: {
         type: 'select',

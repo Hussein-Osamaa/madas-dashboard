@@ -12,14 +12,18 @@ const ProductsSection = ({ data, style }: Props) => {
   const headingSize = d.heading_size ?? 'h1';
   const columnsDesktop = d.columns_desktop ?? d.columns ?? 4;
   const showViewAll = d.show_view_all ?? true;
-  const imageRatio = d.image_ratio ?? 'adapt';
-  const showVendor = d.show_vendor ?? d.showVendor ?? false;
-  const showRating = d.show_rating ?? false;
   const showPrice = d.showPrice ?? true;
   const showAddToCart = d.showAddToCart ?? true;
   const paddingTop = d.padding_top ?? 36;
   const paddingBottom = d.padding_bottom ?? 36;
-  const layout = d.layout ?? 'grid'; // 'grid' | 'carousel'
+  const layout = d.layout ?? 'grid';
+
+  // Read from THEME settings (Product cards panel)
+  const cardStyle = theme.productCardStyle || 'standard';
+  const imageRatio = d.image_ratio ?? theme.productImageRatio ?? 'adapt';
+  const textAlign = theme.productTextAlign || 'left';
+  const showVendor = theme.productShowVendor ?? false;
+  const showRating = d.show_rating ?? false;
 
   const products = d.selectedProducts ?? [];
 
@@ -55,7 +59,6 @@ const ProductsSection = ({ data, style }: Props) => {
     { id: '4', name: 'Designer Sunglasses', price: 124.99, image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&h=800&fit=crop' },
   ];
 
-  // If a collection is selected but products are loading/empty, show a message
   const hasCollection = !!d.collection;
   const displayProducts = products.length > 0 ? products : (hasCollection ? [] : defaultProducts);
 
@@ -92,23 +95,37 @@ const ProductsSection = ({ data, style }: Props) => {
     el.scrollBy({ left: dir * (cardW + 24), behavior: 'smooth' });
   };
 
+  // Card style classes
+  const isCard = cardStyle === 'card';
+  const isMinimal = cardStyle === 'minimal';
+
+  const cardWrapperCls = isCard
+    ? 'bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow'
+    : '';
+
+  const imgContainerCls = isCard
+    ? `overflow-hidden ${ratioMap[imageRatio] || 'aspect-[3/4]'}`
+    : `bg-[#F3F3F3] overflow-hidden mb-3 rounded-[var(--btn-radius,8px)] ${ratioMap[imageRatio] || 'aspect-[3/4]'}`;
+
+  const bodyPaddingCls = isCard ? 'p-3' : '';
+
   const renderProductCard = (product: any, index: number) => (
     <a
       key={product.id || index}
       href="#"
-      className={`group block ${layout === 'carousel' ? 'flex-shrink-0 snap-start' : ''}`}
+      className={`group block ${cardWrapperCls} ${layout === 'carousel' ? 'flex-shrink-0 snap-start' : ''}`}
       style={layout === 'carousel' ? { width: `calc((100% - ${(columnsDesktop - 1) * 24}px) / ${columnsDesktop})`, minWidth: '200px' } : undefined}
     >
       {/* Product image */}
-      <div className={`bg-[#F3F3F3] overflow-hidden mb-3 rounded-[var(--btn-radius,8px)] ${ratioMap[imageRatio] || 'aspect-[3/4]'}`}>
+      <div className={imgContainerCls}>
         <img src={product.image || product.images?.[0] || defaultProducts[index % defaultProducts.length]?.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
       </div>
       {/* Product info */}
-      <div className="space-y-1">
-        {showVendor && <p className="text-xs uppercase tracking-wider" style={{ opacity: 0.5 }}>Vendor</p>}
+      <div className={`space-y-1 ${bodyPaddingCls}`} style={{ textAlign }}>
+        {showVendor && product.vendor && <p className="text-xs uppercase tracking-wider" style={{ opacity: 0.5 }}>{product.vendor}</p>}
         <h3 className="text-sm group-hover:underline leading-snug">{product.name}</h3>
         {showRating && (
-          <div className="flex gap-0.5">
+          <div className="flex gap-0.5" style={{ justifyContent: textAlign === 'center' ? 'center' : 'flex-start' }}>
             {[1,2,3,4,5].map(i => <span key={i} className="text-xs" style={{ opacity: 0.3 }}>&#9733;</span>)}
             <span className="text-xs ml-1" style={{ opacity: 0.5 }}>No reviews</span>
           </div>
@@ -126,11 +143,23 @@ const ProductsSection = ({ data, style }: Props) => {
           </p>
         )}
         {showAddToCart && (
-          <button
-            className="mt-2 w-full border text-xs font-medium tracking-wider uppercase transition-colors"
-            style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)' }}>
-            Add to cart
-          </button>
+          isCard ? (
+            <button
+              className="mt-2 w-full text-xs font-medium tracking-wider uppercase transition-colors text-white"
+              style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', background: 'var(--c-primary, #121212)' }}>
+              Add to cart
+            </button>
+          ) : isMinimal ? (
+            <button className="mt-1 text-sm font-semibold underline" style={{ color: 'var(--c-primary, #121212)' }}>
+              Add to cart
+            </button>
+          ) : (
+            <button
+              className="mt-2 w-full border text-xs font-medium tracking-wider uppercase transition-colors"
+              style={{ padding: 'var(--btn-padding, 0.75rem 1.5rem)', borderRadius: 'var(--btn-radius, 8px)', boxShadow: 'var(--btn-shadow, none)', borderColor: 'var(--scheme-outline-btn, #121212)', color: 'var(--scheme-outline-btn, #121212)' }}>
+              Add to cart
+            </button>
+          )
         )}
       </div>
     </a>

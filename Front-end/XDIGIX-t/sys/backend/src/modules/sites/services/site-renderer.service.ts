@@ -803,8 +803,8 @@ function renderProducts(c: Record<string, unknown>): string {
   const imgRatioStyle = sectionImgRatio && sectionImgRatio !== 'adapt'
     ? ` style="--product-img-ratio:${sectionImgRatio === 'square' ? '1' : sectionImgRatio === 'portrait' ? '2/3' : 'auto'}"`
     : '';
-  // Show/hide options from section data, fallback to theme
-  const showVendor = c.show_vendor ?? _themeData.productShowVendor ?? false;
+  // Show/hide options from theme (vendor is theme-only)
+  const showVendor = _themeData.productShowVendor ?? false;
   const showRating = c.show_rating ?? false;
   const showPrice = c.showPrice !== false;
   const showAddToCart = c.showAddToCart !== false;
