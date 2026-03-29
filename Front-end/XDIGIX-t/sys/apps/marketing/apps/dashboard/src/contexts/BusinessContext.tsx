@@ -180,7 +180,7 @@ const BusinessProvider = ({ children }: Props) => {
     }
 
     // On initial load, try to use cached data first for faster rendering
-    if (!isRetry && retryCount === 0) {
+    if (!isRetry && retryCountRef.current === 0) {
       const cached = getCachedUserData();
       if (cached && cached.businessId && cached.email === user?.email) {
         console.log('[BusinessProvider] Using cached business data');
