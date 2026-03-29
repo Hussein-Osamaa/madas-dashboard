@@ -6,5 +6,16 @@
   "redirects": [
     { "source": "/setup-password", "destination": "/dashboard/setup-password", "permanent": false },
     { "source": "/reset-password", "destination": "/dashboard/reset-password", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/dashboard/index.html" },
+    { "source": "/dashboard/(.*)", "destination": "/dashboard/index.html" },
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/admin/(.*)", "destination": "/admin/index.html" },
+    { "source": "/finance", "destination": "/finance/index.html" },
+    { "source": "/finance/(.*)", "destination": "/finance/index.html" },
+    { "source": "/warehouse", "destination": "/warehouse/index.html" },
+    { "source": "/warehouse/(.*)", "destination": "/warehouse/index.html" },
+    { "source": "/((?!dashboard|admin|finance|warehouse|assets).*)", "destination": "/index.html" }
   ]
 }
