@@ -289,7 +289,7 @@ ul,ol{list-style:none}
 .xd-feature-icon .material-icons{font-size:1.75rem;color:var(--c-primary)}
 .xd-feature-card h3{font-size:1.1rem;font-weight:700;color:var(--c-primary);margin-bottom:.5rem}
 .xd-feature-card p{font-size:.95rem;opacity:.75;line-height:1.6}
-.xd-product-card{display:flex;flex-direction:column;transition:translate .25s}
+.xd-product-card{display:flex;flex-direction:column;transition:translate .25s;text-decoration:none;color:inherit}
 .xd-product-card:hover{translate:0 -2px}
 .xd-product-img-wrap{position:relative;overflow:hidden;background:color-mix(in srgb,var(--scheme-text,#121212) 5%,var(--scheme-bg,#fff));border-radius:min(var(--btn-radius,8px),16px)}
 .xd-product-img-wrap img{width:100%;aspect-ratio:var(--product-img-ratio,auto);object-fit:cover;transition:scale .4s,opacity .4s}
@@ -308,7 +308,7 @@ ul,ol{list-style:none}
 .xd-product-vendor{font-size:.75rem;opacity:.5;text-transform:uppercase;letter-spacing:.03em}
 .xd-product-rating{font-size:.75rem;color:#f59e0b;display:flex;align-items:center;gap:.15rem}
 .xd-rating-count{color:var(--scheme-text,var(--c-text,#666));font-size:.75rem;opacity:.5}
-.xd-product-btn{margin-top:.5rem;padding:var(--btn-padding,.75rem 1.5rem);font-size:.75rem;font-weight:500;letter-spacing:.04em;text-transform:uppercase;border-radius:min(var(--btn-radius,8px),12px);border:1px solid var(--scheme-text,var(--c-text,#121212));background:transparent;color:var(--scheme-text,var(--c-text,#121212));box-shadow:var(--btn-shadow,none);text-align:center;display:block;text-decoration:none;transition:background .2s,color .2s}
+.xd-product-btn{margin-top:.5rem;padding:var(--btn-padding,.75rem 1.5rem);font-size:.75rem;font-weight:500;font-family:inherit;letter-spacing:.04em;text-transform:uppercase;border-radius:min(var(--btn-radius,8px),12px);border:1px solid var(--scheme-text,var(--c-text,#121212));background:transparent;color:var(--scheme-text,var(--c-text,#121212));box-shadow:var(--btn-shadow,none);text-align:center;display:block;width:100%;text-decoration:none;cursor:pointer;transition:background .2s,color .2s}
 .xd-product-btn:hover{background:var(--scheme-text,var(--c-text,#121212));color:var(--scheme-bg,#fff)}
 .xd-card-card .xd-product-card{background:var(--scheme-bg,#fff);border-radius:12px;border:1px solid color-mix(in srgb,var(--scheme-text,#121212) 12%,transparent);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .xd-card-card .xd-product-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
@@ -760,12 +760,13 @@ function productCard(p: Record<string, unknown>, ctaLabel: string, opts: Product
   const badgeHtml = outOfStock
     ? '<span class="xd-product-badge xd-badge-sold-out">Sold Out</span>'
     : onSale ? '<span class="xd-product-badge">Sale</span>' : '';
+  // Use <button> instead of <a> to avoid nested <a> inside card <a>
   const btnHtml = !showAddToCart ? '' : outOfStock
     ? `<span class="xd-product-btn xd-btn-disabled" style="opacity:.5;pointer-events:none;cursor:not-allowed">Sold Out</span>`
-    : `<a href="${attr(p.link as string, detailHref)}" class="xd-product-btn"
+    : `<button type="button" class="xd-product-btn"
            data-xd-atc data-xd-product-id="${attr(p.id as string)}"
            data-xd-product-name="${attr(p.name as string)}"
-           data-xd-price="${attr(String(p.price || 0))}">${ctaLabel}</a>`;
+           data-xd-price="${attr(String(p.price || 0))}">${ctaLabel}</button>`;
   const vendorHtml = showVendor && p.vendor ? `<span class="xd-product-vendor">${txt(p.vendor as string)}</span>` : '';
   const ratingHtml = showRating ? `<div class="xd-product-rating">${'★'.repeat(Math.round(Number(p.rating || 0)))}${'☆'.repeat(5 - Math.round(Number(p.rating || 0)))}<span class="xd-rating-count">${p.reviewCount ? ` (${p.reviewCount})` : ' No reviews'}</span></div>` : '';
   // Secondary image on hover
@@ -778,7 +779,7 @@ function productCard(p: Record<string, unknown>, ctaLabel: string, opts: Product
     ? `<img src="${attr(secondaryImg)}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400" class="xd-product-img-secondary">`
     : '';
   return `
-    <a href="${detailHref}" class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}" style="text-decoration:none;color:inherit;display:flex;flex-direction:column">
+    <a href="${detailHref}" class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}" style="text-decoration:none;color:inherit">
       <div class="xd-product-img-wrap">
         <img src="${imgSrc}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400" class="xd-product-img-primary">
         ${secondaryImgHtml}

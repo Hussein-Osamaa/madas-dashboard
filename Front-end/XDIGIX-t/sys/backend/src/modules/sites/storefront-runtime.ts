@@ -26,7 +26,9 @@ try{_m=JSON.parse(_mEl?(_mEl.textContent||_mEl.innerText||''):'{}');}catch(e){}
 var tenantId = _m.tenantId||'';
 var apiBase  = _m.apiBase||'/api/public';
 var currency = _m.currency||'SAR';
+var sfBase   = _m.storefrontBase||'';
 var sections = Array.isArray(_m.sections)?_m.sections:[];
+window.__xd_sf_base=sfBase;
 
 /* ── 1. Cart token (sessionStorage) ────────────────────────────────── */
 var cartKey='xd-cart-'+tenantId;
@@ -116,12 +118,14 @@ function updateCartBadge(cart){
 
 /* ── 7. Product card builder (safe DOM methods) ─────────────────────── */
 function makeProductCard(p,ctaLabel,eventName){
-  var card=mk('div','xd-product-card xd-reveal xd-visible');
+  var detailHref=(window.__xd_sf_base||'')+'/products/'+(p.id||p._id||'');
+  var card=mk('a','xd-product-card xd-reveal xd-visible');
+  card.href=detailHref;
   setAttrs(card,{'data-item-id':p.id||p._id||''});
   if(eventName)card.setAttribute('data-xd-analytics-view',eventName);
 
   var imgWrap=mk('div','xd-product-img-wrap');
-  var img=mk('img');
+  var img=mk('img','xd-product-img-primary');
   var src=p.image||(p.images&&p.images[0])||'';
   img.src=src||'https://placehold.co/400/f5f5f5/999?text=Product';
   img.alt=p.name||'';
@@ -130,6 +134,14 @@ function makeProductCard(p,ctaLabel,eventName){
   img.setAttribute('width','400');
   img.setAttribute('height','400');
   imgWrap.appendChild(img);
+  // Secondary image on hover
+  if(p.images&&p.images.length>1){
+    var img2=mk('img','xd-product-img-secondary');
+    img2.src=p.images[1];img2.alt=p.name||'';
+    img2.setAttribute('loading','lazy');img2.setAttribute('decoding','async');
+    img2.setAttribute('width','400');img2.setAttribute('height','400');
+    imgWrap.appendChild(img2);
+  }
 
   var onSale=p.onSale||(p.salePrice&&Number(p.salePrice)<Number(p.price));
   var outOfStock=p.inStock===false||(typeof p.totalStock==='number'&&p.totalStock<=0);
@@ -153,8 +165,8 @@ function makeProductCard(p,ctaLabel,eventName){
     soldBtn.style.opacity='0.5';soldBtn.style.pointerEvents='none';soldBtn.style.cursor='not-allowed';
     body.appendChild(soldBtn);
   }else{
-    var btn=mk('a','xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full',ctaLabel||'Add to Cart');
-    btn.href=p.link||p.url||'#';
+    var btn=mk('button','xd-product-btn',ctaLabel||'Add to Cart');
+    btn.type='button';
     setAttrs(btn,{'data-xd-atc':'','data-xd-product-id':String(p.id||p._id||''),
       'data-xd-product-name':String(p.name||''),'data-xd-price':String(p.price||0)});
     body.appendChild(btn);
