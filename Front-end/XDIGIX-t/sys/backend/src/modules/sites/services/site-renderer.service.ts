@@ -207,6 +207,8 @@ ul,ol{list-style:none}
 .xd-grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:2rem}
 .xd-grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:2rem}
 .xd-grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:1.5rem}
+.xd-grid-5{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:1.5rem}
+.xd-grid-6{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:1.5rem}
 .xd-flex{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
 .xd-flex-center{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;justify-content:center}
 .xd-h1{font-size:clamp(2rem,5vw,3.75rem);font-weight:800;line-height:1.15;letter-spacing:-.02em}
@@ -290,7 +292,7 @@ ul,ol{list-style:none}
 .xd-product-card{display:flex;flex-direction:column;transition:translate .25s}
 .xd-product-card:hover{translate:0 -2px}
 .xd-product-img-wrap{position:relative;overflow:hidden;background:color-mix(in srgb,var(--scheme-text,#121212) 5%,var(--scheme-bg,#fff));border-radius:var(--btn-radius,8px)}
-.xd-product-img-wrap img{width:100%;aspect-ratio:var(--product-img-ratio,1);object-fit:cover;transition:scale .4s}
+.xd-product-img-wrap img{width:100%;aspect-ratio:var(--product-img-ratio,auto);object-fit:cover;transition:scale .4s}
 .xd-product-card:hover .xd-product-img-wrap img{scale:1.05}
 .xd-product-badge{position:absolute;top:.75rem;left:.75rem;background:var(--badge-color,#ef4444);color:#fff;
   font-size:.75rem;font-weight:700;padding:.25rem .625rem;border-radius:var(--badge-radius,999px)}
@@ -706,7 +708,7 @@ function renderFeatures(c: Record<string, unknown>): string {
   const colAlign = (c.column_alignment as string) || 'center';
   const imgWidth = (c.image_width as string) || 'full';
   const imgRatio = (c.image_ratio as string) || 'adapt';
-  const ratioStyle = imgRatio === 'square' ? 'aspect-ratio:1;object-fit:cover;' : imgRatio === 'portrait' ? 'aspect-ratio:2/3;object-fit:cover;' : '';
+  const ratioStyle = imgRatio === 'square' ? 'aspect-ratio:1;object-fit:cover;' : imgRatio === 'portrait' ? 'aspect-ratio:3/4;object-fit:cover;' : '';
   const imgMaxW = imgWidth === 'small' ? 'max-width:120px;' : imgWidth === 'medium' ? 'max-width:200px;' : '';
   return `
 <section class="xd-section">
@@ -792,8 +794,8 @@ function skeletonCard(): string {
 
 function renderProducts(c: Record<string, unknown>): string {
   const prods   = (c.selectedProducts as Array<Record<string, unknown>>) || [];
-  const colsN   = Number(c.columns_desktop || c.columns) || 3;
-  const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
+  const colsN   = Number(c.columns_desktop || c.columns) || 4;
+  const colsCls = colsN === 5 ? 'xd-grid-5' : colsN === 6 ? 'xd-grid-6' : colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
   const layout  = (c.layout as string) || 'grid';
   // Card style: section data overrides theme
   const cardStyle = (c.cardStyleType as string) || (_themeData.productCardStyle as string) || 'standard';
@@ -801,8 +803,17 @@ function renderProducts(c: Record<string, unknown>): string {
   // Per-section image ratio override (adapt | portrait | square)
   const sectionImgRatio = c.image_ratio as string | undefined;
   const imgRatioStyle = sectionImgRatio && sectionImgRatio !== 'adapt'
-    ? ` style="--product-img-ratio:${sectionImgRatio === 'square' ? '1' : sectionImgRatio === 'portrait' ? '2/3' : 'auto'}"`
+    ? ` style="--product-img-ratio:${sectionImgRatio === 'square' ? '1' : sectionImgRatio === 'portrait' ? '3/4' : 'auto'}"`
     : '';
+  // Heading size (match builder heading_size setting: h2, h1, h0, hxl)
+  const headingSize = (c.heading_size as string) || 'h1';
+  const headingSizeMap: Record<string, string> = {
+    h2: 'font-size:clamp(1.4rem,3vw,1.875rem)',
+    h1: 'font-size:clamp(1.6rem,3.5vw,2.5rem)',
+    h0: 'font-size:clamp(2rem,4.5vw,3rem)',
+    hxl: 'font-size:clamp(2.5rem,5.5vw,3.75rem)',
+  };
+  const headingStyle = headingSizeMap[headingSize] || headingSizeMap.h1;
   // Show/hide options from theme (vendor is theme-only)
   const showVendor = _themeData.productShowVendor ?? false;
   const showRating = c.show_rating ?? false;
@@ -828,14 +839,11 @@ function renderProducts(c: Record<string, unknown>): string {
   return `
 <section class="xd-section${cardStyleCls}"${imgRatioStyle}>
 <div class="xd-container">
-  <div class="xd-section-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
-    <div>
-      <h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string) || 'Products')}</h2>
-      ${(c.description || c.subtitle) ? `<p class="xd-lead xd-reveal">${txt((c.description as string) || (c.subtitle as string))}</p>` : ''}
-    </div>
+  <div class="xd-section-head" style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem">
+    <h2 class="xd-reveal" style="font-weight:700;line-height:1.2;${headingStyle}">${txt((c.heading as string) || (c.title as string) || 'Featured products')}</h2>
     <div style="display:flex;align-items:center;gap:.75rem">
       ${arrowsHtml}
-      ${showViewAll ? `<a href="${_sfBase}/products" class="xd-btn xd-btn-secondary xd-btn-sm">View all</a>` : ''}
+      ${showViewAll ? `<a href="${_sfBase}/products" style="font-size:.875rem;text-decoration:underline">View all</a>` : ''}
     </div>
   </div>
   ${gridOrCarousel}
@@ -1873,7 +1881,7 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   const productCardStyle = (theme.productCardStyle as string) || 'standard';
   const productImgRatio = (theme.productImageRatio as string) || 'adapt';
   const productTextAlign = (theme.productTextAlign as string) || 'left';
-  const productImgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '2/3', square: '1' };
+  const productImgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '3/4', square: '1' };
   const _productImgAspect = productImgRatioMap[productImgRatio] || 'auto';
   // Media settings
   const _mediaRadius = `${Number(theme.mediaBorderRadius) || 0}px`;
@@ -2147,7 +2155,7 @@ function pageShell(
   const _bShadowMap: Record<string, string> = { none: 'none', small: '0 1px 2px rgba(0,0,0,.08)', medium: '0 2px 8px rgba(0,0,0,.12)', large: '0 4px 16px rgba(0,0,0,.16)' };
   const _bPadMap: Record<string, string> = { small: '0.5rem 1rem', medium: '0.75rem 1.5rem', large: '1rem 2rem' };
   const _varRadMap: Record<string, string> = { pill: '9999px', rectangle: '6px', circle: '50%' };
-  const _imgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '2/3', square: '1' };
+  const _imgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '3/4', square: '1' };
   const themeVars = `:root{
   --c-primary:${attr((theme.primaryColor   || theme.colorPrimary   || '#27491F') as string)};
   --c-secondary:${attr((theme.secondaryColor || theme.colorSecondary || '#F0CAE1') as string)};
