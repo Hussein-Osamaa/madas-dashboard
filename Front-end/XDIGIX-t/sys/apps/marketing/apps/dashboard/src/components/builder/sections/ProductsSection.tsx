@@ -23,6 +23,7 @@ const ProductsSection = ({ data, style }: Props) => {
   const imageRatio = d.image_ratio ?? theme.productImageRatio ?? 'adapt';
   const textAlign = theme.productTextAlign || 'left';
   const showVendor = theme.productShowVendor ?? false;
+  const showSecondaryImage = theme.productShowSecondaryImage ?? false;
   const showRating = d.show_rating ?? false;
 
   const products = d.selectedProducts ?? [];
@@ -120,8 +121,11 @@ const ProductsSection = ({ data, style }: Props) => {
       style={layout === 'carousel' ? { width: `calc((100% - ${(columnsDesktop - 1) * 24}px) / ${columnsDesktop})`, minWidth: '200px' } : undefined}
     >
       {/* Product image */}
-      <div className={imgContainerCls} style={imgRadiusStyle}>
-        <img src={product.image || product.images?.[0] || defaultProducts[index % defaultProducts.length]?.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+      <div className={`${imgContainerCls} relative`} style={imgRadiusStyle}>
+        <img src={product.image || product.images?.[0] || defaultProducts[index % defaultProducts.length]?.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />
+        {showSecondaryImage && product.images?.length > 1 && (
+          <img src={product.images[1]} alt={product.name} className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        )}
       </div>
       {/* Product info */}
       <div className={`space-y-1 ${bodyPaddingCls}`} style={{ textAlign }}>

@@ -292,8 +292,10 @@ ul,ol{list-style:none}
 .xd-product-card{display:flex;flex-direction:column;transition:translate .25s}
 .xd-product-card:hover{translate:0 -2px}
 .xd-product-img-wrap{position:relative;overflow:hidden;background:color-mix(in srgb,var(--scheme-text,#121212) 5%,var(--scheme-bg,#fff));border-radius:min(var(--btn-radius,8px),16px)}
-.xd-product-img-wrap img{width:100%;aspect-ratio:var(--product-img-ratio,auto);object-fit:cover;transition:scale .4s}
-.xd-product-card:hover .xd-product-img-wrap img{scale:1.05}
+.xd-product-img-wrap img{width:100%;aspect-ratio:var(--product-img-ratio,auto);object-fit:cover;transition:scale .4s,opacity .4s}
+.xd-product-img-secondary{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s}
+.xd-product-card:hover .xd-product-img-primary{scale:1.05}
+.xd-product-card:hover .xd-product-img-secondary{opacity:1}
 .xd-product-badge{position:absolute;top:.75rem;left:.75rem;background:var(--badge-color,#ef4444);color:#fff;
   font-size:.75rem;font-weight:700;padding:.25rem .625rem;border-radius:var(--badge-radius,999px)}
 .xd-badge-sold-out{background:#6b7280}
@@ -742,10 +744,11 @@ interface ProductCardOpts {
   showRating?: boolean;
   showPrice?: boolean;
   showAddToCart?: boolean;
+  showSecondaryImage?: boolean;
 }
 
 function productCard(p: Record<string, unknown>, ctaLabel: string, opts: ProductCardOpts = {}): string {
-  const { showVendor = false, showRating = false, showPrice = true, showAddToCart = true } = opts;
+  const { showVendor = false, showRating = false, showPrice = true, showAddToCart = true, showSecondaryImage = false } = opts;
   const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
   const display = p.sellingPrice || p.salePrice || p.price;
   const detailHref = `${_sfBase}/products/${attr(p.id as string)}`;
@@ -765,20 +768,30 @@ function productCard(p: Record<string, unknown>, ctaLabel: string, opts: Product
            data-xd-price="${attr(String(p.price || 0))}">${ctaLabel}</a>`;
   const vendorHtml = showVendor && p.vendor ? `<span class="xd-product-vendor">${txt(p.vendor as string)}</span>` : '';
   const ratingHtml = showRating ? `<div class="xd-product-rating">${'★'.repeat(Math.round(Number(p.rating || 0)))}${'☆'.repeat(5 - Math.round(Number(p.rating || 0)))}<span class="xd-rating-count">${p.reviewCount ? ` (${p.reviewCount})` : ' No reviews'}</span></div>` : '';
+  // Secondary image on hover
+  const images = (p.images as string[]) || [];
+  const primaryImg = p.image as string || images[0] || '';
+  const secondaryImg = images.length > 1 ? images[1] : '';
+  const hasSecondary = showSecondaryImage && secondaryImg;
+  const imgSrc = attr(primaryImg, 'https://placehold.co/400/f5f5f5/999?text=Product');
+  const secondaryImgHtml = hasSecondary
+    ? `<img src="${attr(secondaryImg)}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400" class="xd-product-img-secondary">`
+    : '';
   return `
-    <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
-      <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
-        <img src="${attr(p.image as string || ((p.images as string[]) || [])[0] || '', 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
+    <a href="${detailHref}" class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}" style="text-decoration:none;color:inherit;display:flex;flex-direction:column">
+      <div class="xd-product-img-wrap">
+        <img src="${imgSrc}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400" class="xd-product-img-primary">
+        ${secondaryImgHtml}
         ${badgeHtml}
-      </a>
+      </div>
       <div class="xd-product-body">
-        <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
+        <span class="xd-product-name">${txt(p.name as string)}</span>
         ${vendorHtml}
         ${ratingHtml}
         ${showPrice && display ? `<div><span class="xd-product-price">${formatCurrency(display)}</span>${onSale && !outOfStock ? `<span class="xd-product-compare">${formatCurrency(p.price)}</span>` : ''}</div>` : ''}
         ${btnHtml}
       </div>
-    </div>`;
+    </a>`;
 }
 
 function skeletonCard(): string {
@@ -817,11 +830,12 @@ function renderProducts(c: Record<string, unknown>): string {
   const headingStyle = headingSizeMap[headingSize] || headingSizeMap.h1;
   // Show/hide options from theme (vendor is theme-only)
   const showVendor = _themeData.productShowVendor ?? false;
+  const showSecondaryImage = _themeData.productShowSecondaryImage ?? false;
   const showRating = c.show_rating ?? false;
   const showPrice = c.showPrice !== false;
   const showAddToCart = c.showAddToCart !== false;
   const showViewAll = c.show_view_all !== false;
-  const cardOpts: ProductCardOpts = { showVendor: !!showVendor, showRating: !!showRating, showPrice, showAddToCart };
+  const cardOpts: ProductCardOpts = { showVendor: !!showVendor, showRating: !!showRating, showPrice, showAddToCart, showSecondaryImage: !!showSecondaryImage };
   // If no products selected, show skeleton cards — runtime will hydrate with live data
   const cards = prods.length > 0
     ? prods.map(p => productCard(p, 'Add to Cart', cardOpts)).join('')
@@ -2263,7 +2277,8 @@ export function renderAllProductsPage(
 
   // Reuse shared productCard() for consistent styling across all product pages
   const showVendor = !!(_themeData.productShowVendor);
-  const cardOpts: ProductCardOpts = { showVendor, showRating: false, showPrice: true, showAddToCart: true };
+  const showSecondaryImage = !!(_themeData.productShowSecondaryImage);
+  const cardOpts: ProductCardOpts = { showVendor, showRating: false, showPrice: true, showAddToCart: true, showSecondaryImage };
   const cardStyleCls = (_themeData.productCardStyle as string) === 'minimal' ? ' xd-card-minimal' : (_themeData.productCardStyle as string) === 'card' ? ' xd-card-card' : '';
   // Temporarily set _sfBase for productCard links
   const prevBase = _sfBase;
