@@ -48,7 +48,9 @@ const ProductsSection = ({ data, style }: Props) => {
     { id: '4', name: 'Designer Sunglasses', price: 124.99, image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&h=800&fit=crop' },
   ];
 
-  const displayProducts = products.length > 0 ? products : defaultProducts;
+  // If a collection is selected but products are loading/empty, show a message
+  const hasCollection = !!d.collection;
+  const displayProducts = products.length > 0 ? products : (hasCollection ? [] : defaultProducts);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
@@ -65,12 +67,19 @@ const ProductsSection = ({ data, style }: Props) => {
             <a href="#" className="text-sm underline hover:no-underline">View all</a>
           )}
         </div>
+        {hasCollection && displayProducts.length === 0 && (
+          <div className="text-center py-12 text-gray-400">
+            <span className="material-icons text-4xl mb-2 block">inventory_2</span>
+            <p className="text-sm">No products in this collection yet.</p>
+            <p className="text-xs mt-1">Add products to this collection in your inventory.</p>
+          </div>
+        )}
         <div className={`grid ${colsMap[columnsDesktop] || colsMap[4]} gap-4 sm:gap-6`}>
           {displayProducts.map((product: any, index: number) => (
             <a key={product.id || index} href="#" className="group block">
               {/* Product image */}
               <div className={`bg-[#F3F3F3] overflow-hidden mb-3 ${ratioMap[imageRatio] || 'aspect-[3/4]'}`}>
-                <img src={product.image || defaultProducts[index % defaultProducts.length]?.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src={product.image || product.images?.[0] || defaultProducts[index % defaultProducts.length]?.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
               {/* Product info */}
               <div className="space-y-1">

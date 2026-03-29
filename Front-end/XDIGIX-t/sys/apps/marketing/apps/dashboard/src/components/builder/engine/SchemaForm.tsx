@@ -19,6 +19,10 @@ const SchemaForm: React.FC<Props> = ({ settings, data, onChange, siteId, busines
     onChange({ ...data, [key]: value });
   };
 
+  const handleBatchChange = (updates: Record<string, unknown>) => {
+    onChange({ ...data, ...updates });
+  };
+
   const entries = Object.entries(settings);
   if (entries.length === 0) return null;
 
@@ -31,6 +35,7 @@ const SchemaForm: React.FC<Props> = ({ settings, data, onChange, siteId, busines
           schema={schema}
           value={data[key]}
           onChange={(v) => handleFieldChange(key, v)}
+          onBatchChange={handleBatchChange}
           allValues={data}
           siteId={siteId}
           businessId={businessId}

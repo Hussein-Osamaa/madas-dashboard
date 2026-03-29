@@ -709,7 +709,7 @@ function productCard(p: Record<string, unknown>, ctaLabel: string): string {
   return `
     <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
       <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
-        <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
+        <img src="${attr(p.image as string || ((p.images as string[]) || [])[0] || '', 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
         ${badgeHtml}
       </a>
       <div class="xd-product-body">
@@ -2121,7 +2121,7 @@ export function renderAllProductsPage(
     return `
     <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
       <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
-        <img src="${attr(p.image as string, 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
+        <img src="${attr(p.image as string || ((p.images as string[]) || [])[0] || '', 'https://placehold.co/400/f5f5f5/999?text=Product')}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400">
         ${onSale ? '<span class="xd-product-badge">Sale</span>' : ''}
       </a>
       <div class="xd-product-body">

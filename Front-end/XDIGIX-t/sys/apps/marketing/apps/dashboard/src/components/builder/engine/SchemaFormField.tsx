@@ -1,5 +1,5 @@
 // src/components/builder/engine/SchemaFormField.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { FieldSchema } from '../../../types/engine';
 import TextField from '../editors/shared/TextField';
 import ColorField from '../editors/shared/ColorField';
@@ -10,12 +10,15 @@ import NumberField from '../editors/shared/NumberField';
 import { useTheme, DEFAULT_COLOR_SCHEMES } from '../../../contexts/ThemeContext';
 import { useCollections } from '../../../hooks/useCollections';
 import { useBusiness } from '../../../contexts/BusinessContext';
+import { fetchProducts } from '../../../services/productsService';
 
 interface Props {
   fieldKey: string;
   schema: FieldSchema;
   value: unknown;
   onChange: (value: unknown) => void;
+  /** Update multiple fields at once (e.g. collection change also sets selectedProducts) */
+  onBatchChange?: (updates: Record<string, unknown>) => void;
   /** All field values in the current form — used for showWhen evaluation */
   allValues: Record<string, unknown>;
   /** Context for image uploads */
@@ -178,7 +181,13 @@ const LinkPicker: React.FC<{ value: string; onChange: (v: string) => void; label
 };
 
 /* ── Collection picker ──────────────────────────────────────────────── */
-const CollectionSelect: React.FC<{ value: string; onChange: (v: string) => void; label: string; helpText?: string }> = ({ value, onChange, label, helpText }) => {
+const CollectionSelect: React.FC<{
+  value: string;
+  onChange: (v: string) => void;
+  onCollectionSelect?: (collection: any) => void;
+  label: string;
+  helpText?: string;
+}> = ({ value, onChange, onCollectionSelect, label, helpText }) => {
   const { businessId } = useBusiness();
   const { collections, isLoading } = useCollections(businessId);
 
@@ -207,17 +216,26 @@ const CollectionSelect: React.FC<{ value: string; onChange: (v: string) => void;
     );
   }
 
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const colId = e.target.value;
+    onChange(colId);
+    if (onCollectionSelect) {
+      const col = collections.find((c: any) => c.id === colId);
+      onCollectionSelect(col || null);
+    }
+  };
+
   return (
     <div className="space-y-1">
       <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
       <select
         value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={handleChange}
         className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary cursor-pointer"
       >
         <option value="">All products</option>
         {collections.map((col: any) => (
-          <option key={col.id || col.name} value={col.name || col.title}>
+          <option key={col.id} value={col.id}>
             {col.name || col.title}
           </option>
         ))}
@@ -232,10 +250,42 @@ const SchemaFormField: React.FC<Props> = ({
   schema,
   value,
   onChange,
+  onBatchChange,
   allValues,
   siteId: _siteId,
   businessId: _businessId,
 }) => {
+  const { businessId: ctxBusinessId } = useBusiness();
+  const effectiveBusinessId = _businessId || ctxBusinessId;
+
+  // When a collection is selected, fetch its products and update selectedProducts
+  const handleCollectionSelect = useCallback(async (col: any) => {
+    if (!col || !effectiveBusinessId || !onBatchChange) return;
+    const productIds: string[] = col.productIds || [];
+    if (productIds.length === 0) {
+      // Collection has no products assigned
+      onBatchChange({ collection: col.id, selectedProducts: [] });
+      return;
+    }
+    try {
+      const allProducts = await fetchProducts(effectiveBusinessId);
+      const matched = allProducts
+        .filter(p => productIds.includes(p.id))
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          sellingPrice: p.sellingPrice,
+          image: p.images?.[0] || '',
+          images: p.images || [],
+          category: p.category,
+        }));
+      onBatchChange({ collection: col.id, selectedProducts: matched });
+    } catch (err) {
+      console.error('[SchemaFormField] Failed to fetch products for collection:', err);
+    }
+  }, [effectiveBusinessId, onBatchChange]);
+
   // Conditional display
   if (schema.showWhen) {
     const watchValue = allValues[schema.showWhen.field];
@@ -252,7 +302,17 @@ const SchemaFormField: React.FC<Props> = ({
       <CollectionSelect
         label={schema.label}
         value={strVal}
-        onChange={(v) => onChange(v)}
+        onChange={(v) => {
+          if (!v) {
+            // Cleared collection — reset to defaults
+            if (onBatchChange) {
+              onBatchChange({ collection: '', selectedProducts: [] });
+            } else {
+              onChange(v);
+            }
+          }
+        }}
+        onCollectionSelect={handleCollectionSelect}
         helpText={schema.helpText}
       />
     );
