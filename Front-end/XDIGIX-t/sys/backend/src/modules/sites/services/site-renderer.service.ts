@@ -2229,9 +2229,9 @@ ${extraMeta}
 .xd-pd-thumb{width:72px;height:72px;object-fit:cover;border-radius:min(var(--media-radius,8px),8px);cursor:pointer;border:2px solid transparent;transition:border-color .2s}
 .xd-pd-thumb:hover,.xd-pd-thumb.active{border-color:var(--c-primary)}
 .xd-pd-info{display:flex;flex-direction:column;gap:1.25rem}
-.xd-pd-name{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;line-height:1.2}
+.xd-pd-name{font-size:clamp(1.5rem,3vw,1.875rem);font-weight:700;line-height:1.2;margin-bottom:.25rem}
 .xd-pd-price-row{display:flex;align-items:center;gap:.75rem}
-.xd-pd-price{font-size:1.75rem;font-weight:800;color:var(--c-primary)}
+.xd-pd-price{font-size:1.25rem;font-weight:600;color:inherit}
 .xd-pd-compare{font-size:1.1rem;text-decoration:line-through;opacity:.45}
 .xd-pd-badge{background:#ef4444;color:#fff;font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:999px}
 .xd-pd-desc{font-size:.975rem;line-height:1.75;opacity:.8}
@@ -2333,6 +2333,7 @@ export function renderAllProductsPage(
 
 /**
  * Render a single product detail page.
+ * Layout matches the builder's ProductInfoSection block system:
  */
 export function renderProductDetailPage(site: ISite, product: ProductData, opts?: { subdomain?: boolean }): string {
   const sfBase = opts?.subdomain
@@ -2364,18 +2365,39 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
         ).join('')}
       </div>` : '';
 
-  const variantHtml = variants.length > 0 ? `
-    <div class="xd-pd-variants">
+  // Group variants by type (Size, Color, etc.) — or show flat list
+  const productVariants = (product.variants as Array<{name: string; values: string[]}>) || [];
+  let variantHtml = '';
+  if (productVariants.length > 0) {
+    // Builder-style grouped variants
+    variantHtml = productVariants.map(opt => {
+      const buttons = (opt.values || []).map((v, vi) =>
+        `<button type="button" class="xd-pd-variant${vi === 0 ? ' selected' : ''}"
+          onclick="this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');">${txt(v)}</button>`
+      ).join('');
+      return `<div class="xd-pd-variants">
+        <span class="xd-pd-variants-label">${txt(opt.name)}</span>
+        <div class="xd-pd-variant-grid">${buttons}</div>
+      </div>`;
+    }).join('');
+  } else if (variants.length > 0) {
+    // Fallback: flat stock keys as variants
+    variantHtml = `<div class="xd-pd-variants">
       <span class="xd-pd-variants-label">Select Size</span>
       <div class="xd-pd-variant-grid">
         ${variants.map(v => {
           const qty = stock[v] || 0;
           return `<button type="button" class="xd-pd-variant${qty <= 0 ? ' oos' : ''}"
-            onclick="if(!this.classList.contains('oos')){document.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');document.getElementById('xd-pd-atc').setAttribute('data-xd-variant',this.textContent.trim());}"
+            onclick="if(!this.classList.contains('oos')){this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');}"
             ${qty <= 0 ? 'disabled' : ''}>${txt(v)}${qty <= 0 ? ' (OOS)' : ''}</button>`;
         }).join('')}
       </div>
-    </div>` : '';
+    </div>`;
+  }
+
+  // Check overall stock
+  const totalStock = Object.values(stock).reduce((a, b) => a + b, 0);
+  const isAvailable = variants.length === 0 || totalStock > 0;
 
   const safeJson = (obj: unknown) => JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
   const ldJson = safeJson({
@@ -2388,51 +2410,61 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
       '@type': 'Offer',
       price: String(price || 0),
       priceCurrency: getCurrencyCode(),
-      availability: variants.length === 0 || Object.values(stock).some(q => q > 0)
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
+      availability: isAvailable ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
     },
   });
+
+  // Build buttons matching builder: outline "Add to cart" + filled "Buy it now"
+  const buttonsHtml = isAvailable
+    ? `<div style="display:flex;flex-direction:column;gap:.5rem">
+        <button type="button" id="xd-pd-atc"
+          class="xd-product-btn xd-pd-atc"
+          data-xd-atc
+          data-xd-product-id="${pid}"
+          data-xd-product-name="${attr(product.name as string)}"
+          data-xd-price="${attr(String(price || 0))}"
+          style="text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit">ADD TO CART</button>
+        <button type="button" class="xd-pd-atc"
+          style="width:100%;padding:1rem;font-size:1.05rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:var(--scheme-btn-bg,var(--c-primary,#121212));color:var(--scheme-btn-label,#fff);cursor:pointer;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit;box-shadow:var(--btn-shadow,none)">BUY IT NOW</button>
+      </div>`
+    : `<button disabled class="xd-pd-atc" style="width:100%;padding:1rem;font-size:1.05rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:#d1d5db;color:#6b7280;cursor:not-allowed;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit">SOLD OUT</button>`;
 
   const body = `
 <script type="application/ld+json">${ldJson}</script>
 <section class="xd-section">
 <div class="xd-container">
-  <nav class="xd-breadcrumb" aria-label="Breadcrumb">
-    <a href="${sfBase}">Home</a><span>›</span>
-    <a href="${sfBase}/products">Products</a><span>›</span>
-    <span>${name}</span>
-  </nav>
   <div class="xd-pd-grid">
     <!-- Images -->
     <div class="xd-pd-images">
-      <img id="xd-pd-main" src="${attr(mainImg)}" alt="${name}" class="xd-pd-main-img" width="600" height="600">
+      <div style="overflow:hidden;border-radius:var(--media-radius,12px);background:#f5f5f5">
+        <img id="xd-pd-main" src="${attr(mainImg)}" alt="${name}" class="xd-pd-main-img" width="600" height="600">
+      </div>
       ${thumbs}
     </div>
     <!-- Info -->
     <div class="xd-pd-info">
+      ${product.vendor ? `<p style="font-size:.8rem;opacity:.5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">${txt(product.vendor as string)}</p>` : ''}
       <h1 class="xd-pd-name">${name}</h1>
       <div class="xd-pd-price-row">
         <span class="xd-pd-price">${formatCurrency(price)}</span>
         ${onSale && compare ? `<span class="xd-pd-compare">${formatCurrency(compare)}</span><span class="xd-pd-badge">Sale</span>` : ''}
       </div>
-      ${desc ? `<p class="xd-pd-desc">${desc}</p>` : ''}
       ${variantHtml}
       <div class="xd-pd-qty" id="xd-pd-qty">
-        <button type="button" class="xd-pd-qty-btn" aria-label="Decrease" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=Math.max(1,parseInt(v.textContent)-1)">−</button>
-        <span id="xd-pd-qty-val" class="xd-pd-qty-val">1</span>
-        <button type="button" class="xd-pd-qty-btn" aria-label="Increase" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=parseInt(v.textContent)+1">+</button>
+        <span class="xd-pd-variants-label">Quantity</span>
+        <div style="display:flex;align-items:center;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),8px);width:fit-content">
+          <button type="button" class="xd-pd-qty-btn" style="border:none;border-right:1px solid #e5e7eb" aria-label="Decrease" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=Math.max(1,parseInt(v.textContent)-1)">−</button>
+          <span id="xd-pd-qty-val" class="xd-pd-qty-val" style="width:3rem;text-align:center;font-weight:600;font-size:.9rem">1</span>
+          <button type="button" class="xd-pd-qty-btn" style="border:none;border-left:1px solid #e5e7eb" aria-label="Increase" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=parseInt(v.textContent)+1">+</button>
+        </div>
       </div>
-      <a id="xd-pd-atc" href="#"
-         class="xd-btn xd-btn-primary xd-pd-atc"
-         data-xd-atc
-         data-xd-product-id="${pid}"
-         data-xd-product-name="${attr(product.name as string)}"
-         data-xd-price="${attr(String(price || 0))}">
-        <span class="material-icons" aria-hidden="true" style="font-size:1.2rem">shopping_cart</span>
-        Add to Cart
-      </a>
-      <div class="xd-pd-meta">
+      ${buttonsHtml}
+      ${desc ? `<div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #e5e7eb"><p class="xd-pd-desc">${desc}</p></div>` : ''}
+      <div style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;opacity:.6;cursor:pointer">
+        <span class="material-icons" style="font-size:1.1rem">share</span>
+        <span style="font-size:.9rem">Share</span>
+      </div>
+      <div class="xd-pd-meta" style="margin-top:.75rem">
         ${sku}
         ${product.collectionId ? `<span>Collection: ${txt(product.collectionId as string)}</span>` : ''}
       </div>
