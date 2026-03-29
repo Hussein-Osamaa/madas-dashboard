@@ -278,7 +278,7 @@ const BusinessProvider = ({ children }: Props) => {
 
       if (!matchedBusiness) {
         // Reset retry count on successful resolution (even if no business found)
-        setRetryCount(0);
+        retryCountRef.current = 0;
         
         // Check if we have cached data - if so, don't immediately redirect to no-access
         const cached = getCachedUserData();
@@ -304,7 +304,7 @@ const BusinessProvider = ({ children }: Props) => {
       }
       
       // Reset retry count on success
-      setRetryCount(0);
+      retryCountRef.current = 0;
 
       const businessData = matchedBusiness.data() as Record<string, unknown>;
       const businessId = matchedBusiness.id;
