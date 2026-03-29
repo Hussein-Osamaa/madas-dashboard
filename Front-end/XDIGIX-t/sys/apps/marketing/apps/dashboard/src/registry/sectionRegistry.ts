@@ -258,6 +258,7 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       padding_bottom: 36,
     },
     settings: {
+      layout: { type: 'select', label: 'Layout', options: [{ value: 'classic', label: 'Classic' }, { value: 'minimal', label: 'Minimal' }], defaultValue: 'classic' },
       newsletter_enable: { type: 'toggle', label: 'Enable Newsletter', helpText: 'Show email signup form in the footer', defaultValue: true },
       show_social: { type: 'toggle', label: 'Show Social Icons', defaultValue: true },
       payment_enable: { type: 'toggle', label: 'Show Payment Icons', helpText: 'Display accepted payment method icons', defaultValue: false },
