@@ -437,7 +437,49 @@ if(typeof IntersectionObserver!=='undefined'){
   document.querySelectorAll('.xd-reveal').forEach(function(el){revealObserver.observe(el);});
 }
 
-/* ── 22. Init ───────────────────────────────────────────────────────── */
+/* ── 22. Slideshow ─────────────────────────────────────────────────── */
+document.querySelectorAll('.xd-slideshow').forEach(function(ss){
+  var slides=ss.querySelectorAll('.xd-slide');
+  var count=slides.length;
+  if(count<2)return;
+  var current=0;
+  var isTransition=(ss.getAttribute('data-transition')||'slide');
+  var autoplay=ss.getAttribute('data-autoplay')==='true';
+  var speed=(parseInt(ss.getAttribute('data-speed')||'5',10)||5)*1000;
+  var slidesWrap=ss.querySelector('.xd-slides');
+  var dots=ss.querySelectorAll('.xd-slide-dot');
+  var counter=ss.querySelector('.xd-slide-current');
+  var timer=null;
+
+  function goTo(idx){
+    if(idx<0)idx=count-1;
+    if(idx>=count)idx=0;
+    current=idx;
+    if(isTransition==='slide'&&slidesWrap){
+      slidesWrap.style.transform='translateX(-'+(current*100)+'%)';
+    }else{
+      slides.forEach(function(s,i){s.style.opacity=i===current?'1':'0';s.style.zIndex=i===current?'10':'0';});
+    }
+    dots.forEach(function(d,i){d.style.background=i===current?'#fff':'rgba(255,255,255,.4)';d.style.transform=i===current?'scale(1.1)':'scale(1)';d.classList.toggle('active',i===current);});
+    if(counter)counter.textContent=''+(current+1);
+    resetTimer();
+  }
+
+  function resetTimer(){
+    if(timer)clearInterval(timer);
+    if(autoplay)timer=setInterval(function(){goTo(current+1);},speed);
+  }
+
+  var prevBtn=ss.querySelector('.xd-slide-prev');
+  var nextBtn=ss.querySelector('.xd-slide-next');
+  if(prevBtn)prevBtn.addEventListener('click',function(){goTo(current-1);});
+  if(nextBtn)nextBtn.addEventListener('click',function(){goTo(current+1);});
+  dots.forEach(function(d){d.addEventListener('click',function(){goTo(parseInt(d.getAttribute('data-slide')||'0',10));});});
+
+  resetTimer();
+});
+
+/* ── 23. Init ───────────────────────────────────────────────────────── */
 function init(){
   sections.forEach(hydrateSection);
   sections.forEach(function(entry){

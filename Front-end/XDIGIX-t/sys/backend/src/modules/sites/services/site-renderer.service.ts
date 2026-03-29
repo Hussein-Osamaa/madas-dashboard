@@ -1183,6 +1183,9 @@ function renderSlideshow(c: Record<string, unknown>): string {
   const speed = Number(c.autoplay_speed) || 5;
   const showArrows = c.show_arrows !== false;
   const showDots = c.show_dots !== false;
+  const transition = (c.transition as string) || 'slide';
+
+  const placeholderColors = ['#2d3748', '#1a365d', '#22543d', '#744210', '#553c9a'];
 
   const slidesHtml = slides.map((slide, i) => {
     const bgImg = slide.image as string || '';
@@ -1190,29 +1193,48 @@ function renderSlideshow(c: Record<string, unknown>): string {
     const sub = slide.subheading as string || '';
     const btnText = slide.button_label as string || '';
     const btnLink = slide.button_link as string || '#';
+    const btnStyle = (slide.button_style as string) || 'solid';
     const overlay = Number(slide.overlay_opacity) || 0;
     const pos = (slide.content_position as string) || 'middle-center';
     const align = (slide.text_alignment as string) || 'center';
     const [vPos, hPos] = pos.includes('-') ? pos.split('-') : ['middle', 'center'];
     const justifyMap: Record<string, string> = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
     const alignMap: Record<string, string> = { left: 'flex-start', center: 'center', right: 'flex-end' };
+
+    const bgHtml = bgImg
+      ? `<img src="${attr(bgImg)}" alt="${attr(heading)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async">`
+      : `<div style="position:absolute;inset:0;background:linear-gradient(135deg,${placeholderColors[i % placeholderColors.length]} 0%,${placeholderColors[(i + 2) % placeholderColors.length]} 100%)"></div>`;
+
+    const btnHtml = btnText
+      ? btnStyle === 'outline'
+        ? `<a href="${attr(btnLink)}" class="xd-btn" style="border-radius:var(--btn-radius,8px);padding:var(--btn-padding,0.75rem 1.5rem);box-shadow:var(--btn-shadow,none);border:2px solid var(--scheme-btn-bg,#fff);color:var(--scheme-btn-bg,#fff);background:transparent">${txt(btnText)}</a>`
+        : `<a href="${attr(btnLink)}" class="xd-btn" style="border-radius:var(--btn-radius,8px);padding:var(--btn-padding,0.75rem 1.5rem);box-shadow:var(--btn-shadow,none);background:var(--scheme-btn-bg,#fff);color:var(--scheme-btn-label,#000);border:2px solid transparent">${txt(btnText)}</a>`
+      : '';
+
     return `
-    <div class="xd-slide${i === 0 ? ' active' : ''}" style="${heightCls};position:relative;overflow:hidden;${i > 0 ? 'display:none;' : ''}">
-      ${bgImg ? `<img src="${attr(bgImg)}" alt="${attr(heading)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async">` : ''}
+    <div class="xd-slide" data-index="${i}" style="${heightCls};position:relative;overflow:hidden;flex-shrink:0;width:100%;${transition === 'fade' ? `position:absolute;inset:0;opacity:${i === 0 ? '1' : '0'};transition:opacity 0.7s ease-in-out;` : ''}">
+      ${bgHtml}
       ${overlay > 0 ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,${(overlay / 100).toFixed(2)})"></div>` : ''}
-      <div style="position:relative;z-index:2;display:flex;flex-direction:column;justify-content:${justifyMap[vPos] || 'center'};align-items:${alignMap[hPos] || 'center'};text-align:${align};${heightCls};padding:3rem 2rem;color:#fff">
-        ${heading ? `<h2 class="xd-h1" style="font-weight:bold;margin-bottom:.75rem">${txt(heading)}</h2>` : ''}
-        ${sub ? `<p style="font-size:1.125rem;opacity:.85;margin-bottom:1.5rem;max-width:36rem">${txt(sub)}</p>` : ''}
-        ${btnText ? `<a href="${attr(btnLink)}" class="xd-btn xd-btn-primary" style="border-radius:var(--btn-radius,8px)">${txt(btnText)}</a>` : ''}
+      <div style="position:relative;z-index:2;display:flex;flex-direction:column;justify-content:${justifyMap[vPos] || 'center'};align-items:${alignMap[hPos] || 'center'};text-align:${align};${heightCls};padding:3rem 2rem">
+        ${heading ? `<h2 style="font-size:clamp(1.875rem,5vw,3.75rem);font-weight:bold;margin-bottom:.75rem;line-height:1.1;color:var(--scheme-text,#fff)">${txt(heading)}</h2>` : ''}
+        ${sub ? `<p style="font-size:1.125rem;opacity:.85;margin-bottom:1.5rem;max-width:36rem;color:var(--scheme-text,#fff)">${txt(sub)}</p>` : ''}
+        ${btnHtml}
       </div>
     </div>`;
   }).join('');
 
+  const wrapperStyle = transition === 'slide'
+    ? `display:flex;transition:transform 0.6s cubic-bezier(0.4,0,0.2,1);`
+    : `position:relative;${heightCls};`;
+
   return `
-<section class="xd-slideshow" data-autoplay="${autoplay}" data-speed="${speed}">
-  <div class="xd-slides">${slidesHtml}</div>
-  ${showArrows ? `<button class="xd-slide-prev" aria-label="Previous slide">‹</button><button class="xd-slide-next" aria-label="Next slide">›</button>` : ''}
-  ${showDots ? `<div class="xd-slide-dots">${slides.map((_, i) => `<button class="xd-slide-dot${i === 0 ? ' active' : ''}" data-slide="${i}" aria-label="Slide ${i + 1}"></button>`).join('')}</div>` : ''}
+<section class="xd-slideshow" data-autoplay="${autoplay}" data-speed="${speed}" data-transition="${transition}" data-count="${slides.length}">
+  <div class="xd-slides" style="${wrapperStyle}">${slidesHtml}</div>
+  ${showArrows && slides.length > 1 ? `
+  <button class="xd-slide-prev" aria-label="Previous slide" style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);z-index:20;width:2.5rem;height:2.5rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(0,0,0,.3);color:#fff;border:none;cursor:pointer;backdrop-filter:blur(4px);font-size:1.25rem">‹</button>
+  <button class="xd-slide-next" aria-label="Next slide" style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);z-index:20;width:2.5rem;height:2.5rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(0,0,0,.3);color:#fff;border:none;cursor:pointer;backdrop-filter:blur(4px);font-size:1.25rem">›</button>` : ''}
+  ${showDots && slides.length > 1 ? `<div class="xd-slide-dots" style="position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:0.5rem">${slides.map((_, i) => `<button class="xd-slide-dot${i === 0 ? ' active' : ''}" data-slide="${i}" aria-label="Slide ${i + 1}" style="width:0.625rem;height:0.625rem;border-radius:50%;border:none;cursor:pointer;transition:all 0.3s;${i === 0 ? 'background:#fff;transform:scale(1.1)' : 'background:rgba(255,255,255,.4)'}"></button>`).join('')}</div>` : ''}
+  ${slides.length > 1 ? `<div style="position:absolute;top:1rem;right:1rem;z-index:20;background:rgba(0,0,0,.3);backdrop-filter:blur(4px);color:#fff;font-size:.75rem;padding:.375rem .75rem;border-radius:9999px"><span class="xd-slide-current">1</span> / ${slides.length}</div>` : ''}
 </section>`;
 }
 
