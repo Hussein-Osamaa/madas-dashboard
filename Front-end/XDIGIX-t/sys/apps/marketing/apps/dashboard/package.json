@@ -24,7 +24,6 @@
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.3",
     "exceljs": "^4.4.0",
-    "firebase": "^10.12.0",
     "html5-qrcode": "^2.3.8",
     "jsbarcode": "^3.12.1",
     "lucide-react": "^0.460.0",
