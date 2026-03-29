@@ -26,16 +26,27 @@ const AboutSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBl
   const paddingTop = d.padding_top ?? 36;
   const paddingBottom = d.padding_bottom ?? 36;
 
-  // Content (blocks or legacy)
-  const blocks = d.blocks ?? [];
-  const heading = blocks.find((b: any) => b.type === 'heading')?.text || d.title || 'Image with text';
-  const headingSize = blocks.find((b: any) => b.type === 'heading')?.heading_size || 'h1';
-  const caption = blocks.find((b: any) => b.type === 'caption')?.text || '';
-  const textContent = blocks.find((b: any) => b.type === 'text')?.text || d.content || 'Pair text with an image to focus on your chosen product, collection, or blog post.';
-  const buttonBlock = blocks.find((b: any) => b.type === 'button');
-  const buttonLabel = buttonBlock?.button_label || '';
-  const buttonLink = buttonBlock?.button_link || '#';
-  const buttonSecondary = buttonBlock?.button_style_secondary ?? false;
+  // Content — read from blocks array, falling back to flat fields
+  const blocks: Array<Record<string, any>> = d.blocks ?? [];
+  const hasBlocks = blocks.length > 0;
+
+  // Find block indices
+  const headingIdx = blocks.findIndex((b: any) => b.type === 'heading');
+  const captionIdx = blocks.findIndex((b: any) => b.type === 'caption');
+  const textIdx = blocks.findIndex((b: any) => b.type === 'text');
+  const buttonIdx = blocks.findIndex((b: any) => b.type === 'button');
+
+  // Resolve content from blocks or flat fields
+  const heading = (headingIdx >= 0 ? blocks[headingIdx].text : null) || d.heading || d.title || 'Image with text';
+  const headingSize = (headingIdx >= 0 ? blocks[headingIdx].heading_size : null) || d.heading_size || 'h1';
+  const caption = (captionIdx >= 0 ? blocks[captionIdx].text : null) || d.caption || '';
+  const textContent = (textIdx >= 0 ? blocks[textIdx].text : null) || d.text || d.content || 'Pair text with an image to focus on your chosen product, collection, or blog post.';
+
+  // Button block reads both 'label'/'link' (registry) and 'button_label'/'button_link' (legacy)
+  const btnBlock = buttonIdx >= 0 ? blocks[buttonIdx] : null;
+  const buttonLabel = btnBlock ? (btnBlock.label || btnBlock.button_label || '') : (d.button_label || d.buttonText || '');
+  const buttonLink = btnBlock ? (btnBlock.link || btnBlock.button_link || '#') : (d.button_link || d.buttonLink || '#');
+  const buttonSecondary = btnBlock?.button_style_secondary ?? false;
 
   const imageWidthMap: Record<string, string> = {
     small: 'md:w-1/3',
@@ -75,17 +86,10 @@ const AboutSection = ({ data, style, isSelected = false, onEditBlock, onDeleteBl
     </div>
   );
 
-  // Block indices for BlockWrapper
-  const captionIdx = blocks.findIndex((b: any) => b.type === 'caption');
-  const headingIdx = blocks.findIndex((b: any) => b.type === 'heading');
-  const textIdx = blocks.findIndex((b: any) => b.type === 'text');
-  const buttonIdx = blocks.findIndex((b: any) => b.type === 'button');
-
   const wrapBlock = (blockIndex: number, blockType: string, children: React.ReactNode) => {
-    if (!isSelected) return children;
-    const safeIndex = blockIndex >= 0 ? blockIndex : 0;
+    if (!isSelected || blockIndex < 0) return children;
     return (
-      <BlockWrapper dataKey="blocks" blockIndex={safeIndex} blockType={blockType} isSelected={isSelected} onEdit={onEditBlock ?? ((_dk: string, _bi: number) => {})} onDelete={onDeleteBlock ?? ((_dk: string, _bi: number) => {})}>
+      <BlockWrapper dataKey="blocks" blockIndex={blockIndex} blockType={blockType} isSelected={isSelected} onEdit={onEditBlock ?? (() => {})} onDelete={onDeleteBlock ?? (() => {})}>
         {children}
       </BlockWrapper>
     );

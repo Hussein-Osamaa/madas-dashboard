@@ -261,4 +261,79 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
   }
 });
 
+/**
+ * GET /api/storage/list
+ *
+ * Lists all uploaded files for the current tenant.
+ * Returns { files: Array<{ url: string, path: string, size?: number, lastModified?: string }> }
+ */
+router.get('/list', async (req: Request, res: Response) => {
+  const tenantId: string = (req as any).tenantId || 'default';
+
+  try {
+    if (isS3Configured && s3) {
+      /* ── S3 / Cloudflare R2 / MinIO ─────────────────────────────── */
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
+      const prefix = `uploads/${tenantId}/`;
+      const result = await s3.send(
+        new ListObjectsV2Command({
+          Bucket: config.s3.bucket,
+          Prefix: prefix,
+          MaxKeys: 500,
+        })
+      );
+      const publicBase = (config.s3.publicUrl || '').replace(/\/$/, '');
+      const files = ((result.Contents || []) as Array<{ Key: string; Size?: number; LastModified?: Date }>)
+        .filter((obj) => {
+          const ext = (obj.Key || '').split('.').pop()?.toLowerCase() || '';
+          return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+        })
+        .map((obj) => ({
+          url: `${publicBase}/${obj.Key}`,
+          path: obj.Key,
+          size: obj.Size || 0,
+          lastModified: obj.LastModified ? new Date(obj.LastModified).toISOString() : undefined,
+        }))
+        .sort((a, b) => (b.lastModified || '').localeCompare(a.lastModified || ''));
+
+      res.json({ files });
+    } else {
+      /* ── Local filesystem fallback ──────────────────────────────── */
+      const tenantDir = path.join(LOCAL_UPLOAD_DIR, tenantId);
+      if (!fs.existsSync(tenantDir)) {
+        res.json({ files: [] });
+        return;
+      }
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+      const host = req.headers['x-forwarded-host'] || req.headers.host || `localhost:${config.port}`;
+      const baseUrl = `${protocol}://${host}`;
+
+      const entries = fs.readdirSync(tenantDir);
+      const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+      const files = entries
+        .filter((name) => {
+          const ext = name.split('.').pop()?.toLowerCase() || '';
+          return imageExts.has(ext);
+        })
+        .map((name) => {
+          const filePath = path.join(tenantDir, name);
+          const stat = fs.statSync(filePath);
+          return {
+            url: `${baseUrl}/storage/files/${tenantId}/${name}`,
+            path: `${tenantId}/${name}`,
+            size: stat.size,
+            lastModified: stat.mtime.toISOString(),
+          };
+        })
+        .sort((a, b) => (b.lastModified || '').localeCompare(a.lastModified || ''));
+
+      res.json({ files });
+    }
+  } catch (err) {
+    console.error('[storage] List error:', err);
+    res.status(500).json({ error: 'Failed to list files', code: 'storage/list-error' });
+  }
+});
+
 export default router;
