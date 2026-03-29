@@ -301,6 +301,9 @@ ul,ol{list-style:none}
 .xd-product-name{font-weight:600;font-size:.95rem;line-height:1.4;flex:1;color:var(--scheme-text,var(--c-text,inherit))}
 .xd-product-price{font-weight:800;color:var(--scheme-text,var(--c-primary));font-size:1.1rem}
 .xd-product-compare{text-decoration:line-through;opacity:.5;font-size:.875rem;margin-left:.5rem}
+.xd-product-vendor{font-size:.8rem;opacity:.6;text-transform:uppercase;letter-spacing:.02em}
+.xd-product-rating{font-size:.8rem;color:#f59e0b;display:flex;align-items:center;gap:.25rem}
+.xd-rating-count{color:var(--scheme-text,var(--c-text,#666));font-size:.75rem;opacity:.6}
 .xd-product-btn{margin-top:.5rem;padding:.625rem;font-size:.875rem;border-radius:var(--btn-radius,8px)}
 .xd-card-minimal .xd-product-card{border:none;box-shadow:none;border-radius:0;background:transparent}
 .xd-card-minimal .xd-product-card:hover{box-shadow:none;translate:none}
@@ -725,7 +728,15 @@ function renderFeatures(c: Record<string, unknown>): string {
 </section>`;
 }
 
-function productCard(p: Record<string, unknown>, ctaLabel: string): string {
+interface ProductCardOpts {
+  showVendor?: boolean;
+  showRating?: boolean;
+  showPrice?: boolean;
+  showAddToCart?: boolean;
+}
+
+function productCard(p: Record<string, unknown>, ctaLabel: string, opts: ProductCardOpts = {}): string {
+  const { showVendor = false, showRating = false, showPrice = true, showAddToCart = true } = opts;
   const onSale  = p.onSale || (p.salePrice && Number(p.salePrice) < Number(p.price));
   const display = p.sellingPrice || p.salePrice || p.price;
   const detailHref = `${_sfBase}/products/${attr(p.id as string)}`;
@@ -737,12 +748,14 @@ function productCard(p: Record<string, unknown>, ctaLabel: string): string {
   const badgeHtml = outOfStock
     ? '<span class="xd-product-badge xd-badge-sold-out">Sold Out</span>'
     : onSale ? '<span class="xd-product-badge">Sale</span>' : '';
-  const btnHtml = outOfStock
+  const btnHtml = !showAddToCart ? '' : outOfStock
     ? `<span class="xd-btn xd-btn-sm xd-product-btn xd-btn-full xd-btn-disabled" style="opacity:.5;pointer-events:none;cursor:not-allowed">Sold Out</span>`
     : `<a href="${attr(p.link as string, detailHref)}" class="xd-btn xd-btn-primary xd-btn-sm xd-product-btn xd-btn-full"
            data-xd-atc data-xd-product-id="${attr(p.id as string)}"
            data-xd-product-name="${attr(p.name as string)}"
            data-xd-price="${attr(String(p.price || 0))}">${ctaLabel}</a>`;
+  const vendorHtml = showVendor && p.vendor ? `<span class="xd-product-vendor">${txt(p.vendor as string)}</span>` : '';
+  const ratingHtml = showRating ? `<div class="xd-product-rating">${'★'.repeat(Math.round(Number(p.rating || 0)))}${'☆'.repeat(5 - Math.round(Number(p.rating || 0)))}<span class="xd-rating-count">${p.reviewCount ? ` (${p.reviewCount})` : ' No reviews'}</span></div>` : '';
   return `
     <div class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}">
       <a href="${detailHref}" class="xd-product-img-wrap" style="text-decoration:none;display:block">
@@ -751,7 +764,9 @@ function productCard(p: Record<string, unknown>, ctaLabel: string): string {
       </a>
       <div class="xd-product-body">
         <a href="${detailHref}" class="xd-product-name" style="text-decoration:none;color:inherit">${txt(p.name as string)}</a>
-        ${display ? `<div><span class="xd-product-price">${formatCurrency(display)}</span>${onSale && !outOfStock ? `<span class="xd-product-compare">${formatCurrency(p.price)}</span>` : ''}</div>` : ''}
+        ${vendorHtml}
+        ${ratingHtml}
+        ${showPrice && display ? `<div><span class="xd-product-price">${formatCurrency(display)}</span>${onSale && !outOfStock ? `<span class="xd-product-compare">${formatCurrency(p.price)}</span>` : ''}</div>` : ''}
         ${btnHtml}
       </div>
     </div>`;
@@ -774,14 +789,24 @@ function renderProducts(c: Record<string, unknown>): string {
   const colsN   = Number(c.columns_desktop || c.columns) || 3;
   const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
   const layout  = (c.layout as string) || 'grid';
-  // Card style from theme (standard | card | minimal)
-  const cardStyleCls = (_themeData.productCardStyle as string) === 'minimal' ? ' xd-card-minimal' : (_themeData.productCardStyle as string) === 'card' ? ' xd-card-card' : '';
-  // Show/hide vendor from theme
+  // Card style: section data overrides theme
+  const cardStyle = (c.cardStyleType as string) || (_themeData.productCardStyle as string) || 'standard';
+  const cardStyleCls = cardStyle === 'minimal' ? ' xd-card-minimal' : cardStyle === 'card' ? ' xd-card-card' : '';
+  // Per-section image ratio override (adapt | portrait | square)
+  const sectionImgRatio = c.image_ratio as string | undefined;
+  const imgRatioStyle = sectionImgRatio && sectionImgRatio !== 'adapt'
+    ? ` style="--product-img-ratio:${sectionImgRatio === 'square' ? '1' : sectionImgRatio === 'portrait' ? '2/3' : 'auto'}"`
+    : '';
+  // Show/hide options from section data, fallback to theme
   const showVendor = c.show_vendor ?? _themeData.productShowVendor ?? false;
+  const showRating = c.show_rating ?? false;
+  const showPrice = c.showPrice !== false;
+  const showAddToCart = c.showAddToCart !== false;
   const showViewAll = c.show_view_all !== false;
+  const cardOpts: ProductCardOpts = { showVendor: !!showVendor, showRating: !!showRating, showPrice, showAddToCart };
   // If no products selected, show skeleton cards — runtime will hydrate with live data
   const cards = prods.length > 0
-    ? prods.map(p => productCard(p, 'Add to Cart')).join('')
+    ? prods.map(p => productCard(p, 'Add to Cart', cardOpts)).join('')
     : Array.from({ length: colsN }, () => skeletonCard()).join('');
 
   const isCarousel = layout === 'carousel';
@@ -795,7 +820,7 @@ function renderProducts(c: Record<string, unknown>): string {
     </div>` : '';
 
   return `
-<section class="xd-section${cardStyleCls}">
+<section class="xd-section${cardStyleCls}"${imgRatioStyle}>
 <div class="xd-container">
   <div class="xd-section-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
     <div>
