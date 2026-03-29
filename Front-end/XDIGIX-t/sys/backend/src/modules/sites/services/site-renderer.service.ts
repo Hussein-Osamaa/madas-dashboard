@@ -195,7 +195,7 @@ ul,ol{list-style:none}
 .xd-flex{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
 .xd-flex-center{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;justify-content:center}
 .xd-h1{font-size:clamp(2rem,5vw,3.75rem);font-weight:800;line-height:1.15;letter-spacing:-.02em}
-.xd-h2{font-size:clamp(1.6rem,3.5vw,2.5rem);font-weight:700;line-height:1.2;color:var(--c-primary)}
+.xd-h2{font-size:clamp(1.6rem,3.5vw,2.5rem);font-weight:700;line-height:1.2;color:inherit}
 .xd-h3{font-size:clamp(1.1rem,2vw,1.4rem);font-weight:700;line-height:1.3}
 .xd-lead{font-size:clamp(1rem,2vw,1.2rem);opacity:.8;max-width:620px}
 .xd-section-head{text-align:center;margin-bottom:clamp(2rem,5vw,4rem)}
@@ -414,7 +414,7 @@ ul,ol{list-style:none}
 .xd-footer-links{display:flex;flex-direction:column;gap:.625rem}
 .xd-footer-links a{font-size:.9rem;opacity:.7;transition:opacity .2s}
 .xd-footer-links a:hover{opacity:1}
-.xd-footer-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:1.5rem;
+.xd-footer-bottom{border-top:1px solid color-mix(in srgb,currentColor 15%,transparent);padding-top:1.5rem;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
 .xd-footer-social{display:flex;gap:.625rem}
 .xd-footer-social-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
@@ -1340,53 +1340,93 @@ function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: 
     return `<a href="${attr(s.url)}" class="xd-footer-social-btn" target="_blank" rel="noopener noreferrer" aria-label="${attr(s.platform)}" style="opacity:.7;transition:opacity .2s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">${svg}</a>`;
   }).join('');
 
+  const logoText = txt(c.logoText as string || siteName);
+  const tagline = txt(c.tagline as string || '');
+  const borderStyle = 'border-color:color-mix(in srgb,currentColor 15%,transparent)';
+
   if (layout === 'minimal') {
-    const policyLinks = (c.policyLinks as Array<Record<string, unknown>>) || [];
     return `
-<footer
-<div class="xd-container xd-footer-minimal">
-  <strong style="font-size:1.1rem">${txt(c.logoText as string || siteName)}</strong>
-  <nav class="xd-footer-policy">${policyLinks.map(l => `<a href="${attr(l.link as string, '#')}">${txt(l.label as string)}</a>`).join('')}</nav>
-  <div class="xd-footer-social">${socialHtml}</div>
-  <span style="font-size:.8rem;opacity:.45">${copyright}</span>
-</div>
+<footer style="width:100%">
+  <div style="${borderStyle};border-top-width:1px;border-top-style:solid"></div>
+  <div class="xd-container" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2rem;padding:1.5rem 0">
+    <div style="max-width:28rem">
+      <strong style="font-size:1.5rem;display:block;margin-bottom:.75rem">${logoText}</strong>
+      ${tagline ? `<p style="font-size:.875rem;opacity:.65">${tagline}</p>` : ''}
+    </div>
+    ${socialHtml ? `<div class="xd-footer-social">${socialHtml}</div>` : ''}
+  </div>
+  <div style="${borderStyle};border-top-width:1px;border-top-style:solid">
+    <div class="xd-container" style="padding:1rem 0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1rem;font-size:.75rem;opacity:.65">
+      <span>${copyright}</span>
+      <a href="#" style="opacity:.8">Privacy policy</a>
+      <a href="#" style="opacity:.8">Terms of service</a>
+      <a href="#" style="opacity:.8">Contact</a>
+    </div>
+  </div>
 </footer>`;
   }
 
-  return `
-<footer
-<div class="xd-container xd-footer">
-  <div class="xd-footer-grid" style="border-bottom:1px solid color-mix(in srgb, currentColor 15%, transparent);padding-bottom:2.5rem;margin-bottom:2rem">
-    <div>
-      ${c.logo ? `<img src="${attr(c.logo as string)}" alt="${attr(c.logoText as string || siteName)}" style="max-height:48px;max-width:160px;object-fit:contain;margin-bottom:.75rem" loading="lazy">` : ''}
-      <strong style="font-size:1.2rem;display:block;margin-bottom:.5rem">${txt(c.logoText as string || siteName)}</strong>
-      ${c.tagline ? `<p style="opacity:.6;font-size:.9rem;line-height:1.6;max-width:280px">${txt(c.tagline as string)}</p>` : ''}
-    </div>
-    ${columns.map(col => {
+  // Classic layout — 4-column grid matching builder
+  // Column 1: Brand + tagline + social icons
+  // Columns 2-3: From data (or defaults)
+  // Column 4: Newsletter
+
+  // Build link columns from data or defaults
+  let colsHtml = '';
+  if (columns.length > 0) {
+    colsHtml = columns.map(col => {
       const colTitle = (col.title as string) || (col.heading as string) || '';
-      // Support both links array (legacy) and menu textarea (registry: "Label | url\nLabel | url")
       let linksHtml = '';
       const linksArr = col.links as Array<Record<string, unknown>> | undefined;
       if (linksArr && Array.isArray(linksArr)) {
-        linksHtml = linksArr.map(l => `<a href="${attr(l.link as string || l.url as string, '#')}">${txt(l.label as string)}</a>`).join('');
+        linksHtml = linksArr.map(l => `<li><a href="${attr(l.link as string || l.url as string, '#')}" style="opacity:.65;transition:opacity .2s">${txt(l.label as string)}</a></li>`).join('');
       } else if (col.menu && typeof col.menu === 'string') {
         linksHtml = (col.menu as string).split('\n').filter(Boolean).map(line => {
           const [label, url] = line.split('|').map(s => s.trim());
-          return `<a href="${attr(url || '#')}">${txt(label || '')}</a>`;
+          return `<li><a href="${attr(url || '#')}" style="opacity:.65;transition:opacity .2s">${txt(label || '')}</a></li>`;
         }).join('');
       }
-      return `
-    <div>
-      <p class="xd-footer-col-title">${txt(colTitle)}</p>
-      <nav class="xd-footer-links">${linksHtml}</nav>
-    </div>`;
-    }).join('')}
+      return `<div><h4 style="font-weight:600;margin-bottom:1rem">${txt(colTitle)}</h4><ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem;font-size:.875rem">${linksHtml}</ul></div>`;
+    }).join('');
+  } else {
+    // Default columns matching the builder preview
+    colsHtml = `
+    <div><h4 style="font-weight:600;margin-bottom:1rem">Quick Links</h4><ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem;font-size:.875rem;opacity:.65"><li><a href="/">Home</a></li><li><a href="/products">Shop</a></li><li><a href="#">About Us</a></li><li><a href="/contact">Contact</a></li></ul></div>
+    <div><h4 style="font-weight:600;margin-bottom:1rem">Customer Service</h4><ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem;font-size:.875rem;opacity:.65"><li><a href="#">FAQ</a></li><li><a href="#">Shipping &amp; Returns</a></li><li><a href="#">Size Guide</a></li><li><a href="#">Track Order</a></li></ul></div>`;
+  }
+
+  return `
+<footer style="width:100%;padding:0 1.5rem">
+  <div style="max-width:80rem;margin:0 auto">
+    <div style="display:grid;grid-template-columns:repeat(1,1fr);gap:2rem">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2rem">
+        <!-- Brand column -->
+        <div>
+          <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem">${logoText}</h3>
+          ${tagline ? `<p style="font-size:.875rem;opacity:.65;margin-bottom:1rem">${tagline}</p>` : ''}
+          ${socialHtml ? `<div style="display:flex;gap:.75rem">${socialHtml}</div>` : ''}
+        </div>
+        ${colsHtml}
+        <!-- Newsletter column -->
+        <div>
+          <h4 style="font-weight:600;margin-bottom:1rem">Newsletter</h4>
+          <p style="font-size:.875rem;opacity:.65;margin-bottom:1rem">Subscribe to get special offers and updates.</p>
+          <form style="display:flex" onsubmit="event.preventDefault()">
+            <input type="email" placeholder="Your email" style="flex:1;padding:.5rem .75rem;font-size:.875rem;border:1px solid color-mix(in srgb,currentColor 20%,transparent);border-radius:8px 0 0 8px;background:transparent;color:inherit">
+            <button type="submit" style="padding:.5rem 1rem;border-radius:0 8px 8px 0;font-weight:500;font-size:.875rem;background:var(--scheme-btn-bg,var(--c-primary,#121212));color:var(--scheme-btn-label,#fff);border:none;cursor:pointer">Subscribe</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Bottom bar -->
+    <div style="margin-top:3rem;padding-top:2rem;${borderStyle};border-top-width:1px;border-top-style:solid;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem">
+      <p style="font-size:.875rem;opacity:.65">${copyright}</p>
+      <div style="display:flex;gap:1.5rem;font-size:.875rem;opacity:.65">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+      </div>
+    </div>
   </div>
-  <div class="xd-footer-bottom">
-    <span style="font-size:.85rem;opacity:.45">${copyright}</span>
-    <div class="xd-footer-social">${socialHtml}</div>
-  </div>
-</div>
 </footer>`;
 }
 
