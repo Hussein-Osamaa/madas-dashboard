@@ -1728,7 +1728,9 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   --btn-radius:${_btnRadius};
   --btn-shadow:${_btnShadow};
   --btn-padding:${_btnPadding};
+  --body-scale:${Number(theme.bodyScale || 100) / 100};
 }
+body{font-size:calc(1rem * var(--body-scale,1))}
 /* Color scheme buttons — inherit scheme CSS vars when set */
 [style*="--scheme-btn-bg"] .xd-btn,
 [style*="--scheme-btn-bg"] .xd-cta-btn,
@@ -1976,7 +1978,9 @@ function pageShell(
   --c-text:${attr((theme.textColor        || theme.colorText      || '#171817') as string)};
   --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
   --br:${theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px'};
-}`;
+  --body-scale:${Number(theme.bodyScale || 100) / 100};
+}
+body{font-size:calc(1rem * var(--body-scale,1))}`;
   const storefrontBase = opts?.subdomain
     ? ''
     : (site as unknown as Record<string, unknown>).slug
