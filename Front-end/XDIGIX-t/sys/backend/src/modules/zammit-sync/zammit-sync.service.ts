@@ -252,10 +252,20 @@ export async function syncZammitOrders(
 
   logger.info('Zammit sync: starting', logMeta);
 
-  // Atomic lock
+  // Atomic lock — also clear stale locks older than 10 minutes
+  const STALE_LOCK_MS = 10 * 60 * 1000; // 10 minutes
+  const staleCutoff = new Date(Date.now() - STALE_LOCK_MS);
+
   const lockResult = await ZammitIntegration.findOneAndUpdate(
-    { businessId, lastSyncStatus: { $ne: 'running' } },
-    { $set: { lastSyncStatus: 'running', lastSyncError: '' } },
+    {
+      businessId,
+      $or: [
+        { lastSyncStatus: { $ne: 'running' } },
+        { lastSyncAt: { $lt: staleCutoff } },    // Stale lock — force release
+        { lastSyncAt: { $exists: false } },       // Never synced
+      ],
+    },
+    { $set: { lastSyncStatus: 'running', lastSyncError: '', lastSyncAt: new Date() } },
     { new: true }
   );
 

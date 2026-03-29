@@ -174,9 +174,17 @@ router.post('/sync/trigger', async (req: Request, res: Response) => {
       return;
     }
 
+    // Check for stale lock — if "running" for > 10 minutes, force clear it
     if (integration.lastSyncStatus === 'running') {
-      res.status(409).json({ error: 'Sync is already running' });
-      return;
+      const lastSync = integration.lastSyncAt ? new Date(integration.lastSyncAt).getTime() : 0;
+      const staleMins = (Date.now() - lastSync) / 60000;
+      if (staleMins < 10) {
+        res.status(409).json({ error: 'Sync is already running' });
+        return;
+      }
+      // Stale lock — clear it so we can proceed
+      logger.warn('Zammit sync trigger: clearing stale lock', { businessId, staleMins: String(Math.round(staleMins)) });
+      await ZammitIntegration.updateOne({ businessId }, { $set: { lastSyncStatus: 'idle' } });
     }
 
     // Run sync (this may take a while — respond with 202 Accepted)

@@ -127,8 +127,9 @@ export default function PendingOrdersPage() {
             
             console.log(`[PendingOrdersPage] Order ${orderDoc.id}: status=${fulfillmentStatus}`);
             
-            // Only include pending orders
-            if (fulfillmentStatus === 'pending') {
+            // Only include orders explicitly sent to fulfillment (via the Fulfillment button)
+            // and still pending — don't show all pending orders automatically
+            if (fulfillmentStatus === 'pending' && orderData.fulfillmentSynced === true) {
               allOrders.push({
                 id: orderDoc.id,
                 orderId: orderDoc.id,
