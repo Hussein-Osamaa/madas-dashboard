@@ -897,6 +897,16 @@ function renderAbout(c: Record<string, unknown>): string {
   const isTextFirst = layout === 'text_first' || (c.imagePosition as string) === 'left';
   const rev = isTextFirst ? ' reverse' : '';
 
+  // Image height & width settings
+  const height = (c.height as string) || 'adapt';
+  const heightMap: Record<string, string> = { adapt: '', small: 'min-height:300px', medium: 'min-height:450px', large: 'min-height:600px' };
+  const imgHeightStyle = heightMap[height] || '';
+  const desktopImageWidth = (c.desktop_image_width as string) || 'medium';
+  const widthMap: Record<string, string> = { small: '1fr 2fr', medium: '1fr 1fr', large: '2fr 1fr' };
+  const gridCols = widthMap[desktopImageWidth] || '1fr 1fr';
+  const contentPos = (c.content_position as string) || 'middle';
+  const contentAlignV: Record<string, string> = { top: 'start', middle: 'center', bottom: 'end' };
+
   // Support both blocks format and flat fields
   const blocks = (c.blocks as Array<Record<string, unknown>>) || [];
   let title = (c.heading as string) || (c.title as string) || '';
@@ -920,8 +930,8 @@ function renderAbout(c: Record<string, unknown>): string {
   return `
 <section class="xd-section">
 <div class="xd-container">
-  <div class="xd-split${rev}">
-    ${c.image ? `<img class="xd-split-img xd-reveal" src="${attr(c.image as string)}" alt="${attr(c.imageAlt as string || title || '')}" loading="lazy" decoding="async">` : ''}
+  <div class="xd-split${rev}" style="grid-template-columns:${gridCols};align-items:${contentAlignV[contentPos] || 'center'}">
+    ${c.image ? `<img class="xd-split-img xd-reveal" src="${attr(c.image as string)}" alt="${attr(c.imageAlt as string || title || '')}" loading="lazy" decoding="async" style="${imgHeightStyle ? imgHeightStyle + ';' : ''}${height !== 'adapt' ? 'aspect-ratio:auto;' : ''}">` : ''}
     <div class="xd-reveal" style="text-align:${contentAlign}">
       ${caption ? `<p style="font-size:.85rem;opacity:.6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">${txt(caption)}</p>` : ''}
       ${title ? `<h2 class="xd-h2" style="margin-bottom:1rem;font-size:${hSize}">${txt(title)}</h2>` : ''}
