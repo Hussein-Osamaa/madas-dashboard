@@ -7,10 +7,8 @@ import {
   loginStaff,
   loginAdmin,
   refreshToken,
-  exchangeFirebaseForAdminToken,
   type AccountType,
 } from '../services/central-auth.service';
-import { verifyFirebaseToken } from '../lib/firebaseAdmin';
 import { centralJwtMiddleware } from '../middleware/central-jwt.middleware';
 
 const router = Router();
@@ -71,26 +69,6 @@ router.post(
       return;
     }
     res.json(result);
-  }
-);
-
-/** POST /auth/admin/exchange-firebase */
-router.post(
-  '/admin/exchange-firebase',
-  authRateLimit,
-  [body('firebaseIdToken').isString().notEmpty()],
-  validate,
-  async (req: Request, res: Response) => {
-    try {
-      const result = await exchangeFirebaseForAdminToken(req.body.firebaseIdToken, verifyFirebaseToken);
-      if (!result) {
-        res.status(403).json({ error: 'Not authorized as admin', code: 'auth/not-admin' });
-        return;
-      }
-      res.json(result);
-    } catch {
-      res.status(500).json({ error: 'Authentication failed' });
-    }
   }
 );
 

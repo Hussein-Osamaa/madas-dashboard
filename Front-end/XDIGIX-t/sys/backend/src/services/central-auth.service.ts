@@ -238,48 +238,6 @@ export async function refreshToken(
   return { accessToken, expiresIn };
 }
 
-/** Exchange Firebase ID token for backend admin token (super_admin only) */
-export async function exchangeFirebaseForAdminToken(
-  firebaseIdToken: string,
-  verifyFirebase: (token: string) => Promise<{ uid: string; email?: string } | null>
-): Promise<{ accessToken: string; expiresIn: number } | null> {
-  const decoded = await verifyFirebase(firebaseIdToken);
-  if (!decoded?.email) return null;
-
-  const email = decoded.email.toLowerCase().trim();
-  const user = await User.findOne({ email });
-  if (user && user.type === 'super_admin') {
-    const payload: JWTPayload = {
-      userId: user.uid,
-      accountType: 'ADMIN',
-      email: user.email,
-      role: 'super_admin',
-    };
-    const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'] };
-    const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, opts);
-    const decodedJwt = jwt.decode(accessToken) as { exp?: number };
-    const expiresIn = decodedJwt?.exp ? decodedJwt.exp - Math.floor(Date.now() / 1000) : 86400;
-    return { accessToken, expiresIn };
-  }
-
-  const SUPER_ADMIN_EMAILS = ['hesainosama@gmail.com'];
-  if (SUPER_ADMIN_EMAILS.some((e) => e.toLowerCase() === email)) {
-    const payload: JWTPayload = {
-      userId: decoded.uid,
-      accountType: 'ADMIN',
-      email: decoded.email,
-      role: 'super_admin',
-    };
-    const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'] };
-    const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, opts);
-    const decodedJwt = jwt.decode(accessToken) as { exp?: number };
-    const expiresIn = decodedJwt?.exp ? decodedJwt.exp - Math.floor(Date.now() / 1000) : 86400;
-    return { accessToken, expiresIn };
-  }
-
-  return null;
-}
-
 /** Verify token and return extended payload */
 export function verifyToken(token: string): JWTPayload | null {
   try {
