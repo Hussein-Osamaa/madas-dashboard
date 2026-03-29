@@ -182,7 +182,7 @@ const SlideshowSection = ({ data, style, isSelected = false, onEditBlock, onDele
             {slide.button_label && (
               <a
                 href={slide.button_link || '#'}
-                className="inline-block text-sm font-medium tracking-wider uppercase transition-all duration-300"
+                className={`xd-slide-btn ${slide.button_style === 'outline' ? 'xd-slide-btn-outline' : 'xd-slide-btn-solid'} inline-block text-sm font-medium tracking-wider uppercase`}
                 style={slide.button_style === 'outline'
                   ? {
                       padding: 'var(--btn-padding, 0.75rem 1.5rem)',

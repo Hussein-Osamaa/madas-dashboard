@@ -276,17 +276,20 @@ ul,ol{list-style:none}
   display:flex;flex-direction:column;transition:box-shadow .25s,translate .25s}
 .xd-product-card:hover{box-shadow:0 12px 32px rgba(0,0,0,.1);translate:0 -3px}
 .xd-product-img-wrap{position:relative;overflow:hidden;background:#f9f9f9}
-.xd-product-img-wrap img{width:100%;aspect-ratio:1;object-fit:cover;transition:scale .4s}
+.xd-product-img-wrap img{width:100%;aspect-ratio:var(--product-img-ratio,1);object-fit:cover;transition:scale .4s}
 .xd-product-card:hover .xd-product-img-wrap img{scale:1.05}
-.xd-product-badge{position:absolute;top:.75rem;left:.75rem;background:#ef4444;color:#fff;
-  font-size:.75rem;font-weight:700;padding:.25rem .625rem;border-radius:999px}
+.xd-product-badge{position:absolute;top:.75rem;left:.75rem;background:var(--badge-color,#ef4444);color:#fff;
+  font-size:.75rem;font-weight:700;padding:.25rem .625rem;border-radius:var(--badge-radius,999px)}
 .xd-badge-sold-out{background:#6b7280}
 .xd-btn-disabled{background:#d1d5db;color:#6b7280;cursor:not-allowed}
-.xd-product-body{padding:1rem;flex:1;display:flex;flex-direction:column;gap:.5rem}
+.xd-product-body{padding:1rem;flex:1;display:flex;flex-direction:column;gap:.5rem;text-align:var(--product-text-align,left)}
 .xd-product-name{font-weight:600;font-size:.95rem;line-height:1.4;flex:1}
 .xd-product-price{font-weight:800;color:var(--c-primary);font-size:1.1rem}
 .xd-product-compare{text-decoration:line-through;opacity:.5;font-size:.875rem;margin-left:.5rem}
-.xd-product-btn{margin-top:.5rem;padding:.625rem;font-size:.875rem;border-radius:8px}
+.xd-product-btn{margin-top:.5rem;padding:.625rem;font-size:.875rem;border-radius:var(--btn-radius,8px)}
+.xd-card-minimal .xd-product-card{border:none;box-shadow:none;border-radius:0}
+.xd-card-minimal .xd-product-card:hover{box-shadow:none;translate:none}
+.xd-card-card .xd-product-card{box-shadow:0 2px 8px rgba(0,0,0,.08)}
 @keyframes xd-pulse{0%,100%{opacity:1}50%{opacity:.45}}
 .xd-skel{pointer-events:none}
 .xd-skel-img{aspect-ratio:1;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200%;animation:xd-pulse 1.5s ease-in-out infinite}
@@ -401,12 +404,23 @@ ul,ol{list-style:none}
   box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .xd-comparison-label{position:absolute;top:.75rem;padding:.25rem .75rem;
   border-radius:999px;font-size:.8rem;font-weight:700;background:rgba(0,0,0,.55);color:#fff;z-index:5}
+.xd-slideshow{position:relative;overflow:hidden}
+.xd-slide-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;
+  font-weight:600;font-size:1rem;white-space:nowrap;cursor:pointer;text-decoration:none;z-index:1;
+  transition:color .4s ease,border-color .3s ease}
+.xd-slide-btn::before{content:'';position:absolute;inset:0;z-index:-1;
+  transform:scaleX(0);transform-origin:left;transition:transform .45s cubic-bezier(.4,0,.2,1)}
+.xd-slide-btn:hover::before{transform:scaleX(1)}
+.xd-slide-btn-solid::before{background:rgba(255,255,255,.2)}
+.xd-slide-btn-solid:hover{filter:brightness(1.1)}
+.xd-slide-btn-outline::before{background:var(--scheme-btn-bg,#fff)}
+.xd-slide-btn-outline:hover{color:var(--scheme-btn-label,#000)!important;border-color:var(--scheme-btn-bg,#fff)!important}
 .xd-cta{padding:clamp(3rem,7vw,5rem) 0;text-align:center}
 .xd-cta .xd-h2{margin-bottom:.75rem}
 .xd-split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,6vw,5rem);align-items:center}
 .xd-split.reverse{direction:rtl}.xd-split.reverse>*{direction:ltr}
 @media(max-width:768px){.xd-split{grid-template-columns:1fr}}
-.xd-split-img{border-radius:var(--br);width:100%;aspect-ratio:4/3;object-fit:cover}
+.xd-split-img{border-radius:var(--media-radius,var(--br));width:100%;aspect-ratio:4/3;object-fit:cover}
 .xd-footer{padding:clamp(2.5rem,6vw,5rem) 0 1.5rem}
 .xd-footer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2.5rem;
   margin-bottom:clamp(2rem,4vw,3rem)}
@@ -736,12 +750,16 @@ function renderProducts(c: Record<string, unknown>): string {
   const prods   = (c.selectedProducts as Array<Record<string, unknown>>) || [];
   const colsN   = Number(c.columns_desktop || c.columns) || 3;
   const colsCls = colsN === 4 ? 'xd-grid-4' : colsN === 2 ? 'xd-grid-2' : 'xd-grid-3';
+  // Card style from theme (standard | card | minimal)
+  const cardStyleCls = (_themeData.productCardStyle as string) === 'minimal' ? ' xd-card-minimal' : (_themeData.productCardStyle as string) === 'card' ? ' xd-card-card' : '';
+  // Show/hide vendor from theme
+  const showVendor = c.show_vendor ?? _themeData.productShowVendor ?? false;
   // If no products selected, show skeleton cards — runtime will hydrate with live data
   const cards = prods.length > 0
     ? prods.map(p => productCard(p, 'Add to Cart')).join('')
     : Array.from({ length: colsN }, () => skeletonCard()).join('');
   return `
-<section class="xd-section">
+<section class="xd-section${cardStyleCls}">
 <div class="xd-container">
   <div class="xd-section-head">
     <h2 class="xd-h2 xd-reveal">${txt((c.heading as string) || (c.title as string) || 'Products')}</h2>
@@ -904,39 +922,50 @@ function renderAbout(c: Record<string, unknown>): string {
   const desktopImageWidth = (c.desktop_image_width as string) || 'medium';
   const widthMap: Record<string, string> = { small: '1fr 2fr', medium: '1fr 1fr', large: '2fr 1fr' };
   const gridCols = widthMap[desktopImageWidth] || '1fr 1fr';
-  const contentPos = (c.content_position as string) || 'middle';
+  const contentPos = (c.desktop_content_position as string) || (c.content_position as string) || 'middle';
   const contentAlignV: Record<string, string> = { top: 'start', middle: 'center', bottom: 'end' };
+  const paddingTop = Number(c.padding_top) || 36;
+  const paddingBottom = Number(c.padding_bottom) || 36;
 
-  // Support both blocks format and flat fields
+  // Blocks take priority over flat fields (same logic as AboutSection.tsx)
   const blocks = (c.blocks as Array<Record<string, unknown>>) || [];
-  let title = (c.heading as string) || (c.title as string) || '';
-  let caption = (c.caption as string) || '';
-  let body = (c.text as string) || (c.content as string) || '';
-  let btn = (c.button_label as string) || (c.buttonText as string) || '';
-  let btnLink = (c.button_link as string) || (c.buttonLink as string) || '#';
-  for (const block of blocks) {
-    if (block.type === 'heading') title = title || (block.text as string) || '';
-    if (block.type === 'caption') caption = caption || (block.text as string) || '';
-    if (block.type === 'text') body = body || (block.text as string) || '';
-    if (block.type === 'button') {
-      btn = btn || (block.label as string) || (block.button_label as string) || '';
-      btnLink = (block.link as string) || (block.button_link as string) || btnLink;
-    }
-  }
-  const headingSize = (c.heading_size as string) || 'h1';
-  const hSizeMap: Record<string, string> = { h0: '3.5rem', h1: '3rem', h2: '2.25rem', h3: '1.875rem', h4: '1.5rem', h5: '1.25rem' };
+  const headingBlock = blocks.find(b => b.type === 'heading');
+  const captionBlock = blocks.find(b => b.type === 'caption');
+  const textBlock = blocks.find(b => b.type === 'text');
+  const buttonBlock = blocks.find(b => b.type === 'button');
+
+  const title = (headingBlock?.text as string) || (c.heading as string) || (c.title as string) || '';
+  const headingSize = (headingBlock?.heading_size as string) || (c.heading_size as string) || 'h1';
+  const caption = (captionBlock?.text as string) || (c.caption as string) || '';
+  const body = (textBlock?.text as string) || (c.text as string) || (c.content as string) || '';
+  const btn = buttonBlock
+    ? ((buttonBlock.label as string) || (buttonBlock.button_label as string) || '')
+    : ((c.button_label as string) || (c.buttonText as string) || '');
+  const btnLink = buttonBlock
+    ? ((buttonBlock.link as string) || (buttonBlock.button_link as string) || '#')
+    : ((c.button_link as string) || (c.buttonLink as string) || '#');
+  const btnSecondary = buttonBlock?.button_style_secondary === true;
+
+  const hSizeMap: Record<string, string> = { hxl: '4rem', h0: '3.5rem', h1: '3rem', h2: '2.25rem', h3: '1.875rem' };
   const hSize = hSizeMap[headingSize] || hSizeMap.h1;
-  const contentAlign = (c.content_alignment as string) || 'left';
+  const contentAlign = (c.desktop_content_alignment as string) || (c.content_alignment as string) || 'left';
+
+  const btnHtml = btn
+    ? btnSecondary
+      ? `<a href="${attr(btnLink)}" class="xd-btn" style="border-radius:var(--btn-radius,8px);padding:var(--btn-padding,0.75rem 1.5rem);box-shadow:var(--btn-shadow,none);border:1px solid var(--scheme-outline-btn,currentColor);color:var(--scheme-outline-btn,currentColor);background:transparent">${txt(btn)}</a>`
+      : `<a href="${attr(btnLink)}" class="xd-btn xd-btn-primary" style="border-radius:var(--btn-radius,8px);padding:var(--btn-padding,0.75rem 1.5rem);box-shadow:var(--btn-shadow,none);background:var(--scheme-btn-bg,var(--c-primary));color:var(--scheme-btn-label,#fff);border:2px solid transparent">${txt(btn)}</a>`
+    : '';
+
   return `
-<section class="xd-section">
+<section class="xd-section" style="padding-top:${paddingTop}px;padding-bottom:${paddingBottom}px">
 <div class="xd-container">
   <div class="xd-split${rev}" style="grid-template-columns:${gridCols};align-items:${contentAlignV[contentPos] || 'center'}">
-    ${c.image ? `<img class="xd-split-img xd-reveal" src="${attr(c.image as string)}" alt="${attr(c.imageAlt as string || title || '')}" loading="lazy" decoding="async" style="${imgHeightStyle ? imgHeightStyle + ';' : ''}${height !== 'adapt' ? 'aspect-ratio:auto;' : ''}">` : ''}
-    <div class="xd-reveal" style="text-align:${contentAlign}">
-      ${caption ? `<p style="font-size:.85rem;opacity:.6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">${txt(caption)}</p>` : ''}
+    ${c.image ? `<img class="xd-split-img xd-reveal" src="${attr(c.image as string)}" alt="${attr(c.imageAlt as string || title || '')}" loading="lazy" decoding="async" style="${imgHeightStyle ? imgHeightStyle + ';' : ''}${height !== 'adapt' ? 'aspect-ratio:auto;object-fit:cover;' : ''}">` : `<div class="xd-split-img xd-reveal" style="background:#f3f3f3;${imgHeightStyle || 'min-height:300px'}"></div>`}
+    <div class="xd-reveal" style="text-align:${contentAlign};padding:2rem 0">
+      ${caption ? `<p style="font-size:.75rem;opacity:.6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem">${txt(caption)}</p>` : ''}
       ${title ? `<h2 class="xd-h2" style="margin-bottom:1rem;font-size:${hSize}">${txt(title)}</h2>` : ''}
-      ${body ? `<p style="opacity:.8;line-height:1.8;margin-bottom:1.5rem">${txt(body)}</p>` : ''}
-      ${btn ? `<a href="${attr(btnLink)}" class="xd-btn xd-btn-primary" style="border-radius:var(--btn-radius,8px)">${txt(btn)}</a>` : ''}
+      ${body ? `<div style="opacity:.75;line-height:1.8;margin-bottom:1.5rem;font-size:.95rem">${txt(body)}</div>` : ''}
+      ${btnHtml}
     </div>
   </div>
 </div>
@@ -1217,8 +1246,8 @@ function renderSlideshow(c: Record<string, unknown>): string {
 
     const btnHtml = btnText
       ? btnStyle === 'outline'
-        ? `<a href="${attr(btnLink)}" class="xd-btn" style="border-radius:var(--btn-radius,8px);padding:var(--btn-padding,0.75rem 1.5rem);box-shadow:var(--btn-shadow,none);border:2px solid var(--scheme-btn-bg,#fff);color:var(--scheme-btn-bg,#fff);background:transparent">${txt(btnText)}</a>`
-        : `<a href="${attr(btnLink)}" class="xd-btn" style="border-radius:var(--btn-radius,8px);padding:var(--btn-padding,0.75rem 1.5rem);box-shadow:var(--btn-shadow,none);background:var(--scheme-btn-bg,#fff);color:var(--scheme-btn-label,#000);border:2px solid transparent">${txt(btnText)}</a>`
+        ? `<a href="${attr(btnLink)}" class="xd-slide-btn xd-slide-btn-outline" style="border-radius:var(--btn-radius,8px);padding:var(--btn-padding,0.75rem 1.5rem);box-shadow:var(--btn-shadow,none);border:2px solid var(--scheme-btn-bg,#fff);color:var(--scheme-btn-bg,#fff);background:transparent">${txt(btnText)}</a>`
+        : `<a href="${attr(btnLink)}" class="xd-slide-btn xd-slide-btn-solid" style="border-radius:var(--btn-radius,8px);padding:var(--btn-padding,0.75rem 1.5rem);box-shadow:var(--btn-shadow,none);background:var(--scheme-btn-bg,#fff);color:var(--scheme-btn-label,#000);border:2px solid transparent">${txt(btnText)}</a>`
       : '';
 
     return `
@@ -1767,6 +1796,23 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
 
   // ── CSS variables from theme ─────────────────────────────────────
   // Support both the old key names (theme.*Color) and new ThemeContext names (theme.color*)
+  // Variant style
+  const variantStyleMap: Record<string, string> = { pill: '9999px', rectangle: '6px', circle: '50%' };
+  const _variantRadius = variantStyleMap[(theme.variantStyle as string) || 'pill'] || '9999px';
+  // Product card settings
+  const productCardStyle = (theme.productCardStyle as string) || 'standard';
+  const productImgRatio = (theme.productImageRatio as string) || 'adapt';
+  const productTextAlign = (theme.productTextAlign as string) || 'left';
+  const productImgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '2/3', square: '1' };
+  const _productImgAspect = productImgRatioMap[productImgRatio] || 'auto';
+  // Media settings
+  const _mediaRadius = `${Number(theme.mediaBorderRadius) || 0}px`;
+  // Badge settings
+  const badgePositionMap: Record<string, [string, string]> = { 'top-left': ['top:.75rem', 'left:.75rem'], 'top-right': ['top:.75rem', 'right:.75rem'], 'bottom-left': ['bottom:.75rem', 'left:.75rem'] };
+  const _badgePos = badgePositionMap[(theme.badgePosition as string) || 'top-left'] || badgePositionMap['top-left'];
+  const _badgeRadius = (theme.badgeShape as string) === 'pill' ? '999px' : '4px';
+  const _badgeColor = attr((theme.saleBadgeColor as string) || '#ef4444');
+
   const themeVars = `:root{
   --c-primary:${attr((theme.primaryColor   || theme.colorPrimary   || '#27491F') as string)};
   --c-secondary:${attr((theme.secondaryColor || theme.colorSecondary || '#F0CAE1') as string)};
@@ -1779,6 +1825,12 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   --btn-shadow:${_btnShadow};
   --btn-padding:${_btnPadding};
   --body-scale:${Number(theme.bodyScale || 100) / 100};
+  --variant-radius:${_variantRadius};
+  --product-img-ratio:${_productImgAspect};
+  --product-text-align:${productTextAlign};
+  --media-radius:${_mediaRadius};
+  --badge-color:${_badgeColor};
+  --badge-radius:${_badgeRadius};
 }
 body{font-size:calc(1rem * var(--body-scale,1))}
 /* Color scheme buttons — inherit scheme CSS vars when set */
@@ -1878,6 +1930,7 @@ body{font-size:calc(1rem * var(--body-scale,1))}
 <meta name="description" content="${attr(seo.description)}">
 ${seo.keywords?.length ? `<meta name="keywords" content="${attr(seo.keywords.join(', '))}">` : ''}
 <link rel="canonical" href="${attr(seo.canonical || site.publicUrl || site.url || '')}">
+${(theme.faviconUrl as string) ? `<link rel="icon" type="image/png" href="${attr(theme.faviconUrl as string)}">` : ''}
 <meta property="og:type"        content="website">
 <meta property="og:site_name"   content="${attr(name)}">
 <meta property="og:title"       content="${attr(seo.title || name)}">
@@ -2047,6 +2100,7 @@ body{font-size:calc(1rem * var(--body-scale,1))}`;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${txt(title)} | ${txt(name)}</title>
+${(theme.faviconUrl as string) ? `<link rel="icon" type="image/png" href="${attr(theme.faviconUrl as string)}">` : ''}
 ${extraMeta}
 <script id="xd-manifest" type="application/json">${manifest}</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2076,7 +2130,7 @@ ${extraMeta}
 .xd-pd-variants{display:flex;flex-direction:column;gap:.75rem}
 .xd-pd-variants-label{font-weight:600;font-size:.9rem}
 .xd-pd-variant-grid{display:flex;gap:.5rem;flex-wrap:wrap}
-.xd-pd-variant{padding:.4rem .9rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem;cursor:pointer;transition:all .2s}
+.xd-pd-variant{padding:.4rem .9rem;border:1px solid #e5e7eb;border-radius:var(--variant-radius,9999px);font-size:.875rem;cursor:pointer;transition:all .2s}
 .xd-pd-variant:hover{border-color:var(--c-primary)}
 .xd-pd-variant.selected{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
 .xd-pd-variant.oos{opacity:.4;cursor:not-allowed;text-decoration:line-through}

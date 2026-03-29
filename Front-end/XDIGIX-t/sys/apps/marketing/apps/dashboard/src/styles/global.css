@@ -77,6 +77,39 @@
   /* Hide xl: styles */
 }
 
+/* Slideshow button hover effects */
+.xd-slide-btn {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: color 0.4s ease, border-color 0.3s ease;
+}
+.xd-slide-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.xd-slide-btn:hover::before {
+  transform: scaleX(1);
+}
+.xd-slide-btn-solid::before {
+  background: rgba(255, 255, 255, 0.2);
+}
+.xd-slide-btn-solid:hover {
+  filter: brightness(1.1);
+}
+.xd-slide-btn-outline::before {
+  background: var(--scheme-btn-bg, #fff);
+}
+.xd-slide-btn-outline:hover {
+  color: var(--scheme-btn-label, #000) !important;
+  border-color: var(--scheme-btn-bg, #fff) !important;
+}
+
 /* Desktop - show all breakpoints */
 .force-desktop {
   width: 100% !important;

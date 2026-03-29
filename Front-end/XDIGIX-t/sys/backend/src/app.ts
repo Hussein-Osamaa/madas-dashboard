@@ -293,6 +293,13 @@ export function createApp(): Express {
         sendPage(res, html);
         return;
       }
+      // Custom pages (e.g. /about, /contact) — match any single-segment path
+      const customPageSlug = req.path.match(/^\/([a-z0-9-]+)$/)?.[1];
+      if (customPageSlug && customPageSlug !== 'home') {
+        const html = renderSite(site, customPageSlug, sdOpts);
+        sendPage(res, html);
+        return;
+      }
       // Homepage
       const html = renderSite(site, undefined, sdOpts);
       sendPage(res, html);

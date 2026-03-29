@@ -376,6 +376,10 @@ export function buildThemeCssVars(theme: SiteTheme): string {
     --scheme-shadow: ${s.shadow};
   }`).join('\n');
 
+  const variantRadiusMap: Record<string, string> = { pill: '9999px', rectangle: '6px', circle: '50%' };
+  const productImgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '2/3', square: '1' };
+  const badgeShapeMap: Record<string, string> = { rectangle: '4px', pill: '999px' };
+
   return `
 :root {
   --c-primary:    ${theme.colorPrimary};
@@ -402,8 +406,12 @@ export function buildThemeCssVars(theme: SiteTheme): string {
   --dropdown-radius: ${theme.dropdownBorderRadius}px;
   --drawer-radius: ${theme.drawerBorderRadius}px;
   --badge-color:  ${theme.saleBadgeColor};
+  --badge-radius: ${badgeShapeMap[theme.badgeShape] ?? '999px'};
   --checkout-accent: ${theme.checkoutAccentColor};
   --animation-duration: ${theme.animationDuration}ms;
+  --variant-radius: ${variantRadiusMap[theme.variantStyle] ?? '9999px'};
+  --product-img-ratio: ${productImgRatioMap[theme.productImageRatio] ?? 'auto'};
+  --product-text-align: ${theme.productTextAlign};
 }
 ${schemeCss}`.trim();
 }
