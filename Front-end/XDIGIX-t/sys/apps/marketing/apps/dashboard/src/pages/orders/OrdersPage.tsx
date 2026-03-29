@@ -940,7 +940,8 @@ const OrdersPage = () => {
           businessId: bostaConfig.businessId,
           countryId: bostaConfig.countryId,
           testMode: bostaConfig.testMode,
-          defaultPickupLocationId: bostaConfig.defaultPickupLocationId
+          defaultPickupLocationId: bostaConfig.defaultPickupLocationId,
+          xdigixBusinessId: businessId,
         },
         {
           id: order.id,

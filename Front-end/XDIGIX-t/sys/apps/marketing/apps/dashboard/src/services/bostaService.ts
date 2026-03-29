@@ -11,10 +11,12 @@
 
 interface BostaConfig {
   apiKey: string;
-  businessId?: string;
+  businessId?: string;       // Bosta's business ID
   countryId?: string;
   testMode?: boolean;
   defaultPickupLocationId?: string;
+  webhookUrl?: string;
+  xdigixBusinessId?: string; // Our XDIGIX businessId (for auto-generating webhook URL)
 }
 
 interface BostaAddress {
@@ -300,6 +302,15 @@ export const createBostaDelivery = async (
     },
     businessReference: order.id
   };
+
+  // Add webhook URL so Bosta sends status updates to our backend
+  // Auto-generate from backend URL + our XDIGIX businessId
+  if (config.webhookUrl) {
+    deliveryRequest.webhookUrl = config.webhookUrl;
+  } else if (config.xdigixBusinessId) {
+    const backendBase = (import.meta.env.VITE_API_BACKEND_URL || '').replace(/\/$/, '') || 'https://xdigix-os-production.up.railway.app';
+    deliveryRequest.webhookUrl = `${backendBase}/api/bosta/webhook/${config.xdigixBusinessId}`;
+  }
 
   // Add pickup location if configured
   if (config.defaultPickupLocationId) {
