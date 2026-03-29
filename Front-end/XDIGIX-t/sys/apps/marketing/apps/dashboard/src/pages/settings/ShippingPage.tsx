@@ -325,10 +325,17 @@ const BostaTab = ({ data, onSave, saving, businessId }: BostaTabProps) => {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [webhookCopied, setWebhookCopied] = useState(false);
+  const [webhookGenerated, setWebhookGenerated] = useState(!!data.webhookUrl);
 
   // Auto-generate the webhook URL pointing to our backend
   const backendUrl = (import.meta.env.VITE_API_BACKEND_URL || '').replace(/\/$/, '') || 'https://xdigix-os-production.up.railway.app';
   const webhookUrl = businessId ? `${backendUrl}/api/bosta/webhook/${businessId}` : '';
+
+  const handleGenerateWebhook = () => {
+    if (!webhookUrl) return;
+    setWebhookGenerated(true);
+    setFormData({ ...formData, webhookUrl });
+  };
 
   useEffect(() => {
     setFormData(data);
@@ -489,51 +496,71 @@ const BostaTab = ({ data, onSave, saving, businessId }: BostaTabProps) => {
               </p>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={webhookUrl}
-                  readOnly
-                  className="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm font-mono text-gray-600 focus:outline-none cursor-default"
-                  placeholder={businessId ? '' : 'Business ID required'}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (webhookUrl) {
-                      navigator.clipboard.writeText(webhookUrl);
-                      setWebhookCopied(true);
-                      setTimeout(() => setWebhookCopied(false), 2000);
-                    }
-                  }}
-                  disabled={!webhookUrl}
-                  className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  <span className="material-icons text-base">{webhookCopied ? 'check' : 'content_copy'}</span>
-                  {webhookCopied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              <p className="mt-1 text-xs text-gray-400">
-                Auto-generated. Copy this URL and paste it in your Bosta dashboard.
-              </p>
-            </div>
-            <div className="md:col-span-2 rounded-lg bg-amber-50 border border-amber-200 p-4">
-              <div className="flex items-start gap-3">
-                <span className="material-icons text-amber-600 mt-0.5">integration_instructions</span>
-                <div className="text-sm text-amber-900 space-y-2">
-                  <p className="font-medium">Webhook Setup Instructions</p>
-                  <ol className="text-xs space-y-1.5 list-decimal list-inside marker:text-amber-600">
-                    <li>Go to your <a href="https://business.bosta.co/settings/api-settings" target="_blank" rel="noopener noreferrer" className="text-amber-700 underline font-medium">Bosta Dashboard &rarr; Settings &rarr; API Integration</a></li>
-                    <li>Under <strong>"Set Up Your Webhook"</strong>, paste the URL above</li>
-                    <li>Click Save. That's it &mdash; delivery status updates will sync automatically!</li>
-                  </ol>
-                  <p className="text-xs text-amber-700 mt-2">
-                    <strong>Note:</strong> Bosta triggers webhooks only when an order status changes, not on creation.
-                    Supported events: pickup, in-transit, delivered, returned, exception, cancelled, and more.
-                  </p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Webhook URL</label>
+              {!webhookGenerated ? (
+                <div className="flex flex-col items-center gap-3 py-6 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50">
+                  <span className="material-icons text-3xl text-gray-300">webhook</span>
+                  <p className="text-sm text-gray-500">Generate a webhook URL to receive real-time delivery status updates from Bosta</p>
+                  <button
+                    type="button"
+                    onClick={handleGenerateWebhook}
+                    disabled={!businessId}
+                    className="px-5 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                  >
+                    <span className="material-icons text-base">bolt</span>
+                    Generate Webhook URL
+                  </button>
+                  {!businessId && (
+                    <p className="text-xs text-red-500">Business ID is required to generate a webhook URL</p>
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={webhookUrl}
+                      readOnly
+                      className="flex-1 rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-mono text-gray-700 focus:outline-none cursor-default"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (webhookUrl) {
+                          navigator.clipboard.writeText(webhookUrl);
+                          setWebhookCopied(true);
+                          setTimeout(() => setWebhookCopied(false), 2000);
+                        }
+                      }}
+                      disabled={!webhookUrl}
+                      className="px-3 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 flex items-center gap-1.5 transition-colors"
+                    >
+                      <span className="material-icons text-base">{webhookCopied ? 'check' : 'content_copy'}</span>
+                      {webhookCopied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-green-700">
+                    <span className="material-icons text-sm">check_circle</span>
+                    Webhook URL generated. Copy it and paste in your Bosta dashboard.
+                  </div>
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="material-icons text-amber-600 mt-0.5">integration_instructions</span>
+                      <div className="text-sm text-amber-900 space-y-2">
+                        <p className="font-medium">Setup Instructions</p>
+                        <ol className="text-xs space-y-1.5 list-decimal list-inside marker:text-amber-600">
+                          <li>Go to your <a href="https://business.bosta.co/settings/api-settings" target="_blank" rel="noopener noreferrer" className="text-amber-700 underline font-medium">Bosta Dashboard &rarr; Settings &rarr; API Integration</a></li>
+                          <li>Under <strong>"Set Up Your Webhook"</strong>, paste the URL above</li>
+                          <li>Click Save &mdash; delivery status updates will sync automatically!</li>
+                        </ol>
+                        <p className="text-xs text-amber-700 mt-2">
+                          <strong>Note:</strong> Bosta triggers webhooks only when an order status changes (pickup, in-transit, delivered, returned, exception, etc.)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
