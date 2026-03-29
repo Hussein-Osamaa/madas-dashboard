@@ -82,6 +82,101 @@ const ColorSchemeSelect: React.FC<{ value: string; onChange: (v: string) => void
   );
 };
 
+/* ── Link picker (pages, collections, custom URL) ─────────────────── */
+const BUILTIN_PAGES = [
+  { value: '/', label: 'Home' },
+  { value: '/products', label: 'All Products' },
+  { value: '/cart', label: 'Cart' },
+  { value: '/favorites', label: 'Wishlist' },
+  { value: '/account', label: 'Account' },
+  { value: '/login', label: 'Sign In' },
+  { value: '/register', label: 'Sign Up' },
+];
+
+const LinkPicker: React.FC<{ value: string; onChange: (v: string) => void; label: string; helpText?: string }> = ({ value, onChange, label, helpText }) => {
+  const { businessId } = useBusiness();
+  const { collections } = useCollections(businessId);
+  const [mode, setMode] = useState<'page' | 'collection' | 'custom'>(() => {
+    if (!value || BUILTIN_PAGES.some(p => p.value === value)) return 'page';
+    if (value.startsWith('/products?collection=')) return 'collection';
+    return 'custom';
+  });
+
+  const isPage = BUILTIN_PAGES.some(p => p.value === value);
+  const collectionMatch = value?.match(/^\/products\?collection=(.+)$/);
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
+      {/* Mode tabs */}
+      <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+        {(['page', 'collection', 'custom'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={`flex-1 py-1.5 text-[11px] font-medium transition-all border-r last:border-r-0 border-gray-200 ${
+              mode === m ? 'bg-[#111827] text-white' : 'bg-white text-[#6b7280] hover:bg-gray-50'
+            }`}
+          >
+            {m === 'page' ? 'Page' : m === 'collection' ? 'Collection' : 'Custom URL'}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'page' && (
+        <select
+          value={isPage ? value : ''}
+          onChange={(e) => onChange(e.target.value)}
+          className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
+        >
+          <option value="">Select a page...</option>
+          {BUILTIN_PAGES.map((p) => (
+            <option key={p.value} value={p.value}>{p.label}</option>
+          ))}
+        </select>
+      )}
+
+      {mode === 'collection' && (
+        <>
+          {collections && collections.length > 0 ? (
+            <select
+              value={collectionMatch?.[1] || ''}
+              onChange={(e) => onChange(e.target.value ? `/products?collection=${e.target.value}` : '/products')}
+              className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
+            >
+              <option value="">All products</option>
+              {collections.map((col: any) => (
+                <option key={col.id} value={col.id}>{col.name || col.title}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="px-3 py-2.5 text-sm border border-amber-200 rounded-lg bg-amber-50">
+              <p className="text-amber-800 text-xs">No collections yet.</p>
+              <a href="/dashboard/inventory/collections" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-amber-700 hover:text-amber-900 underline">
+                <span className="material-icons" style={{ fontSize: '14px' }}>add_circle_outline</span>
+                Create collection
+              </a>
+            </div>
+          )}
+        </>
+      )}
+
+      {mode === 'custom' && (
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://example.com"
+          className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+        />
+      )}
+
+      {helpText && <p className="text-xs text-gray-400">{helpText}</p>}
+    </div>
+  );
+};
+
 /* ── Collection picker ──────────────────────────────────────────────── */
 const CollectionSelect: React.FC<{ value: string; onChange: (v: string) => void; label: string; helpText?: string }> = ({ value, onChange, label, helpText }) => {
   const { businessId } = useBusiness();
@@ -192,12 +287,11 @@ const SchemaFormField: React.FC<Props> = ({
 
     case 'url':
       return (
-        <TextField
+        <LinkPicker
           label={schema.label}
           value={strVal}
           onChange={(v) => onChange(v)}
-          placeholder={schema.placeholder ?? 'https://'}
-          helperText={schema.helpText}
+          helpText={schema.helpText}
         />
       );
 

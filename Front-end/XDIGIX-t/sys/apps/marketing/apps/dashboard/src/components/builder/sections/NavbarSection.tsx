@@ -7,9 +7,10 @@ type Props = {
   data: NavbarSectionData;
   style?: React.CSSProperties;
   siteId?: string;
+  onEditBlock?: (dataKey: string, blockIndex: number) => void;
 };
 
-const NavbarSection = ({ data, style, siteId: propSiteId }: Props) => {
+const NavbarSection = ({ data, style, siteId: propSiteId, onEditBlock }: Props) => {
   const { siteId: paramSiteId } = useParams<{ siteId?: string }>();
   const [searchParams] = useSearchParams();
   const querySiteId = searchParams.get('siteId');
@@ -380,6 +381,13 @@ const NavbarSection = ({ data, style, siteId: propSiteId }: Props) => {
           href={item.link || '#'}
           className="nav-link-builder px-3 xl:px-4 py-2 text-sm xl:text-base font-medium relative"
           style={{ color: textColor }}
+          onClick={(e) => {
+            if (onEditBlock) {
+              e.preventDefault();
+              e.stopPropagation();
+              onEditBlock('menuItems', index);
+            }
+          }}
         >
           {item.label}
           {item.badge && (
@@ -446,6 +454,13 @@ const NavbarSection = ({ data, style, siteId: propSiteId }: Props) => {
           type="button"
           className="nav-dropdown-trigger-builder px-3 xl:px-4 py-2 text-sm xl:text-base font-medium transition-opacity relative flex items-center gap-1 rounded-lg"
           style={{ color: textColor }}
+          onClick={(e) => {
+            if (onEditBlock) {
+              e.preventDefault();
+              e.stopPropagation();
+              onEditBlock('menuItems', index);
+            }
+          }}
         >
           {item.label}
           <span className="material-icons text-sm transition-transform duration-200" style={{ transform: openDropdown === index ? 'rotate(180deg)' : 'rotate(0deg)' }}>
@@ -482,7 +497,7 @@ const NavbarSection = ({ data, style, siteId: propSiteId }: Props) => {
         )}
       </div>
     );
-  }, [openDropdown, textColor, backgroundColor, menuType]);
+  }, [openDropdown, textColor, backgroundColor, menuType, onEditBlock]);
 
   // ── Right-side action icons ────────────────────────────────────────
   const renderActionIcons = () => (
