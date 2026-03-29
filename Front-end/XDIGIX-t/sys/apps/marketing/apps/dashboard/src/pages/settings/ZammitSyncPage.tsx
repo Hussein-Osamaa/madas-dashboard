@@ -277,7 +277,7 @@ export default function ZammitSyncPage() {
             <button
               type="button"
               onClick={handleSync}
-              disabled={syncing || config.lastSyncStatus === 'running'}
+              disabled={syncing}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className={`material-icons text-sm ${syncing ? 'animate-spin' : ''}`}>
