@@ -2221,8 +2221,8 @@ ${extraMeta}
 .xd-search-input:focus{border-color:var(--c-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)}
 .xd-breadcrumb{display:flex;align-items:center;gap:.5rem;font-size:.875rem;opacity:.65;margin-bottom:1.5rem;flex-wrap:wrap}
 .xd-breadcrumb a{color:inherit;text-decoration:none}.xd-breadcrumb a:hover{text-decoration:underline}
-.xd-pd-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4rem);align-items:start}
-@media(max-width:768px){.xd-pd-grid{grid-template-columns:1fr}}
+.xd-pd-grid{width:100%}
+@media(max-width:768px){.xd-pd-grid .xd-pd-images{flex:1 1 100%!important}}
 .xd-pd-images{display:flex;flex-direction:column;gap:.75rem}
 .xd-pd-main-img{aspect-ratio:auto;width:100%;object-fit:cover;border-radius:var(--media-radius,12px);background:#f9f9f9}
 .xd-pd-thumbs{display:flex;gap:.5rem;flex-wrap:wrap}
@@ -2333,7 +2333,8 @@ export function renderAllProductsPage(
 
 /**
  * Render a single product detail page.
- * Layout matches the builder's ProductInfoSection block system:
+ * Reads the productInfo section's block layout from the site's pages
+ * (or uses default blocks) to match the builder's ProductInfoSection.
  */
 export function renderProductDetailPage(site: ISite, product: ProductData, opts?: { subdomain?: boolean }): string {
   const sfBase = opts?.subdomain
@@ -2341,6 +2342,24 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
     : (site as unknown as Record<string, unknown>).slug
       ? `/${(site as unknown as Record<string, unknown>).slug}`
       : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+
+  // Find the productInfo section config from the site's pages
+  let pdBlocks: Array<Record<string, unknown>> = [
+    { type: 'vendor' }, { type: 'title' }, { type: 'price' },
+    { type: 'variant_picker', picker_type: 'pills' },
+    { type: 'quantity_selector' }, { type: 'buy_buttons' },
+    { type: 'description' }, { type: 'share' },
+  ];
+  let pdMediaWidth = 'medium';
+  const productsPage = (site.pages || []).find(p => p.slug === 'products');
+  if (productsPage?.sections?.length) {
+    const piSec = productsPage.sections.find(s => s.type === 'productInfo');
+    if (piSec) {
+      const piData = getSectionData(piSec);
+      if (Array.isArray(piData.blocks) && piData.blocks.length > 0) pdBlocks = piData.blocks as Array<Record<string, unknown>>;
+      if (piData.media_width) pdMediaWidth = piData.media_width as string;
+    }
+  }
 
   const name      = txt(product.name as string || 'Product');
   const price     = product.sellingPrice || product.salePrice || product.price;
@@ -2365,39 +2384,10 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
         ).join('')}
       </div>` : '';
 
-  // Group variants by type (Size, Color, etc.) — or show flat list
-  const productVariants = (product.variants as Array<{name: string; values: string[]}>) || [];
-  let variantHtml = '';
-  if (productVariants.length > 0) {
-    // Builder-style grouped variants
-    variantHtml = productVariants.map(opt => {
-      const buttons = (opt.values || []).map((v, vi) =>
-        `<button type="button" class="xd-pd-variant${vi === 0 ? ' selected' : ''}"
-          onclick="this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');">${txt(v)}</button>`
-      ).join('');
-      return `<div class="xd-pd-variants">
-        <span class="xd-pd-variants-label">${txt(opt.name)}</span>
-        <div class="xd-pd-variant-grid">${buttons}</div>
-      </div>`;
-    }).join('');
-  } else if (variants.length > 0) {
-    // Fallback: flat stock keys as variants
-    variantHtml = `<div class="xd-pd-variants">
-      <span class="xd-pd-variants-label">Select Size</span>
-      <div class="xd-pd-variant-grid">
-        ${variants.map(v => {
-          const qty = stock[v] || 0;
-          return `<button type="button" class="xd-pd-variant${qty <= 0 ? ' oos' : ''}"
-            onclick="if(!this.classList.contains('oos')){this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');}"
-            ${qty <= 0 ? 'disabled' : ''}>${txt(v)}${qty <= 0 ? ' (OOS)' : ''}</button>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
-
   // Check overall stock
   const totalStock = Object.values(stock).reduce((a, b) => a + b, 0);
   const isAvailable = variants.length === 0 || totalStock > 0;
+  const productVariants = (product.variants as Array<{name: string; values: string[]}>) || [];
 
   const safeJson = (obj: unknown) => JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
   const ldJson = safeJson({
@@ -2414,59 +2404,121 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
     },
   });
 
-  // Build buttons matching builder: outline "Add to cart" + filled "Buy it now"
-  const buttonsHtml = isAvailable
-    ? `<div style="display:flex;flex-direction:column;gap:.5rem">
-        <button type="button" id="xd-pd-atc"
-          class="xd-product-btn xd-pd-atc"
-          data-xd-atc
-          data-xd-product-id="${pid}"
-          data-xd-product-name="${attr(product.name as string)}"
-          data-xd-price="${attr(String(price || 0))}"
-          style="text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit">ADD TO CART</button>
-        <button type="button" class="xd-pd-atc"
-          style="width:100%;padding:1rem;font-size:1.05rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:var(--scheme-btn-bg,var(--c-primary,#121212));color:var(--scheme-btn-label,#fff);cursor:pointer;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit;box-shadow:var(--btn-shadow,none)">BUY IT NOW</button>
-      </div>`
-    : `<button disabled class="xd-pd-atc" style="width:100%;padding:1rem;font-size:1.05rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:#d1d5db;color:#6b7280;cursor:not-allowed;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit">SOLD OUT</button>`;
+  // ── Render blocks in order (matching builder's ProductInfoSection) ──
+  const mediaWidthMap: Record<string, string> = { small: '42%', medium: '50%', large: '58%' };
+  const mediaW = mediaWidthMap[pdMediaWidth] || '50%';
+
+  function renderBlock(block: Record<string, unknown>): string {
+    switch (block.type) {
+      case 'title':
+        return `<h1 class="xd-pd-name">${name}</h1>`;
+      case 'price':
+        return `<div class="xd-pd-price-row" style="margin-bottom:1rem">
+          <span class="xd-pd-price">${formatCurrency(price)}</span>
+          ${onSale && compare ? `<span class="xd-pd-compare">${formatCurrency(compare)}</span><span class="xd-pd-badge">Sale</span>` : ''}
+        </div>`;
+      case 'vendor':
+        return product.vendor ? `<p style="font-size:.8rem;opacity:.5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">${txt(product.vendor as string)}</p>` : '';
+      case 'description':
+        return desc ? `<div style="font-size:.9rem;line-height:1.75;opacity:.8;margin-bottom:1.5rem"><p>${desc}</p></div>` : '';
+      case 'variant_picker': {
+        const pickerType = (block.picker_type as string) || 'pills';
+        if (productVariants.length > 0) {
+          return productVariants.map(opt => {
+            const buttons = (opt.values || []).map((v, vi) =>
+              `<button type="button" class="xd-pd-variant${vi === 0 ? ' selected' : ''}"
+                onclick="this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');">${txt(v)}</button>`
+            ).join('');
+            return `<div class="xd-pd-variants"><span class="xd-pd-variants-label">${txt(opt.name)}</span><div class="xd-pd-variant-grid">${buttons}</div></div>`;
+          }).join('');
+        }
+        if (variants.length > 0) {
+          return `<div class="xd-pd-variants"><span class="xd-pd-variants-label">Size</span><div class="xd-pd-variant-grid">
+            ${variants.map(v => {
+              const qty = stock[v] || 0;
+              return `<button type="button" class="xd-pd-variant${qty <= 0 ? ' oos' : ''}"
+                onclick="if(!this.classList.contains('oos')){this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');}"
+                ${qty <= 0 ? 'disabled' : ''}>${txt(v)}${qty <= 0 ? ' (OOS)' : ''}</button>`;
+            }).join('')}
+          </div></div>`;
+        }
+        return '';
+      }
+      case 'quantity_selector':
+        return `<div class="xd-pd-qty" style="margin-bottom:1rem">
+          <span class="xd-pd-variants-label">Quantity</span>
+          <div style="display:flex;align-items:center;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),8px);width:fit-content">
+            <button type="button" class="xd-pd-qty-btn" style="border:none;border-right:1px solid #e5e7eb" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=Math.max(1,parseInt(v.textContent)-1)">\u2212</button>
+            <span id="xd-pd-qty-val" style="width:3rem;text-align:center;font-weight:600;font-size:.9rem;padding:.5rem 0">1</span>
+            <button type="button" class="xd-pd-qty-btn" style="border:none;border-left:1px solid #e5e7eb" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=parseInt(v.textContent)+1">+</button>
+          </div>
+        </div>`;
+      case 'buy_buttons':
+        return isAvailable
+          ? `<div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem">
+              <button type="button" id="xd-pd-atc" class="xd-product-btn xd-pd-atc" data-xd-atc
+                data-xd-product-id="${pid}" data-xd-product-name="${attr(product.name as string)}"
+                data-xd-price="${attr(String(price || 0))}"
+                style="text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit">ADD TO CART</button>
+              <button type="button" class="xd-pd-atc"
+                style="width:100%;padding:1rem;font-size:1rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:var(--scheme-btn-bg,var(--c-primary,#121212));color:var(--scheme-btn-label,#fff);cursor:pointer;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit;box-shadow:var(--btn-shadow,none)">BUY IT NOW</button>
+            </div>`
+          : `<button disabled class="xd-pd-atc" style="width:100%;padding:1rem;font-size:1rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:#d1d5db;color:#6b7280;cursor:not-allowed;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit;margin-bottom:1.5rem">SOLD OUT</button>`;
+      case 'sku':
+        return sku ? `<p style="font-size:.75rem;opacity:.4;margin-bottom:.5rem">SKU: ${txt(product.sku as string || '')}</p>` : '';
+      case 'inventory_status':
+        return `<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+          <span style="width:8px;height:8px;border-radius:50%;background:${totalStock > 0 ? '#22c55e' : '#ef4444'}"></span>
+          <span style="font-size:.875rem">${totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}</span>
+        </div>`;
+      case 'share':
+        return `<div style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;opacity:.6;cursor:pointer">
+          <span class="material-icons" style="font-size:1.1rem">share</span>
+          <span style="font-size:.9rem">Share</span>
+        </div>`;
+      case 'collapsible_tab':
+        return `<details style="border-top:1px solid #e5e7eb;padding:.75rem 0">
+          <summary style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:.9rem;font-weight:600">
+            <span>${txt((block.heading as string) || 'Details')}</span>
+            <span class="material-icons" style="font-size:1rem;transition:transform .2s">expand_more</span>
+          </summary>
+          <div style="padding-top:.75rem;font-size:.875rem;opacity:.75;line-height:1.6">${txt((block.content as string) || '')}</div>
+        </details>`;
+      case 'rating':
+        return `<div style="display:flex;align-items:center;gap:.25rem;margin-bottom:.75rem">
+          ${'<span class="material-icons" style="font-size:1rem;color:#f59e0b">star</span>'.repeat(4)}
+          <span class="material-icons" style="font-size:1rem;color:#d1d5db">star</span>
+          <span style="font-size:.85rem;opacity:.5;margin-left:.25rem">(12 reviews)</span>
+        </div>`;
+      case 'custom_text':
+        return `<div style="font-size:.9rem;line-height:1.6;margin-bottom:1rem;opacity:.8">${txt((block.text as string) || '')}</div>`;
+      default:
+        return '';
+    }
+  }
+
+  const blocksHtml = pdBlocks.map(b => renderBlock(b)).join('\n');
 
   const body = `
 <script type="application/ld+json">${ldJson}</script>
 <section class="xd-section">
 <div class="xd-container">
-  <div class="xd-pd-grid">
-    <!-- Images -->
-    <div class="xd-pd-images">
-      <div style="overflow:hidden;border-radius:var(--media-radius,12px);background:#f5f5f5">
-        <img id="xd-pd-main" src="${attr(mainImg)}" alt="${name}" class="xd-pd-main-img" width="600" height="600">
-      </div>
-      ${thumbs}
-    </div>
-    <!-- Info -->
-    <div class="xd-pd-info">
-      ${product.vendor ? `<p style="font-size:.8rem;opacity:.5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">${txt(product.vendor as string)}</p>` : ''}
-      <h1 class="xd-pd-name">${name}</h1>
-      <div class="xd-pd-price-row">
-        <span class="xd-pd-price">${formatCurrency(price)}</span>
-        ${onSale && compare ? `<span class="xd-pd-compare">${formatCurrency(compare)}</span><span class="xd-pd-badge">Sale</span>` : ''}
-      </div>
-      ${variantHtml}
-      <div class="xd-pd-qty" id="xd-pd-qty">
-        <span class="xd-pd-variants-label">Quantity</span>
-        <div style="display:flex;align-items:center;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),8px);width:fit-content">
-          <button type="button" class="xd-pd-qty-btn" style="border:none;border-right:1px solid #e5e7eb" aria-label="Decrease" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=Math.max(1,parseInt(v.textContent)-1)">−</button>
-          <span id="xd-pd-qty-val" class="xd-pd-qty-val" style="width:3rem;text-align:center;font-weight:600;font-size:.9rem">1</span>
-          <button type="button" class="xd-pd-qty-btn" style="border:none;border-left:1px solid #e5e7eb" aria-label="Increase" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=parseInt(v.textContent)+1">+</button>
+  <div style="display:flex;flex-direction:column;gap:2rem" class="xd-pd-grid">
+    <div style="display:flex;flex-wrap:wrap;gap:clamp(2rem,5vw,3rem)">
+      <!-- Images -->
+      <div class="xd-pd-images" style="flex:0 0 ${mediaW};min-width:280px">
+        <div style="overflow:hidden;border-radius:var(--media-radius,12px);background:#f5f5f5;margin-bottom:.75rem">
+          <img id="xd-pd-main" src="${attr(mainImg)}" alt="${name}" class="xd-pd-main-img" width="600" height="600">
         </div>
+        ${thumbs}
       </div>
-      ${buttonsHtml}
-      ${desc ? `<div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #e5e7eb"><p class="xd-pd-desc">${desc}</p></div>` : ''}
-      <div style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;opacity:.6;cursor:pointer">
-        <span class="material-icons" style="font-size:1.1rem">share</span>
-        <span style="font-size:.9rem">Share</span>
-      </div>
-      <div class="xd-pd-meta" style="margin-top:.75rem">
-        ${sku}
-        ${product.collectionId ? `<span>Collection: ${txt(product.collectionId as string)}</span>` : ''}
+      <!-- Info (blocks) -->
+      <div class="xd-pd-info" style="flex:1;min-width:280px">
+        ${blocksHtml}
+        <div class="xd-pd-meta" style="margin-top:.75rem;font-size:.8rem;opacity:.4">
+          ${sku}
+          ${product.collectionId ? `<span>Collection: ${txt(product.collectionId as string)}</span>` : ''}
+        </div>
       </div>
     </div>
   </div>
