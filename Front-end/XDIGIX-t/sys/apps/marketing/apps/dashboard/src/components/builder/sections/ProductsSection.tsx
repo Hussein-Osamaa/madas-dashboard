@@ -105,7 +105,10 @@ const ProductsSection = ({ data, style }: Props) => {
 
   const imgContainerCls = isCard
     ? `overflow-hidden ${ratioMap[imageRatio] || 'aspect-[3/4]'}`
-    : `bg-[#F3F3F3] overflow-hidden mb-3 rounded-[var(--btn-radius,8px)] ${ratioMap[imageRatio] || 'aspect-[3/4]'}`;
+    : `bg-[#F3F3F3] overflow-hidden mb-3 ${ratioMap[imageRatio] || 'aspect-[3/4]'}`;
+
+  // Cap image border-radius to 16px max (pill theme would make images circular otherwise)
+  const imgRadiusStyle = isCard ? {} : { borderRadius: 'min(var(--btn-radius, 8px), 16px)' };
 
   const bodyPaddingCls = isCard ? 'p-3' : '';
 
@@ -117,7 +120,7 @@ const ProductsSection = ({ data, style }: Props) => {
       style={layout === 'carousel' ? { width: `calc((100% - ${(columnsDesktop - 1) * 24}px) / ${columnsDesktop})`, minWidth: '200px' } : undefined}
     >
       {/* Product image */}
-      <div className={imgContainerCls}>
+      <div className={imgContainerCls} style={imgRadiusStyle}>
         <img src={product.image || product.images?.[0] || defaultProducts[index % defaultProducts.length]?.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
       </div>
       {/* Product info */}
