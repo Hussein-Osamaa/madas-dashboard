@@ -322,11 +322,12 @@ router.post('/sync/dedup', async (req: Request, res: Response) => {
     const deletedIds = new Set<string>();
     let deletedCount = 0;
 
-    // --- Strategy 1: Group by zammitPurchaseId ---
+    // --- Strategy 1: Group by zammitPurchaseId / externalOrderId ---
     const zammitGroups = new Map<string, Array<{ _id: unknown; docId: string }>>();
     for (const order of allOrders) {
       const data = (order as Record<string, unknown>).data as Record<string, unknown> | undefined;
-      const zammitId = String(data?.zammitPurchaseId || '');
+      const meta = (data?.metadata as Record<string, unknown>) ?? {};
+      const zammitId = String(data?.externalOrderId || meta?.zammitPurchaseId || '');
       if (!zammitId) continue;
 
       if (!zammitGroups.has(zammitId)) zammitGroups.set(zammitId, []);
@@ -402,12 +403,14 @@ router.post('/sync/dedup', async (req: Request, res: Response) => {
 
     // Rebuild syncedOrderIds from remaining zammit orders
     const remaining = await FirestoreDoc.find(
-      { businessId, coll: 'orders', 'data.zammitPurchaseId': { $exists: true } },
-      { 'data.zammitPurchaseId': 1 },
+      { businessId, coll: 'orders', 'data.externalOrderId': { $exists: true } },
+      { 'data.externalOrderId': 1, 'data.metadata.zammitPurchaseId': 1 },
     ).lean();
-    const validIds = remaining.map((d: Record<string, unknown>) =>
-      String(((d as { data?: Record<string, unknown> }).data?.zammitPurchaseId) || '')
-    ).filter(Boolean);
+    const validIds = remaining.map((d: Record<string, unknown>) => {
+      const data = (d as { data?: Record<string, unknown> }).data ?? {};
+      const meta = (data.metadata as Record<string, unknown>) ?? {};
+      return String(data.externalOrderId || meta.zammitPurchaseId || '');
+    }).filter(Boolean);
 
     await ZammitIntegration.updateOne(
       { businessId },

@@ -303,14 +303,28 @@ export async function syncZammitOrders(
     let created = 0;
 
     // Pre-load existing zammit order IDs to prevent duplicates after a sync reset
+    // Check BOTH paths: data.externalOrderId (top-level) and data.metadata.zammitPurchaseId (nested)
     const { FirestoreDoc } = await import('../../schemas/document.schema');
     const existingZammitOrders = await FirestoreDoc.find(
-      { businessId, coll: 'orders', 'data.zammitPurchaseId': { $exists: true } },
-      { 'data.zammitPurchaseId': 1 },
+      {
+        businessId,
+        coll: 'orders',
+        $or: [
+          { 'data.externalOrderId': { $exists: true } },
+          { 'data.metadata.zammitPurchaseId': { $exists: true } },
+        ],
+      },
+      { 'data.externalOrderId': 1, 'data.metadata.zammitPurchaseId': 1 },
     ).lean();
-    const existingZammitIds = new Set(
-      existingZammitOrders.map((d: Record<string, unknown>) => String(((d as { data?: Record<string, unknown> }).data?.zammitPurchaseId) || ''))
-    );
+    const existingZammitIds = new Set<string>();
+    for (const d of existingZammitOrders) {
+      const data = (d as { data?: Record<string, unknown> }).data ?? {};
+      const meta = (data.metadata as Record<string, unknown>) ?? {};
+      const extId = String(data.externalOrderId || '');
+      const zammitId = String(meta.zammitPurchaseId || '');
+      if (extId) existingZammitIds.add(extId);
+      if (zammitId) existingZammitIds.add(zammitId);
+    }
 
     for (const purchase of newPurchases) {
       const purchaseId = String(purchase.id);
