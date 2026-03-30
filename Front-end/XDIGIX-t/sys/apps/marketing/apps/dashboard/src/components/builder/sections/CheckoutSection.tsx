@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { normalizeCheckoutConfig } from '../../../lib/section-configs';
 
 type Props = {
   data: Record<string, any>;
@@ -10,32 +11,16 @@ const CheckoutSection = ({ data, style }: Props) => {
   const d = (data ?? {}) as Record<string, any>;
   const { theme } = useTheme();
 
-  // ── Read ALL settings (matching registry) ──
-  const title = d.title || 'Checkout';
-  const subtitle = d.subtitle || 'Complete your purchase securely';
-  const contactTitle = d.contact_title || 'Contact';
-  const shippingTitle = d.shipping_title || 'Shipping address';
-  const paymentTitle = d.payment_title || 'Payment method';
-  const summaryTitle = d.summary_title || 'Order summary';
-  const orderNotesLabel = d.order_notes_label || 'Order notes';
-  const orderNotesPlaceholder = d.order_notes_placeholder || 'Any special instructions...';
-  const checkoutButtonText = d.checkout_button_text || theme.checkoutButtonText || 'Complete order';
-  const secureBadgeText = d.secure_badge_text || 'Secure checkout';
-  const supportText = d.support_text || '';
-  const termsText = d.terms_text || '';
-  const deliveryInfoText = d.delivery_info_text || '';
-
-  const showEmail = d.show_email ?? true;
-  const showPhone = d.show_phone ?? true;
-  const showCompany = d.show_company ?? false;
-  const showAddress2 = d.show_address2 ?? false;
-  const showPostalCode = d.show_postal_code ?? true;
-  const showOrderNotes = d.show_order_notes ?? d.show_notes ?? true;
-  const showPaymentIcons = d.show_payment_icons ?? true;
-  const showTrustBadges = d.show_trust_badges ?? true;
-  const showSecureBadge = d.show_secure_badge ?? true;
-  const showTermsLink = d.show_terms_link ?? false;
-  const layout = d.layout || 'two-column';
+  // Normalize via shared contract — same logic as renderer + runtime
+  const cfg = normalizeCheckoutConfig(d, theme.checkoutButtonText);
+  const {
+    title, subtitle, contactTitle, shippingTitle, paymentTitle, summaryTitle,
+    orderNotesLabel, orderNotesPlaceholder, checkoutButtonText,
+    secureBadgeText, supportText, termsText, deliveryInfoText,
+    showEmail, showPhone, showCompany, showAddress2, showPostalCode,
+    showOrderNotes, showPaymentIcons, showTrustBadges, showSecureBadge,
+    showTermsLink, layout,
+  } = cfg;
 
   const paddingTop = d.padding_top ?? 36;
   const paddingBottom = d.padding_bottom ?? 36;

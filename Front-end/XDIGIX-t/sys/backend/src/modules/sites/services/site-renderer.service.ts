@@ -1,6 +1,7 @@
 import type { ISite, ISection, ISiteSettings } from '../../../schemas/site.schema';
 import { STOREFRONT_RUNTIME_JS } from '../storefront-runtime';
 import { buildSectionManifestEntry } from '../../../registry/serverSectionRegistry';
+import { normalizeCartConfig, normalizeCheckoutConfig, serializeConfigForHtml } from '../section-configs';
 
 /**
  * Set by renderSite before rendering sections — gives sub-functions access to the
@@ -1873,33 +1874,9 @@ function renderCart(c: Record<string, unknown>): string {
   const emptyBtnText = txt((c.empty_button_text as string) || 'Continue shopping');
   const emptyBtnLink = attr((c.empty_button_link as string) || '/products');
 
-  // Build config JSON for runtime to read — ALL settings that affect storefront behavior
-  const cartConfig: Record<string, unknown> = {
-    title: c.title || 'Your cart',
-    subtitle: c.subtitle || '',
-    emptyTitle: c.empty_title || 'Your cart is empty',
-    emptyMessage: c.empty_message || 'Looks like you have not added anything yet.',
-    emptyButtonText: c.empty_button_text || 'Continue shopping',
-    emptyButtonLink: c.empty_button_link || '/products',
-    continueShoppingText: c.continue_shopping_text || 'Continue shopping',
-    checkoutButtonText: c.checkout_button_text || 'Check out',
-    notesLabel: c.notes_label || 'Order notes',
-    notesPlaceholder: c.notes_placeholder || 'Special instructions for your order...',
-    shippingInfoText: c.shipping_info_text || 'Shipping & taxes calculated at checkout',
-    trustMessage: c.trust_message || '',
-    showNotes: c.show_notes ?? false,
-    showShippingInfo: c.show_shipping_info ?? c.show_shipping ?? true,
-    showQuantityControls: c.show_quantity_controls ?? true,
-    showRemoveButtons: c.show_remove_buttons ?? true,
-    showProductVendor: c.show_product_vendor ?? false,
-    showVariantDetails: c.show_variant_details ?? true,
-    showProductImage: c.show_product_image ?? true,
-    showTrustBadges: c.show_trust_badges ?? false,
-    showEstimatedTotal: c.show_estimated_total ?? true,
-    showCheckoutButton: c.show_checkout_button ?? true,
-    showContinueShopping: c.show_continue_shopping ?? true,
-  };
-  const configJson = JSON.stringify(cartConfig).replace(/</g, '\\u003c').replace(/'/g, '\\u0027');
+  // Normalize section data → shared CartSectionConfig contract
+  const cartConfig = normalizeCartConfig(c);
+  const configJson = serializeConfigForHtml(cartConfig as unknown as Record<string, unknown>);
 
   return `
 <section style="max-width:var(--page-width,1000px);margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
@@ -1944,37 +1921,9 @@ function renderCheckout(c: Record<string, unknown>): string {
   const title = txt((c.title as string) || 'Checkout');
   const subtitle = txt((c.subtitle as string) || 'Complete your purchase securely');
 
-  // Build checkout config for runtime — ALL builder settings
-  const checkoutConfig: Record<string, unknown> = {
-    title: c.title || 'Checkout',
-    subtitle: c.subtitle || 'Complete your purchase securely',
-    contactTitle: c.contact_title || 'Contact',
-    shippingTitle: c.shipping_title || 'Shipping address',
-    paymentTitle: c.payment_title || 'Payment method',
-    summaryTitle: c.summary_title || 'Order summary',
-    orderNotesLabel: c.order_notes_label || 'Order notes',
-    orderNotesPlaceholder: c.order_notes_placeholder || 'Any special instructions...',
-    checkoutButtonText: c.checkout_button_text || (_themeData.checkoutButtonText as string) || 'Complete order',
-    guestCheckoutText: c.guest_checkout_text || '',
-    supportText: c.support_text || '',
-    termsText: c.terms_text || '',
-    privacyText: c.privacy_text || '',
-    secureBadgeText: c.secure_badge_text || 'Secure checkout',
-    deliveryInfoText: c.delivery_info_text || '',
-    showEmail: c.show_email ?? true,
-    showPhone: c.show_phone ?? true,
-    showCompany: c.show_company ?? false,
-    showAddress2: c.show_address2 ?? false,
-    showPostalCode: c.show_postal_code ?? true,
-    showOrderNotes: c.show_order_notes ?? c.show_notes ?? true,
-    showBillingToggle: c.show_billing_toggle ?? false,
-    showPaymentIcons: c.show_payment_icons ?? true,
-    showTrustBadges: c.show_trust_badges ?? true,
-    showSecureBadge: c.show_secure_badge ?? true,
-    showTermsLink: c.show_terms_link ?? false,
-    layout: c.layout || 'two-column',
-  };
-  const configJson = JSON.stringify(checkoutConfig).replace(/</g, '\\u003c').replace(/'/g, '\\u0027');
+  // Normalize section data → shared CheckoutSectionConfig contract
+  const checkoutConfig = normalizeCheckoutConfig(c, _themeData.checkoutButtonText as string | undefined);
+  const configJson = serializeConfigForHtml(checkoutConfig as unknown as Record<string, unknown>);
 
   return `
 <section style="max-width:var(--page-width,1100px);margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">

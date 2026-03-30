@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { normalizeCartConfig } from '../../../lib/section-configs';
 
 type Props = {
   data: Record<string, any>;
@@ -11,29 +12,16 @@ const CartSection = ({ data, style }: Props) => {
   const { theme } = useTheme();
   const [quantities, setQuantities] = useState<Record<number, number>>({});
 
-  // ── Read ALL settings (matching registry defaultData) ──
-  const title = d.title || 'Your cart';
-  const subtitle = d.subtitle || '';
-  const emptyTitle = d.empty_title || 'Your cart is empty';
-  const emptyMessage = d.empty_message || 'Looks like you have not added anything yet.';
-  const emptyButtonText = d.empty_button_text || 'Continue shopping';
-  const continueShoppingText = d.continue_shopping_text || 'Continue shopping';
-  const checkoutButtonText = d.checkout_button_text || 'Check out';
-  const notesLabel = d.notes_label || 'Order notes';
-  const notesPlaceholder = d.notes_placeholder || 'Special instructions for your order...';
-  const shippingInfoText = d.shipping_info_text || 'Shipping & taxes calculated at checkout';
-  const trustMessage = d.trust_message || '';
-  const showNotes = d.show_notes ?? false;
-  const showShippingInfo = d.show_shipping_info ?? d.show_shipping ?? true;
-  const showQuantityControls = d.show_quantity_controls ?? true;
-  const showRemoveButtons = d.show_remove_buttons ?? true;
-  const showProductVendor = d.show_product_vendor ?? false;
-  const showVariantDetails = d.show_variant_details ?? true;
-  const showProductImage = d.show_product_image ?? true;
-  const showTrustBadges = d.show_trust_badges ?? false;
-  const showEstimatedTotal = d.show_estimated_total ?? true;
-  const showCheckoutButton = d.show_checkout_button ?? true;
-  const showContinueShopping = d.show_continue_shopping ?? true;
+  // Normalize via shared contract — same logic as renderer + runtime
+  const cfg = normalizeCartConfig(d);
+  const {
+    title, subtitle, emptyTitle, emptyMessage, emptyButtonText,
+    continueShoppingText, checkoutButtonText,
+    notesLabel, notesPlaceholder, shippingInfoText, trustMessage,
+    showNotes, showShippingInfo, showQuantityControls, showRemoveButtons,
+    showProductVendor, showVariantDetails, showProductImage,
+    showTrustBadges, showEstimatedTotal, showCheckoutButton, showContinueShopping,
+  } = cfg;
   const previewMode = d.preview_mode || 'with_items';
   const paddingTop = d.padding_top ?? 36;
   const paddingBottom = d.padding_bottom ?? 36;
