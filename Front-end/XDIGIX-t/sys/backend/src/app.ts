@@ -467,6 +467,23 @@ export function createApp(): Express {
       const { registerFinanceEventHandlers } = await import('./modules/finance/finance.events');
       registerFinanceEventHandlers();
 
+      // Fulfillment: register event handlers + overdue job check
+      const { registerFulfillmentEventHandlers } = await import('./modules/fulfillment/fulfillment.events');
+      registerFulfillmentEventHandlers();
+
+      const { checkOverdueJobs } = await import('./modules/fulfillment/fulfillment.jobs');
+      setInterval(async () => {
+        try {
+          const overdue = await checkOverdueJobs();
+          if (overdue > 0) {
+            const { createLogger } = await import('./lib/logger');
+            createLogger('fulfillment-jobs').info(`Found ${overdue} overdue fulfillment jobs`);
+          }
+        } catch (err) {
+          console.error('[fulfillment-jobs] Overdue job check error:', (err as Error).message);
+        }
+      }, 30 * 60 * 1000); // Every 30 minutes
+
       const { checkOverdueInvoices } = await import('./modules/finance/finance.jobs');
       setInterval(async () => {
         try {
