@@ -264,6 +264,17 @@ ul,ol{list-style:none}
 .xd-mobile-nav-links a{display:block;padding:.875rem 0;border-bottom:1px solid #f0f0f0;
   font-size:1.05rem;font-weight:500;color:#171817}
 @media(max-width:768px){.xd-nav-menu{display:none}.xd-mobile-toggle{display:flex}}
+.xd-cart-drawer{position:fixed;inset:0;z-index:300;display:none;pointer-events:none}
+.xd-cart-drawer.xd-open{display:block;pointer-events:auto}
+.xd-cart-drawer-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s}
+.xd-cart-drawer.xd-open .xd-cart-drawer-backdrop{opacity:1}
+.xd-cart-drawer-panel{position:absolute;right:0;top:0;bottom:0;width:min(420px,90vw);background:var(--c-bg,#fff);color:var(--c-text,#121212);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s ease;box-shadow:-4px 0 24px rgba(0,0,0,.12)}
+.xd-cart-drawer.xd-open .xd-cart-drawer-panel{transform:translateX(0)}
+.xd-cart-drawer-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid color-mix(in srgb,currentColor 10%,transparent)}
+.xd-cart-drawer-close{background:none;border:none;cursor:pointer;padding:.25rem;color:inherit;font-size:1.25rem;display:flex}
+.xd-cart-drawer-items{flex:1;overflow-y:auto;padding:1rem 1.25rem}
+.xd-cart-drawer-footer{padding:1rem 1.25rem;border-top:1px solid color-mix(in srgb,currentColor 10%,transparent)}
+.xd-cart-drawer-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;font-weight:700;font-size:1.05rem}
 .xd-hero{position:relative;overflow:hidden;display:flex;align-items:center}
 .xd-hero-full{min-height:100svh}
 .xd-hero-large{min-height:min(92vh,780px)}
@@ -615,7 +626,7 @@ function renderNavbar(c: Record<string, unknown>): string {
   <div class="xd-nav-actions">
     ${c.showSearch ? `<a href="${_sfBase}/search" class="xd-nav-icon" aria-label="Search"${clrAttr}>${searchSvg}</a>` : ''}
     ${c.showWishlist ? `<a href="${wishlistUrl}" class="xd-nav-icon" aria-label="Wishlist"${clrAttr}>${wishlistSvg}</a>` : ''}
-    ${c.showCart !== false ? `<a href="${cartUrl}" class="xd-nav-icon xd-cart-icon" aria-label="Cart"${clrAttr}>${cartSvg}<span class="xd-nav-badge" style="display:none"></span></a>` : ''}
+    ${c.showCart !== false ? `<button type="button" class="xd-nav-icon xd-cart-icon" aria-label="Cart" data-xd-cart-toggle data-cart-url="${cartUrl}"${clrAttr}>${cartSvg}<span class="xd-nav-badge" style="display:none"></span></button>` : ''}
     ${c.showUserIcon ? `<a href="${_sfBase}/signin" class="xd-nav-icon xd-account-toggle xd-when-logged-out" aria-label="Sign in"${clrAttr} style="font-size:.875rem;font-weight:600;white-space:nowrap;text-decoration:none">Sign in</a><a href="${userIconUrl}" class="xd-nav-icon xd-account-toggle xd-when-logged-in" aria-label="Account"${clrAttr} style="display:none">${userSvg}</a>` : ''}
     <button class="xd-mobile-toggle" aria-label="Open menu"${clrAttr}>${menuSvg}</button>
   </div>
@@ -624,6 +635,29 @@ function renderNavbar(c: Record<string, unknown>): string {
   <div class="xd-mobile-menu-inner">
     <button class="xd-mobile-menu-close" aria-label="Close menu">×</button>
     <nav class="xd-mobile-nav-links">${mobileHtml}</nav>
+  </div>
+</div>
+<!-- Cart Drawer -->
+<div id="xd-cart-drawer" class="xd-cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping cart">
+  <div class="xd-cart-drawer-backdrop"></div>
+  <div class="xd-cart-drawer-panel">
+    <div class="xd-cart-drawer-header">
+      <h2 style="font-weight:700;font-size:1.1rem">Cart</h2>
+      <button type="button" class="xd-cart-drawer-close" aria-label="Close cart">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div id="xd-cart-drawer-items" class="xd-cart-drawer-items">
+      <div style="text-align:center;padding:3rem 1rem;opacity:.5">
+        <span class="material-icons" style="font-size:2.5rem;display:block;margin-bottom:.5rem">shopping_bag</span>
+        <p>Your cart is empty</p>
+      </div>
+    </div>
+    <div id="xd-cart-drawer-footer" class="xd-cart-drawer-footer" style="display:none">
+      <div class="xd-cart-drawer-total"></div>
+      <a href="${_sfBase}/checkout" class="xd-btn xd-btn-primary" style="width:100%;display:flex;justify-content:center;border-radius:min(var(--btn-radius,8px),12px)">Checkout</a>
+      <a href="${_sfBase}/cart" style="display:block;text-align:center;font-size:.85rem;opacity:.6;margin-top:.5rem;text-decoration:underline">View cart</a>
+    </div>
   </div>
 </div>
 </header>`;

@@ -114,7 +114,123 @@ function updateCartBadge(cart){
     badge.textContent=String(count);
     badge.style.display=count>0?'':'none';
   });
+  // Also update the drawer if open
+  renderCartDrawerItems(cart);
 }
+
+/* ── 6b. Cart Drawer ──────────────────────────────────────────────── */
+var _lastCart=null;
+var _cartDrawerEl=document.getElementById('xd-cart-drawer');
+
+function openCartDrawer(){
+  if(!_cartDrawerEl)return;
+  _cartDrawerEl.classList.add('xd-open');
+  document.body.style.overflow='hidden';
+  // Refresh cart data
+  if(tenantId&&getToken()){
+    cartFetch('GET','/cart',null).then(function(cart){
+      if(cart){_lastCart=cart;renderCartDrawerItems(cart);}
+    });
+  }
+}
+function closeCartDrawer(){
+  if(!_cartDrawerEl)return;
+  _cartDrawerEl.classList.remove('xd-open');
+  document.body.style.overflow='';
+}
+
+function renderCartDrawerItems(cart){
+  var container=document.getElementById('xd-cart-drawer-items');
+  var footer=document.getElementById('xd-cart-drawer-footer');
+  if(!container)return;
+  _lastCart=cart;
+  while(container.firstChild)container.removeChild(container.firstChild);
+
+  if(!cart||!cart.items||cart.items.length===0){
+    var empty=mk('div','');
+    empty.style.cssText='text-align:center;padding:3rem 1rem;opacity:.5';
+    var icon=mk('span','material-icons','shopping_bag');
+    icon.style.cssText='font-size:2.5rem;display:block;margin-bottom:.5rem';
+    empty.appendChild(icon);
+    empty.appendChild(mk('p','','Your cart is empty'));
+    container.appendChild(empty);
+    if(footer)footer.style.display='none';
+    return;
+  }
+
+  var cur=cart.currency||currency;
+  cart.items.forEach(function(item){
+    var row=mk('div','');
+    row.style.cssText='display:flex;gap:.75rem;padding:.75rem 0;border-bottom:1px solid color-mix(in srgb,currentColor 8%,transparent);align-items:center';
+    // Image
+    var img=mk('img','');
+    img.src=item.imageUrl||item.image||'https://placehold.co/64/f5f5f5/999?text=Item';
+    img.alt=item.name||'';
+    img.style.cssText='width:56px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0';
+    row.appendChild(img);
+    // Info
+    var info=mk('div','');
+    info.style.cssText='flex:1;min-width:0';
+    var nm=mk('p','',item.name||'Product');
+    nm.style.cssText='font-size:.85rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+    info.appendChild(nm);
+    var priceQty=mk('p','',Number(item.price).toFixed(2)+' '+cur+' × '+item.quantity);
+    priceQty.style.cssText='font-size:.75rem;opacity:.6';
+    info.appendChild(priceQty);
+    row.appendChild(info);
+    // Remove
+    var removeBtn=mk('button','','\u2715');
+    removeBtn.type='button';
+    removeBtn.style.cssText='background:none;border:none;cursor:pointer;opacity:.4;font-size:.9rem;padding:.25rem;color:inherit;font-family:inherit';
+    removeBtn.onmouseover=function(){this.style.opacity='1';};
+    removeBtn.onmouseout=function(){this.style.opacity='.4';};
+    (function(pid,vid){
+      removeBtn.addEventListener('click',function(e){
+        e.stopPropagation();
+        cartFetch('PATCH','/cart/item',{cartToken:getToken(),productId:pid,variantId:vid,quantity:0});
+      });
+    })(item.productId,item.variantId);
+    row.appendChild(removeBtn);
+    container.appendChild(row);
+  });
+
+  // Footer
+  if(footer){
+    footer.style.display='';
+    var totalEl=footer.querySelector('.xd-cart-drawer-total');
+    if(totalEl){
+      while(totalEl.firstChild)totalEl.removeChild(totalEl.firstChild);
+      totalEl.appendChild(mk('span','','Subtotal'));
+      var totalVal=mk('span','',Number(cart.subtotal||0).toFixed(2)+' '+cur);
+      totalVal.style.fontWeight='800';
+      totalEl.appendChild(totalVal);
+    }
+  }
+}
+
+// Cart drawer toggle, close, backdrop
+if(_cartDrawerEl){
+  _cartDrawerEl.querySelector('.xd-cart-drawer-backdrop').addEventListener('click',closeCartDrawer);
+  _cartDrawerEl.querySelector('.xd-cart-drawer-close').addEventListener('click',closeCartDrawer);
+}
+// Cart icon click — open drawer or navigate to /cart
+document.querySelectorAll('[data-xd-cart-toggle]').forEach(function(btn){
+  btn.addEventListener('click',function(e){
+    e.preventDefault();
+    if(_cartDrawerEl){
+      openCartDrawer();
+    }else{
+      // Fallback: navigate to cart page
+      window.location.href=btn.getAttribute('data-cart-url')||sfBase+'/cart';
+    }
+  });
+});
+// Close drawer on Escape
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&_cartDrawerEl&&_cartDrawerEl.classList.contains('xd-open')){
+    closeCartDrawer();
+  }
+});
 
 /* ── 7. Product card builder (safe DOM methods) ─────────────────────── */
 function makeProductCard(p,ctaLabel,eventName){
@@ -337,8 +453,10 @@ document.addEventListener('click',function(e){
   track('add_to_cart',{item_id:pid,item_name:pname,value:price,currency:currency});
   if(tenantId){
     btn.style.opacity='0.6';btn.style.pointerEvents='none';
-    cartFetch('POST','/cart/add',{productId:pid,quantity:1,name:pname,price:price}).then(function(){
+    cartFetch('POST','/cart/add',{productId:pid,quantity:1,name:pname,price:price}).then(function(cart){
       btn.style.opacity='';btn.style.pointerEvents='';
+      // Open cart drawer after adding item
+      if(_cartDrawerEl&&cart){openCartDrawer();}
     }).catch(function(err){
       btn.style.opacity='';btn.style.pointerEvents='';
       if(err&&err.message&&err.message.indexOf('Out of stock')!==-1){
