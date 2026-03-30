@@ -19,6 +19,7 @@ import checkoutRoutes, { handleStripeWebhook } from './checkout.routes';
 import aiRoutes from './ai.routes';
 import financeRoutes from '../modules/finance/finance.routes';
 import fulfillmentRoutes from '../modules/fulfillment/fulfillment.routes';
+import shippingModuleRoutes from '../modules/shipping-module/shipping.routes';
 
 const router = Router();
 
@@ -68,6 +69,9 @@ router.use('/finance', financeRoutes);
 
 // Fulfillment API — auth required, tenant-scoped
 router.use('/fulfillment', fulfillmentRoutes);
+
+// Shipping v2 API — auth required (except public tracking), tenant-scoped
+router.use('/shipping-v2', shippingModuleRoutes);
 
 // Cloud Functions compatibility: /addDomain, /verifyDomain, etc. (base URL replacement only)
 const qs = (req: { url?: string }) => (req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');

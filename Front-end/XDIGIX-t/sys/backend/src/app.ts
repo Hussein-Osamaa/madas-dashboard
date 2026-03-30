@@ -484,6 +484,23 @@ export function createApp(): Express {
         }
       }, 30 * 60 * 1000); // Every 30 minutes
 
+      // Shipping: register event handlers + failed delivery retry job
+      const { registerShippingEventHandlers } = await import('./modules/shipping-module/shipping.events');
+      registerShippingEventHandlers();
+
+      const { processFailedDeliveryRetries } = await import('./modules/shipping-module/shipping.jobs');
+      setInterval(async () => {
+        try {
+          const retried = await processFailedDeliveryRetries();
+          if (retried > 0) {
+            const { createLogger } = await import('./lib/logger');
+            createLogger('shipping-jobs').info(`Processed ${retried} failed delivery retries`);
+          }
+        } catch (err) {
+          console.error('[shipping-jobs] Failed delivery retry error:', (err as Error).message);
+        }
+      }, 30 * 60 * 1000); // Every 30 minutes
+
       const { checkOverdueInvoices } = await import('./modules/finance/finance.jobs');
       setInterval(async () => {
         try {
