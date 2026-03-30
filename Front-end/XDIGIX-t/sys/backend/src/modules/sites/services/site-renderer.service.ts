@@ -1867,17 +1867,52 @@ function renderProductInfo(c: Record<string, unknown>): string {
 
 function renderCart(c: Record<string, unknown>): string {
   const title = txt((c.title as string) || 'Your cart');
-  const emptyMsg = txt((c.empty_message as string) || 'Your cart is empty');
+  const subtitle = txt((c.subtitle as string) || '');
+  const emptyTitle = txt((c.empty_title as string) || 'Your cart is empty');
+  const emptyMsg = txt((c.empty_message as string) || 'Looks like you haven\'t added anything yet.');
   const emptyBtnText = txt((c.empty_button_text as string) || 'Continue shopping');
-  const emptyBtnLink = attr((c.empty_button_link as string) || '/');
+  const emptyBtnLink = attr((c.empty_button_link as string) || '/products');
+
+  // Build config JSON for runtime to read — ALL settings that affect storefront behavior
+  const cartConfig: Record<string, unknown> = {
+    title: c.title || 'Your cart',
+    subtitle: c.subtitle || '',
+    emptyTitle: c.empty_title || 'Your cart is empty',
+    emptyMessage: c.empty_message || 'Looks like you haven\'t added anything yet.',
+    emptyButtonText: c.empty_button_text || 'Continue shopping',
+    emptyButtonLink: c.empty_button_link || '/products',
+    continueShoppingText: c.continue_shopping_text || 'Continue shopping',
+    checkoutButtonText: c.checkout_button_text || 'Check out',
+    notesLabel: c.notes_label || 'Order notes',
+    notesPlaceholder: c.notes_placeholder || 'Special instructions for your order...',
+    shippingInfoText: c.shipping_info_text || 'Shipping & taxes calculated at checkout',
+    trustMessage: c.trust_message || '',
+    showNotes: c.show_notes ?? false,
+    showShippingInfo: c.show_shipping_info ?? c.show_shipping ?? true,
+    showQuantityControls: c.show_quantity_controls ?? true,
+    showRemoveButtons: c.show_remove_buttons ?? true,
+    showProductVendor: c.show_product_vendor ?? false,
+    showVariantDetails: c.show_variant_details ?? true,
+    showProductImage: c.show_product_image ?? true,
+    showTrustBadges: c.show_trust_badges ?? false,
+    showEstimatedTotal: c.show_estimated_total ?? true,
+    showCheckoutButton: c.show_checkout_button ?? true,
+    showContinueShopping: c.show_continue_shopping ?? true,
+  };
+  const configJson = JSON.stringify(cartConfig).replace(/</g, '\\u003c');
+
   return `
-<section style="max-width:900px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
-  <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1.5rem">${title}</h1>
-  <div id="xd-cart-container">
-    <div style="text-align:center;padding:3rem 0;opacity:.6">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-      <p style="font-size:1.1rem">${emptyMsg}</p>
-      <a href="${emptyBtnLink}" class="xd-btn" style="margin-top:1rem;display:inline-block">${emptyBtnText}</a>
+<section style="max-width:var(--page-width,1000px);margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+  <div style="margin-bottom:1.5rem">
+    <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800">${title}</h1>
+    ${subtitle ? `<p style="opacity:.6;font-size:.95rem;margin-top:.25rem">${subtitle}</p>` : ''}
+  </div>
+  <div id="xd-cart-container" data-xd-cart-config='${configJson}'>
+    <div style="text-align:center;padding:4rem 0">
+      <span class="material-icons" style="font-size:4rem;opacity:.2;display:block;margin-bottom:1rem">shopping_bag</span>
+      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:.5rem">${emptyTitle}</h2>
+      <p style="opacity:.6;font-size:.95rem;margin-bottom:1.5rem">${emptyMsg}</p>
+      <a href="${emptyBtnLink}" class="xd-btn xd-btn-primary" style="display:inline-flex">${emptyBtnText}</a>
     </div>
   </div>
 </section>`;
