@@ -18,6 +18,7 @@
  *   POST /:tenantId/contact                  contact form submission
  */
 import { Router, Request, Response } from 'express';
+import { cacheGet, cacheSet } from '../lib/cache';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { Business } from '../schemas/business.schema';
@@ -80,6 +81,11 @@ router.get('/:tenantId/search', catalogLimiter, async (req: Request, res: Respon
   const q = ((req.query.q as string) || '').trim().slice(0, 200);
   if (!q) { res.json({ products: [], total: 0, query: '' }); return; }
 
+  // Redis cache — 30s TTL for search results
+  const cacheKey = `search:${tenantId}:${q}:${req.query.page || 1}`;
+  const cached = await cacheGet<Record<string, unknown>>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
   const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
   const limit = Math.min(50, parseInt(req.query.limit as string) || 20);
   const skip  = (page - 1) * limit;
@@ -123,7 +129,9 @@ router.get('/:tenantId/search', catalogLimiter, async (req: Request, res: Respon
       id: d.docId,
       ...(d.data as Record<string, unknown>),
     }));
-    res.json({ products, total, query: q, page, limit });
+    const result = { products, total, query: q, page, limit };
+    await cacheSet(cacheKey, result, 30); // 30s TTL
+    res.json(result);
   } catch (err) {
     // Text index might not exist yet — fallback to regex only
     const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -162,6 +170,11 @@ router.get('/:tenantId/products', catalogLimiter, async (req: Request, res: Resp
   const sortOrder   = req.query.order === 'desc' ? -1 : 1;
   const collection  = req.query.collection as string | undefined;
   const search      = req.query.search     as string | undefined;
+
+  // Redis cache — 60s TTL for product listings
+  const prodCacheKey = `products:${tenantId}:${page}:${limit}:${sortField}:${sortOrder}:${collection || ''}:${search || ''}:${req.query.ids || ''}`;
+  const prodCached = await cacheGet<Record<string, unknown>>(prodCacheKey);
+  if (prodCached) { res.json(prodCached); return; }
 
   const filter: Record<string, unknown> = {
     businessId: biz.businessId,
@@ -202,6 +215,9 @@ router.get('/:tenantId/products', catalogLimiter, async (req: Request, res: Resp
     delete raw.reservedStock;
     return raw;
   });
+
+  const prodResult = { products, total, page, limit, hasMore: skip + limit < total };
+  await cacheSet(prodCacheKey, prodResult, 60); // 60s TTL
 
   res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
   res.json({
@@ -456,6 +472,11 @@ router.get('/:tenantId/payment-methods', catalogLimiter, async (req: Request, re
   const biz = await resolveBusiness(tenantId);
   if (!biz) { res.status(404).json({ error: 'Store not found' }); return; }
 
+  // Redis cache — 300s TTL for payment methods (rarely change)
+  const pmCacheKey = `paymethods:${tenantId}`;
+  const pmCached = await cacheGet<Record<string, unknown>>(pmCacheKey);
+  if (pmCached) { res.json(pmCached); return; }
+
   try {
     const doc = await FirestoreDoc.findOne({
       businessId: biz.businessId,
@@ -501,7 +522,9 @@ router.get('/:tenantId/payment-methods', catalogLimiter, async (req: Request, re
       methods.push(method);
     }
 
-    res.json({ currency: biz.currency || 'SAR', methods });
+    const pmResult = { currency: biz.currency || 'SAR', methods };
+    await cacheSet(pmCacheKey, pmResult, 300); // 5min TTL
+    res.json(pmResult);
   } catch (err) {
     console.error('[payment-methods] Error:', (err as Error).message);
     res.status(500).json({ error: 'Failed to load payment methods' });

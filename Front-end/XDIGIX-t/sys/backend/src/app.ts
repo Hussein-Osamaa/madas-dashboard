@@ -119,8 +119,16 @@ export function createApp(): Express {
   // 5. Body parsing
   app.use(express.json({ limit: '10mb' }));
 
-  // 6. Gzip/brotli compression for all responses
-  app.use(compression());
+  // 6. Gzip/brotli compression — level 6 gzip, brotli auto-negotiated via Accept-Encoding
+  app.use(compression({
+    level: 6,
+    threshold: 1024, // Skip responses < 1KB
+    filter: (req, res) => {
+      // Don't compress if client opts out
+      if (req.headers['x-no-compression']) return false;
+      return compression.filter(req, res);
+    },
+  }));
 
   app.use('/api', routes);
 

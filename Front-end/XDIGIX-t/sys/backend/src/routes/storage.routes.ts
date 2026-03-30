@@ -154,24 +154,46 @@ function sanitizeSvg(buffer: Buffer): Buffer {
 }
 
 /* ─── Image processing pipeline ──────────────────────────────────────────
-   Raster images  → resize to max 2048 px wide → WebP (quality 80)
+   Raster images  → generate 3 responsive sizes (400w, 800w, 2048w) as WebP
    SVG            → strip dangerous constructs, keep as SVG
    Other files    → pass through unchanged
 ──────────────────────────────────────────────────────────────────────────── */
+
+export interface ImageVariant {
+  buffer: Buffer;
+  suffix: string; // '' for original, '-800w', '-400w'
+  contentType: string;
+}
+
+const IMAGE_SIZES = [
+  { width: 400, suffix: '-400w' },
+  { width: 800, suffix: '-800w' },
+  { width: 2048, suffix: '' },     // Original/full size
+];
+
 async function processFile(
   buffer: Buffer,
   mimetype: string
-): Promise<{ buffer: Buffer; contentType: string }> {
+): Promise<{ buffer: Buffer; contentType: string; variants?: ImageVariant[] }> {
   if (mimetype === 'image/svg+xml') {
     return { buffer: sanitizeSvg(buffer), contentType: 'image/svg+xml' };
   }
 
   if (mimetype.startsWith('image/') && sharpFn) {
-    const webpBuffer: Buffer = await sharpFn(buffer)
-      .resize({ width: 2048, withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toBuffer();
-    return { buffer: webpBuffer, contentType: 'image/webp' };
+    // Generate all 3 responsive sizes in parallel
+    const variants = await Promise.all(
+      IMAGE_SIZES.map(async (size) => ({
+        buffer: await sharpFn(buffer)
+          .resize({ width: size.width, withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toBuffer(),
+        suffix: size.suffix,
+        contentType: 'image/webp',
+      }))
+    );
+    // The "original" (largest) variant is the one with empty suffix
+    const primary = variants.find(v => v.suffix === '') || variants[variants.length - 1];
+    return { buffer: primary.buffer, contentType: 'image/webp', variants };
   }
 
   // Non-image files or sharp unavailable → store unchanged
@@ -207,7 +229,7 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
   const uuid = uuidv4();
 
   try {
-    const { buffer, contentType } = await processFile(req.file.buffer, req.file.mimetype);
+    const { buffer, contentType, variants } = await processFile(req.file.buffer, req.file.mimetype);
 
     // Use .webp extension if Sharp converted the image, otherwise keep original ext
     const ext = contentType === 'image/webp' ? '.webp' : (MIME_TO_EXT[req.file.mimetype] || '.bin');
@@ -215,26 +237,43 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
 
     if (isS3Configured && s3 && PutObjectCommandClass) {
       /* ── S3 / Cloudflare R2 / MinIO ─────────────────────────────── */
-      const s3Key = `uploads/${tenantId}/${filename}`;
-
-      await s3.send(
-        new PutObjectCommandClass({
-          Bucket: config.s3.bucket,
-          Key: s3Key,
-          Body: buffer,
-          ContentType: contentType,
-          CacheControl: 'public, max-age=31536000, immutable',
-          // ACL: 'public-read',  // Uncomment for AWS S3; omit for Cloudflare R2
-        })
-      );
-
       const publicBase = (config.s3.publicUrl || '').replace(/\/$/, '');
-      const url = `${publicBase}/${s3Key}`;
+
+      // Upload all responsive variants in parallel (or single file if no variants)
+      const filesToUpload = variants && variants.length > 0
+        ? variants.map(v => ({
+            key: `uploads/${tenantId}/${uuid}${v.suffix}${ext}`,
+            body: v.buffer,
+            type: v.contentType,
+          }))
+        : [{ key: `uploads/${tenantId}/${filename}`, body: buffer, type: contentType }];
+
+      await Promise.all(filesToUpload.map(f =>
+        s3.send(new PutObjectCommandClass({
+          Bucket: config.s3.bucket,
+          Key: f.key,
+          Body: f.body,
+          ContentType: f.type,
+          CacheControl: 'public, max-age=31536000, immutable',
+        }))
+      ));
+
+      const primaryKey = `uploads/${tenantId}/${filename}`;
+      const url = `${publicBase}/${primaryKey}`;
+
+      // Build srcset URLs for responsive images
+      const srcset: Record<string, string> = {};
+      if (variants && variants.length > 0) {
+        for (const v of variants) {
+          const w = v.suffix === '' ? '2048w' : v.suffix.replace('-', '') ;
+          srcset[w] = `${publicBase}/uploads/${tenantId}/${uuid}${v.suffix}${ext}`;
+        }
+      }
 
       console.log(
-        `[storage] → S3 ${s3Key} ${(buffer.length / 1024).toFixed(1)} KB ${contentType}`
+        `[storage] → S3 ${primaryKey} ${(buffer.length / 1024).toFixed(1)} KB ${contentType}${variants ? ` (${variants.length} variants)` : ''}`
       );
-      res.json({ url, path: s3Key });
+      res.json({ url, path: primaryKey, ...(Object.keys(srcset).length > 0 ? { srcset } : {}) });
     } else {
       /* ── Local filesystem fallback ──────────────────────────────── */
       const tenantDir = path.join(LOCAL_UPLOAD_DIR, tenantId);

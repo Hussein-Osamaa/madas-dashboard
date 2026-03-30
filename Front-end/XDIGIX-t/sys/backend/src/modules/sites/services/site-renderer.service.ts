@@ -83,6 +83,31 @@ function getSectionData(sec: ISection): Record<string, unknown> {
   return {};
 }
 
+/** CDN public URL prefix — images from our CDN get responsive srcset */
+const CDN_HOSTS = ['pub-', 'r2.dev', 'r2.cloudflarestorage'];
+
+/** Generate a responsive <img> tag with srcset for CDN-hosted images. */
+function responsiveImg(src: string, alt: string, opts: {
+  sizes?: string; width?: number; height?: number;
+  loading?: 'lazy' | 'eager'; priority?: boolean; cls?: string;
+} = {}): string {
+  const { sizes = '(max-width:768px) 100vw, 50vw', loading = 'lazy', priority = false, cls = '' } = opts;
+  const safeSrc = attr(src);
+  const safeAlt = attr(alt);
+  // Only add srcset for our CDN images (have -400w/-800w variants)
+  const isCdn = CDN_HOSTS.some(h => src.includes(h)) && src.endsWith('.webp');
+  let srcsetAttr = '';
+  if (isCdn) {
+    const base = safeSrc.replace(/\.webp$/, '');
+    srcsetAttr = ` srcset="${base}-400w.webp 400w, ${base}-800w.webp 800w, ${base}.webp 2048w" sizes="${sizes}"`;
+  }
+  return `<img src="${safeSrc}"${srcsetAttr} alt="${safeAlt}"${
+    cls ? ` class="${cls}"` : ''}${
+    opts.width ? ` width="${opts.width}"` : ''}${
+    opts.height ? ` height="${opts.height}"` : ''
+  } loading="${loading}"${priority ? ' fetchpriority="high"' : ''} decoding="async">`;
+}
+
 /** Format a price with the site's currency setting from theme. */
 function formatCurrency(price: unknown): string {
   const num = Number(price);
@@ -849,7 +874,7 @@ function productCard(p: Record<string, unknown>, ctaLabel: string, opts: Product
   return `
     <a href="${detailHref}" class="xd-product-card xd-reveal" data-item-id="${attr(p.id as string)}" style="text-decoration:none;color:inherit">
       <div class="xd-product-img-wrap">
-        <img src="${imgSrc}" alt="${attr(p.name as string)}" loading="lazy" decoding="async" width="400" height="400" class="xd-product-img-primary">
+        ${responsiveImg(imgSrc, p.name as string || '', { width: 400, height: 400, cls: 'xd-product-img-primary', sizes: '(max-width:768px) 50vw, 25vw' })}
         ${secondaryImgHtml}
         ${badgeHtml}
       </div>
