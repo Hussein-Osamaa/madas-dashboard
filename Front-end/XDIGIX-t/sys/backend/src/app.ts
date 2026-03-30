@@ -427,12 +427,27 @@ export function createApp(): Express {
   app.use(errorMiddleware);
 
   // ── Platform Core: start event bus worker + seed plans ──
+  // ── Inventory: reservation expiry job ──
   // Lazy import to avoid circular dependencies during app construction
   setTimeout(async () => {
     try {
       const { eventBus, planService } = await import('./modules/platform-core');
       eventBus.startWorker(2000); // Poll every 2s
       await planService.seedDefaultPlans();
+
+      // Inventory: process expired reservations every 5 minutes
+      const { processExpiredReservations } = await import('./modules/inventory/inventory.jobs');
+      setInterval(async () => {
+        try {
+          const released = await processExpiredReservations();
+          if (released > 0) {
+            const { createLogger } = await import('./lib/logger');
+            createLogger('inventory-jobs').info(`Released ${released} expired reservations`);
+          }
+        } catch (err) {
+          console.error('[inventory-jobs] Reservation expiry error:', (err as Error).message);
+        }
+      }, 5 * 60 * 1000); // Every 5 minutes
     } catch (err) {
       console.error('[platform-core] Failed to initialize:', (err as Error).message);
     }
