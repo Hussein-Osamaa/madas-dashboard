@@ -80,6 +80,13 @@ export interface ISite extends Document {
   publishedAt?: Date;
   unpublishedAt?: Date;
   isActive?: boolean;
+  activeVersion?: number;
+  previousVersion?: number;
+  candidateVersion?: number;
+  candidateStatus?: 'building' | 'storing' | 'failed' | null;
+  candidateFailedAt?: Date;
+  candidateFailureReason?: string;
+  publishedVersion?: number;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -164,6 +171,13 @@ const SiteSchema = new Schema<ISite>(
     publishedAt:   { type: Date },
     unpublishedAt: { type: Date },
     isActive:      { type: Boolean, default: false },
+    activeVersion:         { type: Number, default: null },
+    previousVersion:       { type: Number, default: null },
+    candidateVersion:      { type: Number, default: null },
+    candidateStatus:       { type: String, enum: ['building', 'storing', 'failed', null], default: null },
+    candidateFailedAt:     { type: Date, default: null },
+    candidateFailureReason: { type: String, default: null },
+    publishedVersion:      { type: Number, default: null },
     createdBy:     { type: String, required: true },
   },
   { timestamps: true }
