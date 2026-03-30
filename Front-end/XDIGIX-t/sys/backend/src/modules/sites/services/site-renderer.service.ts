@@ -2244,12 +2244,22 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
     }
   }
 
+  // Build canonical URL: base + page path
+  const siteCanonicalBase = (site.publicUrl || site.url || '') as string;
+  const pagePath = pageSlug && pageSlug !== 'home' ? `/${pageSlug}` : '';
+  const canonicalUrl = (pageSeo.canonical as string) || (siteCanonicalBase ? siteCanonicalBase.replace(/\/$/, '') + pagePath : '');
+
+  // Pages that should NOT be indexed
+  const noIndexPages = new Set(['cart', 'checkout', 'signin', 'signup', 'account', 'favorites']);
+  const robotsContent = (pageSlug && noIndexPages.has(pageSlug)) ? 'noindex,nofollow' : 'index,follow';
+
   const seo = {
     title:       (pageSeo.title       || globalSeo.title       || '') as string,
     description: (pageSeo.description || globalSeo.description || '') as string,
     ogImage:     (pageSeo.ogImage     || globalSeo.ogImage     || '') as string,
     keywords:    (globalSeo.keywords  || []) as string[],
-    canonical:   (pageSeo.canonical   || '') as string,
+    canonical:   canonicalUrl,
+    robots:      robotsContent,
   };
 
   // ── Resolve color schemes from theme ────────────────────────────
@@ -2411,19 +2421,21 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="index,follow">
+<meta name="robots" content="${seo.robots}">
 <title>${pageTitle}${pageTitle !== siteName2 ? ` | ${siteName2}` : ''}</title>
 <meta name="description" content="${attr(seo.description)}">
 ${seo.keywords?.length ? `<meta name="keywords" content="${attr(seo.keywords.join(', '))}">` : ''}
-<link rel="canonical" href="${attr(seo.canonical || site.publicUrl || site.url || '')}">
+${seo.canonical ? `<link rel="canonical" href="${attr(seo.canonical)}">` : ''}
 ${(theme.faviconUrl as string) ? `<link rel="icon" type="image/png" href="${attr(theme.faviconUrl as string)}">` : ''}
 <meta property="og:type"        content="website">
 <meta property="og:site_name"   content="${attr(name)}">
-<meta property="og:title"       content="${attr(seo.title || name)}">
+<meta property="og:title"       content="${attr(pageTitle || seo.title || name)}">
 <meta property="og:description" content="${attr(seo.description)}">
-${seo.ogImage ? `<meta property="og:image" content="${attr(seo.ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">` : ''}
+${seo.canonical ? `<meta property="og:url" content="${attr(seo.canonical)}">` : ''}
+${seo.ogImage ? `<meta property="og:image" content="${attr(seo.ogImage)}">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">` : ''}
 <meta name="twitter:card"        content="${seo.ogImage ? 'summary_large_image' : 'summary'}">
-<meta name="twitter:title"       content="${attr(seo.title || name)}">
+<meta name="twitter:title"       content="${attr(pageTitle || seo.title || name)}">
 <meta name="twitter:description" content="${attr(seo.description)}">
 ${seo.ogImage ? `<meta name="twitter:image" content="${attr(seo.ogImage)}">` : ''}
 <script type="application/ld+json">${jsonLd}</script>
@@ -2668,13 +2680,20 @@ export function renderProductDetailPage(site: ISite, product: ProductData, opts?
     pageSections: { ...((site as unknown as Record<string, unknown>).pageSections as Record<string, unknown> || {}), products: pageSections },
   };
 
-  // Set page SEO title to product name
+  // Set page SEO: title, description, OG image, canonical for product page
+  const prodTitle = String(product.name || 'Product');
+  const prodDesc = String(product.description || '').slice(0, 160);
+  const prodImages = (product.images as string[]) || (product.image ? [product.image as string] : []);
+  const prodOgImage = prodImages[0] || '';
+  const prodCanonical = (site.publicUrl ? String(site.publicUrl).replace(/\/$/, '') : '') + '/products/' + String(product.id || product.docId || '');
+  const prodSeo = { title: prodTitle, description: prodDesc, ogImage: prodOgImage, canonical: prodCanonical };
+
   if (!clonedSite.pages) clonedSite.pages = [];
   const prodPage = clonedSite.pages.find((p: Record<string, unknown>) => p.slug === 'products');
   if (prodPage) {
-    prodPage.seo = { ...(prodPage.seo || {}), title: String(product.name || 'Product') };
+    prodPage.seo = prodSeo;
   } else {
-    clonedSite.pages.push({ id: 'products', slug: 'products', name: 'Product', sections: [], seo: { title: String(product.name || 'Product') } });
+    clonedSite.pages.push({ id: 'products', slug: 'products', name: 'Product', sections: [], seo: prodSeo });
   }
 
   return renderSite(clonedSite, 'products', opts);

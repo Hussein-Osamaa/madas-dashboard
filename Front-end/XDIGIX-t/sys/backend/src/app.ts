@@ -289,6 +289,55 @@ export function createApp(): Express {
       }
       if (!site) { res.status(404).send('<h1>404 — Site not found</h1>'); return; }
 
+      const siteBaseUrl = `https://${host}`;
+
+      // ── robots.txt ──────────────────────────────────────────
+      if (req.path === '/robots.txt') {
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.send(`User-agent: *\nAllow: /\nDisallow: /cart\nDisallow: /checkout\nDisallow: /account\nDisallow: /signin\nDisallow: /signup\nDisallow: /favorites\nDisallow: /order/\n\nSitemap: ${siteBaseUrl}/sitemap.xml`);
+        return;
+      }
+
+      // ── sitemap.xml ─────────────────────────────────────────
+      if (req.path === '/sitemap.xml') {
+        try {
+          const biz = await Business.findOne({ tenantId: site.tenantId }).lean() as { businessId: string } | null;
+          const productDocs = biz ? await FirestoreDoc.find({
+            businessId: biz.businessId, coll: 'products', 'data.deleted': { $ne: true },
+          }).select('docId data.name updatedAt').limit(5000).lean() : [];
+
+          const now = new Date().toISOString().split('T')[0];
+          let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+          // Home page
+          xml += `  <url><loc>${siteBaseUrl}/</loc><lastmod>${now}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n`;
+          // Products page
+          xml += `  <url><loc>${siteBaseUrl}/products</loc><lastmod>${now}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>\n`;
+          // Individual products
+          for (const doc of productDocs) {
+            const mod = doc.updatedAt ? new Date(doc.updatedAt).toISOString().split('T')[0] : now;
+            xml += `  <url><loc>${siteBaseUrl}/products/${doc.docId}</loc><lastmod>${mod}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+          }
+          // Custom pages
+          if (site.pages?.length) {
+            for (const p of site.pages) {
+              if (p.slug && p.slug !== 'home' && !['cart','checkout','signin','signup','account','favorites','search'].includes(p.slug)) {
+                xml += `  <url><loc>${siteBaseUrl}/${p.slug}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+              }
+            }
+          }
+          xml += '</urlset>';
+
+          res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=7200');
+          res.send(xml);
+        } catch (err) {
+          console.error('[sitemap] Error:', (err as Error).message);
+          res.status(500).send('<!-- sitemap generation failed -->');
+        }
+        return;
+      }
+
       const sdOpts = { subdomain: true };
       // Handle storefront sub-pages under subdomain
       const subPage = req.path.match(/^\/(cart|checkout|search|favorites|account|signin|signup)$/)?.[1];
