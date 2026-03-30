@@ -854,6 +854,12 @@ document.addEventListener('click',function(e){
 function renderCheckoutPage(cart){
   var container=document.getElementById('xd-checkout-container');
   if(!container)return;
+
+  // Read config embedded by renderCheckout()
+  var cfg={};
+  try{cfg=JSON.parse(container.getAttribute('data-xd-checkout-config')||'{}');}catch(e){}
+  var C=function(k,d){return cfg[k]!=null?cfg[k]:d;};
+
   while(container.firstChild)container.removeChild(container.firstChild);
 
   if(!cart||!cart.items||cart.items.length===0){
@@ -891,7 +897,7 @@ function renderCheckoutPage(cart){
   form.appendChild(errBox);
 
   // Contact section
-  var contactH=mk('h3','','Contact');
+  var contactH=mk('h3','',C('contactTitle','Contact'));
   contactH.style.cssText='font-weight:700;font-size:1.1rem;margin-bottom:.5rem';
   form.appendChild(contactH);
   var contactGrid=mk('div','');
@@ -919,7 +925,7 @@ function renderCheckoutPage(cart){
   form.appendChild(contactGrid);
 
   // Shipping section
-  var shipH=mk('h3','','Shipping address');
+  var shipH=mk('h3','',C('shippingTitle','Shipping address'));
   shipH.style.cssText='font-weight:700;font-size:1.1rem;margin-bottom:.5rem;margin-top:.5rem';
   form.appendChild(shipH);
   var shipGrid=mk('div','');
@@ -932,7 +938,7 @@ function renderCheckoutPage(cart){
   form.appendChild(shipGrid);
 
   // Payment method section
-  var payH=mk('h3','','Payment method');
+  var payH=mk('h3','',C('paymentTitle','Payment method'));
   payH.style.cssText='font-weight:700;font-size:1.1rem;margin-bottom:.5rem;margin-top:.5rem';
   form.appendChild(payH);
   var payContainer=mk('div','');
@@ -943,25 +949,53 @@ function renderCheckoutPage(cart){
   payContainer.appendChild(payLoading);
   form.appendChild(payContainer);
 
-  // Notes
-  var noteWrap=mk('div','');
-  var noteLbl=mk('label','','Order notes (optional)');
-  noteLbl.setAttribute('for','checkout-notes');
-  noteLbl.style.cssText='font-size:.8rem;font-weight:600;display:block;margin-bottom:.25rem';
-  noteWrap.appendChild(noteLbl);
-  var noteArea=document.createElement('textarea');
-  noteArea.id='checkout-notes';noteArea.name='notes';
-  noteArea.placeholder='Any special instructions...';
-  noteArea.style.cssText='width:100%;padding:.65rem .75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:.9rem;font-family:inherit;outline:none;resize:vertical;min-height:60px;box-sizing:border-box';
-  noteWrap.appendChild(noteArea);
-  form.appendChild(noteWrap);
+  // Notes (conditional)
+  if(C('showOrderNotes',true)){
+    var noteWrap=mk('div','');
+    var noteLbl=mk('label','',C('orderNotesLabel','Order notes')+' (optional)');
+    noteLbl.setAttribute('for','checkout-notes');
+    noteLbl.style.cssText='font-size:.8rem;font-weight:600;display:block;margin-bottom:.25rem';
+    noteWrap.appendChild(noteLbl);
+    var noteArea=document.createElement('textarea');
+    noteArea.id='checkout-notes';noteArea.name='notes';
+    noteArea.placeholder=C('orderNotesPlaceholder','Any special instructions...');
+    noteArea.style.cssText='width:100%;padding:.65rem .75rem;border:1px solid var(--input-border,#e5e7eb);border-radius:var(--input-radius,8px);font-size:.9rem;font-family:inherit;outline:none;resize:vertical;min-height:60px;box-sizing:border-box;background:transparent;color:inherit';
+    noteWrap.appendChild(noteArea);
+    form.appendChild(noteWrap);
+  }
+
+  // Secure badge
+  if(C('showSecureBadge',true)){
+    var secureBadge=mk('div','');
+    secureBadge.style.cssText='display:flex;align-items:center;gap:.5rem;font-size:.8rem;opacity:.5;margin-bottom:.75rem';
+    var lockIcon=mk('span','material-icons','lock');
+    lockIcon.style.fontSize='.9rem';
+    secureBadge.appendChild(lockIcon);
+    secureBadge.appendChild(mk('span','',C('secureBadgeText','Secure checkout')));
+    form.appendChild(secureBadge);
+  }
 
   // Submit button
-  var submitBtn=mk('button','xd-btn xd-btn-primary','Complete order');
+  var _checkoutBtnText=C('checkoutButtonText','Complete order');
+  var submitBtn=mk('button','xd-btn xd-btn-primary',_checkoutBtnText);
   submitBtn.type='submit';
   submitBtn.id='xd-checkout-submit';
-  submitBtn.style.cssText='width:100%;padding:1rem;font-size:1.05rem;font-weight:700;cursor:pointer;border:none;border-radius:min(var(--btn-radius,8px),12px);font-family:inherit';
+  submitBtn.style.cssText='width:100%;padding:1rem;font-size:1.05rem;font-weight:700;cursor:pointer;border:none;border-radius:min(var(--btn-radius,8px),12px);font-family:inherit;background:var(--checkout-accent,var(--c-primary,#121212))';
   form.appendChild(submitBtn);
+
+  // Terms link
+  if(C('showTermsLink',false)&&C('termsText','')){
+    var termsP=mk('p','',C('termsText',''));
+    termsP.style.cssText='font-size:.75rem;opacity:.5;text-align:center;margin-top:.75rem';
+    form.appendChild(termsP);
+  }
+
+  // Support text
+  if(C('supportText','')){
+    var supportP=mk('p','',C('supportText',''));
+    supportP.style.cssText='font-size:.8rem;opacity:.5;text-align:center;margin-top:.5rem';
+    form.appendChild(supportP);
+  }
 
   formCol.appendChild(form);
   layout.appendChild(formCol);
@@ -971,7 +1005,7 @@ function renderCheckoutPage(cart){
   summaryCol.style.cssText='width:360px;flex-shrink:0';
   var summaryBox=mk('div','');
   summaryBox.style.cssText='border:1px solid #e5e7eb;border-radius:12px;padding:1.5rem;position:sticky;top:100px';
-  var summaryH=mk('h3','','Order summary');
+  var summaryH=mk('h3','',C('summaryTitle','Order summary'));
   summaryH.style.cssText='font-weight:700;font-size:1rem;margin-bottom:1rem';
   summaryBox.appendChild(summaryH);
 
@@ -1101,7 +1135,7 @@ function renderCheckoutPage(cart){
   }
   function resetBtn(){
     var btn=document.getElementById('xd-checkout-submit');
-    if(btn){btn.disabled=false;btn.textContent='Complete order';btn.style.opacity='';}
+    if(btn){btn.disabled=false;btn.textContent=_checkoutBtnText||'Complete order';btn.style.opacity='';}
   }
 }
 
@@ -1118,7 +1152,7 @@ function loadStripeAndPay(clientSecret,orderId,lookupToken){
     var box=document.getElementById('xd-checkout-error');
     if(box){box.textContent='Failed to load payment processor. Please try again.';box.style.display='block';}
     var btn=document.getElementById('xd-checkout-submit');
-    if(btn){btn.disabled=false;btn.textContent='Complete order';btn.style.opacity='';}
+    if(btn){btn.disabled=false;btn.textContent=_checkoutBtnText||'Complete order';btn.style.opacity='';}
   };
   document.head.appendChild(script);
 }
@@ -1139,7 +1173,7 @@ function confirmStripePayment(clientSecret,orderId,lookupToken){
         var box=document.getElementById('xd-checkout-error');
         if(box){box.textContent=result.error.message||'Payment failed';box.style.display='block';}
         var btn=document.getElementById('xd-checkout-submit');
-        if(btn){btn.disabled=false;btn.textContent='Complete order';btn.style.opacity='';}
+        if(btn){btn.disabled=false;btn.textContent=_checkoutBtnText||'Complete order';btn.style.opacity='';}
       }else{
         window.location.href=sfBase+'/order/'+orderId+'?token='+lookupToken;
       }

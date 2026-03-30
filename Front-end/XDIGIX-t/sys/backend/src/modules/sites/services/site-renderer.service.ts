@@ -1943,17 +1943,49 @@ function renderSearch(c: Record<string, unknown>): string {
 function renderCheckout(c: Record<string, unknown>): string {
   const title = txt((c.title as string) || 'Checkout');
   const subtitle = txt((c.subtitle as string) || 'Complete your purchase securely');
-  const btnText = txt((_themeData.checkoutButtonText as string) || 'Complete order');
+
+  // Build checkout config for runtime — ALL builder settings
+  const checkoutConfig: Record<string, unknown> = {
+    title: c.title || 'Checkout',
+    subtitle: c.subtitle || 'Complete your purchase securely',
+    contactTitle: c.contact_title || 'Contact',
+    shippingTitle: c.shipping_title || 'Shipping address',
+    paymentTitle: c.payment_title || 'Payment method',
+    summaryTitle: c.summary_title || 'Order summary',
+    orderNotesLabel: c.order_notes_label || 'Order notes',
+    orderNotesPlaceholder: c.order_notes_placeholder || 'Any special instructions...',
+    checkoutButtonText: c.checkout_button_text || (_themeData.checkoutButtonText as string) || 'Complete order',
+    guestCheckoutText: c.guest_checkout_text || '',
+    supportText: c.support_text || '',
+    termsText: c.terms_text || '',
+    privacyText: c.privacy_text || '',
+    secureBadgeText: c.secure_badge_text || 'Secure checkout',
+    deliveryInfoText: c.delivery_info_text || '',
+    showEmail: c.show_email ?? true,
+    showPhone: c.show_phone ?? true,
+    showCompany: c.show_company ?? false,
+    showAddress2: c.show_address2 ?? false,
+    showPostalCode: c.show_postal_code ?? true,
+    showOrderNotes: c.show_order_notes ?? c.show_notes ?? true,
+    showBillingToggle: c.show_billing_toggle ?? false,
+    showPaymentIcons: c.show_payment_icons ?? true,
+    showTrustBadges: c.show_trust_badges ?? true,
+    showSecureBadge: c.show_secure_badge ?? true,
+    showTermsLink: c.show_terms_link ?? false,
+    layout: c.layout || 'two-column',
+  };
+  const configJson = JSON.stringify(checkoutConfig).replace(/</g, '\\u003c').replace(/'/g, '\\u0027');
+
   return `
-<section style="max-width:1100px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+<section style="max-width:var(--page-width,1100px);margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
   <div style="margin-bottom:2rem">
     <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800">${title}</h1>
     <p style="opacity:.6;font-size:.95rem">${subtitle}</p>
   </div>
-  <div id="xd-checkout-container">
-    <div style="text-align:center;padding:3rem 0;opacity:.5">
-      <span class="material-icons" style="font-size:3rem;display:block;margin-bottom:1rem">shopping_cart_checkout</span>
-      <p>Loading checkout...</p>
+  <div id="xd-checkout-container" data-xd-checkout-config='${configJson}'>
+    <div style="text-align:center;padding:4rem 0">
+      <span class="material-icons" style="font-size:3rem;opacity:.3;display:block;margin-bottom:1rem">shopping_cart_checkout</span>
+      <p style="opacity:.5">Loading checkout...</p>
     </div>
   </div>
 </section>`;
