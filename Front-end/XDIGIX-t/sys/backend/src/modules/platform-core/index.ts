@@ -18,3 +18,6 @@ export { FeatureFlag } from './feature-flag.schema';
 export type { IFeatureFlag } from './feature-flag.schema';
 export { AuditLog } from './audit.schema';
 export type { IAuditEntry, ActorType } from './audit.schema';
+
+// Event type constants and payload interfaces
+export * from './event-types';

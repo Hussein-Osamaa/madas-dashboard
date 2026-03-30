@@ -574,7 +574,8 @@ async function updateStatus(
   orderId: string,
   newStatus: OrderStatus,
   actor: string,
-  reason?: string
+  reason?: string,
+  correlationId?: string
 ): Promise<IStorefrontOrder> {
   const order = await StorefrontOrder.findOne({ orderId });
   if (!order) {
@@ -609,7 +610,7 @@ async function updateStatus(
     previousStatus: order.status,
     newStatus,
     reason,
-  }, { tenantId: order.tenantId });
+  }, { tenantId: order.tenantId, correlationId: correlationId || undefined });
 
   // Audit log
   await auditService.log({
@@ -644,7 +645,8 @@ async function updateStatus(
 async function cancelOrder(
   orderId: string,
   reason: string,
-  actor: string
+  actor: string,
+  correlationId?: string
 ): Promise<IStorefrontOrder> {
   const order = await StorefrontOrder.findOne({ orderId });
   if (!order) {
@@ -669,7 +671,7 @@ async function cancelOrder(
   }
 
   // Update status through state machine
-  const updated = await updateStatus(orderId, 'cancelled', actor, reason);
+  const updated = await updateStatus(orderId, 'cancelled', actor, reason, correlationId);
 
   // Release inventory reservation if active
   const reservationId = (order.paymentDetails as Record<string, unknown>)?.reservationId as string | undefined;
@@ -694,7 +696,7 @@ async function cancelOrder(
     businessId: order.businessId,
     reason,
     reservationId,
-  }, { tenantId: order.tenantId });
+  }, { tenantId: order.tenantId, correlationId: correlationId || undefined });
 
   return updated;
 }
