@@ -636,9 +636,11 @@ function renderCartPage(cart){
   if(!container)return;
 
   // Read config embedded by renderCart() — ALL builder settings
+  // Safe parse: malformed JSON falls back to empty object (all defaults used)
   var cfg={};
-  try{cfg=JSON.parse(container.getAttribute('data-xd-cart-config')||'{}');}catch(e){}
-  var C=function(k,d){return cfg[k]!=null?cfg[k]:d;};
+  try{var raw=container.getAttribute('data-xd-cart-config');if(raw)cfg=JSON.parse(raw);if(typeof cfg!=='object'||cfg===null)cfg={};}catch(e){cfg={};}
+  // Type-safe config getter: returns default if key missing, null, or wrong type
+  var C=function(k,d){var v=cfg[k];if(v==null)return d;if(typeof d==='boolean')return!!v;if(typeof d==='string')return typeof v==='string'?v:d;return v;};
 
   while(container.firstChild)container.removeChild(container.firstChild);
 
@@ -876,9 +878,9 @@ function renderCheckoutPage(cart){
   var container=document.getElementById('xd-checkout-container');
   if(!container)return;
 
-  // Read config embedded by renderCheckout()
+  // Read config — safe parse with type-safe fallback
   var cfg={};
-  try{cfg=JSON.parse(container.getAttribute('data-xd-checkout-config')||'{}');}catch(e){}
+  try{var raw=container.getAttribute('data-xd-checkout-config');if(raw)cfg=JSON.parse(raw);if(typeof cfg!=='object'||cfg===null)cfg={};}catch(e){cfg={};}
   var C=function(k,d){return cfg[k]!=null?cfg[k]:d;};
 
   while(container.firstChild)container.removeChild(container.firstChild);

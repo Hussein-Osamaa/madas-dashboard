@@ -198,12 +198,11 @@ describe('serializeConfigForHtml', () => {
     expect(result).toContain('\\u0027');
   });
 
-  it('produces valid JSON after unescaping', () => {
+  it('produces valid JSON after attribute extraction', () => {
     const original = { title: "John's <Store>", showNotes: true };
     const serialized = serializeConfigForHtml(original);
-    // Undo HTML escaping to get valid JSON
-    const unescaped = serialized.replace(/\\u003c/g, '<').replace(/\\u0027/g, "'");
-    const parsed = JSON.parse(unescaped);
+    // JSON.parse handles \uXXXX natively
+    const parsed = JSON.parse(serialized);
     expect(parsed.title).toBe("John's <Store>");
     expect(parsed.showNotes).toBe(true);
   });

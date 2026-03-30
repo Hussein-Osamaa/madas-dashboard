@@ -66,7 +66,8 @@ export const DEFAULT_CART_CONFIG: CartSectionConfig = {
 };
 
 export function normalizeCartConfig(raw: Record<string, unknown>): CartSectionConfig {
-  const s = (key: string, fb: string): string => { const v = raw[key]; return typeof v === 'string' ? v : fb; };
+  if (!raw || typeof raw !== 'object') raw = {};
+  const s = (key: string, fb: string): string => { const v = raw[key]; return typeof v === 'string' ? v.replace(/<[^>]*>/g, '').slice(0, 500).trim() || fb : fb; };
   const b = (key: string, legacy: string | null, fb: boolean): boolean => {
     if (raw[key] != null) return !!raw[key];
     if (legacy && raw[legacy] != null) return !!raw[legacy];
@@ -164,7 +165,8 @@ export const DEFAULT_CHECKOUT_CONFIG: CheckoutSectionConfig = {
 };
 
 export function normalizeCheckoutConfig(raw: Record<string, unknown>, themeButtonText?: string): CheckoutSectionConfig {
-  const s = (key: string, fb: string): string => { const v = raw[key]; return typeof v === 'string' ? v : fb; };
+  if (!raw || typeof raw !== 'object') raw = {};
+  const s = (key: string, fb: string): string => { const v = raw[key]; return typeof v === 'string' ? v.replace(/<[^>]*>/g, '').slice(0, 500).trim() || fb : fb; };
   const b = (key: string, legacy: string | null, fb: boolean): boolean => {
     if (raw[key] != null) return !!raw[key];
     if (legacy && raw[legacy] != null) return !!raw[legacy];

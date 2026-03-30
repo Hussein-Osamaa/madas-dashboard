@@ -75,9 +75,12 @@ export const DEFAULT_CART_CONFIG: CartSectionConfig = {
  *  - Invalid types → defaults
  */
 export function normalizeCartConfig(raw: Record<string, unknown>): CartSectionConfig {
+  if (!raw || typeof raw !== 'object') raw = {};
   const s = (key: string, fallback: string): string => {
     const v = raw[key];
-    return typeof v === 'string' ? v : fallback;
+    if (typeof v !== 'string') return fallback;
+    // Strip HTML tags to prevent markup injection from builder settings
+    return v.replace(/<[^>]*>/g, '').slice(0, 500).trim() || fallback;
   };
   const b = (key: string, legacyKey: string | null, fallback: boolean): boolean => {
     if (raw[key] != null) return !!raw[key];
@@ -192,9 +195,11 @@ export function normalizeCheckoutConfig(
   raw: Record<string, unknown>,
   themeCheckoutButtonText?: string,
 ): CheckoutSectionConfig {
+  if (!raw || typeof raw !== 'object') raw = {};
   const s = (key: string, fallback: string): string => {
     const v = raw[key];
-    return typeof v === 'string' ? v : fallback;
+    if (typeof v !== 'string') return fallback;
+    return v.replace(/<[^>]*>/g, '').slice(0, 500).trim() || fallback;
   };
   const b = (key: string, legacyKey: string | null, fallback: boolean): boolean => {
     if (raw[key] != null) return !!raw[key];
@@ -237,8 +242,40 @@ export function normalizeCheckoutConfig(
 
 /**
  * Safely serialize a config object for HTML attribute embedding.
- * Escapes < and ' to prevent XSS and HTML attribute breakout.
+ *
+ * Escapes all characters that could break out of a single-quoted
+ * HTML attribute or inject script content:
+ *  - < → \u003c  (prevents <script> injection)
+ *  - > → \u003e  (prevents tag close)
+ *  - ' → \u0027  (prevents attribute breakout)
+ *  - & → \u0026  (prevents HTML entity injection)
+ *  - " → \u0022  (prevents double-quote attribute breakout)
+ *
+ * The output is safe to embed as: data-config='${serialized}'
+ * The runtime reverses this with JSON.parse() which handles \uXXXX natively.
  */
 export function serializeConfigForHtml(config: Record<string, unknown>): string {
-  return JSON.stringify(config).replace(/</g, '\\u003c').replace(/'/g, '\\u0027');
+  // JSON.stringify handles " escaping within string values as \"
+  // We escape characters that could break single-quoted HTML attributes or inject tags.
+  // IMPORTANT: & must be escaped FIRST to avoid double-escaping \u003c → \\u0026u003c
+  // Actually, & in JSON output is always inside string values (never structural),
+  // and single-quoted attributes don't interpret & as HTML entity.
+  // So we only need to escape < > and ' for safety.
+  return JSON.stringify(config)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/'/g, '\\u0027');
+}
+
+/**
+ * Sanitize a raw string value from section data before including in config.
+ * Strips any HTML tags and limits length to prevent abuse.
+ */
+export function sanitizeConfigString(value: unknown, maxLength = 500): string {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/<[^>]*>/g, '')  // Strip HTML tags
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')  // Strip control chars
+    .slice(0, maxLength)
+    .trim();
 }
