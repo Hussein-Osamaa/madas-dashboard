@@ -2277,6 +2277,35 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
       padding_top: PADDING_TOP,
       padding_bottom: PADDING_BOTTOM,
     },
+    blocks: [],
+  },
+
+  checkout: {
+    type: 'checkout',
+    label: 'Checkout',
+    icon: 'shopping_cart_checkout',
+    description: 'Checkout form with customer info, shipping, and payment',
+    category: 'E-commerce',
+    editableElements: [],
+    defaultData: {
+      title: 'Checkout',
+      subtitle: 'Complete your purchase securely',
+      show_notes: true,
+      show_trust_badges: true,
+      color_scheme: 'scheme-1',
+      padding_top: 36,
+      padding_bottom: 36,
+    },
+    settings: {
+      title: { type: 'text', label: 'Heading', placeholder: 'Checkout' },
+      subtitle: { type: 'text', label: 'Subtitle', placeholder: 'Complete your purchase securely' },
+      show_notes: { type: 'toggle', label: 'Show order notes', defaultValue: true },
+      show_trust_badges: { type: 'toggle', label: 'Show trust badges', defaultValue: true },
+      color_scheme: { type: 'select', label: 'Color scheme', options: COLOR_SCHEME_OPTIONS, defaultValue: 'scheme-1' },
+      padding_top: PADDING_TOP,
+      padding_bottom: PADDING_BOTTOM,
+    },
+    blocks: [],
   },
 };
 

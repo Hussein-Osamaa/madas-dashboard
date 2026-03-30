@@ -25,7 +25,8 @@ export type SectionType =
   | 'imageComparison'
   | 'slideshow'
   | 'productInfo'
-  | 'cart';
+  | 'cart'
+  | 'checkout';
 
 export interface Section {
   id: string;

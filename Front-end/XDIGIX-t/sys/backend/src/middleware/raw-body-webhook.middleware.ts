@@ -5,7 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 
-const WEBHOOK_PATH_REGEX = /^\/api\/external\/[^/]+\/webhook\/?$/;
+const WEBHOOK_PATH_REGEX = /^\/api\/(external\/[^/]+\/webhook|payments\/stripe\/webhook)\/?$/;
 
 export function rawBodyWebhookMiddleware(req: Request, res: Response, next: NextFunction): void {
   if (req.method !== 'POST' || !WEBHOOK_PATH_REGEX.test(req.path)) {

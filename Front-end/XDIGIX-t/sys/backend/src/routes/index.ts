@@ -15,6 +15,7 @@ import bostaRoutes from './bosta.routes';
 import shippingRoutes from './shipping/index';
 import sitesRoutes from './sites.routes';
 import publicRoutes from './public.routes';
+import checkoutRoutes, { handleStripeWebhook } from './checkout.routes';
 import aiRoutes from './ai.routes';
 
 const router = Router();
@@ -43,6 +44,12 @@ router.use('/sites', sitesRoutes);
 
 // Public storefront API — no auth required, cors(*), rate-limited
 router.use('/public', publicRoutes);
+
+// Checkout API — no auth, cart-token based, rate-limited
+router.use('/public', checkoutRoutes);
+
+// Stripe webhook — raw body, signature verified
+router.post('/payments/stripe/webhook', handleStripeWebhook);
 
 // AI Theme API — auth required, rate-limited to 10 req/min
 router.use('/ai', aiRoutes);

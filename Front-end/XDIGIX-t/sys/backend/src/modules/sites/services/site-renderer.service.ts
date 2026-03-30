@@ -1774,6 +1774,25 @@ function renderCart(c: Record<string, unknown>): string {
 </section>`;
 }
 
+function renderCheckout(c: Record<string, unknown>): string {
+  const title = txt((c.title as string) || 'Checkout');
+  const subtitle = txt((c.subtitle as string) || 'Complete your purchase securely');
+  const btnText = txt((_themeData.checkoutButtonText as string) || 'Complete order');
+  return `
+<section style="max-width:1100px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+  <div style="margin-bottom:2rem">
+    <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800">${title}</h1>
+    <p style="opacity:.6;font-size:.95rem">${subtitle}</p>
+  </div>
+  <div id="xd-checkout-container">
+    <div style="text-align:center;padding:3rem 0;opacity:.5">
+      <span class="material-icons" style="font-size:3rem;display:block;margin-bottom:1rem">shopping_cart_checkout</span>
+      <p>Loading checkout...</p>
+    </div>
+  </div>
+</section>`;
+}
+
 function renderFavorites(_c: Record<string, unknown>): string {
   return `
 <section style="max-width:900px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
@@ -1944,6 +1963,7 @@ function renderSection(sec: ISection, siteName: string): string {
     case 'footer':       html = renderFooter(c, siteName, _themeData); break;
     case 'productInfo':  html = renderProductInfo(c);  break;
     case 'cart':         html = renderCart(c);          break;
+    case 'checkout':     html = renderCheckout(c);      break;
     case 'favorites':    html = renderFavorites(c);     break;
     case 'account':      html = renderAccount(c);       break;
     case 'signin':       html = renderSignin(c);        break;
@@ -2030,6 +2050,7 @@ function resolvePageSections(site: ISite, pageSlug?: string): ISection[] {
     account: () => ({ id: 'acct-default', type: 'account', content: {}, data: {}, style: {}, order: 0 }),
     signin: () => ({ id: 'signin-default', type: 'signin', content: {}, data: {}, style: {}, order: 0 }),
     signup: () => ({ id: 'signup-default', type: 'signup', content: {}, data: { store_name: site.name }, style: {}, order: 0 }),
+    checkout: () => ({ id: 'checkout-default', type: 'checkout', content: {}, data: { title: 'Checkout', subtitle: 'Complete your purchase securely' }, style: {}, order: 0 }),
     products: () => ({ id: 'pi-default', type: 'productInfo', content: {}, data: { blocks: [{type:'vendor'},{type:'title'},{type:'price'},{type:'variant_picker',picker_type:'pills'},{type:'quantity_selector'},{type:'buy_buttons'},{type:'description'},{type:'share'}], media_width: 'medium' }, style: {}, order: 0 }),
     collections: () => ({ id: 'col-default', type: 'products', content: {}, data: { title: 'All Products', columns_desktop: 4, show_view_all: false }, style: {}, order: 0 }),
   };

@@ -472,6 +472,7 @@ export const SECTION_DEFAULTS: Record<SectionType, SectionDefaults> = {
   slideshow:       SLIDESHOW,
   productInfo:     PRODUCT_INFO,
   cart:            CART,
+  checkout:        { minHeight: 400, canDelete: false, dataFields: ['title', 'subtitle'] },
 };
 
 /**

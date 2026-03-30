@@ -356,6 +356,81 @@ router.delete('/:tenantId/cart', cartLimiter, async (req: Request, res: Response
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   PAYMENT METHODS
+═══════════════════════════════════════════════════════════════════════════ */
+
+const PAYMENT_METHOD_LABELS: Record<string, { label: string; type: string }> = {
+  cod:           { label: 'Cash on Delivery', type: 'offline' },
+  stripe:        { label: 'Credit / Debit Card', type: 'online' },
+  paymob:        { label: 'Paymob', type: 'online' },
+  fawry:         { label: 'Fawry', type: 'online' },
+  instapay:      { label: 'InstaPay', type: 'manual' },
+  vodafone_cash: { label: 'Vodafone Cash', type: 'manual' },
+  bank_transfer: { label: 'Bank Transfer', type: 'manual' },
+};
+
+/**
+ * GET /api/public/:tenantId/payment-methods
+ * Returns enabled payment methods with public-safe info (no secret keys).
+ */
+router.get('/:tenantId/payment-methods', catalogLimiter, async (req: Request, res: Response) => {
+  const { tenantId } = req.params;
+  const biz = await resolveBusiness(tenantId);
+  if (!biz) { res.status(404).json({ error: 'Store not found' }); return; }
+
+  try {
+    const doc = await FirestoreDoc.findOne({
+      businessId: biz.businessId,
+      coll: 'settings',
+      docId: 'payments',
+    }).lean();
+    const settings = ((doc?.data ?? {}) as Record<string, any>);
+    const methods: Array<Record<string, unknown>> = [];
+
+    for (const [code, meta] of Object.entries(PAYMENT_METHOD_LABELS)) {
+      const config = settings[code];
+      if (!config || !config.enabled) continue;
+      const method: Record<string, unknown> = {
+        code,
+        label: meta.label,
+        type: meta.type,
+        enabled: true,
+      };
+      // Include only public-safe fields per method
+      if (code === 'stripe' && config.publishableKey) {
+        method.publishableKey = config.publishableKey;
+      }
+      if (code === 'instapay') {
+        if (config.accountName) method.accountName = config.accountName;
+        if (config.accountNumber) method.accountNumber = config.accountNumber;
+        if (config.instructions) method.instructions = String(config.instructions).slice(0, 1000);
+      }
+      if (code === 'vodafone_cash') {
+        if (config.phoneNumber) method.phoneNumber = config.phoneNumber;
+        if (config.instructions) method.instructions = String(config.instructions).slice(0, 1000);
+      }
+      if (code === 'bank_transfer') {
+        if (config.bankName) method.bankName = config.bankName;
+        if (config.accountName) method.accountName = config.accountName;
+        if (config.accountNumber) method.accountNumber = config.accountNumber;
+        if (config.iban) method.iban = config.iban;
+        if (config.instructions) method.instructions = String(config.instructions).slice(0, 1000);
+      }
+      if (code === 'cod') {
+        if (config.maxOrderAmount) method.maxOrderAmount = config.maxOrderAmount;
+        if (config.instructions) method.instructions = String(config.instructions).slice(0, 1000);
+      }
+      methods.push(method);
+    }
+
+    res.json({ currency: biz.currency || 'SAR', methods });
+  } catch (err) {
+    console.error('[payment-methods] Error:', (err as Error).message);
+    res.status(500).json({ error: 'Failed to load payment methods' });
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
    NEWSLETTER
 ═══════════════════════════════════════════════════════════════════════════ */
 

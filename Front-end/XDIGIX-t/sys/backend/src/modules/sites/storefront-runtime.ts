@@ -648,7 +648,402 @@ document.addEventListener('click',function(e){
   }
 });
 
-/* ── 24. Init ───────────────────────────────────────────────────────── */
+/* ── 24. Checkout page ──────────────────────────────────────────────── */
+function renderCheckoutPage(cart){
+  var container=document.getElementById('xd-checkout-container');
+  if(!container)return;
+  while(container.firstChild)container.removeChild(container.firstChild);
+
+  if(!cart||!cart.items||cart.items.length===0){
+    var empty=mk('div','');
+    empty.style.cssText='text-align:center;padding:3rem 0;opacity:.6';
+    empty.appendChild(mk('p','','Your cart is empty. Add some products before checking out.'));
+    var shopLink=mk('a','xd-btn','Continue Shopping');
+    shopLink.href=sfBase+'/products';
+    shopLink.style.cssText='margin-top:1rem;display:inline-block';
+    empty.appendChild(shopLink);
+    container.appendChild(empty);
+    return;
+  }
+
+  var cur=cart.currency||currency;
+  var subtotal=cart.subtotal||0;
+
+  // Build checkout layout: form left, summary right
+  var layout=mk('div','');
+  layout.style.cssText='display:flex;flex-wrap:wrap;gap:2rem';
+
+  // ── Left: Checkout form ──
+  var formCol=mk('div','');
+  formCol.style.cssText='flex:1;min-width:320px';
+
+  var form=mk('form','');
+  form.id='xd-checkout-form';
+  form.style.cssText='display:flex;flex-direction:column;gap:1.5rem';
+  form.setAttribute('onsubmit','return false');
+
+  // Error display
+  var errBox=mk('div','');
+  errBox.id='xd-checkout-error';
+  errBox.style.cssText='display:none;background:#fef2f2;color:#dc2626;padding:.75rem 1rem;border-radius:8px;font-size:.875rem';
+  form.appendChild(errBox);
+
+  // Contact section
+  var contactH=mk('h3','','Contact');
+  contactH.style.cssText='font-weight:700;font-size:1.1rem;margin-bottom:.5rem';
+  form.appendChild(contactH);
+  var contactGrid=mk('div','');
+  contactGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:.75rem';
+  function addInput(parent,id,label,type,required,placeholder,colspan){
+    var wrap=mk('div','');
+    if(colspan)wrap.style.gridColumn='1/-1';
+    var lbl=mk('label','',label);
+    lbl.setAttribute('for',id);
+    lbl.style.cssText='font-size:.8rem;font-weight:600;display:block;margin-bottom:.25rem';
+    wrap.appendChild(lbl);
+    var inp=mk('input','');
+    inp.id=id;inp.name=id;inp.type=type||'text';
+    inp.placeholder=placeholder||'';
+    if(required)inp.required=true;
+    inp.style.cssText='width:100%;padding:.65rem .75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:.9rem;font-family:inherit;outline:none;box-sizing:border-box';
+    wrap.appendChild(inp);
+    parent.appendChild(wrap);
+    return inp;
+  }
+  addInput(contactGrid,'checkout-firstName','First name','text',true,'John');
+  addInput(contactGrid,'checkout-lastName','Last name','text',true,'Doe');
+  addInput(contactGrid,'checkout-email','Email','email',true,'john@example.com',true);
+  addInput(contactGrid,'checkout-phone','Phone','tel',false,'+20 XXX XXX XXXX',true);
+  form.appendChild(contactGrid);
+
+  // Shipping section
+  var shipH=mk('h3','','Shipping address');
+  shipH.style.cssText='font-weight:700;font-size:1.1rem;margin-bottom:.5rem;margin-top:.5rem';
+  form.appendChild(shipH);
+  var shipGrid=mk('div','');
+  shipGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:.75rem';
+  addInput(shipGrid,'checkout-address','Address','text',true,'123 Main St',true);
+  addInput(shipGrid,'checkout-city','City','text',true,'Cairo');
+  addInput(shipGrid,'checkout-state','State / Province','text',false,'');
+  addInput(shipGrid,'checkout-postalCode','Postal code','text',false,'');
+  addInput(shipGrid,'checkout-country','Country','text',true,'Egypt',true);
+  form.appendChild(shipGrid);
+
+  // Payment method section
+  var payH=mk('h3','','Payment method');
+  payH.style.cssText='font-weight:700;font-size:1.1rem;margin-bottom:.5rem;margin-top:.5rem';
+  form.appendChild(payH);
+  var payContainer=mk('div','');
+  payContainer.id='xd-payment-methods';
+  payContainer.style.cssText='display:flex;flex-direction:column;gap:.5rem';
+  var payLoading=mk('p','','Loading payment methods...');
+  payLoading.style.cssText='opacity:.5;font-size:.9rem';
+  payContainer.appendChild(payLoading);
+  form.appendChild(payContainer);
+
+  // Notes
+  var noteWrap=mk('div','');
+  var noteLbl=mk('label','','Order notes (optional)');
+  noteLbl.setAttribute('for','checkout-notes');
+  noteLbl.style.cssText='font-size:.8rem;font-weight:600;display:block;margin-bottom:.25rem';
+  noteWrap.appendChild(noteLbl);
+  var noteArea=document.createElement('textarea');
+  noteArea.id='checkout-notes';noteArea.name='notes';
+  noteArea.placeholder='Any special instructions...';
+  noteArea.style.cssText='width:100%;padding:.65rem .75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:.9rem;font-family:inherit;outline:none;resize:vertical;min-height:60px;box-sizing:border-box';
+  noteWrap.appendChild(noteArea);
+  form.appendChild(noteWrap);
+
+  // Submit button
+  var submitBtn=mk('button','xd-btn xd-btn-primary','Complete order');
+  submitBtn.type='submit';
+  submitBtn.id='xd-checkout-submit';
+  submitBtn.style.cssText='width:100%;padding:1rem;font-size:1.05rem;font-weight:700;cursor:pointer;border:none;border-radius:min(var(--btn-radius,8px),12px);font-family:inherit';
+  form.appendChild(submitBtn);
+
+  formCol.appendChild(form);
+  layout.appendChild(formCol);
+
+  // ── Right: Order summary ──
+  var summaryCol=mk('div','');
+  summaryCol.style.cssText='width:360px;flex-shrink:0';
+  var summaryBox=mk('div','');
+  summaryBox.style.cssText='border:1px solid #e5e7eb;border-radius:12px;padding:1.5rem;position:sticky;top:100px';
+  var summaryH=mk('h3','','Order summary');
+  summaryH.style.cssText='font-weight:700;font-size:1rem;margin-bottom:1rem';
+  summaryBox.appendChild(summaryH);
+
+  // Items list
+  cart.items.forEach(function(item){
+    var row=mk('div','');
+    row.style.cssText='display:flex;gap:.75rem;align-items:center;margin-bottom:.75rem;padding-bottom:.75rem;border-bottom:1px solid #f3f3f3';
+    var img=mk('img','');
+    img.src=item.imageUrl||item.image||'https://placehold.co/60/f5f5f5/999?text=Item';
+    img.alt=item.name||'';
+    img.style.cssText='width:50px;height:50px;object-fit:cover;border-radius:6px;flex-shrink:0';
+    row.appendChild(img);
+    var info=mk('div','');
+    info.style.cssText='flex:1;min-width:0';
+    var nm=mk('p','',item.name||'Product');
+    nm.style.cssText='font-size:.85rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+    info.appendChild(nm);
+    var qty=mk('p','','Qty: '+item.quantity);
+    qty.style.cssText='font-size:.75rem;opacity:.5';
+    info.appendChild(qty);
+    row.appendChild(info);
+    var pr=mk('span','',Number(item.price*item.quantity).toFixed(2)+' '+cur);
+    pr.style.cssText='font-weight:600;font-size:.85rem;flex-shrink:0';
+    row.appendChild(pr);
+    summaryBox.appendChild(row);
+  });
+
+  // Totals
+  var totalsDiv=mk('div','');
+  totalsDiv.style.cssText='margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb';
+  function addTotalRow(label,value,bold){
+    var r=mk('div','');
+    r.style.cssText='display:flex;justify-content:space-between;margin-bottom:.5rem'+(bold?';font-weight:800;font-size:1.1rem':'');
+    r.appendChild(mk('span','',label));
+    r.appendChild(mk('span','',value));
+    totalsDiv.appendChild(r);
+  }
+  addTotalRow('Subtotal',Number(subtotal).toFixed(2)+' '+cur,false);
+  addTotalRow('Shipping','Calculated at checkout',false);
+  addTotalRow('Total',Number(subtotal).toFixed(2)+' '+cur,true);
+  summaryBox.appendChild(totalsDiv);
+  summaryCol.appendChild(summaryBox);
+  layout.appendChild(summaryCol);
+
+  container.appendChild(layout);
+
+  // Load payment methods
+  var selectedPayment='';
+  fetchJSON(publicUrl('/payment-methods'),{}).then(function(data){
+    if(!data||!data.methods)return;
+    while(payContainer.firstChild)payContainer.removeChild(payContainer.firstChild);
+    data.methods.forEach(function(m,i){
+      var label=mk('label','');
+      label.style.cssText='display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:border-color .2s';
+      var radio=mk('input','');
+      radio.type='radio';radio.name='paymentMethod';radio.value=m.code;
+      if(i===0){radio.checked=true;selectedPayment=m.code;label.style.borderColor='var(--c-primary,#121212)';}
+      radio.addEventListener('change',function(){
+        selectedPayment=m.code;
+        payContainer.querySelectorAll('label').forEach(function(l){l.style.borderColor='#e5e7eb';});
+        label.style.borderColor='var(--c-primary,#121212)';
+      });
+      label.appendChild(radio);
+      var info=mk('div','');
+      info.appendChild(mk('span','',m.label));
+      if(m.type==='offline'){var badge=mk('span','','Pay on delivery');badge.style.cssText='font-size:.7rem;opacity:.5;display:block';info.appendChild(badge);}
+      if(m.type==='manual'&&m.instructions){var inst=mk('span','',m.instructions.substring(0,60));inst.style.cssText='font-size:.7rem;opacity:.5;display:block';info.appendChild(inst);}
+      label.appendChild(info);
+      payContainer.appendChild(label);
+    });
+  });
+
+  // Handle form submit
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    if(!selectedPayment){showCheckoutError('Please select a payment method');return;}
+    var btn=document.getElementById('xd-checkout-submit');
+    if(btn.disabled)return;
+    btn.disabled=true;btn.textContent='Processing...';btn.style.opacity='0.6';
+
+    var payload={
+      cartToken:getToken(),
+      customer:{
+        email:document.getElementById('checkout-email').value,
+        firstName:document.getElementById('checkout-firstName').value,
+        lastName:document.getElementById('checkout-lastName').value,
+        phone:document.getElementById('checkout-phone').value||undefined,
+      },
+      shipping:{
+        address:document.getElementById('checkout-address').value,
+        city:document.getElementById('checkout-city').value,
+        state:document.getElementById('checkout-state').value||undefined,
+        postalCode:document.getElementById('checkout-postalCode').value||undefined,
+        country:document.getElementById('checkout-country').value,
+      },
+      paymentMethod:selectedPayment,
+      customerNote:document.getElementById('checkout-notes').value||undefined,
+      idempotencyKey:'ck-'+getToken()+'-'+Date.now(),
+    };
+
+    fetchJSON(publicUrl('/checkout'),{method:'POST',headers:{'Content-Type':'application/json','x-cart-token':getToken()},body:JSON.stringify(payload)}).then(function(result){
+      if(!result){showCheckoutError('Checkout failed. Please try again.');resetBtn();return;}
+      if(result.error){showCheckoutError(result.error);resetBtn();return;}
+
+      // Handle response based on status
+      if(result.status==='confirmed'){
+        // COD or confirmed — redirect to confirmation
+        window.location.href=sfBase+'/order/'+result.orderId+'?token='+result.publicLookupToken;
+      }else if(result.clientSecret){
+        // Stripe — load Stripe.js and confirm payment
+        loadStripeAndPay(result.clientSecret,result.orderId,result.publicLookupToken);
+      }else if(result.status==='awaiting_payment'){
+        // Manual payment — show instructions then redirect
+        window.location.href=sfBase+'/order/'+result.orderId+'?token='+result.publicLookupToken;
+      }else{
+        window.location.href=sfBase+'/order/'+result.orderId+'?token='+result.publicLookupToken;
+      }
+    }).catch(function(err){
+      showCheckoutError(err&&err.message||'Checkout failed');
+      resetBtn();
+    });
+  });
+
+  function showCheckoutError(msg){
+    var box=document.getElementById('xd-checkout-error');
+    if(box){box.textContent=msg;box.style.display='block';}
+  }
+  function resetBtn(){
+    var btn=document.getElementById('xd-checkout-submit');
+    if(btn){btn.disabled=false;btn.textContent='Complete order';btn.style.opacity='';}
+  }
+}
+
+/* Load Stripe.js dynamically and confirm payment */
+function loadStripeAndPay(clientSecret,orderId,lookupToken){
+  if(window.Stripe){
+    confirmStripePayment(clientSecret,orderId,lookupToken);
+    return;
+  }
+  var script=document.createElement('script');
+  script.src='https://js.stripe.com/v3/';
+  script.onload=function(){confirmStripePayment(clientSecret,orderId,lookupToken);};
+  script.onerror=function(){
+    var box=document.getElementById('xd-checkout-error');
+    if(box){box.textContent='Failed to load payment processor. Please try again.';box.style.display='block';}
+    var btn=document.getElementById('xd-checkout-submit');
+    if(btn){btn.disabled=false;btn.textContent='Complete order';btn.style.opacity='';}
+  };
+  document.head.appendChild(script);
+}
+
+function confirmStripePayment(clientSecret,orderId,lookupToken){
+  // Get publishable key from payment methods
+  fetchJSON(publicUrl('/payment-methods'),{}).then(function(data){
+    if(!data||!data.methods)return;
+    var stripeMethod=data.methods.find(function(m){return m.code==='stripe';});
+    if(!stripeMethod||!stripeMethod.publishableKey)return;
+    var stripe=window.Stripe(stripeMethod.publishableKey);
+    stripe.confirmCardPayment(clientSecret,{
+      payment_method:{
+        card:{/* Stripe Elements would go here — for now redirect to Stripe hosted */},
+      },
+    }).then(function(result){
+      if(result.error){
+        var box=document.getElementById('xd-checkout-error');
+        if(box){box.textContent=result.error.message||'Payment failed';box.style.display='block';}
+        var btn=document.getElementById('xd-checkout-submit');
+        if(btn){btn.disabled=false;btn.textContent='Complete order';btn.style.opacity='';}
+      }else{
+        window.location.href=sfBase+'/order/'+orderId+'?token='+lookupToken;
+      }
+    });
+  });
+}
+
+/* ── 25. Order confirmation page ──────────────────────────────────── */
+function renderOrderConfirmation(){
+  var container=document.getElementById('xd-checkout-container');
+  if(!container)return;
+  var params=new URLSearchParams(window.location.search);
+  var token=params.get('token');
+  var pathParts=window.location.pathname.split('/');
+  var orderIdx=pathParts.indexOf('order');
+  var orderId=orderIdx>=0?pathParts[orderIdx+1]:'';
+  if(!orderId||!token)return;
+
+  fetchJSON(publicUrl('/orders/'+orderId+'?token='+encodeURIComponent(token)),{}).then(function(order){
+    if(!order||order.error){
+      while(container.firstChild)container.removeChild(container.firstChild);
+      container.appendChild(mk('p','','Order not found'));
+      return;
+    }
+    while(container.firstChild)container.removeChild(container.firstChild);
+    var cur=order.currency||currency;
+    // Success icon
+    var icon=mk('div','');
+    icon.style.cssText='text-align:center;margin-bottom:2rem';
+    var checkSvg=mk('span','material-icons','check_circle');
+    checkSvg.style.cssText='font-size:4rem;color:#22c55e';
+    icon.appendChild(checkSvg);
+    var thankYou=mk('h2','','Thank you for your order!');
+    thankYou.style.cssText='font-size:1.5rem;font-weight:800;margin-top:.5rem';
+    icon.appendChild(thankYou);
+    var orderNum=mk('p','','Order #'+order.orderId);
+    orderNum.style.cssText='opacity:.6;font-size:.95rem';
+    icon.appendChild(orderNum);
+    container.appendChild(icon);
+
+    // Status
+    var statusMap={confirmed:'Confirmed',awaiting_payment:'Awaiting Payment',processing:'Processing',shipped:'Shipped',delivered:'Delivered'};
+    var statusBadge=mk('div','');
+    statusBadge.style.cssText='text-align:center;margin-bottom:2rem';
+    var badge=mk('span','',(statusMap[order.status]||order.status).toUpperCase());
+    badge.style.cssText='display:inline-block;padding:.4rem 1rem;border-radius:999px;font-size:.8rem;font-weight:700;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0';
+    if(order.status==='awaiting_payment'){badge.style.background='#fffbeb';badge.style.color='#d97706';badge.style.borderColor='#fde68a';}
+    if(order.status==='failed'||order.status==='cancelled'){badge.style.background='#fef2f2';badge.style.color='#dc2626';badge.style.borderColor='#fecaca';}
+    statusBadge.appendChild(badge);
+    container.appendChild(statusBadge);
+
+    // Order details grid
+    var details=mk('div','');
+    details.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:2rem;max-width:700px;margin:0 auto';
+    // Customer
+    var custBox=mk('div','');
+    custBox.appendChild(mk('h4','','Customer'));
+    custBox.querySelector('h4').style.cssText='font-weight:700;margin-bottom:.5rem';
+    custBox.appendChild(mk('p','',order.customer.firstName+' '+order.customer.lastName));
+    custBox.appendChild(mk('p','',order.customer.email));
+    if(order.customer.phone)custBox.appendChild(mk('p','',order.customer.phone));
+    details.appendChild(custBox);
+    // Shipping
+    var shipBox=mk('div','');
+    shipBox.appendChild(mk('h4','','Shipping'));
+    shipBox.querySelector('h4').style.cssText='font-weight:700;margin-bottom:.5rem';
+    shipBox.appendChild(mk('p','',order.shipping.address));
+    shipBox.appendChild(mk('p','',order.shipping.city+(order.shipping.state?', '+order.shipping.state:'')));
+    shipBox.appendChild(mk('p','',order.shipping.country));
+    details.appendChild(shipBox);
+    container.appendChild(details);
+
+    // Items
+    var itemsH=mk('h4','','Items');
+    itemsH.style.cssText='font-weight:700;margin:2rem 0 1rem;max-width:700px;margin-left:auto;margin-right:auto';
+    container.appendChild(itemsH);
+    var itemsList=mk('div','');
+    itemsList.style.cssText='max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:.5rem';
+    (order.items||[]).forEach(function(item){
+      var row=mk('div','');
+      row.style.cssText='display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #f3f3f3';
+      row.appendChild(mk('span','',item.name+' × '+item.quantity));
+      row.appendChild(mk('span','',Number(item.price*item.quantity).toFixed(2)+' '+cur));
+      itemsList.appendChild(row);
+    });
+    container.appendChild(itemsList);
+
+    // Total
+    var totalDiv=mk('div','');
+    totalDiv.style.cssText='max-width:700px;margin:1rem auto 0;padding-top:1rem;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-weight:800;font-size:1.1rem';
+    totalDiv.appendChild(mk('span','','Total'));
+    totalDiv.appendChild(mk('span','',Number(order.total).toFixed(2)+' '+cur));
+    container.appendChild(totalDiv);
+
+    // Continue shopping
+    var shopDiv=mk('div','');
+    shopDiv.style.cssText='text-align:center;margin-top:2rem';
+    var shopBtn=mk('a','xd-btn','Continue Shopping');
+    shopBtn.href=sfBase+'/products';
+    shopBtn.style.cssText='display:inline-block';
+    shopDiv.appendChild(shopBtn);
+    container.appendChild(shopDiv);
+  });
+}
+
+/* ── 26. Init ───────────────────────────────────────────────────────── */
 function init(){
   sections.forEach(hydrateSection);
   sections.forEach(function(entry){
@@ -657,11 +1052,18 @@ function init(){
     wireAnalyticsOnSection(sEl,entry);
     if(entry.apiBinding)wireFormSubmit(sEl,entry);
   });
-  // Load cart and hydrate cart page if on /cart
+  // Load cart and hydrate cart/checkout pages
   if(tenantId&&getToken()){
     cartFetch('GET','/cart',null).then(function(cart){
-      if(cart)renderCartPage(cart);
+      if(cart){
+        renderCartPage(cart);
+        renderCheckoutPage(cart);
+      }
     });
+  }
+  // Order confirmation page
+  if(window.location.pathname.indexOf('/order/')!==-1){
+    renderOrderConfirmation();
   }
 }
 
