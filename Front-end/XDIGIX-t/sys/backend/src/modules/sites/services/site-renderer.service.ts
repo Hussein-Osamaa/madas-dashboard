@@ -1869,7 +1869,7 @@ function renderCart(c: Record<string, unknown>): string {
   const title = txt((c.title as string) || 'Your cart');
   const subtitle = txt((c.subtitle as string) || '');
   const emptyTitle = txt((c.empty_title as string) || 'Your cart is empty');
-  const emptyMsg = txt((c.empty_message as string) || 'Looks like you haven\'t added anything yet.');
+  const emptyMsg = txt((c.empty_message as string) || 'Looks like you have not added anything yet.');
   const emptyBtnText = txt((c.empty_button_text as string) || 'Continue shopping');
   const emptyBtnLink = attr((c.empty_button_link as string) || '/products');
 
@@ -1878,7 +1878,7 @@ function renderCart(c: Record<string, unknown>): string {
     title: c.title || 'Your cart',
     subtitle: c.subtitle || '',
     emptyTitle: c.empty_title || 'Your cart is empty',
-    emptyMessage: c.empty_message || 'Looks like you haven\'t added anything yet.',
+    emptyMessage: c.empty_message || 'Looks like you have not added anything yet.',
     emptyButtonText: c.empty_button_text || 'Continue shopping',
     emptyButtonLink: c.empty_button_link || '/products',
     continueShoppingText: c.continue_shopping_text || 'Continue shopping',
@@ -1899,7 +1899,7 @@ function renderCart(c: Record<string, unknown>): string {
     showCheckoutButton: c.show_checkout_button ?? true,
     showContinueShopping: c.show_continue_shopping ?? true,
   };
-  const configJson = JSON.stringify(cartConfig).replace(/</g, '\\u003c');
+  const configJson = JSON.stringify(cartConfig).replace(/</g, '\\u003c').replace(/'/g, '\\u0027');
 
   return `
 <section style="max-width:var(--page-width,1000px);margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">

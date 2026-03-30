@@ -652,7 +652,7 @@ function renderCartPage(cart){
     var emptyH=mk('h2','',C('emptyTitle','Your cart is empty'));
     emptyH.style.cssText='font-size:1.25rem;font-weight:700;margin-bottom:.5rem';
     empty.appendChild(emptyH);
-    var emptyP=mk('p','',C('emptyMessage','Looks like you haven\'t added anything yet.'));
+    var emptyP=mk('p','',C('emptyMessage','Looks like you have not added anything yet.'));
     emptyP.style.cssText='opacity:.6;font-size:.95rem;margin-bottom:1.5rem';
     empty.appendChild(emptyP);
     var shopLink=mk('a','xd-btn xd-btn-primary',C('emptyButtonText','Continue shopping'));

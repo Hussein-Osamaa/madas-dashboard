@@ -15,7 +15,7 @@ const CartSection = ({ data, style }: Props) => {
   const title = d.title || 'Your cart';
   const subtitle = d.subtitle || '';
   const emptyTitle = d.empty_title || 'Your cart is empty';
-  const emptyMessage = d.empty_message || 'Looks like you haven\'t added anything yet.';
+  const emptyMessage = d.empty_message || 'Looks like you have not added anything yet.';
   const emptyButtonText = d.empty_button_text || 'Continue shopping';
   const continueShoppingText = d.continue_shopping_text || 'Continue shopping';
   const checkoutButtonText = d.checkout_button_text || 'Check out';
