@@ -154,7 +154,17 @@ router.patch('/:id', async (req: Request, res: Response) => {
   const update: Record<string, unknown> = { updatedAt: new Date() };
   for (const key of allowed) {
     if ((parsed.data as Record<string, unknown>)[key] !== undefined) {
-      update[key] = (parsed.data as Record<string, unknown>)[key];
+      if (key === 'settings') {
+        // Use dot-notation for settings sub-keys to avoid wiping other settings
+        const settings = (parsed.data as Record<string, unknown>).settings as Record<string, unknown>;
+        if (settings.theme) update['settings.theme'] = settings.theme;
+        if (settings.seo) update['settings.seo'] = settings.seo;
+        if (settings.analytics) update['settings.analytics'] = settings.analytics;
+        if (settings.customCss !== undefined) update['settings.customCss'] = settings.customCss;
+        if (settings.announcements) update['settings.announcements'] = settings.announcements;
+      } else {
+        update[key] = (parsed.data as Record<string, unknown>)[key];
+      }
     }
   }
   try {

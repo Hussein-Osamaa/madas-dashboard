@@ -134,15 +134,7 @@ const SiteSchema = new Schema<ISite>(
     pageSections: { type: Schema.Types.Mixed, default: {} },
     pages:        { type: [SitePageSchema], default: [] },
     settings: {
-      theme: { type: Schema.Types.Mixed, default: {
-        primaryColor: '#27491F',
-        secondaryColor: '#F0CAE1',
-        accentColor: '#f59e0b',
-        backgroundColor: '#FFFFFF',
-        textColor: '#171817',
-        fontFamily: 'Inter',
-        borderRadius: 'rounded',
-      } },
+      theme: { type: Schema.Types.Mixed, default: {} },
       seo: {
         title:       { type: String, default: '' },
         description: { type: String, default: '' },
