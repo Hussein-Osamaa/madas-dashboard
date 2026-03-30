@@ -448,6 +448,20 @@ export function createApp(): Express {
           console.error('[inventory-jobs] Reservation expiry error:', (err as Error).message);
         }
       }, 5 * 60 * 1000); // Every 5 minutes
+
+      // Orders: expire unpaid orders every 5 minutes
+      const { processExpiredOrders } = await import('./modules/orders/orders.jobs');
+      setInterval(async () => {
+        try {
+          const expired = await processExpiredOrders();
+          if (expired > 0) {
+            const { createLogger } = await import('./lib/logger');
+            createLogger('orders-jobs').info(`Expired ${expired} unpaid orders`);
+          }
+        } catch (err) {
+          console.error('[orders-jobs] Order expiry error:', (err as Error).message);
+        }
+      }, 5 * 60 * 1000); // Every 5 minutes
     } catch (err) {
       console.error('[platform-core] Failed to initialize:', (err as Error).message);
     }
