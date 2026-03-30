@@ -462,6 +462,23 @@ export function createApp(): Express {
           console.error('[orders-jobs] Order expiry error:', (err as Error).message);
         }
       }, 5 * 60 * 1000); // Every 5 minutes
+
+      // Finance: register event handlers + background jobs
+      const { registerFinanceEventHandlers } = await import('./modules/finance/finance.events');
+      registerFinanceEventHandlers();
+
+      const { checkOverdueInvoices } = await import('./modules/finance/finance.jobs');
+      setInterval(async () => {
+        try {
+          const overdue = await checkOverdueInvoices();
+          if (overdue > 0) {
+            const { createLogger } = await import('./lib/logger');
+            createLogger('finance-jobs').info(`Marked ${overdue} invoices as overdue`);
+          }
+        } catch (err) {
+          console.error('[finance-jobs] Overdue invoice check error:', (err as Error).message);
+        }
+      }, 60 * 60 * 1000); // Every hour
     } catch (err) {
       console.error('[platform-core] Failed to initialize:', (err as Error).message);
     }
