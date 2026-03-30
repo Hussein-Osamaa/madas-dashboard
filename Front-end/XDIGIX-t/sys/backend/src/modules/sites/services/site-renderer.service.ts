@@ -488,6 +488,39 @@ ul,ol{list-style:none}
   .xd-reveal-zoom-in{opacity:0;scale:.92;transition:opacity .6s ease,scale .6s ease}
   .xd-reveal-zoom-in.xd-visible{opacity:1;scale:1}
 }
+.xd-page-hero{padding:clamp(2rem,5vw,4rem) 0;text-align:center;background:color-mix(in srgb,var(--c-primary) 6%,transparent)}
+.xd-search-bar{display:flex;gap:.75rem;max-width:560px;margin:1.5rem auto 0;padding:0 1rem}
+.xd-search-input{flex:1;padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),12px);font-size:1rem;font-family:inherit;outline:none}
+.xd-search-input:focus{border-color:var(--c-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)}
+.xd-breadcrumb{display:flex;align-items:center;gap:.5rem;font-size:.875rem;opacity:.65;margin-bottom:1.5rem;flex-wrap:wrap}
+.xd-breadcrumb a{color:inherit;text-decoration:none}.xd-breadcrumb a:hover{text-decoration:underline}
+.xd-pd-grid{width:100%}
+@media(max-width:768px){.xd-pd-grid .xd-pd-images{flex:1 1 100%!important}}
+.xd-pd-images{display:flex;flex-direction:column;gap:.75rem}
+.xd-pd-main-img{aspect-ratio:auto;width:100%;object-fit:cover;border-radius:var(--media-radius,12px);background:#f9f9f9}
+.xd-pd-thumbs{display:flex;gap:.5rem;flex-wrap:wrap}
+.xd-pd-thumb{width:72px;height:72px;object-fit:cover;border-radius:min(var(--media-radius,8px),8px);cursor:pointer;border:2px solid transparent;transition:border-color .2s}
+.xd-pd-thumb:hover,.xd-pd-thumb.active{border-color:var(--c-primary)}
+.xd-pd-info{display:flex;flex-direction:column;gap:1.25rem}
+.xd-pd-name{font-size:clamp(1.5rem,3vw,1.875rem);font-weight:700;line-height:1.2;margin-bottom:.25rem}
+.xd-pd-price-row{display:flex;align-items:center;gap:.75rem}
+.xd-pd-price{font-size:1.25rem;font-weight:600;color:inherit}
+.xd-pd-compare{font-size:1.1rem;text-decoration:line-through;opacity:.45}
+.xd-pd-badge{background:#ef4444;color:#fff;font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:999px}
+.xd-pd-desc{font-size:.975rem;line-height:1.75;opacity:.8}
+.xd-pd-variants{display:flex;flex-direction:column;gap:.75rem}
+.xd-pd-variants-label{font-weight:600;font-size:.9rem}
+.xd-pd-variant-grid{display:flex;gap:.5rem;flex-wrap:wrap}
+.xd-pd-variant{padding:.4rem .9rem;border:1px solid #e5e7eb;border-radius:var(--variant-radius,9999px);font-size:.875rem;cursor:pointer;transition:all .2s}
+.xd-pd-variant:hover{border-color:var(--c-primary)}
+.xd-pd-variant.selected{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.xd-pd-variant.oos{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.xd-pd-qty{display:flex;align-items:center;gap:.75rem}
+.xd-pd-qty-btn{width:36px;height:36px;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),8px);background:transparent;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:inherit;color:inherit}
+.xd-pd-qty-btn:hover{border-color:var(--c-primary);color:var(--c-primary)}
+.xd-pd-qty-val{font-weight:700;font-size:1.1rem;min-width:1.5rem;text-align:center}
+.xd-pd-atc{width:100%;padding:1rem;font-size:1.05rem;margin-top:.5rem;border-radius:min(var(--btn-radius,8px),12px)!important}
+.xd-pd-meta{font-size:.85rem;opacity:.55;display:flex;flex-direction:column;gap:.3rem}
 `;
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -864,6 +897,17 @@ function renderProducts(c: Record<string, unknown>): string {
     </div>
   </div>
   ${gridOrCarousel}
+  ${(c._totalProducts && c._currentPage) ? (() => {
+    const limit = 20;
+    const totalPages = Math.ceil(Number(c._totalProducts) / limit);
+    if (totalPages <= 1) return '';
+    return '<div style="display:flex;justify-content:center;gap:.5rem;margin-top:3rem;flex-wrap:wrap">' +
+      Array.from({length: totalPages}, (_, i) => {
+        const p = i + 1;
+        const active = p === Number(c._currentPage);
+        return `<a href="${_sfBase}/products?page=${p}" class="xd-btn xd-btn-sm ${active ? 'xd-btn-primary' : 'xd-btn-secondary'}">${p}</a>`;
+      }).join('') + '</div>';
+  })() : ''}
 </div>
 </section>`;
 }
@@ -1555,121 +1599,183 @@ function renderFooter(c: Record<string, unknown>, siteName: string, themeData?: 
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   SECTION DISPATCH
+   UNIFIED PAGE-SECTION RENDERERS
+   Each function receives the section's `data` bag and returns <section> HTML.
 ───────────────────────────────────────────────────────────────────── */
 
-/**
- * Inject data-xd-section-id and data-xd-type into the first HTML tag of
- * a rendered section so the storefront runtime can target it by ID.
- */
-function addSectionAttrs(html: string, secId: string, secType: string): string {
-  const id   = attr(secId);
-  const type = attr(secType);
-  return html.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9]*)/, `$1 data-xd-section-id="${id}" data-xd-type="${type}"`);
-}
+function renderProductInfo(c: Record<string, unknown>): string {
+  const name      = txt(c.product_name as string || 'Product');
+  const price     = c.product_price;
+  const compare   = c.product_compare_price;
+  const onSale    = compare && Number(compare) > Number(price);
+  const images    = (c.product_images as string[]) || [];
+  const mainImg   = images[0] || 'https://placehold.co/600/f5f5f5/999?text=Product';
+  const desc      = txt(c.product_description as string || '');
+  const stock     = (c.product_stock as Record<string, number>) || {};
+  const variants  = Object.keys(stock);
+  const totalStock = (c.product_inventory as number) || 0;
+  const isAvailable = c.product_available !== false;
+  const productVariants = (c.product_variants as Array<{name: string; values: string[]}>) || [];
+  const pid       = attr(c.product_id as string || '');
+  const skuVal    = c.product_sku as string || '';
 
-function renderSection(sec: ISection, siteName: string): string {
-  const c = getSectionData(sec);
+  const blocks: Array<Record<string, unknown>> = (c.blocks as Array<Record<string, unknown>>) || [
+    { type: 'vendor' }, { type: 'title' }, { type: 'price' },
+    { type: 'variant_picker', picker_type: 'pills' },
+    { type: 'quantity_selector' }, { type: 'buy_buttons' },
+    { type: 'description' }, { type: 'share' },
+  ];
 
-  let html: string;
-  switch (sec.type) {
-    case 'banner':
-    case 'announcement': html = renderBanner(c);       break;
-    case 'navbar':       html = renderNavbar(c);       break;
-    case 'hero':         html = renderHero(c);         break;
-    case 'features':     html = renderFeatures(c);     break;
-    case 'products':     html = renderProducts(c);     break;
-    case 'deals':        html = renderDeals(c, sec.id); break;
-    case 'collections':  html = renderCollections(c);  break;
-    case 'testimonials': html = renderTestimonials(c); break;
-    case 'cta':          html = renderCTA(c);          break;
-    case 'about':
-    case 'split_media':  html = renderAbout(c);        break;
-    case 'contact':      html = renderContact(c);      break;
-    case 'gallery':      html = renderGallery(c);      break;
-    case 'pricing':      html = renderPricing(c);      break;
-    case 'faq':          html = renderFAQ(c);          break;
-    case 'stats':        html = renderStats(c);        break;
-    case 'team':         html = renderTeam(c);         break;
-    case 'services':     html = renderServices(c);     break;
-    case 'video':
-    case 'video_hero':   html = renderVideo(c);        break;
-    case 'countdown':    html = renderCountdown(c, sec.id); break;
-    case 'partners':     html = renderPartners(c);     break;
-    case 'newsletter':   html = renderNewsletter(c);   break;
-    case 'divider':      html = renderDivider(c);      break;
-    case 'imageComparison': html = renderImageComparison(c); break;
-    case 'slideshow':    html = renderSlideshow(c); break;
-    case 'footer':       html = renderFooter(c, siteName, _themeData); break;
-    default:             return `<!-- section "${attr(sec.type)}" not rendered -->`;
-  }
+  const mediaWidthMap: Record<string, string> = { small: '42%', medium: '50%', large: '58%' };
+  const mediaW = mediaWidthMap[(c.media_width as string) || 'medium'] || '50%';
 
-  // ── Apply padding ──────────────────────────────────────────────
-  const padTop = c.padding_top as number | undefined;
-  const padBot = c.padding_bottom as number | undefined;
-  const padStyle = [
-    padTop != null ? `padding-top:${padTop}px` : '',
-    padBot != null ? `padding-bottom:${padBot}px` : '',
-  ].filter(Boolean).join(';');
+  const thumbs = images.length > 1
+    ? `<div class="xd-pd-thumbs">
+        ${images.map((img, i) =>
+          `<img src="${attr(img)}" alt="${name} image ${i + 1}" class="xd-pd-thumb${i === 0 ? ' active' : ''}"
+               loading="lazy" onclick="
+                 document.getElementById('xd-pd-main').src=this.src;
+                 document.querySelectorAll('.xd-pd-thumb').forEach(function(t){t.classList.remove('active')});
+                 this.classList.add('active');">`
+        ).join('')}
+      </div>` : '';
 
-  // ── Apply color scheme styling ──────────────────────────────────
-  // Sections that have their own bg handling (hero has image, divider is transparent)
-  const skipSchemeBg = ['hero', 'divider', 'slideshow'].includes(sec.type);
-  const schemeId = c.color_scheme as string | undefined;
-  if (schemeId) {
-    const scheme = _colorSchemes.find(s => s.id === schemeId);
-    if (scheme) {
-      // Build CSS custom properties for scheme colors
-      const cssVars = [
-        `--scheme-bg:${attr(scheme.background)}`,
-        `--scheme-text:${attr(scheme.text)}`,
-        `--scheme-btn-bg:${attr(scheme.solidButtonBg)}`,
-        `--scheme-btn-label:${attr(scheme.solidButtonLabel)}`,
-        `--scheme-outline-btn:${attr(scheme.outlineButton)}`,
-        `--scheme-shadow:${attr(scheme.shadow)}`,
-        `--btn-radius:${_btnRadius}`,
-      ].join(';');
-
-      // Apply scheme background and text color
-      const sectionStyle = sec.style as Record<string, unknown> | undefined;
-      const hasManualBg = sectionStyle?.backgroundColor || sectionStyle?.backgroundImage;
-      const bgStyle = (!skipSchemeBg && !hasManualBg)
-        ? (scheme.backgroundGradient
-            ? `background:${attr(scheme.backgroundGradient)};`
-            : `background-color:${attr(scheme.background)};`)
-        : '';
-      const textStyle = `color:${attr(scheme.text)};`;
-
-      // Wrap the section HTML in a div with scheme + padding styles
-      html = `<div style="${cssVars};${bgStyle}${textStyle}${padStyle ? padStyle + ';' : ''}">${html}</div>`;
+  function renderBlock(block: Record<string, unknown>): string {
+    switch (block.type) {
+      case 'title':
+        return `<h1 class="xd-pd-name">${name}</h1>`;
+      case 'price':
+        return `<div class="xd-pd-price-row" style="margin-bottom:1rem">
+          <span class="xd-pd-price">${formatCurrency(price)}</span>
+          ${onSale && compare ? `<span class="xd-pd-compare">${formatCurrency(compare)}</span><span class="xd-pd-badge">Sale</span>` : ''}
+        </div>`;
+      case 'vendor':
+        return c.product_vendor ? `<p style="font-size:.8rem;opacity:.5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">${txt(c.product_vendor as string)}</p>` : '';
+      case 'description':
+        return desc ? `<div style="font-size:.9rem;line-height:1.75;opacity:.8;margin-bottom:1.5rem"><p>${desc}</p></div>` : '';
+      case 'variant_picker': {
+        if (productVariants.length > 0) {
+          return productVariants.map(opt => {
+            const buttons = (opt.values || []).map((v, vi) =>
+              `<button type="button" class="xd-pd-variant${vi === 0 ? ' selected' : ''}"
+                onclick="this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');">${txt(v)}</button>`
+            ).join('');
+            return `<div class="xd-pd-variants"><span class="xd-pd-variants-label">${txt(opt.name)}</span><div class="xd-pd-variant-grid">${buttons}</div></div>`;
+          }).join('');
+        }
+        if (variants.length > 0) {
+          return `<div class="xd-pd-variants"><span class="xd-pd-variants-label">Size</span><div class="xd-pd-variant-grid">
+            ${variants.map(v => {
+              const qty = stock[v] || 0;
+              return `<button type="button" class="xd-pd-variant${qty <= 0 ? ' oos' : ''}"
+                onclick="if(!this.classList.contains('oos')){this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');}"
+                ${qty <= 0 ? 'disabled' : ''}>${txt(v)}${qty <= 0 ? ' (OOS)' : ''}</button>`;
+            }).join('')}
+          </div></div>`;
+        }
+        return '';
+      }
+      case 'quantity_selector':
+        return `<div class="xd-pd-qty" style="margin-bottom:1rem">
+          <span class="xd-pd-variants-label">Quantity</span>
+          <div style="display:flex;align-items:center;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),8px);width:fit-content">
+            <button type="button" class="xd-pd-qty-btn" style="border:none;border-right:1px solid #e5e7eb" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=Math.max(1,parseInt(v.textContent)-1)">\u2212</button>
+            <span id="xd-pd-qty-val" style="width:3rem;text-align:center;font-weight:600;font-size:.9rem;padding:.5rem 0">1</span>
+            <button type="button" class="xd-pd-qty-btn" style="border:none;border-left:1px solid #e5e7eb" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=parseInt(v.textContent)+1">+</button>
+          </div>
+        </div>`;
+      case 'buy_buttons':
+        return isAvailable
+          ? `<div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem">
+              <button type="button" id="xd-pd-atc" class="xd-product-btn xd-pd-atc" data-xd-atc
+                data-xd-product-id="${pid}" data-xd-product-name="${attr(c.product_name as string)}"
+                data-xd-price="${attr(String(price || 0))}"
+                style="text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit">ADD TO CART</button>
+              <button type="button" class="xd-pd-atc"
+                style="width:100%;padding:1rem;font-size:1rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:var(--scheme-btn-bg,var(--c-primary,#121212));color:var(--scheme-btn-label,#fff);cursor:pointer;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit;box-shadow:var(--btn-shadow,none)">BUY IT NOW</button>
+            </div>`
+          : `<button disabled class="xd-pd-atc" style="width:100%;padding:1rem;font-size:1rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:#d1d5db;color:#6b7280;cursor:not-allowed;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit;margin-bottom:1.5rem">SOLD OUT</button>`;
+      case 'sku':
+        return skuVal ? `<p style="font-size:.75rem;opacity:.4;margin-bottom:.5rem">SKU: ${txt(skuVal)}</p>` : '';
+      case 'inventory_status':
+        return `<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+          <span style="width:8px;height:8px;border-radius:50%;background:${totalStock > 0 ? '#22c55e' : '#ef4444'}"></span>
+          <span style="font-size:.875rem">${totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}</span>
+        </div>`;
+      case 'share':
+        return `<div style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;opacity:.6;cursor:pointer">
+          <span class="material-icons" style="font-size:1.1rem">share</span>
+          <span style="font-size:.9rem">Share</span>
+        </div>`;
+      case 'collapsible_tab':
+        return `<details style="border-top:1px solid #e5e7eb;padding:.75rem 0">
+          <summary style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:.9rem;font-weight:600">
+            <span>${txt((block.heading as string) || 'Details')}</span>
+            <span class="material-icons" style="font-size:1rem;transition:transform .2s">expand_more</span>
+          </summary>
+          <div style="padding-top:.75rem;font-size:.875rem;opacity:.75;line-height:1.6">${txt((block.content as string) || '')}</div>
+        </details>`;
+      case 'rating':
+        return `<div style="display:flex;align-items:center;gap:.25rem;margin-bottom:.75rem">
+          ${'<span class="material-icons" style="font-size:1rem;color:#f59e0b">star</span>'.repeat(4)}
+          <span class="material-icons" style="font-size:1rem;color:#d1d5db">star</span>
+          <span style="font-size:.85rem;opacity:.5;margin-left:.25rem">(12 reviews)</span>
+        </div>`;
+      case 'custom_text':
+        return `<div style="font-size:.9rem;line-height:1.6;margin-bottom:1rem;opacity:.8">${txt((block.text as string) || '')}</div>`;
+      default:
+        return '';
     }
-  } else if (padStyle) {
-    // No scheme but padding specified — wrap with padding only
-    html = `<div style="${padStyle}">${html}</div>`;
   }
 
-  return addSectionAttrs(html, sec.id, sec.type);
+  const blocksHtml = blocks.map(b => renderBlock(b)).join('\n');
+
+  return `
+<section class="xd-section">
+<div class="xd-container">
+  <div style="display:flex;flex-direction:column;gap:2rem" class="xd-pd-grid">
+    <div style="display:flex;flex-wrap:wrap;gap:clamp(2rem,5vw,3rem)">
+      <!-- Images -->
+      <div class="xd-pd-images" style="flex:0 0 ${mediaW};min-width:280px">
+        <div style="overflow:hidden;border-radius:var(--media-radius,12px);background:#f5f5f5;margin-bottom:.75rem">
+          <img id="xd-pd-main" src="${attr(mainImg)}" alt="${name}" class="xd-pd-main-img" width="600" height="600">
+        </div>
+        ${thumbs}
+      </div>
+      <!-- Info (blocks) -->
+      <div class="xd-pd-info" style="flex:1;min-width:280px">
+        ${blocksHtml}
+        <div class="xd-pd-meta" style="margin-top:.75rem;font-size:.8rem;opacity:.4">
+          ${skuVal ? `<span>SKU: ${txt(skuVal)}</span>` : ''}
+          ${c.product_collection ? `<span>Collection: ${txt(c.product_collection as string)}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>`;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   STOREFRONT SPECIAL PAGES (Cart, Wishlist, Account)
-───────────────────────────────────────────────────────────────────── */
-function renderStorefrontPage(pageSlug: string, siteName: string): string {
-  if (pageSlug === 'cart') {
-    return `
+function renderCart(c: Record<string, unknown>): string {
+  const title = txt((c.title as string) || 'Your cart');
+  const emptyMsg = txt((c.empty_message as string) || 'Your cart is empty');
+  const emptyBtnText = txt((c.empty_button_text as string) || 'Continue shopping');
+  const emptyBtnLink = attr((c.empty_button_link as string) || '/');
+  return `
 <section style="max-width:900px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
-  <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1.5rem">Shopping Cart</h1>
+  <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1.5rem">${title}</h1>
   <div id="xd-cart-container">
     <div style="text-align:center;padding:3rem 0;opacity:.6">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-      <p style="font-size:1.1rem">Your cart is empty</p>
-      <a href="/" class="xd-btn" style="margin-top:1rem;display:inline-block">Continue Shopping</a>
+      <p style="font-size:1.1rem">${emptyMsg}</p>
+      <a href="${emptyBtnLink}" class="xd-btn" style="margin-top:1rem;display:inline-block">${emptyBtnText}</a>
     </div>
   </div>
 </section>`;
-  }
-  if (pageSlug === 'favorites') {
-    return `
+}
+
+function renderFavorites(_c: Record<string, unknown>): string {
+  return `
 <section style="max-width:900px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
   <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1.5rem">Wishlist</h1>
   <div id="xd-wishlist-container">
@@ -1680,9 +1786,10 @@ function renderStorefrontPage(pageSlug: string, siteName: string): string {
     </div>
   </div>
 </section>`;
-  }
-  if (pageSlug === 'account') {
-    return `
+}
+
+function renderAccount(_c: Record<string, unknown>): string {
+  return `
 <section style="max-width:600px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
   <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1.5rem">My Account</h1>
   <div id="xd-account-container">
@@ -1693,9 +1800,10 @@ function renderStorefrontPage(pageSlug: string, siteName: string): string {
     </div>
   </div>
 </section>`;
-  }
-  if (pageSlug === 'signin') {
-    return `
+}
+
+function renderSignin(_c: Record<string, unknown>): string {
+  return `
 <section style="max-width:440px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
   <div style="text-align:center;margin-bottom:2rem">
     <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:.5rem">Welcome Back</h1>
@@ -1723,13 +1831,15 @@ function renderStorefrontPage(pageSlug: string, siteName: string): string {
     </p>
   </form>
 </section>`;
-  }
-  if (pageSlug === 'signup') {
-    return `
+}
+
+function renderSignup(c: Record<string, unknown>): string {
+  const storeName = txt((c.store_name as string) || '');
+  return `
 <section style="max-width:440px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
   <div style="text-align:center;margin-bottom:2rem">
     <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:.5rem">Create Account</h1>
-    <p style="opacity:.6;font-size:.95rem">Join ${siteName} today</p>
+    <p style="opacity:.6;font-size:.95rem">Join ${storeName || 'us'} today</p>
   </div>
   <form id="xd-signup-form" style="display:flex;flex-direction:column;gap:1rem" onsubmit="return false">
     <div id="xd-signup-error" style="display:none;background:#fef2f2;color:#dc2626;padding:.75rem 1rem;border-radius:var(--br,8px);font-size:.875rem"></div>
@@ -1783,8 +1893,173 @@ function renderStorefrontPage(pageSlug: string, siteName: string): string {
     </p>
   </form>
 </section>`;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SECTION DISPATCH
+───────────────────────────────────────────────────────────────────── */
+
+/**
+ * Inject data-xd-section-id and data-xd-type into the first HTML tag of
+ * a rendered section so the storefront runtime can target it by ID.
+ */
+function addSectionAttrs(html: string, secId: string, secType: string): string {
+  const id   = attr(secId);
+  const type = attr(secType);
+  return html.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9]*)/, `$1 data-xd-section-id="${id}" data-xd-type="${type}"`);
+}
+
+function renderSection(sec: ISection, siteName: string): string {
+  const c = getSectionData(sec);
+
+  let html: string;
+  switch (sec.type) {
+    case 'banner':
+    case 'announcement': html = renderBanner(c);       break;
+    case 'navbar':       html = renderNavbar(c);       break;
+    case 'hero':         html = renderHero(c);         break;
+    case 'features':     html = renderFeatures(c);     break;
+    case 'products':     html = renderProducts(c);     break;
+    case 'deals':        html = renderDeals(c, sec.id); break;
+    case 'collections':  html = renderCollections(c);  break;
+    case 'testimonials': html = renderTestimonials(c); break;
+    case 'cta':          html = renderCTA(c);          break;
+    case 'about':
+    case 'split_media':  html = renderAbout(c);        break;
+    case 'contact':      html = renderContact(c);      break;
+    case 'gallery':      html = renderGallery(c);      break;
+    case 'pricing':      html = renderPricing(c);      break;
+    case 'faq':          html = renderFAQ(c);          break;
+    case 'stats':        html = renderStats(c);        break;
+    case 'team':         html = renderTeam(c);         break;
+    case 'services':     html = renderServices(c);     break;
+    case 'video':
+    case 'video_hero':   html = renderVideo(c);        break;
+    case 'countdown':    html = renderCountdown(c, sec.id); break;
+    case 'partners':     html = renderPartners(c);     break;
+    case 'newsletter':   html = renderNewsletter(c);   break;
+    case 'divider':      html = renderDivider(c);      break;
+    case 'imageComparison': html = renderImageComparison(c); break;
+    case 'slideshow':    html = renderSlideshow(c); break;
+    case 'footer':       html = renderFooter(c, siteName, _themeData); break;
+    case 'productInfo':  html = renderProductInfo(c);  break;
+    case 'cart':         html = renderCart(c);          break;
+    case 'favorites':    html = renderFavorites(c);     break;
+    case 'account':      html = renderAccount(c);       break;
+    case 'signin':       html = renderSignin(c);        break;
+    case 'signup':       html = renderSignup(c);        break;
+    default:             return `<!-- section "${attr(sec.type)}" not rendered -->`;
   }
-  return '<section style="min-height:60vh;padding:4rem;text-align:center"><h1>Page not found</h1></section>';
+
+  // ── Apply padding ──────────────────────────────────────────────
+  const padTop = c.padding_top as number | undefined;
+  const padBot = c.padding_bottom as number | undefined;
+  const padStyle = [
+    padTop != null ? `padding-top:${padTop}px` : '',
+    padBot != null ? `padding-bottom:${padBot}px` : '',
+  ].filter(Boolean).join(';');
+
+  // ── Apply color scheme styling ──────────────────────────────────
+  // Sections that have their own bg handling (hero has image, divider is transparent)
+  const skipSchemeBg = ['hero', 'divider', 'slideshow'].includes(sec.type);
+  const schemeId = c.color_scheme as string | undefined;
+  if (schemeId) {
+    const scheme = _colorSchemes.find(s => s.id === schemeId);
+    if (scheme) {
+      // Build CSS custom properties for scheme colors
+      const cssVars = [
+        `--scheme-bg:${attr(scheme.background)}`,
+        `--scheme-text:${attr(scheme.text)}`,
+        `--scheme-btn-bg:${attr(scheme.solidButtonBg)}`,
+        `--scheme-btn-label:${attr(scheme.solidButtonLabel)}`,
+        `--scheme-outline-btn:${attr(scheme.outlineButton)}`,
+        `--scheme-shadow:${attr(scheme.shadow)}`,
+        `--btn-radius:${_btnRadius}`,
+      ].join(';');
+
+      // Apply scheme background and text color
+      const sectionStyle = sec.style as Record<string, unknown> | undefined;
+      const hasManualBg = sectionStyle?.backgroundColor || sectionStyle?.backgroundImage;
+      const bgStyle = (!skipSchemeBg && !hasManualBg)
+        ? (scheme.backgroundGradient
+            ? `background:${attr(scheme.backgroundGradient)};`
+            : `background-color:${attr(scheme.background)};`)
+        : '';
+      const textStyle = `color:${attr(scheme.text)};`;
+
+      // Wrap the section HTML in a div with scheme + padding styles
+      html = `<div style="${cssVars};${bgStyle}${textStyle}${padStyle ? padStyle + ';' : ''}">${html}</div>`;
+    }
+  } else if (padStyle) {
+    // No scheme but padding specified — wrap with padding only
+    html = `<div style="${padStyle}">${html}</div>`;
+  }
+
+  return addSectionAttrs(html, sec.id, sec.type);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   HELPERS — resolvePageSections & buildProductData
+───────────────────────────────────────────────────────────────────── */
+
+function resolvePageSections(site: ISite, pageSlug?: string): ISection[] {
+  const siteAny = site as unknown as Record<string, unknown>;
+  const pageSectionsMap = (siteAny.pageSections as Record<string, ISection[]>) || {};
+  const slug = pageSlug || 'home';
+
+  // 1. Canonical: pageSections[slug]
+  if (pageSectionsMap[slug]?.length) return pageSectionsMap[slug];
+
+  // 2. Backward compat: site.sections for home
+  if (slug === 'home' && site.sections?.length) return site.sections;
+
+  // 3. Legacy: site.pages array
+  const page = site.pages?.find(p => p.slug === slug);
+  if (page?.sections?.length) return page.sections;
+
+  // 4. Synthesize defaults for known storefront pages
+  // Extract navbar+footer from home, sandwich default content section
+  const homeSections = pageSectionsMap['home'] || site.sections || [];
+  const shell = homeSections.filter(s => ['banner', 'navbar', 'footer'].includes(s.type));
+  const navSections = shell.filter(s => s.type !== 'footer');
+  const footerSections = shell.filter(s => s.type === 'footer');
+
+  const defaultContentSections: Record<string, () => ISection> = {
+    cart: () => ({ id: 'cart-default', type: 'cart', content: {}, data: { title: 'Your cart', empty_message: 'Your cart is empty', empty_button_text: 'Continue shopping', empty_button_link: '/' }, style: {}, order: 0 }),
+    favorites: () => ({ id: 'fav-default', type: 'favorites', content: {}, data: {}, style: {}, order: 0 }),
+    account: () => ({ id: 'acct-default', type: 'account', content: {}, data: {}, style: {}, order: 0 }),
+    signin: () => ({ id: 'signin-default', type: 'signin', content: {}, data: {}, style: {}, order: 0 }),
+    signup: () => ({ id: 'signup-default', type: 'signup', content: {}, data: { store_name: site.name }, style: {}, order: 0 }),
+    products: () => ({ id: 'pi-default', type: 'productInfo', content: {}, data: { blocks: [{type:'vendor'},{type:'title'},{type:'price'},{type:'variant_picker',picker_type:'pills'},{type:'quantity_selector'},{type:'buy_buttons'},{type:'description'},{type:'share'}], media_width: 'medium' }, style: {}, order: 0 }),
+    collections: () => ({ id: 'col-default', type: 'products', content: {}, data: { title: 'All Products', columns_desktop: 4, show_view_all: false }, style: {}, order: 0 }),
+  };
+
+  const factory = defaultContentSections[slug];
+  if (factory) return [...navSections, factory(), ...footerSections];
+
+  // 5. Fallback to home
+  return homeSections;
+}
+
+function buildProductData(product: Record<string, unknown>): Record<string, unknown> {
+  const stock = (product.stock as Record<string, number>) || {};
+  const totalStock = Object.values(stock).reduce((a, b) => a + b, 0);
+  const variants = Object.keys(stock);
+  return {
+    product_name: product.name || 'Product',
+    product_price: product.sellingPrice || product.salePrice || product.price,
+    product_compare_price: product.compareAtPrice || (product.onSale ? product.price : null),
+    product_images: product.images || (product.image ? [product.image] : []),
+    product_description: product.description || '',
+    product_vendor: product.vendor || '',
+    product_sku: product.sku || '',
+    product_available: variants.length === 0 || totalStock > 0,
+    product_inventory: totalStock,
+    product_variants: product.variants || [],
+    product_stock: stock,
+    product_id: product.id || product.docId || '',
+    product_collection: product.collectionId || '',
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -1800,39 +2075,17 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   const customCss   = sanitizeCss(settingsAny?.customCss);
   const currency    = ((theme.currency as string) || 'SAR').toUpperCase();
 
-  // ── Storefront special pages (cart, account, favorites) ────────
-  const STOREFRONT_PAGES = new Set(['cart', 'favorites', 'account', 'signin', 'signup']);
-  if (pageSlug && STOREFRONT_PAGES.has(pageSlug)) {
-    // Set _sfBase for navbar links
-    const storefrontBase = opts?.subdomain
-      ? ''
-      : (site as unknown as Record<string, unknown>).slug
-        ? `/${(site as unknown as Record<string, unknown>).slug}`
-        : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
-    _sfBase = storefrontBase;
-    // Resolve color schemes for navbar/footer rendering
-    const rawSchemes = theme.colorSchemes;
-    if (rawSchemes) {
-      let parsed: unknown = rawSchemes;
-      if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch { parsed = null; } }
-      if (Array.isArray(parsed) && parsed.length > 0) { _colorSchemes = parsed as ColorScheme[]; }
-      else { _colorSchemes = DEFAULT_COLOR_SCHEMES; }
-    } else { _colorSchemes = DEFAULT_COLOR_SCHEMES; }
-    _btnRadius = theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px';
-
-    const pageTitle = pageSlug === 'cart' ? 'Cart' : pageSlug === 'favorites' ? 'Wishlist' : 'Account';
-    const bodyHtml = renderStorefrontPage(pageSlug, txt(name));
-    return pageShell(site, pageTitle, bodyHtml, '', opts);
-  }
-
   // ── Resolve page ────────────────────────────────────────────────
-  let activeSections = site.sections || [];
+  const activeSections = resolvePageSections(site, pageSlug);
   let pageSeo: Record<string, unknown> = {};
 
-  if (pageSlug && pageSlug !== 'home' && site.pages?.length) {
+  // Storefront page SEO titles
+  const storefrontTitles: Record<string, string> = { cart: 'Cart', favorites: 'Wishlist', account: 'Account', signin: 'Sign In', signup: 'Sign Up' };
+  if (pageSlug && storefrontTitles[pageSlug]) {
+    pageSeo = { title: storefrontTitles[pageSlug] };
+  } else if (pageSlug && pageSlug !== 'home' && site.pages?.length) {
     const page = site.pages.find(p => p.slug === pageSlug);
     if (page) {
-      activeSections = page.sections?.length ? page.sections : site.sections;
       pageSeo = (page.seo || {}) as Record<string, unknown>;
     }
   }
@@ -2161,7 +2414,7 @@ function extractShell(site: ISite): { navbar: string; footer: string } {
   return { navbar, footer };
 }
 
-/** Shared page shell HTML (head + theme + runtime) */
+/** @deprecated Use renderSite() with resolvePageSections() instead. Kept for backward compatibility. */
 function pageShell(
   site: ISite,
   title: string,
@@ -2220,41 +2473,7 @@ ${extraMeta}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons" onload="this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></noscript>
-<style>${themeVars}${BASE_CSS}
-.xd-page-hero{padding:clamp(2rem,5vw,4rem) 0;text-align:center;background:color-mix(in srgb,var(--c-primary) 6%,transparent)}
-.xd-search-bar{display:flex;gap:.75rem;max-width:560px;margin:1.5rem auto 0;padding:0 1rem}
-.xd-search-input{flex:1;padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),12px);font-size:1rem;font-family:inherit;outline:none}
-.xd-search-input:focus{border-color:var(--c-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)}
-.xd-breadcrumb{display:flex;align-items:center;gap:.5rem;font-size:.875rem;opacity:.65;margin-bottom:1.5rem;flex-wrap:wrap}
-.xd-breadcrumb a{color:inherit;text-decoration:none}.xd-breadcrumb a:hover{text-decoration:underline}
-.xd-pd-grid{width:100%}
-@media(max-width:768px){.xd-pd-grid .xd-pd-images{flex:1 1 100%!important}}
-.xd-pd-images{display:flex;flex-direction:column;gap:.75rem}
-.xd-pd-main-img{aspect-ratio:auto;width:100%;object-fit:cover;border-radius:var(--media-radius,12px);background:#f9f9f9}
-.xd-pd-thumbs{display:flex;gap:.5rem;flex-wrap:wrap}
-.xd-pd-thumb{width:72px;height:72px;object-fit:cover;border-radius:min(var(--media-radius,8px),8px);cursor:pointer;border:2px solid transparent;transition:border-color .2s}
-.xd-pd-thumb:hover,.xd-pd-thumb.active{border-color:var(--c-primary)}
-.xd-pd-info{display:flex;flex-direction:column;gap:1.25rem}
-.xd-pd-name{font-size:clamp(1.5rem,3vw,1.875rem);font-weight:700;line-height:1.2;margin-bottom:.25rem}
-.xd-pd-price-row{display:flex;align-items:center;gap:.75rem}
-.xd-pd-price{font-size:1.25rem;font-weight:600;color:inherit}
-.xd-pd-compare{font-size:1.1rem;text-decoration:line-through;opacity:.45}
-.xd-pd-badge{background:#ef4444;color:#fff;font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:999px}
-.xd-pd-desc{font-size:.975rem;line-height:1.75;opacity:.8}
-.xd-pd-variants{display:flex;flex-direction:column;gap:.75rem}
-.xd-pd-variants-label{font-weight:600;font-size:.9rem}
-.xd-pd-variant-grid{display:flex;gap:.5rem;flex-wrap:wrap}
-.xd-pd-variant{padding:.4rem .9rem;border:1px solid #e5e7eb;border-radius:var(--variant-radius,9999px);font-size:.875rem;cursor:pointer;transition:all .2s}
-.xd-pd-variant:hover{border-color:var(--c-primary)}
-.xd-pd-variant.selected{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
-.xd-pd-variant.oos{opacity:.4;cursor:not-allowed;text-decoration:line-through}
-.xd-pd-qty{display:flex;align-items:center;gap:.75rem}
-.xd-pd-qty-btn{width:36px;height:36px;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),8px);background:transparent;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:inherit;color:inherit}
-.xd-pd-qty-btn:hover{border-color:var(--c-primary);color:var(--c-primary)}
-.xd-pd-qty-val{font-weight:700;font-size:1.1rem;min-width:1.5rem;text-align:center}
-.xd-pd-atc{width:100%;padding:1rem;font-size:1.05rem;margin-top:.5rem;border-radius:min(var(--btn-radius,8px),12px)!important}
-.xd-pd-meta{font-size:.85rem;opacity:.55;display:flex;flex-direction:column;gap:.3rem}
-</style>
+<style>${themeVars}${BASE_CSS}</style>
 </head>
 <body style="display:flex;flex-direction:column;min-height:100vh;margin:0">
 ${navbar}
@@ -2276,65 +2495,42 @@ export function renderAllProductsPage(
   page  = 1,
   opts?: { subdomain?: boolean },
 ): string {
-  const sfBase = opts?.subdomain
-    ? ''
-    : (site as unknown as Record<string, unknown>).slug
-      ? `/${(site as unknown as Record<string, unknown>).slug}`
-      : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+  let pageSections = resolvePageSections(site, 'collections');
 
-  // Reuse shared productCard() for consistent styling across all product pages
-  const showVendor = !!(_themeData.productShowVendor);
-  const showSecondaryImage = !!(_themeData.productShowSecondaryImage);
-  const cardOpts: ProductCardOpts = { showVendor, showRating: false, showPrice: true, showAddToCart: true, showSecondaryImage };
-  const cardStyleCls = (_themeData.productCardStyle as string) === 'minimal' ? ' xd-card-minimal' : (_themeData.productCardStyle as string) === 'card' ? ' xd-card-card' : '';
-  // Temporarily set _sfBase for productCard links
-  const prevBase = _sfBase;
-  _sfBase = sfBase;
-  const cards = products.map(p => productCard(p as Record<string, unknown>, 'Add to Cart', cardOpts)).join('');
-  _sfBase = prevBase;
+  // Clone sections and inject products + pagination data into the products section
+  pageSections = pageSections.map(s => {
+    if (s.type === 'products') {
+      const existingData = getSectionData(s);
+      return {
+        ...s,
+        data: {
+          ...existingData,
+          selectedProducts: products,
+          show_view_all: false,
+          _totalProducts: total,
+          _currentPage: page,
+        },
+      };
+    }
+    return s;
+  });
 
-  const limit = 20;
-  const totalPages = Math.ceil(total / limit);
-  const paginationLinks = totalPages > 1 ? `
-    <div style="display:flex;justify-content:center;gap:.5rem;margin-top:3rem;flex-wrap:wrap">
-      ${Array.from({ length: totalPages }, (_, i) => {
-        const p2 = i + 1;
-        const active = p2 === page;
-        return `<a href="${sfBase}/products?page=${p2}" class="xd-btn xd-btn-sm ${active ? 'xd-btn-primary' : 'xd-btn-secondary'}">${p2}</a>`;
-      }).join('')}
-    </div>` : '';
+  // Build a cloned site with modified sections
+  const clonedSite = {
+    ...JSON.parse(JSON.stringify(site)),
+    pageSections: { ...((site as unknown as Record<string, unknown>).pageSections as Record<string, unknown> || {}), collections: pageSections },
+  };
 
-  const emptyState = products.length === 0
-    ? `<div style="text-align:center;padding:4rem 0;opacity:.5">
-         <span class="material-icons" style="font-size:4rem;display:block;margin-bottom:1rem">inventory_2</span>
-         <p style="font-size:1.1rem">No products found</p>
-       </div>` : '';
+  // Set page SEO
+  if (!clonedSite.pages) clonedSite.pages = [];
+  const colPage = clonedSite.pages.find((p: Record<string, unknown>) => p.slug === 'collections');
+  if (colPage) {
+    colPage.seo = { ...(colPage.seo || {}), title: 'All Products' };
+  } else {
+    clonedSite.pages.push({ id: 'collections', slug: 'collections', name: 'All Products', sections: [], seo: { title: 'All Products' } });
+  }
 
-  const body = `
-<div class="xd-page-hero">
-  <div class="xd-container">
-    <h1 class="xd-h2">All Products</h1>
-    <p class="xd-lead" style="opacity:.7;margin-inline:auto">${txt(total)} products available</p>
-    <form class="xd-search-bar" action="${sfBase}/products" method="get">
-      <input class="xd-search-input" type="search" name="search" placeholder="Search products…" autocomplete="off">
-      <button class="xd-btn xd-btn-primary" type="submit">Search</button>
-    </form>
-  </div>
-</div>
-<section class="xd-section${cardStyleCls}">
-<div class="xd-container">
-  <nav class="xd-breadcrumb" aria-label="Breadcrumb">
-    <a href="${sfBase}">Home</a><span>›</span><span>All Products</span>
-  </nav>
-  <div class="xd-grid-3" data-xd-grid>
-    ${cards}
-    ${emptyState}
-  </div>
-  ${paginationLinks}
-</div>
-</section>`;
-
-  return pageShell(site, 'All Products', body, '', opts);
+  return renderSite(clonedSite, 'collections', opts);
 }
 
 /**
@@ -2343,199 +2539,32 @@ export function renderAllProductsPage(
  * (or uses default blocks) to match the builder's ProductInfoSection.
  */
 export function renderProductDetailPage(site: ISite, product: ProductData, opts?: { subdomain?: boolean }): string {
-  const sfBase = opts?.subdomain
-    ? ''
-    : (site as unknown as Record<string, unknown>).slug
-      ? `/${(site as unknown as Record<string, unknown>).slug}`
-      : `/site/${(site as unknown as Record<string, unknown>)._id ?? ''}`;
+  const productData = buildProductData(product as Record<string, unknown>);
+  let pageSections = resolvePageSections(site, 'products');
 
-  // Find the productInfo section config from pageSections or site.pages
-  let pdBlocks: Array<Record<string, unknown>> = [
-    { type: 'vendor' }, { type: 'title' }, { type: 'price' },
-    { type: 'variant_picker', picker_type: 'pills' },
-    { type: 'quantity_selector' }, { type: 'buy_buttons' },
-    { type: 'description' }, { type: 'share' },
-  ];
-  let pdMediaWidth = 'medium';
-  // Check pageSections first (new format), then pages (legacy)
-  const siteAny = site as unknown as Record<string, unknown>;
-  const pageSectionsMap = (siteAny.pageSections as Record<string, ISection[]>) || {};
-  const productsSections = pageSectionsMap['products'] || [];
-  const piSec = productsSections.find(s => s.type === 'productInfo')
-    || (site.pages || []).flatMap(p => p.sections || []).find(s => s.type === 'productInfo');
-  if (piSec) {
-    const piData = getSectionData(piSec);
-    if (Array.isArray(piData.blocks) && piData.blocks.length > 0) pdBlocks = piData.blocks as Array<Record<string, unknown>>;
-    if (piData.media_width) pdMediaWidth = piData.media_width as string;
-  }
-
-  const name      = txt(product.name as string || 'Product');
-  const price     = product.sellingPrice || product.salePrice || product.price;
-  const compare   = product.compareAtPrice || (product.onSale ? product.price : null);
-  const onSale    = product.onSale || (product.salePrice && Number(product.salePrice) < Number(product.price));
-  const images    = (product.images as string[]) || (product.image ? [product.image as string] : []);
-  const mainImg   = images[0] || 'https://placehold.co/600/f5f5f5/999?text=Product';
-  const stock     = (product.stock as Record<string, number>) || {};
-  const variants  = Object.keys(stock);
-  const desc      = txt(product.description as string || '');
-  const pid       = attr(product.id as string || product.docId as string || '');
-  const sku       = product.sku ? `<span>SKU: ${txt(product.sku as string)}</span>` : '';
-
-  const thumbs = images.length > 1
-    ? `<div class="xd-pd-thumbs">
-        ${images.map((img, i) =>
-          `<img src="${attr(img)}" alt="${name} image ${i + 1}" class="xd-pd-thumb${i === 0 ? ' active' : ''}"
-               loading="lazy" onclick="
-                 document.getElementById('xd-pd-main').src=this.src;
-                 document.querySelectorAll('.xd-pd-thumb').forEach(function(t){t.classList.remove('active')});
-                 this.classList.add('active');">`
-        ).join('')}
-      </div>` : '';
-
-  // Check overall stock
-  const totalStock = Object.values(stock).reduce((a, b) => a + b, 0);
-  const isAvailable = variants.length === 0 || totalStock > 0;
-  const productVariants = (product.variants as Array<{name: string; values: string[]}>) || [];
-
-  const safeJson = (obj: unknown) => JSON.stringify(obj).replace(/<\/(script)/gi, '<\\/$1');
-  const ldJson = safeJson({
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: String(product.name || ''),
-    description: String(product.description || ''),
-    image: images,
-    offers: {
-      '@type': 'Offer',
-      price: String(price || 0),
-      priceCurrency: getCurrencyCode(),
-      availability: isAvailable ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-    },
+  // Clone sections and inject product data into the productInfo section
+  pageSections = pageSections.map(s => {
+    if (s.type === 'productInfo') {
+      const existingData = getSectionData(s);
+      return { ...s, data: { ...existingData, ...productData } };
+    }
+    return s;
   });
 
-  // ── Render blocks in order (matching builder's ProductInfoSection) ──
-  const mediaWidthMap: Record<string, string> = { small: '42%', medium: '50%', large: '58%' };
-  const mediaW = mediaWidthMap[pdMediaWidth] || '50%';
+  // Build a cloned site with modified sections
+  const clonedSite = {
+    ...JSON.parse(JSON.stringify(site)),
+    pageSections: { ...((site as unknown as Record<string, unknown>).pageSections as Record<string, unknown> || {}), products: pageSections },
+  };
 
-  function renderBlock(block: Record<string, unknown>): string {
-    switch (block.type) {
-      case 'title':
-        return `<h1 class="xd-pd-name">${name}</h1>`;
-      case 'price':
-        return `<div class="xd-pd-price-row" style="margin-bottom:1rem">
-          <span class="xd-pd-price">${formatCurrency(price)}</span>
-          ${onSale && compare ? `<span class="xd-pd-compare">${formatCurrency(compare)}</span><span class="xd-pd-badge">Sale</span>` : ''}
-        </div>`;
-      case 'vendor':
-        return product.vendor ? `<p style="font-size:.8rem;opacity:.5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">${txt(product.vendor as string)}</p>` : '';
-      case 'description':
-        return desc ? `<div style="font-size:.9rem;line-height:1.75;opacity:.8;margin-bottom:1.5rem"><p>${desc}</p></div>` : '';
-      case 'variant_picker': {
-        const pickerType = (block.picker_type as string) || 'pills';
-        if (productVariants.length > 0) {
-          return productVariants.map(opt => {
-            const buttons = (opt.values || []).map((v, vi) =>
-              `<button type="button" class="xd-pd-variant${vi === 0 ? ' selected' : ''}"
-                onclick="this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');">${txt(v)}</button>`
-            ).join('');
-            return `<div class="xd-pd-variants"><span class="xd-pd-variants-label">${txt(opt.name)}</span><div class="xd-pd-variant-grid">${buttons}</div></div>`;
-          }).join('');
-        }
-        if (variants.length > 0) {
-          return `<div class="xd-pd-variants"><span class="xd-pd-variants-label">Size</span><div class="xd-pd-variant-grid">
-            ${variants.map(v => {
-              const qty = stock[v] || 0;
-              return `<button type="button" class="xd-pd-variant${qty <= 0 ? ' oos' : ''}"
-                onclick="if(!this.classList.contains('oos')){this.parentNode.querySelectorAll('.xd-pd-variant').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');}"
-                ${qty <= 0 ? 'disabled' : ''}>${txt(v)}${qty <= 0 ? ' (OOS)' : ''}</button>`;
-            }).join('')}
-          </div></div>`;
-        }
-        return '';
-      }
-      case 'quantity_selector':
-        return `<div class="xd-pd-qty" style="margin-bottom:1rem">
-          <span class="xd-pd-variants-label">Quantity</span>
-          <div style="display:flex;align-items:center;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),8px);width:fit-content">
-            <button type="button" class="xd-pd-qty-btn" style="border:none;border-right:1px solid #e5e7eb" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=Math.max(1,parseInt(v.textContent)-1)">\u2212</button>
-            <span id="xd-pd-qty-val" style="width:3rem;text-align:center;font-weight:600;font-size:.9rem;padding:.5rem 0">1</span>
-            <button type="button" class="xd-pd-qty-btn" style="border:none;border-left:1px solid #e5e7eb" onclick="var v=document.getElementById('xd-pd-qty-val');v.textContent=parseInt(v.textContent)+1">+</button>
-          </div>
-        </div>`;
-      case 'buy_buttons':
-        return isAvailable
-          ? `<div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem">
-              <button type="button" id="xd-pd-atc" class="xd-product-btn xd-pd-atc" data-xd-atc
-                data-xd-product-id="${pid}" data-xd-product-name="${attr(product.name as string)}"
-                data-xd-price="${attr(String(price || 0))}"
-                style="text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit">ADD TO CART</button>
-              <button type="button" class="xd-pd-atc"
-                style="width:100%;padding:1rem;font-size:1rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:var(--scheme-btn-bg,var(--c-primary,#121212));color:var(--scheme-btn-label,#fff);cursor:pointer;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit;box-shadow:var(--btn-shadow,none)">BUY IT NOW</button>
-            </div>`
-          : `<button disabled class="xd-pd-atc" style="width:100%;padding:1rem;font-size:1rem;border-radius:min(var(--btn-radius,8px),12px);border:none;background:#d1d5db;color:#6b7280;cursor:not-allowed;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-family:inherit;margin-bottom:1.5rem">SOLD OUT</button>`;
-      case 'sku':
-        return sku ? `<p style="font-size:.75rem;opacity:.4;margin-bottom:.5rem">SKU: ${txt(product.sku as string || '')}</p>` : '';
-      case 'inventory_status':
-        return `<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
-          <span style="width:8px;height:8px;border-radius:50%;background:${totalStock > 0 ? '#22c55e' : '#ef4444'}"></span>
-          <span style="font-size:.875rem">${totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}</span>
-        </div>`;
-      case 'share':
-        return `<div style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;opacity:.6;cursor:pointer">
-          <span class="material-icons" style="font-size:1.1rem">share</span>
-          <span style="font-size:.9rem">Share</span>
-        </div>`;
-      case 'collapsible_tab':
-        return `<details style="border-top:1px solid #e5e7eb;padding:.75rem 0">
-          <summary style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:.9rem;font-weight:600">
-            <span>${txt((block.heading as string) || 'Details')}</span>
-            <span class="material-icons" style="font-size:1rem;transition:transform .2s">expand_more</span>
-          </summary>
-          <div style="padding-top:.75rem;font-size:.875rem;opacity:.75;line-height:1.6">${txt((block.content as string) || '')}</div>
-        </details>`;
-      case 'rating':
-        return `<div style="display:flex;align-items:center;gap:.25rem;margin-bottom:.75rem">
-          ${'<span class="material-icons" style="font-size:1rem;color:#f59e0b">star</span>'.repeat(4)}
-          <span class="material-icons" style="font-size:1rem;color:#d1d5db">star</span>
-          <span style="font-size:.85rem;opacity:.5;margin-left:.25rem">(12 reviews)</span>
-        </div>`;
-      case 'custom_text':
-        return `<div style="font-size:.9rem;line-height:1.6;margin-bottom:1rem;opacity:.8">${txt((block.text as string) || '')}</div>`;
-      default:
-        return '';
-    }
+  // Set page SEO title to product name
+  if (!clonedSite.pages) clonedSite.pages = [];
+  const prodPage = clonedSite.pages.find((p: Record<string, unknown>) => p.slug === 'products');
+  if (prodPage) {
+    prodPage.seo = { ...(prodPage.seo || {}), title: String(product.name || 'Product') };
+  } else {
+    clonedSite.pages.push({ id: 'products', slug: 'products', name: 'Product', sections: [], seo: { title: String(product.name || 'Product') } });
   }
 
-  const blocksHtml = pdBlocks.map(b => renderBlock(b)).join('\n');
-
-  const body = `
-<script type="application/ld+json">${ldJson}</script>
-<section class="xd-section">
-<div class="xd-container">
-  <div style="display:flex;flex-direction:column;gap:2rem" class="xd-pd-grid">
-    <div style="display:flex;flex-wrap:wrap;gap:clamp(2rem,5vw,3rem)">
-      <!-- Images -->
-      <div class="xd-pd-images" style="flex:0 0 ${mediaW};min-width:280px">
-        <div style="overflow:hidden;border-radius:var(--media-radius,12px);background:#f5f5f5;margin-bottom:.75rem">
-          <img id="xd-pd-main" src="${attr(mainImg)}" alt="${name}" class="xd-pd-main-img" width="600" height="600">
-        </div>
-        ${thumbs}
-      </div>
-      <!-- Info (blocks) -->
-      <div class="xd-pd-info" style="flex:1;min-width:280px">
-        ${blocksHtml}
-        <div class="xd-pd-meta" style="margin-top:.75rem;font-size:.8rem;opacity:.4">
-          ${sku}
-          ${product.collectionId ? `<span>Collection: ${txt(product.collectionId as string)}</span>` : ''}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-</section>`;
-
-  return pageShell(site, String(product.name || 'Product'), body,
-    `<meta name="description" content="${attr(String(product.description || '').slice(0, 160))}">
-<meta property="og:type" content="product">
-<meta property="og:title" content="${attr(String(product.name || ''))}">
-${mainImg ? `<meta property="og:image" content="${attr(mainImg)}">` : ''}`, opts);
+  return renderSite(clonedSite, 'products', opts);
 }
