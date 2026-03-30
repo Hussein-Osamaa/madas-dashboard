@@ -351,6 +351,23 @@ ul,ol{list-style:none}
 .xd-cart-drawer-items{flex:1;overflow-y:auto;padding:1rem 1.25rem}
 .xd-cart-drawer-footer{padding:1rem 1.25rem;border-top:1px solid color-mix(in srgb,currentColor 10%,transparent)}
 .xd-cart-drawer-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;font-weight:700;font-size:1.05rem}
+/* ── UI State Classes ─────────────────────────────────────────────── */
+.xd-loading{position:relative;pointer-events:none;opacity:.6}
+.xd-loading::after{content:'';position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.xd-spinner{width:24px;height:24px;border:3px solid color-mix(in srgb,currentColor 20%,transparent);border-top-color:var(--c-primary,currentColor);border-radius:50%;animation:xd-spin .6s linear infinite;display:inline-block}
+@keyframes xd-spin{to{transform:rotate(360deg)}}
+.xd-btn[disabled],.xd-btn.xd-disabled{opacity:.5;pointer-events:none;cursor:not-allowed}
+.xd-btn:focus-visible{outline:3px solid var(--c-primary);outline-offset:3px}
+.xd-error-box{background:#fef2f2;color:#dc2626;padding:.75rem 1rem;border-radius:var(--input-radius,8px);font-size:.875rem;margin-bottom:1rem;display:flex;align-items:start;gap:.5rem}
+.xd-error-box::before{content:'\\26A0';font-size:1.1rem;flex-shrink:0}
+.xd-success-box{background:#f0fdf4;color:#16a34a;padding:.75rem 1rem;border-radius:var(--input-radius,8px);font-size:.875rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.xd-success-box::before{content:'\\2713';font-size:1.1rem;font-weight:700;flex-shrink:0}
+.xd-cart-item.xd-updating{opacity:.5;pointer-events:none}
+.xd-cart-item.xd-removing{opacity:.3;transform:translateX(20px);transition:opacity .3s,transform .3s}
+.xd-field-error{border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.15)!important}
+.xd-field-error-msg{color:#dc2626;font-size:.75rem;margin-top:.25rem}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--c-primary);outline-offset:2px}
+@media(max-width:768px){.xd-checkout-layout{flex-direction:column!important}.xd-checkout-summary{width:100%!important;position:static!important}}
 .xd-hero{position:relative;overflow:hidden;display:flex;align-items:center}
 .xd-hero-full{min-height:100svh}
 .xd-hero-large{min-height:min(92vh,780px)}

@@ -823,7 +823,18 @@ function renderCartPage(cart){
   container.appendChild(summary);
 }
 
-/* Cart page: quantity +/- and remove */
+/* Cart error display */
+function showCartError(msg){
+  var container=document.getElementById('xd-cart-container');
+  if(!container)return;
+  var existing=container.querySelector('.xd-error-box');
+  if(existing)existing.remove();
+  var err=mk('div','xd-error-box',msg);
+  err.setAttribute('role','alert');
+  container.prepend(err);
+}
+
+/* Cart page: quantity +/- and remove with loading states */
 document.addEventListener('click',function(e){
   var qtyBtn=e.target.closest('[data-xd-cart-qty]');
   if(qtyBtn){
@@ -834,8 +845,13 @@ document.addEventListener('click',function(e){
     var display=document.querySelector('[data-xd-cart-qty-display="'+pid+'"]');
     var currentQty=display?parseInt(display.textContent||'1'):1;
     var newQty=Math.max(0,currentQty+delta);
+    // Add updating state to the item row
+    var itemRow=qtyBtn.closest('.xd-cart-item');
+    if(itemRow)itemRow.classList.add('xd-updating');
     cartFetch('PATCH','/cart/item',{cartToken:getToken(),productId:pid,variantId:vid,quantity:newQty}).then(function(cart){
       renderCartPage(cart);
+    }).catch(function(){
+      if(itemRow)itemRow.classList.remove('xd-updating');
     });
     return;
   }
@@ -844,8 +860,13 @@ document.addEventListener('click',function(e){
     e.preventDefault();
     var pid2=removeBtn.getAttribute('data-xd-cart-remove')||'';
     var vid2=removeBtn.getAttribute('data-vid')||undefined;
+    // Add removing animation state
+    var itemRow2=removeBtn.closest('.xd-cart-item');
+    if(itemRow2)itemRow2.classList.add('xd-removing');
     cartFetch('PATCH','/cart/item',{cartToken:getToken(),productId:pid2,variantId:vid2,quantity:0}).then(function(cart){
       renderCartPage(cart);
+    }).catch(function(){
+      if(itemRow2)itemRow2.classList.remove('xd-removing');
     });
   }
 });
@@ -890,10 +911,12 @@ function renderCheckoutPage(cart){
   form.style.cssText='display:flex;flex-direction:column;gap:1.5rem';
   form.setAttribute('onsubmit','return false');
 
-  // Error display
-  var errBox=mk('div','');
+  // Error display (uses xd-error-box class for consistent styling)
+  var errBox=mk('div','xd-error-box');
   errBox.id='xd-checkout-error';
-  errBox.style.cssText='display:none;background:#fef2f2;color:#dc2626;padding:.75rem 1rem;border-radius:8px;font-size:.875rem';
+  errBox.style.display='none';
+  errBox.setAttribute('role','alert');
+  errBox.setAttribute('aria-live','assertive');
   form.appendChild(errBox);
 
   // Contact section
@@ -1078,64 +1101,141 @@ function renderCheckoutPage(cart){
     });
   });
 
-  // Handle form submit
+  // ── Client-side validation ──
+  function validateCheckoutForm(){
+    var errors=[];
+    var fields=[
+      {id:'checkout-firstName',label:'First name',required:true},
+      {id:'checkout-lastName',label:'Last name',required:true},
+      {id:'checkout-email',label:'Email',required:C('showEmail',true),type:'email'},
+      {id:'checkout-address',label:'Address',required:true},
+      {id:'checkout-city',label:'City',required:true},
+      {id:'checkout-country',label:'Country',required:true},
+    ];
+    // Clear previous field errors
+    fields.forEach(function(f){
+      var el=document.getElementById(f.id);
+      if(el){el.classList.remove('xd-field-error');var em=el.parentNode.querySelector('.xd-field-error-msg');if(em)em.remove();}
+    });
+    // Validate
+    fields.forEach(function(f){
+      var el=document.getElementById(f.id);
+      if(!el||!f.required)return;
+      var val=(el.value||'').trim();
+      if(!val){
+        el.classList.add('xd-field-error');
+        var msg=mk('p','xd-field-error-msg',f.label+' is required');
+        el.parentNode.appendChild(msg);
+        errors.push(f.label+' is required');
+      }
+      if(f.type==='email'&&val&&!/^[^@]+@[^@]+\.[^@]+$/.test(val)){
+        el.classList.add('xd-field-error');
+        var msg2=mk('p','xd-field-error-msg','Please enter a valid email');
+        el.parentNode.appendChild(msg2);
+        errors.push('Invalid email');
+      }
+    });
+    if(!selectedPayment)errors.push('Please select a payment method');
+    return errors;
+  }
+
+  // ── Handle form submit with full state management ──
+  var _isSubmitting=false;
   form.addEventListener('submit',function(e){
     e.preventDefault();
-    if(!selectedPayment){showCheckoutError('Please select a payment method');return;}
-    var btn=document.getElementById('xd-checkout-submit');
-    if(btn.disabled)return;
-    btn.disabled=true;btn.textContent='Processing...';btn.style.opacity='0.6';
 
+    // Validate
+    var errors=validateCheckoutForm();
+    if(errors.length>0){
+      showCheckoutError(errors[0]);
+      // Focus first error field
+      var firstErr=form.querySelector('.xd-field-error');
+      if(firstErr)firstErr.focus();
+      return;
+    }
+
+    // Prevent double submit
+    if(_isSubmitting)return;
+    _isSubmitting=true;
+    var btn=document.getElementById('xd-checkout-submit');
+    if(btn){btn.disabled=true;btn.setAttribute('aria-busy','true');}
+
+    // Show submitting state with spinner
+    hideCheckoutError();
+    if(btn){
+      btn.textContent='';
+      var spinner=mk('span','xd-spinner','');
+      spinner.style.cssText='width:18px;height:18px;border-width:2px;margin-right:.5rem';
+      btn.appendChild(spinner);
+      btn.appendChild(document.createTextNode('Processing...'));
+    }
+
+    var notesEl=document.getElementById('checkout-notes');
     var payload={
       cartToken:getToken(),
       customer:{
-        email:document.getElementById('checkout-email').value,
-        firstName:document.getElementById('checkout-firstName').value,
-        lastName:document.getElementById('checkout-lastName').value,
-        phone:document.getElementById('checkout-phone').value||undefined,
+        email:(document.getElementById('checkout-email')||{}).value||'',
+        firstName:(document.getElementById('checkout-firstName')||{}).value||'',
+        lastName:(document.getElementById('checkout-lastName')||{}).value||'',
+        phone:(document.getElementById('checkout-phone')||{}).value||undefined,
       },
       shipping:{
-        address:document.getElementById('checkout-address').value,
-        city:document.getElementById('checkout-city').value,
-        state:document.getElementById('checkout-state').value||undefined,
-        postalCode:document.getElementById('checkout-postalCode').value||undefined,
-        country:document.getElementById('checkout-country').value,
+        address:(document.getElementById('checkout-address')||{}).value||'',
+        city:(document.getElementById('checkout-city')||{}).value||'',
+        state:(document.getElementById('checkout-state')||{}).value||undefined,
+        postalCode:(document.getElementById('checkout-postalCode')||{}).value||undefined,
+        country:(document.getElementById('checkout-country')||{}).value||'',
       },
       paymentMethod:selectedPayment,
-      customerNote:document.getElementById('checkout-notes').value||undefined,
+      customerNote:notesEl?notesEl.value||undefined:undefined,
       idempotencyKey:'ck-'+getToken()+'-'+Date.now(),
     };
 
     fetchJSON(publicUrl('/checkout'),{method:'POST',headers:{'Content-Type':'application/json','x-cart-token':getToken()},body:JSON.stringify(payload)}).then(function(result){
       if(!result){showCheckoutError('Checkout failed. Please try again.');resetBtn();return;}
       if(result.error){showCheckoutError(result.error);resetBtn();return;}
+      if(result.duplicate){
+        // Already processed — redirect
+        window.location.href=sfBase+'/order/'+result.orderId+'?token='+result.publicLookupToken;
+        return;
+      }
 
-      // Handle response based on status
       if(result.status==='confirmed'){
-        // COD or confirmed — redirect to confirmation
         window.location.href=sfBase+'/order/'+result.orderId+'?token='+result.publicLookupToken;
       }else if(result.clientSecret){
-        // Stripe — load Stripe.js and confirm payment
+        // Stripe — update button to "Confirming payment..."
+        if(btn){btn.textContent='Confirming payment...';}
         loadStripeAndPay(result.clientSecret,result.orderId,result.publicLookupToken);
       }else if(result.status==='awaiting_payment'){
-        // Manual payment — show instructions then redirect
         window.location.href=sfBase+'/order/'+result.orderId+'?token='+result.publicLookupToken;
       }else{
         window.location.href=sfBase+'/order/'+result.orderId+'?token='+result.publicLookupToken;
       }
     }).catch(function(err){
-      showCheckoutError(err&&err.message||'Checkout failed');
+      showCheckoutError(err&&err.message||'Checkout failed. Please check your information and try again.');
       resetBtn();
     });
   });
 
   function showCheckoutError(msg){
     var box=document.getElementById('xd-checkout-error');
-    if(box){box.textContent=msg;box.style.display='block';}
+    if(box){
+      box.textContent='';
+      box.className='xd-error-box';
+      box.appendChild(document.createTextNode(msg));
+      box.style.display='flex';
+      box.setAttribute('role','alert');
+      box.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  }
+  function hideCheckoutError(){
+    var box=document.getElementById('xd-checkout-error');
+    if(box)box.style.display='none';
   }
   function resetBtn(){
+    _isSubmitting=false;
     var btn=document.getElementById('xd-checkout-submit');
-    if(btn){btn.disabled=false;btn.textContent=_checkoutBtnText||'Complete order';btn.style.opacity='';}
+    if(btn){btn.disabled=false;btn.textContent=_checkoutBtnText||'Complete order';btn.removeAttribute('aria-busy');}
   }
 }
 
@@ -1400,14 +1500,33 @@ function init(){
     wireAnalyticsOnSection(sEl,entry);
     if(entry.apiBinding)wireFormSubmit(sEl,entry);
   });
-  // Load cart and hydrate cart/checkout pages
+  // Show loading state on cart/checkout containers, then hydrate
+  var cartContainer=document.getElementById('xd-cart-container');
+  var checkoutContainer=document.getElementById('xd-checkout-container');
+  if(cartContainer){
+    cartContainer.setAttribute('aria-busy','true');
+    cartContainer.setAttribute('aria-live','polite');
+  }
+  if(checkoutContainer){
+    checkoutContainer.setAttribute('aria-busy','true');
+    checkoutContainer.setAttribute('aria-live','polite');
+  }
   if(tenantId&&getToken()){
     cartFetch('GET','/cart',null).then(function(cart){
+      if(cartContainer)cartContainer.setAttribute('aria-busy','false');
+      if(checkoutContainer)checkoutContainer.setAttribute('aria-busy','false');
       if(cart){
         renderCartPage(cart);
         renderCheckoutPage(cart);
       }
+    }).catch(function(){
+      if(cartContainer){cartContainer.setAttribute('aria-busy','false');showCartError('Failed to load cart. Please refresh the page.');}
+      if(checkoutContainer){checkoutContainer.setAttribute('aria-busy','false');}
     });
+  } else {
+    // No cart token — show empty state immediately
+    if(cartContainer){cartContainer.setAttribute('aria-busy','false');renderCartPage(null);}
+    if(checkoutContainer){checkoutContainer.setAttribute('aria-busy','false');renderCheckoutPage(null);}
   }
   // Order confirmation page
   if(window.location.pathname.indexOf('/order/')!==-1){
