@@ -9,6 +9,7 @@ import { config } from './config';
 import routes from './routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import { csrfProtection } from './middleware/csrf.middleware';
+import { requestIdMiddleware } from './middleware/request-id.middleware';
 import { rawBodyWebhookMiddleware } from './middleware/raw-body-webhook.middleware';
 import './types/external-api.types'; // Express Request augmentation for external API
 import './services/orderInventoryIntegration'; // Registers order->inventory event handlers
@@ -46,6 +47,9 @@ export function createApp(): Express {
     .filter(Boolean)
     .filter((o: string) => o !== '*'); // never allow wildcard in CORS list
   const allowedOrigins = [...new Set([...KNOWN_ORIGINS, ...envOrigins])];
+
+  // 0. Request ID — unique ID per request for tracing across logs, audit, events
+  app.use(requestIdMiddleware);
 
   // 1. Security headers (helmet sets X-Content-Type-Options, X-Frame-Options,
   //    Strict-Transport-Security, X-XSS-Protection, and more in one call)
@@ -421,6 +425,18 @@ export function createApp(): Express {
   });
 
   app.use(errorMiddleware);
+
+  // ── Platform Core: start event bus worker + seed plans ──
+  // Lazy import to avoid circular dependencies during app construction
+  setTimeout(async () => {
+    try {
+      const { eventBus, planService } = await import('./modules/platform-core');
+      eventBus.startWorker(2000); // Poll every 2s
+      await planService.seedDefaultPlans();
+    } catch (err) {
+      console.error('[platform-core] Failed to initialize:', (err as Error).message);
+    }
+  }, 1000); // Delay 1s to let MongoDB connect first
 
   return app;
 }

@@ -20,8 +20,15 @@ import aiRoutes from './ai.routes';
 
 const router = Router();
 
-router.get('/health', (_req, res) => {
-  res.json({ ok: true, timestamp: new Date().toISOString() });
+router.get('/health', async (_req, res) => {
+  try {
+    const { healthService } = await import('../modules/platform-core');
+    const health = await healthService.checkHealth();
+    const statusCode = health.status === 'unhealthy' ? 503 : 200;
+    res.status(statusCode).json(health);
+  } catch (err) {
+    res.status(503).json({ status: 'unhealthy', error: (err as Error).message, timestamp: new Date().toISOString() });
+  }
 });
 
 router.use('/external', externalRoutes);
