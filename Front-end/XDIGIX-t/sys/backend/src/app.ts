@@ -8,6 +8,7 @@ import fs from 'fs';
 import { config } from './config';
 import routes from './routes';
 import { errorMiddleware } from './middleware/error.middleware';
+import { csrfProtection } from './middleware/csrf.middleware';
 import { rawBodyWebhookMiddleware } from './middleware/raw-body-webhook.middleware';
 import './types/external-api.types'; // Express Request augmentation for external API
 import './services/orderInventoryIntegration'; // Registers order->inventory event handlers
@@ -68,10 +69,10 @@ export function createApp(): Express {
           callback(null, incoming);
           return;
         }
-        // Allow any Vercel preview/production deployment under the xdigix team
+        // Allow Vercel preview/production deployments matching xdigix project patterns
         if (
-          /^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming) ||
-          /^https:\/\/[a-z0-9-]+-xdigix\.vercel\.app$/.test(incoming.replace(/\/$/, ''))
+          /^https:\/\/xdigix-os(-[a-z0-9]+)?(-xdigix)?\.vercel\.app$/.test(incoming) ||
+          /^https:\/\/dist-xdigix(-[a-z0-9]+)?\.vercel\.app$/.test(incoming)
         ) {
           callback(null, incoming);
           return;
@@ -81,19 +82,20 @@ export function createApp(): Express {
           callback(null, incoming);
           return;
         }
-        // Allow localhost / 127.0.0.1 / LAN IPs on any port for local frontend dev
-        if (
-          incoming.startsWith('http://localhost:') ||
-          incoming.startsWith('http://127.0.0.1:') ||
-          /^http:\/\/(10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/.test(incoming)
-        ) {
-          callback(null, incoming);
-          return;
+        // Allow localhost / 127.0.0.1 only in non-production
+        if (config.nodeEnv !== 'production') {
+          if (
+            incoming.startsWith('http://localhost:') ||
+            incoming.startsWith('http://127.0.0.1:')
+          ) {
+            callback(null, incoming);
+            return;
+          }
         }
         callback(null, false);
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-cart-token'],
       credentials: true,
     })
   );
@@ -108,7 +110,10 @@ export function createApp(): Express {
     })
   );
 
-  // 4. Capture raw body for external webhook signature verification (must run before json parser)
+  // 4. CSRF protection — validates Origin header on state-changing requests
+  app.use(csrfProtection);
+
+  // 5. Capture raw body for external webhook signature verification (must run before json parser)
   app.use(rawBodyWebhookMiddleware);
 
   // 5. Body parsing
@@ -152,7 +157,10 @@ export function createApp(): Express {
       coll: 'products',
       'data.deleted': { $ne: true },
     };
-    if (search) filter['data.name'] = { $regex: search, $options: 'i' };
+    if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').slice(0, 100);
+      filter['data.name'] = { $regex: escaped, $options: 'i' };
+    }
     const skip = (page - 1) * limit;
     const [docs, total] = await Promise.all([
       FirestoreDoc.find(filter).skip(skip).limit(limit).lean(),

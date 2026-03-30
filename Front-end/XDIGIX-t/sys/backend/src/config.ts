@@ -12,8 +12,22 @@ export const config = {
   },
 
   jwt: {
-    accessSecret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret-change-in-prod',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-prod',
+    accessSecret: (() => {
+      const s = process.env.JWT_ACCESS_SECRET;
+      if (!s && process.env.NODE_ENV === 'production') {
+        console.error('FATAL: JWT_ACCESS_SECRET is required in production. Set it in your environment variables.');
+        process.exit(1);
+      }
+      return s || 'dev-access-secret-local-only';
+    })(),
+    refreshSecret: (() => {
+      const s = process.env.JWT_REFRESH_SECRET;
+      if (!s && process.env.NODE_ENV === 'production') {
+        console.error('FATAL: JWT_REFRESH_SECRET is required in production. Set it in your environment variables.');
+        process.exit(1);
+      }
+      return s || 'dev-refresh-secret-local-only';
+    })(),
     accessExpiry: process.env.JWT_ACCESS_EXPIRY || '24h',
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
   },
@@ -28,7 +42,8 @@ export const config = {
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN || '*',
+    /** Comma-separated list of additional allowed origins (never set to '*') */
+    origin: process.env.CORS_ORIGIN || '',
   },
 
   rateLimit: {

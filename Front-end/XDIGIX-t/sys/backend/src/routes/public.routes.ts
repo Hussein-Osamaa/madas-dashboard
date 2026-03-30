@@ -92,7 +92,9 @@ router.get('/:tenantId/products', catalogLimiter, async (req: Request, res: Resp
   };
   if (collection) filter['data.collectionId'] = collection;
   if (search) {
-    filter['data.name'] = { $regex: search, $options: 'i' };
+    // Escape regex special characters to prevent ReDoS / injection
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').slice(0, 100);
+    filter['data.name'] = { $regex: escaped, $options: 'i' };
   }
   // Filter by specific product IDs (used by sections with selectedProducts)
   const ids = req.query.ids as string | undefined;

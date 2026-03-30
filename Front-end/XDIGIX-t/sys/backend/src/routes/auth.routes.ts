@@ -10,6 +10,7 @@ import {
   type AccountType,
 } from '../services/central-auth.service';
 import { centralJwtMiddleware } from '../middleware/central-jwt.middleware';
+import { bruteForceCheck, recordFailedAttempt, resetAttempts } from '../middleware/brute-force.middleware';
 
 const router = Router();
 
@@ -46,12 +47,15 @@ router.post(
   authRateLimit,
   [body('email').isEmail().normalizeEmail(), body('password').isLength({ min: 1 })],
   validate,
+  bruteForceCheck,
   async (req: Request, res: Response) => {
     const result = await loginClient(req.body.email, req.body.password);
     if (!result) {
+      recordFailedAttempt(req.body.email);
       res.status(401).json({ error: 'Invalid credentials', code: 'auth/invalid-credential' });
       return;
     }
+    resetAttempts(req.body.email);
     res.json(result);
   }
 );
@@ -62,12 +66,15 @@ router.post(
   authRateLimit,
   [body('email').isEmail().normalizeEmail(), body('password').isLength({ min: 1 })],
   validate,
+  bruteForceCheck,
   async (req: Request, res: Response) => {
     const result = await loginStaff(req.body.email, req.body.password);
     if (!result) {
+      recordFailedAttempt(req.body.email);
       res.status(401).json({ error: 'Invalid credentials', code: 'auth/invalid-credential' });
       return;
     }
+    resetAttempts(req.body.email);
     res.json(result);
   }
 );
@@ -78,12 +85,15 @@ router.post(
   authRateLimit,
   [body('email').isEmail().normalizeEmail(), body('password').isLength({ min: 1 })],
   validate,
+  bruteForceCheck,
   async (req: Request, res: Response) => {
     const result = await loginAdmin(req.body.email, req.body.password);
     if (!result) {
+      recordFailedAttempt(req.body.email);
       res.status(401).json({ error: 'Invalid credentials', code: 'auth/invalid-credential' });
       return;
     }
+    resetAttempts(req.body.email);
     res.json(result);
   }
 );
@@ -94,12 +104,15 @@ router.post(
   authRateLimit,
   [body('email').isEmail().normalizeEmail(), body('password').isLength({ min: 1 })],
   validate,
+  bruteForceCheck,
   async (req: Request, res: Response) => {
     const result = await login(req.body.email, req.body.password);
     if (!result) {
+      recordFailedAttempt(req.body.email);
       res.status(401).json({ error: 'Invalid credentials', code: 'auth/invalid-credential' });
       return;
     }
+    resetAttempts(req.body.email);
     res.json(result);
   }
 );
