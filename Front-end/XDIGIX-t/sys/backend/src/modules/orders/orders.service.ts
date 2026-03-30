@@ -323,7 +323,7 @@ async function createOrder(
           correlationId,
         });
 
-        await eventBus.publish('order.confirmed', {
+        await eventBus.safePublish('order.confirmed', {
           orderId,
           tenantId,
           businessId,
@@ -506,7 +506,7 @@ async function createOrder(
   }
 
   // 10. Emit order.created
-  await eventBus.publish('order.created', {
+  await eventBus.safePublish('order.created', {
     orderId,
     tenantId,
     businessId,
@@ -602,7 +602,7 @@ async function updateStatus(
 
   // Emit event
   const eventType = `order.${newStatus}`;
-  await eventBus.publish(eventType, {
+  await eventBus.safePublish(eventType, {
     orderId,
     tenantId: order.tenantId,
     businessId: order.businessId,
@@ -688,7 +688,7 @@ async function cancelOrder(
   }
 
   // Emit specific cancellation event
-  await eventBus.publish('order.cancelled', {
+  await eventBus.safePublish('order.cancelled', {
     orderId,
     tenantId: order.tenantId,
     businessId: order.businessId,
@@ -759,7 +759,7 @@ async function handleStripeWebhook(
         }
       );
 
-      await eventBus.publish('order.confirmed', {
+      await eventBus.safePublish('order.confirmed', {
         orderId,
         tenantId,
         businessId: order.businessId,
@@ -826,7 +826,7 @@ async function handleStripeWebhook(
           }
         }
 
-        await eventBus.publish('order.failed', {
+        await eventBus.safePublish('order.failed', {
           orderId,
           tenantId,
           businessId: order.businessId,
@@ -874,7 +874,7 @@ async function handleStripeWebhook(
         { $set: { paymentStatus: 'refunded' } }
       );
 
-      await eventBus.publish('order.refunded', {
+      await eventBus.safePublish('order.refunded', {
         orderId,
         tenantId,
         businessId: order.businessId,
@@ -962,7 +962,7 @@ async function confirmManualPayment(
   });
 
   // Emit event
-  await eventBus.publish('order.confirmed', {
+  await eventBus.safePublish('order.confirmed', {
     orderId,
     tenantId: order.tenantId,
     businessId: order.businessId,
@@ -1073,7 +1073,7 @@ async function initiateReturn(
   });
 
   // Emit event
-  await eventBus.publish('return.requested', {
+  await eventBus.safePublish('return.requested', {
     returnId: returnDoc.returnId,
     orderId,
     tenantId: order.tenantId,
@@ -1151,7 +1151,7 @@ async function expireOrder(orderId: string): Promise<void> {
     }
   }
 
-  await eventBus.publish('order.expired', {
+  await eventBus.safePublish('order.expired', {
     orderId,
     tenantId: order.tenantId,
     businessId: order.businessId,

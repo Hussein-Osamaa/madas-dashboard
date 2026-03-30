@@ -33,6 +33,20 @@ export const eventBus = {
   },
 
   /**
+   * Safe publish: wraps publish in try-catch so callers don't crash.
+   * Returns eventId on success, null on failure (logged).
+   * Use this from business services where event loss is acceptable.
+   */
+  async safePublish(type: string, payload: Record<string, unknown>, metadata?: { tenantId?: string; correlationId?: string }): Promise<string | null> {
+    try {
+      return await eventBus.publish(type, payload, metadata);
+    } catch (err) {
+      log.error(`Failed to publish event: ${type}`, { error: (err as Error).message, tenantId: metadata?.tenantId });
+      return null;
+    }
+  },
+
+  /**
    * Subscribe: register an in-process handler for an event type.
    */
   subscribe(type: string, handler: EventHandler): void {
@@ -69,9 +83,24 @@ export const eventBus = {
       if (!claimed) continue;
 
       const eventHandlers = handlers.get(event.type) || [];
+      if (eventHandlers.length === 0) {
+        log.warn(`No handlers for event type: ${event.type}`, { eventId: event.eventId });
+      }
       try {
+        const handlerErrors: string[] = [];
         for (const handler of eventHandlers) {
-          await handler(event);
+          try {
+            await handler(event);
+          } catch (handlerErr) {
+            // Per-handler resilience: log and continue to next handler
+            const msg = (handlerErr as Error).message?.slice(0, 200) || 'Unknown handler error';
+            handlerErrors.push(msg);
+            log.error(`Handler failed for ${event.type}`, { eventId: event.eventId, error: msg });
+          }
+        }
+        // If ANY handler failed, treat as event failure (for retry)
+        if (handlerErrors.length > 0) {
+          throw new Error(`${handlerErrors.length} handler(s) failed: ${handlerErrors[0]}`);
         }
         await Event.updateOne(
           { _id: event._id },

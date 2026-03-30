@@ -99,7 +99,7 @@ async function createProduct(
     deleted: false,
   });
 
-  await eventBus.publish('product.created', {
+  await eventBus.safePublish('product.created', {
     productId: product._id.toString(),
     tenantId,
     businessId,
@@ -157,7 +157,7 @@ async function updateProduct(
   );
   if (!updated) throw new Error('Product update failed');
 
-  await eventBus.publish('product.updated', {
+  await eventBus.safePublish('product.updated', {
     productId,
     tenantId: updated.tenantId,
     businessId: updated.businessId,
@@ -187,7 +187,7 @@ async function deleteProduct(productId: string, actor: string): Promise<void> {
   );
   if (!product) throw new Error('Product not found');
 
-  await eventBus.publish('product.deleted', {
+  await eventBus.safePublish('product.deleted', {
     productId,
     tenantId: product.tenantId,
     businessId: product.businessId,
@@ -513,7 +513,7 @@ async function requestReservation(
     await StockMovement.insertMany(movements);
 
     // Phase 4: Emit event
-    await eventBus.publish('stock.reserved', {
+    await eventBus.safePublish('stock.reserved', {
       reservationId,
       orderId,
       tenantId,
@@ -580,7 +580,7 @@ async function releaseReservation(reservationId: string): Promise<void> {
   }));
   await StockMovement.insertMany(movements);
 
-  await eventBus.publish('stock.released', {
+  await eventBus.safePublish('stock.released', {
     reservationId,
     orderId: reservation.orderId,
     tenantId: reservation.tenantId,
@@ -629,7 +629,7 @@ async function confirmFulfillment(reservationId: string): Promise<void> {
   }));
   await StockMovement.insertMany(movements);
 
-  await eventBus.publish('stock.fulfilled', {
+  await eventBus.safePublish('stock.fulfilled', {
     reservationId,
     orderId: reservation.orderId,
     tenantId: reservation.tenantId,
@@ -673,7 +673,7 @@ async function adjustStock(
     createdAt: new Date(),
   });
 
-  await eventBus.publish('stock.adjusted', {
+  await eventBus.safePublish('stock.adjusted', {
     productId,
     variantId,
     qty,
@@ -806,7 +806,7 @@ async function checkLowStock(product: IProduct): Promise<void> {
 
   lowStockEmitCache.set(productId, Date.now());
 
-  await eventBus.publish('stock.low', {
+  await eventBus.safePublish('stock.low', {
     productId,
     tenantId: product.tenantId,
     businessId: product.businessId,
