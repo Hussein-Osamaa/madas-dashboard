@@ -16,6 +16,10 @@
     { "source": "/finance/(.*)", "destination": "/finance/index.html" },
     { "source": "/warehouse", "destination": "/warehouse/index.html" },
     { "source": "/warehouse/(.*)", "destination": "/warehouse/index.html" },
-    { "source": "/((?!dashboard|admin|finance|warehouse|assets).*)", "destination": "/index.html" }
+    { "source": "/track", "destination": "/track/index.html" },
+    { "source": "/track/(.*)", "destination": "/track/index.html" },
+    { "source": "/ship", "destination": "/ship/index.html" },
+    { "source": "/ship/(.*)", "destination": "/ship/index.html" },
+    { "source": "/((?!dashboard|admin|finance|warehouse|track|ship|assets).*)", "destination": "/index.html" }
   ]
 }

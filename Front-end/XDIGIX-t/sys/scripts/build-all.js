@@ -16,9 +16,12 @@ const DIST = path.join(ROOT, 'dist-unified');
 
 /** Apps to build: { name, src (relative to ROOT), dest (folder inside dist-unified) } */
 const APPS = [
-  { name: 'dashboard',   src: 'apps/marketing/apps/dashboard',    dest: 'dashboard' },
-  { name: 'finance',     src: 'apps/marketing/apps/finance',      dest: 'finance' },
-  { name: 'admin',       src: 'apps/marketing/apps/digix-admin',  dest: 'admin' },
+  { name: 'dashboard',         src: 'apps/marketing/apps/dashboard',          dest: 'dashboard' },
+  { name: 'finance',           src: 'apps/marketing/apps/finance',            dest: 'finance' },
+  { name: 'admin',             src: 'apps/marketing/apps/digix-admin',        dest: 'admin' },
+  { name: 'fulfillment',       src: 'apps/marketing/apps/fulfillment',        dest: 'warehouse' },
+  { name: 'tracking',          src: 'apps/marketing/apps/tracking',           dest: 'track' },
+  { name: 'merchant-shipping', src: 'apps/marketing/apps/merchant-shipping',  dest: 'ship' },
 ];
 
 /** Marketing landing page (root of dist-unified) */
