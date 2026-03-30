@@ -108,6 +108,56 @@ function responsiveImg(src: string, alt: string, opts: {
   } loading="${loading}"${priority ? ' fetchpriority="high"' : ''} decoding="async">`;
 }
 
+/** Build the full :root CSS variables block from theme data. */
+function buildThemeVarsCSS(theme: Record<string, unknown>, btnRadius: string): string {
+  const btnShadowMap: Record<string, string> = { none: 'none', small: '0 1px 2px rgba(0,0,0,.08)', medium: '0 2px 8px rgba(0,0,0,.12)', large: '0 4px 16px rgba(0,0,0,.16)' };
+  const btnPadMap: Record<string, string> = { small: '0.5rem 1rem', medium: '0.75rem 1.5rem', large: '1rem 2rem' };
+  const varRadMap: Record<string, string> = { pill: '9999px', rectangle: '6px', circle: '50%' };
+  const imgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '3/4', square: '1' };
+  const spacingMap: Record<string, string> = { compact: '0.75rem', normal: '1rem', spacious: '1.5rem' };
+  const shadowMap: Record<string, string> = { none: 'none', small: '0 1px 3px rgba(0,0,0,.08)', medium: '0 4px 12px rgba(0,0,0,.1)' };
+  const mediaShadowMap: Record<string, string> = { none: 'none', small: '0 2px 8px rgba(0,0,0,.08)', medium: '0 4px 16px rgba(0,0,0,.12)' };
+  const ddShadowMap: Record<string, string> = { small: '0 2px 8px rgba(0,0,0,.1)', medium: '0 4px 16px rgba(0,0,0,.15)', large: '0 8px 30px rgba(0,0,0,.2)' };
+
+  return `:root{
+  --c-primary:${attr((theme.colorPrimary || theme.primaryColor || '#27491F') as string)};
+  --c-secondary:${attr((theme.colorSecondary || theme.secondaryColor || '#F0CAE1') as string)};
+  --c-accent:${attr((theme.colorAccent || theme.accentColor || '#FFD300') as string)};
+  --c-bg:${attr((theme.colorBg || theme.backgroundColor || '#ffffff') as string)};
+  --c-text:${attr((theme.colorText || theme.textColor || '#171817') as string)};
+  --c-btn-label:${attr((theme.colorSolidButtonLabel as string) || '#ffffff')};
+  --ff:"${attr((theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
+  --ff-body:"${attr((theme.fontBody || theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
+  --heading-scale:${Number(theme.headingScale || 100) / 100};
+  --body-scale:${Number(theme.bodyScale || 100) / 100};
+  --page-width:${Number(theme.pageWidth) || 1200}px;
+  --spacing-unit:${spacingMap[(theme.spacing as string) || 'normal'] || '1rem'};
+  --section-padding:${Number(theme.sectionPadding) || 60}px;
+  --br:${btnRadius};
+  --btn-radius:${btnRadius};
+  --btn-shadow:${btnShadowMap[(theme.buttonShadow as string) || 'none'] || 'none'};
+  --btn-padding:${btnPadMap[(theme.buttonPadding as string) || 'medium'] || '0.75rem 1.5rem'};
+  --input-radius:${Number(theme.inputBorderRadius) || 8}px;
+  --input-border:${attr((theme.inputBorderColor as string) || '#d1d5db')};
+  --variant-radius:${varRadMap[(theme.variantStyle as string) || 'pill'] || '9999px'};
+  --product-img-ratio:${imgRatioMap[(theme.productImageRatio as string) || 'adapt'] || 'auto'};
+  --product-text-align:${(theme.productTextAlign as string) || 'left'};
+  --container-radius:${Number(theme.containerBorderRadius) || 8}px;
+  --container-shadow:${shadowMap[(theme.containerShadow as string) || 'none'] || 'none'};
+  --media-radius:${Number(theme.mediaBorderRadius) || 0}px;
+  --media-shadow:${mediaShadowMap[(theme.mediaShadow as string) || 'none'] || 'none'};
+  --dropdown-radius:${Number(theme.dropdownBorderRadius) || 8}px;
+  --dropdown-shadow:${ddShadowMap[(theme.dropdownShadow as string) || 'medium'] || '0 4px 16px rgba(0,0,0,.15)'};
+  --drawer-radius:${Number(theme.drawerBorderRadius) || 12}px;
+  --badge-color:${attr((theme.saleBadgeColor as string) || '#ef4444')};
+  --badge-radius:${(theme.badgeShape as string) === 'pill' ? '999px' : '4px'};
+  --checkout-accent:${attr((theme.checkoutAccentColor as string) || (theme.colorPrimary as string) || '#1a1a1a')};
+  --animation-duration:${Number(theme.animationDuration) || 400}ms;
+}
+body{font-size:calc(1rem * var(--body-scale,1))}
+h1,h2,h3,h4,h5,h6{font-family:var(--ff)}`;
+}
+
 /** Format a price with the site's currency setting from theme. */
 function formatCurrency(price: unknown): string {
   const num = Number(price);
@@ -228,8 +278,8 @@ a{color:inherit;text-decoration:none}
 button{cursor:pointer;font-family:inherit}
 ul,ol{list-style:none}
 :focus-visible{outline:3px solid var(--c-primary);outline-offset:3px}
-.xd-container{max-width:1200px;margin-inline:auto;padding-inline:clamp(1rem,4vw,2rem)}
-.xd-section{padding-block:clamp(3rem,7vw,6rem)}
+.xd-container{max-width:var(--page-width,1200px);margin-inline:auto;padding-inline:clamp(1rem,4vw,2rem)}
+.xd-section{padding-block:var(--section-padding,clamp(3rem,7vw,6rem))}
 .xd-grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:2rem}
 .xd-grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:2rem}
 .xd-grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:1.5rem}
@@ -293,7 +343,7 @@ ul,ol{list-style:none}
 .xd-cart-drawer.xd-open{display:block;pointer-events:auto}
 .xd-cart-drawer-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s}
 .xd-cart-drawer.xd-open .xd-cart-drawer-backdrop{opacity:1}
-.xd-cart-drawer-panel{position:absolute;right:0;top:0;bottom:0;width:min(420px,90vw);background:var(--c-bg,#fff);color:var(--c-text,#121212);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s ease;box-shadow:-4px 0 24px rgba(0,0,0,.12)}
+.xd-cart-drawer-panel{position:absolute;right:0;top:0;bottom:0;width:min(420px,90vw);background:var(--c-bg,#fff);color:var(--c-text,#121212);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s ease;box-shadow:-4px 0 24px rgba(0,0,0,.12);border-radius:var(--drawer-radius,12px) 0 0 var(--drawer-radius,12px)}
 .xd-cart-drawer.xd-open .xd-cart-drawer-panel{transform:translateX(0)}
 .xd-cart-drawer-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid color-mix(in srgb,currentColor 10%,transparent)}
 .xd-cart-drawer-close{background:none;border:none;cursor:pointer;padding:.25rem;color:inherit;font-size:1.25rem;display:flex}
@@ -317,7 +367,7 @@ ul,ol{list-style:none}
 .xd-hero-split-img{overflow:hidden;height:100%;min-height:min(80vh,680px)}
 .xd-hero-split-img img{width:100%;height:100%;object-fit:cover}
 @media(max-width:768px){.xd-hero-split{grid-template-columns:1fr}.xd-hero-split-img{aspect-ratio:16/9;min-height:unset}}
-.xd-feature-card{background:#fff;border-radius:var(--br);border:1px solid #e5e7eb;
+.xd-feature-card{background:var(--c-bg,#fff);border-radius:var(--container-radius,8px);border:1px solid color-mix(in srgb,currentColor 10%,transparent);box-shadow:var(--container-shadow,none);
   padding:2rem;text-align:center;transition:box-shadow .25s,translate .25s}
 .xd-feature-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08);translate:0 -2px}
 .xd-feature-icon{width:56px;height:56px;border-radius:12px;
@@ -369,7 +419,7 @@ ul,ol{list-style:none}
 .xd-skel-img{aspect-ratio:1;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200%;animation:xd-pulse 1.5s ease-in-out infinite}
 .xd-skel-line{height:.85rem;background:#f0f0f0;border-radius:4px;margin-bottom:.5rem;animation:xd-pulse 1.5s ease-in-out infinite}
 .xd-skel-btn{height:2.2rem;background:#f0f0f0;border-radius:8px;margin-top:.5rem;animation:xd-pulse 1.5s ease-in-out infinite}
-.xd-testimonial-card{background:#fff;border-radius:var(--br);border:1px solid #e5e7eb;
+.xd-testimonial-card{background:var(--c-bg,#fff);border-radius:var(--container-radius,8px);border:1px solid color-mix(in srgb,currentColor 10%,transparent);box-shadow:var(--container-shadow,none);
   padding:1.75rem;display:flex;flex-direction:column;gap:1rem}
 .xd-stars{display:flex;gap:2px}
 .star{width:18px;height:18px;fill:none;stroke:#d1d5db;stroke-width:1.5}
@@ -380,7 +430,7 @@ ul,ol{list-style:none}
 .xd-testimonial-author-info strong{display:block;font-weight:700;font-size:.95rem}
 .xd-testimonial-author-info span{font-size:.8rem;opacity:.6}
 .xd-gallery-grid{columns:3 240px;gap:1rem}
-.xd-gallery-item{break-inside:avoid;margin-bottom:1rem;border-radius:var(--br);overflow:hidden;cursor:pointer}
+.xd-gallery-item{break-inside:avoid;margin-bottom:1rem;border-radius:var(--media-radius,8px);overflow:hidden;cursor:pointer;box-shadow:var(--media-shadow,none)}
 .xd-gallery-item img{width:100%;display:block;transition:scale .4s}
 .xd-gallery-item:hover img{scale:1.04}
 .xd-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;
@@ -390,7 +440,7 @@ ul,ol{list-style:none}
 .xd-lightbox-close{position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.15);
   border:none;color:#fff;font-size:2rem;width:48px;height:48px;border-radius:50%;
   display:flex;align-items:center;justify-content:center}
-.xd-pricing-card{border:2px solid #e5e7eb;border-radius:var(--br);padding:2.25rem;
+.xd-pricing-card{border:2px solid color-mix(in srgb,currentColor 10%,transparent);border-radius:var(--container-radius,8px);padding:2.25rem;box-shadow:var(--container-shadow,none);
   text-align:center;display:flex;flex-direction:column;gap:1rem;
   transition:border-color .25s,box-shadow .25s}
 .xd-pricing-card.featured{border-color:var(--c-primary);
@@ -445,7 +495,7 @@ ul,ol{list-style:none}
 .xd-countdown-num{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1;display:block}
 .xd-countdown-lbl{font-size:.75rem;opacity:.7;text-transform:uppercase;letter-spacing:.08em;margin-top:.375rem;display:block}
 .xd-newsletter-form{display:flex;gap:.75rem;max-width:480px;margin:2rem auto 0;flex-wrap:wrap}
-.xd-newsletter-input{flex:1 1 200px;padding:.875rem 1rem;border:none;border-radius:var(--br);
+.xd-newsletter-input{flex:1 1 200px;padding:.875rem 1rem;border:1px solid var(--input-border,transparent);border-radius:var(--input-radius,8px);
   font-size:1rem;font-family:inherit;min-width:0}
 .xd-newsletter-input:focus{outline:3px solid rgba(255,255,255,.5)}
 .xd-newsletter-success{font-weight:600;font-size:1.1rem;margin-top:1.5rem}
@@ -453,8 +503,8 @@ ul,ol{list-style:none}
 .xd-partner-logo{max-height:50px;max-width:140px;object-fit:contain;
   opacity:.6;filter:grayscale(100%);transition:opacity .2s,filter .2s}
 .xd-partner-logo:hover{opacity:1;filter:none}
-.xd-input{padding:.875rem 1rem;border:1.5px solid #d1d5db;border-radius:min(var(--btn-radius,8px),12px);
-  font-size:1rem;font-family:inherit;width:100%;transition:border-color .2s;background:#fff}
+.xd-input{padding:.875rem 1rem;border:1.5px solid var(--input-border,#d1d5db);border-radius:var(--input-radius,8px);
+  font-size:1rem;font-family:inherit;width:100%;transition:border-color .2s;background:transparent;color:inherit}
 .xd-input:focus{outline:none;border-color:var(--c-primary)}
 .xd-textarea{min-height:140px;resize:vertical}
 .xd-contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
@@ -2265,28 +2315,7 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   const _badgeRadius = (theme.badgeShape as string) === 'pill' ? '999px' : '4px';
   const _badgeColor = attr((theme.saleBadgeColor as string) || '#ef4444');
 
-  const themeVars = `:root{
-  --c-primary:${attr((theme.colorPrimary   || theme.primaryColor   || '#27491F') as string)};
-  --c-secondary:${attr((theme.colorSecondary || theme.secondaryColor || '#F0CAE1') as string)};
-  --c-accent:${attr((theme.colorAccent    || theme.accentColor    || '#FFD300') as string)};
-  --c-bg:${attr((theme.colorBg           || theme.backgroundColor || '#ffffff') as string)};
-  --c-text:${attr((theme.colorText        || theme.textColor      || '#171817') as string)};
-  --ff:"${attr((theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
-  --ff-body:"${attr((theme.fontBody || theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
-  --br:${_btnRadius};
-  --btn-radius:${_btnRadius};
-  --btn-shadow:${_btnShadow};
-  --btn-padding:${_btnPadding};
-  --body-scale:${Number(theme.bodyScale || 100) / 100};
-  --variant-radius:${_variantRadius};
-  --product-img-ratio:${_productImgAspect};
-  --product-text-align:${productTextAlign};
-  --media-radius:${_mediaRadius};
-  --badge-color:${_badgeColor};
-  --badge-radius:${_badgeRadius};
-}
-body{font-size:calc(1rem * var(--body-scale,1))}
-/* Color scheme buttons — inherit scheme CSS vars when set */
+  const schemeOverrides = `
 [style*="--scheme-btn-bg"] .xd-btn,
 [style*="--scheme-btn-bg"] .xd-cta-btn,
 [style*="--scheme-btn-bg"] button[class*="btn"],
@@ -2302,6 +2331,7 @@ body{font-size:calc(1rem * var(--body-scale,1))}
   border-color: var(--scheme-outline-btn, var(--c-primary)) !important;
   border-radius: var(--btn-radius, 8px) !important;
 }`;
+  const themeVars = buildThemeVarsCSS(theme, _btnRadius) + schemeOverrides;
 
   // ── Font loading ─────────────────────────────────────────────────
   const headingFont = ((theme.fontHeading || theme.fontFamily || 'Inter') as string).replace(/ /g, '+');
@@ -2529,32 +2559,9 @@ function pageShell(
   const { settings, name } = site;
   const theme   = (settings?.theme as Record<string, unknown>) || {};
   _themeData = theme;
+  // pageShell uses same theme vars as renderSite — delegate to a shared helper
   const _br = theme.borderRadius === 'sharp' ? '0px' : theme.borderRadius === 'pill' ? '9999px' : '8px';
-  const _bShadowMap: Record<string, string> = { none: 'none', small: '0 1px 2px rgba(0,0,0,.08)', medium: '0 2px 8px rgba(0,0,0,.12)', large: '0 4px 16px rgba(0,0,0,.16)' };
-  const _bPadMap: Record<string, string> = { small: '0.5rem 1rem', medium: '0.75rem 1.5rem', large: '1rem 2rem' };
-  const _varRadMap: Record<string, string> = { pill: '9999px', rectangle: '6px', circle: '50%' };
-  const _imgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '3/4', square: '1' };
-  const themeVars = `:root{
-  --c-primary:${attr((theme.colorPrimary   || theme.primaryColor   || '#27491F') as string)};
-  --c-secondary:${attr((theme.colorSecondary || theme.secondaryColor || '#F0CAE1') as string)};
-  --c-accent:${attr((theme.colorAccent    || theme.accentColor    || '#FFD300') as string)};
-  --c-bg:${attr((theme.colorBg           || theme.backgroundColor || '#ffffff') as string)};
-  --c-text:${attr((theme.colorText        || theme.textColor      || '#171817') as string)};
-  --ff:"${attr((theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
-  --ff-body:"${attr((theme.fontBody || theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
-  --br:${_br};
-  --btn-radius:${_br};
-  --btn-shadow:${_bShadowMap[(theme.buttonShadow as string) || 'none'] || 'none'};
-  --btn-padding:${_bPadMap[(theme.buttonPadding as string) || 'medium'] || '0.75rem 1.5rem'};
-  --body-scale:${Number(theme.bodyScale || 100) / 100};
-  --variant-radius:${_varRadMap[(theme.variantStyle as string) || 'pill'] || '9999px'};
-  --product-img-ratio:${_imgRatioMap[(theme.productImageRatio as string) || 'adapt'] || 'auto'};
-  --product-text-align:${(theme.productTextAlign as string) || 'left'};
-  --media-radius:${Number(theme.mediaBorderRadius) || 0}px;
-  --badge-color:${attr((theme.saleBadgeColor as string) || '#ef4444')};
-  --badge-radius:${(theme.badgeShape as string) === 'pill' ? '999px' : '4px'};
-}
-body{font-size:calc(1rem * var(--body-scale,1))}`;
+  const themeVars = buildThemeVarsCSS(theme, _br);
   const storefrontBase = opts?.subdomain
     ? ''
     : (site as unknown as Record<string, unknown>).slug
