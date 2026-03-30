@@ -196,7 +196,8 @@ ttq.load(${ttid});ttq.page();}(window,document,'ttq');
 const BASE_CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{font-family:var(--ff);background:var(--c-bg);color:var(--c-text);line-height:1.65;-webkit-font-smoothing:antialiased}
+body{font-family:var(--ff-body,var(--ff));background:var(--c-bg);color:var(--c-text);line-height:1.65;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,h5,h6{font-family:var(--ff)}
 img,video{max-width:100%;height:auto;display:block}
 a{color:inherit;text-decoration:none}
 button{cursor:pointer;font-family:inherit}
@@ -1908,12 +1909,13 @@ export function renderSite(site: ISite, pageSlug?: string, opts?: { subdomain?: 
   const _badgeColor = attr((theme.saleBadgeColor as string) || '#ef4444');
 
   const themeVars = `:root{
-  --c-primary:${attr((theme.primaryColor   || theme.colorPrimary   || '#27491F') as string)};
-  --c-secondary:${attr((theme.secondaryColor || theme.colorSecondary || '#F0CAE1') as string)};
-  --c-accent:${attr((theme.accentColor    || theme.colorAccent    || '#FFD300') as string)};
-  --c-bg:${attr((theme.backgroundColor   || theme.colorBg        || '#ffffff') as string)};
-  --c-text:${attr((theme.textColor        || theme.colorText      || '#171817') as string)};
-  --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
+  --c-primary:${attr((theme.colorPrimary   || theme.primaryColor   || '#27491F') as string)};
+  --c-secondary:${attr((theme.colorSecondary || theme.secondaryColor || '#F0CAE1') as string)};
+  --c-accent:${attr((theme.colorAccent    || theme.accentColor    || '#FFD300') as string)};
+  --c-bg:${attr((theme.colorBg           || theme.backgroundColor || '#ffffff') as string)};
+  --c-text:${attr((theme.colorText        || theme.textColor      || '#171817') as string)};
+  --ff:"${attr((theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
+  --ff-body:"${attr((theme.fontBody || theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
   --br:${_btnRadius};
   --btn-radius:${_btnRadius};
   --btn-shadow:${_btnShadow};
@@ -1945,12 +1947,15 @@ body{font-size:calc(1rem * var(--body-scale,1))}
 }`;
 
   // ── Font loading ─────────────────────────────────────────────────
-  const fontFamily  = ((theme.fontFamily || theme.fontHeading || 'Inter') as string).replace(/ /g, '+');
-  const fontLink    = fontFamily !== 'Inter'
+  const headingFont = ((theme.fontHeading || theme.fontFamily || 'Inter') as string).replace(/ /g, '+');
+  const bodyFont    = ((theme.fontBody || headingFont) as string).replace(/ /g, '+');
+  const fontsToLoad = new Set([headingFont, bodyFont].filter(f => f !== 'Inter'));
+  const fontFamilies = Array.from(fontsToLoad).map(f => `family=${f}:wght@400;500;600;700;800`).join('&');
+  const fontLink    = fontsToLoad.size > 0
     ? `<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=${fontFamily}:wght@400;500;600;700;800&display=swap" onload="this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=${fontFamily}:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>`
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?${fontFamilies}&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?${fontFamilies}&display=swap" rel="stylesheet"></noscript>`
     : '';
 
   // Material Icons — loaded async so it never blocks render
@@ -2173,12 +2178,13 @@ function pageShell(
   const _varRadMap: Record<string, string> = { pill: '9999px', rectangle: '6px', circle: '50%' };
   const _imgRatioMap: Record<string, string> = { adapt: 'auto', portrait: '3/4', square: '1' };
   const themeVars = `:root{
-  --c-primary:${attr((theme.primaryColor   || theme.colorPrimary   || '#27491F') as string)};
-  --c-secondary:${attr((theme.secondaryColor || theme.colorSecondary || '#F0CAE1') as string)};
-  --c-accent:${attr((theme.accentColor    || theme.colorAccent    || '#FFD300') as string)};
-  --c-bg:${attr((theme.backgroundColor   || theme.colorBg        || '#ffffff') as string)};
-  --c-text:${attr((theme.textColor        || theme.colorText      || '#171817') as string)};
-  --ff:"${attr((theme.fontFamily || theme.fontHeading || 'Inter') as string)}",system-ui,sans-serif;
+  --c-primary:${attr((theme.colorPrimary   || theme.primaryColor   || '#27491F') as string)};
+  --c-secondary:${attr((theme.colorSecondary || theme.secondaryColor || '#F0CAE1') as string)};
+  --c-accent:${attr((theme.colorAccent    || theme.accentColor    || '#FFD300') as string)};
+  --c-bg:${attr((theme.colorBg           || theme.backgroundColor || '#ffffff') as string)};
+  --c-text:${attr((theme.colorText        || theme.textColor      || '#171817') as string)};
+  --ff:"${attr((theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
+  --ff-body:"${attr((theme.fontBody || theme.fontHeading || theme.fontFamily || 'Inter') as string)}",system-ui,sans-serif;
   --br:${_br};
   --btn-radius:${_br};
   --btn-shadow:${_bShadowMap[(theme.buttonShadow as string) || 'none'] || 'none'};
