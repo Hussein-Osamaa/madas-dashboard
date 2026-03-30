@@ -35,6 +35,7 @@ import SlideshowSection from '../components/builder/sections/SlideshowSection';
 import ProductInfoSection from '../components/builder/sections/ProductInfoSection';
 import CartSection from '../components/builder/sections/CartSection';
 import CheckoutSection from '../components/builder/sections/CheckoutSection';
+import SearchSection from '../components/builder/sections/SearchSection';
 
 // ── Renderer Map ─────────────────────────────────────────────────────────
 // Each entry is a thin wrapper that passes data/style (and siteId where the
@@ -84,4 +85,5 @@ export const SECTION_RENDERERS: Record<SectionType, React.ComponentType<SectionR
   productInfo:     (p) => <ProductInfoSection data={p.data as never} style={p.style} {...bp(p)} />,
   cart:            (p) => <CartSection data={p.data as never} style={p.style} {...bp(p)} />,
   checkout:        (p) => <CheckoutSection data={p.data as never} style={p.style} />,
+  search:          (p) => <SearchSection data={p.data as never} style={p.style} />,
 };

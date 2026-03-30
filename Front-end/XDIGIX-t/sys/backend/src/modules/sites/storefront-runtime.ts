@@ -945,7 +945,119 @@ function confirmStripePayment(clientSecret,orderId,lookupToken){
   });
 }
 
-/* ── 25. Order confirmation page ──────────────────────────────────── */
+/* ── 25. Search page ──────────────────────────────────────────────── */
+function initSearchPage(){
+  var input=document.getElementById('xd-search-input');
+  var results=document.getElementById('xd-search-results');
+  var status=document.getElementById('xd-search-status');
+  var form=document.getElementById('xd-search-form');
+  if(!input||!results)return;
+
+  var debounceTimer=null;
+  var lastQuery='';
+  var currentPage=1;
+
+  // Read initial query from URL
+  var params=new URLSearchParams(window.location.search);
+  var initialQ=params.get('q')||'';
+  if(initialQ){input.value=initialQ;doSearch(initialQ,1);}
+
+  // Debounced input handler (300ms)
+  input.addEventListener('input',function(){
+    var q=input.value.trim();
+    if(debounceTimer)clearTimeout(debounceTimer);
+    if(!q){clearResults();return;}
+    debounceTimer=setTimeout(function(){doSearch(q,1);},300);
+  });
+
+  // Form submit
+  if(form)form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var q=input.value.trim();
+    if(q)doSearch(q,1);
+  });
+
+  function clearResults(){
+    while(results.firstChild)results.removeChild(results.firstChild);
+    if(status)status.textContent='';
+    lastQuery='';
+  }
+
+  function doSearch(q,page){
+    lastQuery=q;currentPage=page;
+    if(status)status.textContent='Searching...';
+
+    // Update URL without reload
+    var url=new URL(window.location.href);
+    url.searchParams.set('q',q);
+    if(page>1)url.searchParams.set('page',String(page));
+    else url.searchParams.delete('page');
+    window.history.replaceState(null,'',url.toString());
+
+    fetchJSON(publicUrl('/search?q='+encodeURIComponent(q)+'&page='+page+'&limit=20'),{}).then(function(data){
+      if(!data||lastQuery!==q)return; // Stale response
+      if(status){
+        status.textContent=data.total>0
+          ? data.total+' result'+(data.total!==1?'s':'')+' for "'+q+'"'
+          : 'No results found for "'+q+'"';
+      }
+      renderSearchResults(data.products||[],data.total||0,page,q);
+    }).catch(function(){
+      if(status)status.textContent='Search failed. Please try again.';
+    });
+  }
+
+  function renderSearchResults(products,total,page,q){
+    while(results.firstChild)results.removeChild(results.firstChild);
+    if(products.length===0)return;
+
+    var grid=mk('div','');
+    grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:1.5rem';
+
+    products.forEach(function(p){
+      var detailHref=sfBase+'/products/'+(p.id||'');
+      var card=mk('a','xd-product-card xd-reveal xd-visible');
+      card.href=detailHref;
+      card.style.cssText='text-decoration:none;color:inherit';
+      // Image
+      var imgWrap=mk('div','xd-product-img-wrap');
+      var img=mk('img','xd-product-img-primary');
+      img.src=p.image||(p.images&&p.images[0])||'https://placehold.co/400/f5f5f5/999?text=Product';
+      img.alt=p.name||'';
+      img.setAttribute('loading','lazy');img.setAttribute('width','400');img.setAttribute('height','400');
+      imgWrap.appendChild(img);
+      card.appendChild(imgWrap);
+      // Body
+      var body=mk('div','xd-product-body');
+      body.appendChild(mk('span','xd-product-name',p.name||'Product'));
+      if(p.vendor){var v=mk('span','xd-product-vendor',p.vendor);body.appendChild(v);}
+      var price=p.sellingPrice||p.salePrice||p.price;
+      if(price){body.appendChild(mk('span','xd-product-price',Number(price).toFixed(2)+' '+currency));}
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+    results.appendChild(grid);
+
+    // Pagination
+    var totalPages=Math.ceil(total/20);
+    if(totalPages>1){
+      var pag=mk('div','');
+      pag.style.cssText='display:flex;justify-content:center;gap:.5rem;margin-top:2rem;flex-wrap:wrap';
+      for(var i=1;i<=totalPages;i++){
+        (function(pageNum){
+          var btn=mk('button','xd-btn xd-btn-sm '+(pageNum===page?'xd-btn-primary':'xd-btn-secondary'),String(pageNum));
+          btn.type='button';
+          btn.style.cssText='min-width:36px;font-family:inherit;cursor:pointer';
+          btn.addEventListener('click',function(){doSearch(q,pageNum);window.scrollTo({top:0,behavior:'smooth'});});
+          pag.appendChild(btn);
+        })(i);
+      }
+      results.appendChild(pag);
+    }
+  }
+}
+
+/* ── 26. Order confirmation page ──────────────────────────────────── */
 function renderOrderConfirmation(){
   var container=document.getElementById('xd-checkout-container');
   if(!container)return;
@@ -1065,6 +1177,8 @@ function init(){
   if(window.location.pathname.indexOf('/order/')!==-1){
     renderOrderConfirmation();
   }
+  // Search page
+  initSearchPage();
 }
 
 /* Deferred scripts execute after HTML parsing — DOM is complete */

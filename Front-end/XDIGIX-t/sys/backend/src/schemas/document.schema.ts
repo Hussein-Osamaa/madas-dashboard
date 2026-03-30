@@ -30,6 +30,14 @@ const FirestoreDocSchema = new Schema<IFirestoreDoc>(
 FirestoreDocSchema.index({ tenantId: 1, businessId: 1, coll: 1 });
 FirestoreDocSchema.index({ tenantId: 1, businessId: 1, coll: 1, docId: 1 }, { unique: true });
 
+// Text index for product search (name, description, tags, sku, vendor)
+FirestoreDocSchema.index(
+  { 'data.name': 'text', 'data.description': 'text', 'data.tags': 'text', 'data.sku': 'text', 'data.vendor': 'text' },
+  { weights: { 'data.name': 10, 'data.tags': 5, 'data.vendor': 3, 'data.sku': 2, 'data.description': 1 }, name: 'product_search_text' }
+);
+// Partial index for product listing queries (non-deleted products sorted by name)
+FirestoreDocSchema.index({ businessId: 1, coll: 1, 'data.deleted': 1, 'data.name': 1 });
+
 export const FirestoreDoc: Model<IFirestoreDoc> = mongoose.model<IFirestoreDoc>(
   'FirestoreDoc',
   FirestoreDocSchema

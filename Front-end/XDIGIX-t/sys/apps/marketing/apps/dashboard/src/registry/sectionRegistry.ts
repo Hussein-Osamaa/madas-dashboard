@@ -2307,6 +2307,30 @@ export const SECTION_REGISTRY: Record<SectionType, SectionRegistryEntry> = {
     },
     blocks: [],
   },
+
+  search: {
+    type: 'search',
+    label: 'Search',
+    icon: 'search',
+    description: 'Product search with instant results',
+    category: 'E-commerce',
+    editableElements: [],
+    defaultData: {
+      title: 'Search',
+      placeholder: 'Search products...',
+      color_scheme: 'scheme-1',
+      padding_top: 36,
+      padding_bottom: 36,
+    },
+    settings: {
+      title: { type: 'text', label: 'Heading', placeholder: 'Search' },
+      placeholder: { type: 'text', label: 'Placeholder text', placeholder: 'Search products...' },
+      color_scheme: { type: 'select', label: 'Color scheme', options: COLOR_SCHEME_OPTIONS, defaultValue: 'scheme-1' },
+      padding_top: PADDING_TOP,
+      padding_bottom: PADDING_BOTTOM,
+    },
+    blocks: [],
+  },
 };
 
 /* ──────────────────────────────────────────────────────────────────────────

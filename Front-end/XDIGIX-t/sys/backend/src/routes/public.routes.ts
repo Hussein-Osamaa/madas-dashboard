@@ -67,6 +67,84 @@ router.use(publicCors);
 ═══════════════════════════════════════════════════════════════════════════ */
 
 /**
+ * GET /api/public/:tenantId/search
+ * Full-text product search across name, description, tags, vendor, SKU.
+ * Uses MongoDB text index with weighted scoring.
+ * Query params: q (search query), page, limit
+ */
+router.get('/:tenantId/search', catalogLimiter, async (req: Request, res: Response) => {
+  const { tenantId } = req.params;
+  const biz = await resolveBusiness(tenantId);
+  if (!biz) { res.status(404).json({ error: 'Store not found' }); return; }
+
+  const q = ((req.query.q as string) || '').trim().slice(0, 200);
+  if (!q) { res.json({ products: [], total: 0, query: '' }); return; }
+
+  const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
+  const limit = Math.min(50, parseInt(req.query.limit as string) || 20);
+  const skip  = (page - 1) * limit;
+
+  try {
+    const baseFilter: Record<string, unknown> = {
+      businessId: biz.businessId,
+      coll: 'products',
+      'data.deleted': { $ne: true },
+    };
+
+    // Try text search first (uses indexed fields: name, description, tags, vendor, sku)
+    const textFilter = { ...baseFilter, $text: { $search: q } };
+    let [docs, total] = await Promise.all([
+      FirestoreDoc.find(textFilter, { score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' } })
+        .skip(skip).limit(limit).lean(),
+      FirestoreDoc.countDocuments(textFilter),
+    ]);
+
+    // Fallback to regex if text search returns nothing (partial word matching)
+    if (docs.length === 0) {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regexFilter = {
+        ...baseFilter,
+        $or: [
+          { 'data.name': { $regex: escaped, $options: 'i' } },
+          { 'data.description': { $regex: escaped, $options: 'i' } },
+          { 'data.tags': { $regex: escaped, $options: 'i' } },
+          { 'data.vendor': { $regex: escaped, $options: 'i' } },
+          { 'data.sku': { $regex: escaped, $options: 'i' } },
+        ],
+      };
+      [docs, total] = await Promise.all([
+        FirestoreDoc.find(regexFilter).skip(skip).limit(limit).lean(),
+        FirestoreDoc.countDocuments(regexFilter),
+      ]);
+    }
+
+    const products = docs.map((d: any) => ({
+      id: d.docId,
+      ...(d.data as Record<string, unknown>),
+    }));
+    res.json({ products, total, query: q, page, limit });
+  } catch (err) {
+    // Text index might not exist yet — fallback to regex only
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regexFilter = {
+      businessId: biz.businessId,
+      coll: 'products',
+      'data.deleted': { $ne: true },
+      'data.name': { $regex: escaped, $options: 'i' },
+    };
+    const [docs, total] = await Promise.all([
+      FirestoreDoc.find(regexFilter).skip(skip).limit(limit).lean(),
+      FirestoreDoc.countDocuments(regexFilter),
+    ]);
+    res.json({
+      products: docs.map((d: any) => ({ id: d.docId, ...(d.data as Record<string, unknown>) })),
+      total, query: q, page, limit,
+    });
+  }
+});
+
+/**
  * GET /api/public/:tenantId/products
  * Query params: page, limit, sort (name|price|createdAt), order (asc|desc), collection, search
  */

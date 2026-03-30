@@ -473,6 +473,7 @@ export const SECTION_DEFAULTS: Record<SectionType, SectionDefaults> = {
   productInfo:     PRODUCT_INFO,
   cart:            CART,
   checkout:        { minHeight: 400, canDelete: false, dataFields: ['title', 'subtitle'] },
+  search:          { minHeight: 300, canDelete: false, dataFields: ['title', 'placeholder'] },
 };
 
 /**

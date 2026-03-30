@@ -613,7 +613,7 @@ function renderNavbar(c: Record<string, unknown>): string {
   </a>
   <ul class="xd-nav-menu" role="list">${menuHtml}</ul>
   <div class="xd-nav-actions">
-    ${c.showSearch ? `<button class="xd-nav-icon" aria-label="Search"${clrAttr}>${searchSvg}</button>` : ''}
+    ${c.showSearch ? `<a href="${_sfBase}/search" class="xd-nav-icon" aria-label="Search"${clrAttr}>${searchSvg}</a>` : ''}
     ${c.showWishlist ? `<a href="${wishlistUrl}" class="xd-nav-icon" aria-label="Wishlist"${clrAttr}>${wishlistSvg}</a>` : ''}
     ${c.showCart !== false ? `<a href="${cartUrl}" class="xd-nav-icon xd-cart-icon" aria-label="Cart"${clrAttr}>${cartSvg}<span class="xd-nav-badge" style="display:none"></span></a>` : ''}
     ${c.showUserIcon ? `<a href="${_sfBase}/signin" class="xd-nav-icon xd-account-toggle xd-when-logged-out" aria-label="Sign in"${clrAttr} style="font-size:.875rem;font-weight:600;white-space:nowrap;text-decoration:none">Sign in</a><a href="${userIconUrl}" class="xd-nav-icon xd-account-toggle xd-when-logged-in" aria-label="Account"${clrAttr} style="display:none">${userSvg}</a>` : ''}
@@ -1774,6 +1774,28 @@ function renderCart(c: Record<string, unknown>): string {
 </section>`;
 }
 
+function renderSearch(c: Record<string, unknown>): string {
+  const title = txt((c.title as string) || 'Search');
+  const placeholder = txt((c.placeholder as string) || 'Search products...');
+  return `
+<section style="max-width:1200px;margin:0 auto;padding:clamp(2rem,5vw,4rem) 1rem;min-height:60vh">
+  <div style="text-align:center;margin-bottom:2rem">
+    <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:1rem">${title}</h1>
+    <form id="xd-search-form" style="max-width:560px;margin:0 auto;display:flex;gap:.5rem" onsubmit="return false">
+      <input id="xd-search-input" type="search" name="q" placeholder="${placeholder}" autocomplete="off"
+        style="flex:1;padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:min(var(--btn-radius,8px),12px);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--c-primary)';this.style.boxShadow='0 0 0 3px color-mix(in srgb,var(--c-primary) 15%,transparent)'"
+        onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+      <button type="submit" class="xd-btn xd-btn-primary" style="padding:.75rem 1.25rem;display:flex;align-items:center;gap:.5rem;border-radius:min(var(--btn-radius,8px),12px)">
+        <span class="material-icons" style="font-size:1.2rem">search</span>
+      </button>
+    </form>
+  </div>
+  <div id="xd-search-status" style="text-align:center;opacity:.5;margin-bottom:1.5rem"></div>
+  <div id="xd-search-results"></div>
+</section>`;
+}
+
 function renderCheckout(c: Record<string, unknown>): string {
   const title = txt((c.title as string) || 'Checkout');
   const subtitle = txt((c.subtitle as string) || 'Complete your purchase securely');
@@ -1964,6 +1986,7 @@ function renderSection(sec: ISection, siteName: string): string {
     case 'productInfo':  html = renderProductInfo(c);  break;
     case 'cart':         html = renderCart(c);          break;
     case 'checkout':     html = renderCheckout(c);      break;
+    case 'search':       html = renderSearch(c);        break;
     case 'favorites':    html = renderFavorites(c);     break;
     case 'account':      html = renderAccount(c);       break;
     case 'signin':       html = renderSignin(c);        break;
@@ -2051,6 +2074,7 @@ function resolvePageSections(site: ISite, pageSlug?: string): ISection[] {
     signin: () => ({ id: 'signin-default', type: 'signin', content: {}, data: {}, style: {}, order: 0 }),
     signup: () => ({ id: 'signup-default', type: 'signup', content: {}, data: { store_name: site.name }, style: {}, order: 0 }),
     checkout: () => ({ id: 'checkout-default', type: 'checkout', content: {}, data: { title: 'Checkout', subtitle: 'Complete your purchase securely' }, style: {}, order: 0 }),
+    search: () => ({ id: 'search-default', type: 'search', content: {}, data: { title: 'Search', placeholder: 'Search products...' }, style: {}, order: 0 }),
     products: () => ({ id: 'pi-default', type: 'productInfo', content: {}, data: { blocks: [{type:'vendor'},{type:'title'},{type:'price'},{type:'variant_picker',picker_type:'pills'},{type:'quantity_selector'},{type:'buy_buttons'},{type:'description'},{type:'share'}], media_width: 'medium' }, style: {}, order: 0 }),
     collections: () => ({ id: 'col-default', type: 'products', content: {}, data: { title: 'All Products', columns_desktop: 4, show_view_all: false }, style: {}, order: 0 }),
   };
