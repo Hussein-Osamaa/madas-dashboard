@@ -94,5 +94,5 @@ export function generateInvoiceNumber(): string {
   return `INV-${year}${month}${day}-${random}`;
 }
 
-export const Invoice = mongoose.model<IInvoice>('Invoice', InvoiceSchema);
+export const Invoice = (mongoose.models.Invoice as mongoose.Model<IInvoice>) || mongoose.model<IInvoice>('Invoice', InvoiceSchema);
 export default Invoice;

@@ -37,5 +37,5 @@ const TrackingEventSchema = new Schema<ITrackingEvent>(
 TrackingEventSchema.index({ shipmentId: 1, timestamp: 1 });
 TrackingEventSchema.index({ tenantId: 1, createdAt: 1 });
 
-export const TrackingEvent = mongoose.model<ITrackingEvent>('TrackingEvent', TrackingEventSchema);
+export const TrackingEvent = (mongoose.models.TrackingEvent as mongoose.Model<ITrackingEvent>) || mongoose.model<ITrackingEvent>('TrackingEvent', TrackingEventSchema);
 export default TrackingEvent;

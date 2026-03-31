@@ -60,7 +60,7 @@ StockMovementSchema.index({ productId: 1, createdAt: -1 });
 StockMovementSchema.index({ tenantId: 1, createdAt: -1 });
 StockMovementSchema.index({ referenceType: 1, referenceId: 1 });
 
-export const StockMovement: Model<IStockMovement> = mongoose.model<IStockMovement>(
+export const StockMovement: Model<IStockMovement> = (mongoose.models.StockMovement as Model<IStockMovement>) || mongoose.model<IStockMovement>(
   'StockMovement',
-  StockMovementSchema
+  StockMovementSchema,
 );

@@ -21,7 +21,7 @@ const FeatureFlagSchema = new Schema<IFeatureFlag>(
 // Compound unique index: one flag per tenant
 FeatureFlagSchema.index({ tenantId: 1, flagName: 1 }, { unique: true });
 
-export const FeatureFlag: Model<IFeatureFlag> = mongoose.model<IFeatureFlag>(
+export const FeatureFlag: Model<IFeatureFlag> = (mongoose.models.FeatureFlag as Model<IFeatureFlag>) || mongoose.model<IFeatureFlag>(
   'FeatureFlag',
-  FeatureFlagSchema
+  FeatureFlagSchema,
 );

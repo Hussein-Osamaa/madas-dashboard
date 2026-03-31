@@ -122,4 +122,4 @@ ReturnSchema.index({ returnId: 1 }, { unique: true });
 ReturnSchema.index({ orderId: 1 });
 ReturnSchema.index({ tenantId: 1, status: 1 });
 
-export const Return: Model<IReturn> = mongoose.model<IReturn>('Return', ReturnSchema);
+export const Return: Model<IReturn> = (mongoose.models.Return as Model<IReturn>) || mongoose.model<IReturn>('Return', ReturnSchema);

@@ -37,5 +37,5 @@ const ShippingZoneSchema = new Schema<IShippingZone>(
 /* ── Indexes ───────────────────────────────────────────────────── */
 ShippingZoneSchema.index({ tenantId: 1, name: 1 }, { unique: true });
 
-export const ShippingZone = mongoose.model<IShippingZone>('ShippingZone', ShippingZoneSchema);
+export const ShippingZone = (mongoose.models.ShippingZone as mongoose.Model<IShippingZone>) || mongoose.model<IShippingZone>('ShippingZone', ShippingZoneSchema);
 export default ShippingZone;

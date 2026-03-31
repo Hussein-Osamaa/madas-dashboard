@@ -50,7 +50,7 @@ ReservationSchema.index({ orderId: 1 });
 ReservationSchema.index({ status: 1, expiresAt: 1 });
 ReservationSchema.index({ tenantId: 1 });
 
-export const Reservation: Model<IReservation> = mongoose.model<IReservation>(
+export const Reservation: Model<IReservation> = (mongoose.models.Reservation as Model<IReservation>) || mongoose.model<IReservation>(
   'Reservation',
-  ReservationSchema
+  ReservationSchema,
 );

@@ -46,4 +46,4 @@ EventSchema.index({ tenantId: 1, type: 1 });
 // TTL index: auto-delete processed events after 30 days
 EventSchema.index({ processedAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
 
-export const Event: Model<IEvent> = mongoose.model<IEvent>('Event', EventSchema);
+export const Event: Model<IEvent> = (mongoose.models.Event as Model<IEvent>) || mongoose.model<IEvent>('Event', EventSchema);

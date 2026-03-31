@@ -44,7 +44,7 @@ AuditSchema.index({ module: 1, timestamp: -1 });
 AuditSchema.index({ entityType: 1, entityId: 1 });
 AuditSchema.index({ correlationId: 1 });
 
-export const AuditLog: Model<IAuditEntry> = mongoose.model<IAuditEntry>(
+export const AuditLog: Model<IAuditEntry> = (mongoose.models.AuditLog as Model<IAuditEntry>) || mongoose.model<IAuditEntry>(
   'AuditLog',
-  AuditSchema
+  AuditSchema,
 );

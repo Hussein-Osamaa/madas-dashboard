@@ -125,5 +125,5 @@ FulfillmentJobSchema.index({ assignedTo: 1, status: 1 });
 FulfillmentJobSchema.index({ priority: -1, createdAt: 1 });
 FulfillmentJobSchema.index({ fulfillmentJobId: 1 }, { unique: true });
 
-export const FulfillmentJob = mongoose.model<IFulfillmentJob>('FulfillmentJob', FulfillmentJobSchema);
+export const FulfillmentJob = (mongoose.models.FulfillmentJob as mongoose.Model<IFulfillmentJob>) || mongoose.model<IFulfillmentJob>('FulfillmentJob', FulfillmentJobSchema);
 export default FulfillmentJob;

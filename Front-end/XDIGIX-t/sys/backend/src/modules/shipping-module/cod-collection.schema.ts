@@ -50,5 +50,5 @@ const CodCollectionSchema = new Schema<ICodCollection>(
 CodCollectionSchema.index({ tenantId: 1, reportDate: 1 });
 CodCollectionSchema.index({ carrierId: 1, status: 1 });
 
-export const CodCollection = mongoose.model<ICodCollection>('CodCollection', CodCollectionSchema);
+export const CodCollection = (mongoose.models.CodCollection as mongoose.Model<ICodCollection>) || mongoose.model<ICodCollection>('CodCollection', CodCollectionSchema);
 export default CodCollection;

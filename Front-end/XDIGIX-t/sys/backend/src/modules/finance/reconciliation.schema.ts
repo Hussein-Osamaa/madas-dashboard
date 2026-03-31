@@ -61,5 +61,5 @@ const ReconciliationSchema = new Schema<IReconciliation>(
 
 ReconciliationSchema.index({ tenantId: 1, type: 1, createdAt: -1 });
 
-export const Reconciliation = mongoose.model<IReconciliation>('Reconciliation', ReconciliationSchema);
+export const Reconciliation = (mongoose.models.Reconciliation as mongoose.Model<IReconciliation>) || mongoose.model<IReconciliation>('Reconciliation', ReconciliationSchema);
 export default Reconciliation;

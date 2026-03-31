@@ -86,7 +86,7 @@ ProductSchema.index(
   { weights: { name: 10, tags: 5, vendor: 3, sku: 2, description: 1 } }
 );
 
-export const Product: Model<IProduct> = mongoose.model<IProduct>(
+export const Product: Model<IProduct> = (mongoose.models.Product as Model<IProduct>) || mongoose.model<IProduct>(
   'Product',
-  ProductSchema
+  ProductSchema,
 );

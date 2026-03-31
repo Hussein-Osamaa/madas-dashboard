@@ -20,4 +20,4 @@ const SiteVersionSchema = new Schema<ISiteVersion>({
 SiteVersionSchema.index({ siteId: 1, version: 1 }, { unique: true });
 SiteVersionSchema.index({ tenantId: 1 });
 
-export const SiteVersion = mongoose.model<ISiteVersion>('SiteVersion', SiteVersionSchema);
+export const SiteVersion = (mongoose.models.SiteVersion as mongoose.Model<ISiteVersion>) || mongoose.model<ISiteVersion>('SiteVersion', SiteVersionSchema);

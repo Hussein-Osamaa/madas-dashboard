@@ -137,5 +137,5 @@ ShipmentSchema.index({ carrierId: 1, status: 1 });
 ShipmentSchema.index({ type: 1, status: 1 });
 ShipmentSchema.index({ shipmentId: 1 }, { unique: true });
 
-export const Shipment = mongoose.model<IShipment>('Shipment', ShipmentSchema);
+export const Shipment = (mongoose.models.Shipment as mongoose.Model<IShipment>) || mongoose.model<IShipment>('Shipment', ShipmentSchema);
 export default Shipment;

@@ -43,5 +43,5 @@ const CarrierSchema = new Schema<ICarrier>(
 CarrierSchema.index({ carrierId: 1 }, { unique: true });
 CarrierSchema.index({ tenantId: 1, status: 1 });
 
-export const Carrier = mongoose.model<ICarrier>('Carrier', CarrierSchema);
+export const Carrier = (mongoose.models.Carrier as mongoose.Model<ICarrier>) || mongoose.model<ICarrier>('Carrier', CarrierSchema);
 export default Carrier;

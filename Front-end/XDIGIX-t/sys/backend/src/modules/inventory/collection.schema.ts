@@ -34,7 +34,7 @@ const CollectionSchema = new Schema<ICollection>(
 CollectionSchema.index({ tenantId: 1, slug: 1 }, { unique: true });
 CollectionSchema.index({ tenantId: 1, businessId: 1 });
 
-export const Collection: Model<ICollection> = mongoose.model<ICollection>(
+export const Collection: Model<ICollection> = (mongoose.models.Collection as Model<ICollection>) || mongoose.model<ICollection>(
   'Collection',
-  CollectionSchema
+  CollectionSchema,
 );

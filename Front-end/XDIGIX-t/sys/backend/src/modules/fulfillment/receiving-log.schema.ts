@@ -63,5 +63,5 @@ const ReceivingLogSchema = new Schema<IReceivingLog>(
 ReceivingLogSchema.index({ tenantId: 1, createdAt: -1 });
 ReceivingLogSchema.index({ referenceType: 1, referenceId: 1 });
 
-export const ReceivingLog = mongoose.model<IReceivingLog>('ReceivingLog', ReceivingLogSchema);
+export const ReceivingLog = (mongoose.models.ReceivingLog as mongoose.Model<IReceivingLog>) || mongoose.model<IReceivingLog>('ReceivingLog', ReceivingLogSchema);
 export default ReceivingLog;

@@ -62,7 +62,7 @@ PaymentAttemptSchema.index({ orderId: 1 });
 PaymentAttemptSchema.index({ tenantId: 1, createdAt: -1 });
 PaymentAttemptSchema.index({ provider: 1, status: 1 });
 
-export const PaymentAttempt: Model<IPaymentAttempt> = mongoose.model<IPaymentAttempt>(
+export const PaymentAttempt: Model<IPaymentAttempt> = (mongoose.models.PaymentAttempt as Model<IPaymentAttempt>) || mongoose.model<IPaymentAttempt>(
   'PaymentAttempt',
-  PaymentAttemptSchema
+  PaymentAttemptSchema,
 );

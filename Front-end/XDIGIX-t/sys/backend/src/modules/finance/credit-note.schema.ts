@@ -64,5 +64,5 @@ export function generateCreditNoteNumber(): string {
   return `CN-${year}${month}${day}-${random}`;
 }
 
-export const CreditNote = mongoose.model<ICreditNote>('CreditNote', CreditNoteSchema);
+export const CreditNote = (mongoose.models.CreditNote as mongoose.Model<ICreditNote>) || mongoose.model<ICreditNote>('CreditNote', CreditNoteSchema);
 export default CreditNote;

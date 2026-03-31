@@ -97,5 +97,5 @@ LedgerEntrySchema.index({ tenantId: 1, type: 1 });
 LedgerEntrySchema.index({ orderId: 1 }, { sparse: true });
 LedgerEntrySchema.index({ referenceType: 1, referenceId: 1 });
 
-export const LedgerEntry = mongoose.model<ILedgerEntry>('LedgerEntry', LedgerEntrySchema);
+export const LedgerEntry = (mongoose.models.LedgerEntry as mongoose.Model<ILedgerEntry>) || mongoose.model<ILedgerEntry>('LedgerEntry', LedgerEntrySchema);
 export default LedgerEntry;

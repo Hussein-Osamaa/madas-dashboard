@@ -38,5 +38,5 @@ const WarehouseLocationSchema = new Schema<IWarehouseLocation>(
 WarehouseLocationSchema.index({ tenantId: 1, locationCode: 1 }, { unique: true });
 WarehouseLocationSchema.index({ tenantId: 1, zone: 1 });
 
-export const WarehouseLocation = mongoose.model<IWarehouseLocation>('WarehouseLocation', WarehouseLocationSchema);
+export const WarehouseLocation = (mongoose.models.WarehouseLocation as mongoose.Model<IWarehouseLocation>) || mongoose.model<IWarehouseLocation>('WarehouseLocation', WarehouseLocationSchema);
 export default WarehouseLocation;

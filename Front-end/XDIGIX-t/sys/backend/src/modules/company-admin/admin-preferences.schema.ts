@@ -23,7 +23,7 @@ const AdminPreferencesSchema = new Schema<IAdminPreferences>(
   { timestamps: true },
 );
 
-export const AdminPreferences = mongoose.model<IAdminPreferences>(
+export const AdminPreferences = (mongoose.models.AdminPreferences as mongoose.Model<IAdminPreferences>) || mongoose.model<IAdminPreferences>(
   'AdminPreferences',
   AdminPreferencesSchema,
 );

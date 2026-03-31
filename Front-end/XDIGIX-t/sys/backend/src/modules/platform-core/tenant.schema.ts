@@ -47,4 +47,4 @@ const TenantSchema = new Schema<ITenant>(
 TenantSchema.index({ status: 1 });
 TenantSchema.index({ plan: 1 });
 
-export const Tenant: Model<ITenant> = mongoose.model<ITenant>('Tenant', TenantSchema);
+export const Tenant: Model<ITenant> = (mongoose.models.Tenant as Model<ITenant>) || mongoose.model<ITenant>('Tenant', TenantSchema);
