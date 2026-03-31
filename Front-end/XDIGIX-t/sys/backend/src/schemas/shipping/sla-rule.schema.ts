@@ -30,4 +30,4 @@ const SLARuleSchema = new Schema<ISLARule>(
 SLARuleSchema.index({ type: 1 });
 SLARuleSchema.index({ isActive: 1 });
 
-export const SLARule: Model<ISLARule> = mongoose.model<ISLARule>('SLARule', SLARuleSchema);
+export const SLARule: Model<ISLARule> = (mongoose.models.SLARule as mongoose.Model<ISLARule>) || mongoose.model<ISLARule>('SLARule', SLARuleSchema);

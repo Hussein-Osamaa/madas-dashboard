@@ -131,8 +131,8 @@ const SitePageSchema = new Schema<ISitePage>(
 
 const SiteSchema = new Schema<ISite>(
   {
-    tenantId:     { type: String, required: true, index: true },
-    businessId:   { type: String, required: true, index: true },
+    tenantId:     { type: String, required: true },
+    businessId:   { type: String, required: true },
     name:         { type: String, required: true },
     themeName:    { type: String, default: '' },
     description:  { type: String, default: '' },
@@ -186,4 +186,4 @@ const SiteSchema = new Schema<ISite>(
 SiteSchema.index({ tenantId: 1, businessId: 1 });
 SiteSchema.index({ tenantId: 1, status: 1 });
 
-export const Site: Model<ISite> = mongoose.model<ISite>('Site', SiteSchema);
+export const Site: Model<ISite> = (mongoose.models.Site as mongoose.Model<ISite>) || mongoose.model<ISite>('Site', SiteSchema);

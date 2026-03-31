@@ -42,4 +42,4 @@ const BusinessSchema = new Schema<IBusiness>(
 BusinessSchema.index({ tenantId: 1 });
 BusinessSchema.index({ 'owner.userId': 1 });
 
-export const Business: Model<IBusiness> = mongoose.model<IBusiness>('Business', BusinessSchema);
+export const Business: Model<IBusiness> = (mongoose.models.Business as mongoose.Model<IBusiness>) || mongoose.model<IBusiness>('Business', BusinessSchema);

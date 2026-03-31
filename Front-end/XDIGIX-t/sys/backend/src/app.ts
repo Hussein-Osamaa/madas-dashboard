@@ -10,6 +10,7 @@ import routes from './routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import { csrfProtection } from './middleware/csrf.middleware';
 import { requestIdMiddleware } from './middleware/request-id.middleware';
+import { perfMiddleware } from './middleware/perf.middleware';
 import { rawBodyWebhookMiddleware } from './middleware/raw-body-webhook.middleware';
 import './types/external-api.types'; // Express Request augmentation for external API
 import './services/orderInventoryIntegration'; // Registers order->inventory event handlers
@@ -53,6 +54,7 @@ export function createApp(): Express {
 
   // 0. Request ID — unique ID per request for tracing across logs, audit, events
   app.use(requestIdMiddleware);
+  app.use(perfMiddleware);
 
   // 1. Security headers (helmet sets X-Content-Type-Options, X-Frame-Options,
   //    Strict-Transport-Security, X-XSS-Protection, and more in one call)
@@ -136,6 +138,21 @@ export function createApp(): Express {
       return compression.filter(req, res);
     },
   }));
+
+  // Module routes mounted BEFORE main routes to prevent /api/admin catch-all from shadowing them
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const { merchantPlanRouter, adminPlanRouter } = require('./modules/platform-core/enforcement.routes');
+  const { default: reportingRoutes } = require('./modules/reporting/reporting.routes');
+  const { default: supportRoutesM, publicSupportRouter } = require('./modules/support/support.routes');
+  const { default: exportRoutesM, adminExportRouter } = require('./modules/exports/export.routes');
+
+  app.use('/api/admin/reports', reportingRoutes);
+  app.use('/api/admin', adminPlanRouter);
+  app.use('/api/admin', adminExportRouter);
+  app.use('/api/business', merchantPlanRouter);
+  app.use('/api/support', supportRoutesM);
+  app.use('/api/public', publicSupportRouter);
+  app.use('/api/exports', exportRoutesM);
 
   app.use('/api', routes);
 
@@ -572,6 +589,22 @@ export function createApp(): Express {
           console.error('[notification-jobs] Retry error:', (err as Error).message);
         }
       }, 5 * 60 * 1000); // Every 5 minutes
+
+      // Support: register event handlers + seed SLA defaults
+      const { registerSupportEventHandlers } = await import('./modules/support/support.events');
+      registerSupportEventHandlers();
+      const { supportService: suppSvc } = await import('./modules/support/support.service');
+      await suppSvc.seedSlaDefaults();
+
+      // Exports: expire old export files every 6 hours
+      const { exportService: expSvc } = await import('./modules/exports/export.service');
+      setInterval(async () => {
+        try {
+          await expSvc.expireOldExports();
+        } catch (err) {
+          console.error('[exports] Expiry cleanup error:', (err as Error).message);
+        }
+      }, 6 * 60 * 60 * 1000); // Every 6 hours
     } catch (err) {
       console.error('[platform-core] Failed to initialize:', (err as Error).message, (err as Error).stack);
     }

@@ -122,6 +122,10 @@ async function createOrder(
   paymentConfig: PaymentConfig,
   requestMeta?: RequestMeta
 ): Promise<CreateOrderResult> {
+  // Plan enforcement: check monthly order limit
+  const { enforcementService } = await import('../platform-core/enforcement.service');
+  await enforcementService.enforceOrderLimit(tenantId);
+
   const correlationId = uuidv4();
 
   // 1. Validate checkout data

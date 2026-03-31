@@ -25,4 +25,4 @@ const MerchantWalletSchema = new Schema<IMerchantWallet>(
   { timestamps: true }
 );
 
-export const MerchantWallet = mongoose.model<IMerchantWallet>('MerchantWallet', MerchantWalletSchema);
+export const MerchantWallet = (mongoose.models.MerchantWallet as mongoose.Model<IMerchantWallet>) || mongoose.model<IMerchantWallet>('MerchantWallet', MerchantWalletSchema);

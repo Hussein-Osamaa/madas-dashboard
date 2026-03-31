@@ -8,9 +8,12 @@ export async function connectDb(): Promise<void> {
       'MONGODB_URI is required. Set it in .env (e.g. mongodb+srv://user:pass@cluster.mongodb.net/dbname?retryWrites=true&w=majority) or in your deployment environment.'
     );
   }
-  if (uri.startsWith('mongodb://localhost') || uri.startsWith('mongodb://127.0.0.1')) {
+  if (
+    (uri.startsWith('mongodb://localhost') || uri.startsWith('mongodb://127.0.0.1')) &&
+    process.env.ALLOW_LOCAL_DB !== 'true'
+  ) {
     throw new Error(
-      'Local MongoDB is disabled. Set MONGODB_URI to a remote instance (e.g. MongoDB Atlas).'
+      'Local MongoDB is disabled. Set MONGODB_URI to a remote instance (e.g. MongoDB Atlas). Use ALLOW_LOCAL_DB=true to override for testing.'
     );
   }
   try {

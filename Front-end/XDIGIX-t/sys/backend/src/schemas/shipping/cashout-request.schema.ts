@@ -35,4 +35,4 @@ const CashoutRequestSchema = new Schema<ICashoutRequest>(
 
 CashoutRequestSchema.index({ status: 1, createdAt: -1 });
 
-export const CashoutRequest = mongoose.model<ICashoutRequest>('CashoutRequest', CashoutRequestSchema);
+export const CashoutRequest = (mongoose.models.CashoutRequest as mongoose.Model<ICashoutRequest>) || mongoose.model<ICashoutRequest>('CashoutRequest', CashoutRequestSchema);

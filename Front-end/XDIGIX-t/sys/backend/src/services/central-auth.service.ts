@@ -53,7 +53,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 function signTokens(payload: JWTPayload): { accessToken: string; refreshToken: string; expiresIn: number } {
-  const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'] };
+  const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'], algorithm: 'HS256' };
   const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, opts);
   const refreshTokenValue = uuidv4();
   const decoded = jwt.decode(accessToken) as { exp?: number };
@@ -191,7 +191,9 @@ export async function refreshToken(
   refreshTokenValue: string,
   accountType: AccountType
 ): Promise<{ accessToken: string; expiresIn: number } | null> {
-  const doc = await RefreshToken.findOne({ token: refreshTokenValue, accountType });
+  // Atomic claim: delete the refresh token on use (single-use rotation).
+  // Prevents replay attacks — a stolen refresh token can only be used once.
+  const doc = await RefreshToken.findOneAndDelete({ token: refreshTokenValue, accountType });
   if (!doc || doc.expiresAt < new Date()) return null;
 
   let payload: JWTPayload;
@@ -231,7 +233,7 @@ export async function refreshToken(
     };
   }
 
-  const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'] };
+  const opts: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'], algorithm: 'HS256' };
   const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, opts);
   const decoded = jwt.decode(accessToken) as { exp?: number };
   const expiresIn = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 86400;
@@ -241,7 +243,7 @@ export async function refreshToken(
 /** Verify token and return extended payload */
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, config.jwt.accessSecret as jwt.Secret) as
+    const decoded = jwt.verify(token, config.jwt.accessSecret as jwt.Secret, { algorithms: ['HS256'] }) as
       JWTPayload & { sub?: string; type?: string };
 
     const userId = decoded.userId ?? decoded.sub;

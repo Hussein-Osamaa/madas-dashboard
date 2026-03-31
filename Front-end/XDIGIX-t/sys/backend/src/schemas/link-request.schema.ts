@@ -28,7 +28,4 @@ const LinkRequestSchema = new Schema<ILinkRequest>(
 LinkRequestSchema.index({ toBusinessId: 1, status: 1 });
 LinkRequestSchema.index({ fromBusinessId: 1, status: 1 });
 
-export const LinkRequest: Model<ILinkRequest> = mongoose.model<ILinkRequest>(
-  'LinkRequest',
-  LinkRequestSchema
-);
+export const LinkRequest: Model<ILinkRequest> = (mongoose.models.LinkRequest as mongoose.Model<ILinkRequest>) || mongoose.model<ILinkRequest>('LinkRequest', LinkRequestSchema);

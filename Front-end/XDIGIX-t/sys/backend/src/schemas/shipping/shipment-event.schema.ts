@@ -46,4 +46,4 @@ const ShipmentEventSchema = new Schema<IShipmentEvent>(
 ShipmentEventSchema.index({ shipmentId: 1, timestamp: 1 });
 ShipmentEventSchema.index({ trackingNumber: 1, timestamp: 1 });
 
-export const ShipmentEvent: Model<IShipmentEvent> = mongoose.model<IShipmentEvent>('ShipmentEvent', ShipmentEventSchema);
+export const ShipmentEvent: Model<IShipmentEvent> = (mongoose.models.ShipmentEvent as mongoose.Model<IShipmentEvent>) || mongoose.model<IShipmentEvent>('ShipmentEvent', ShipmentEventSchema);

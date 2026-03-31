@@ -125,11 +125,11 @@ const ShipmentSchema = new Schema<IShipment>(
   { timestamps: true }
 );
 
-ShipmentSchema.index({ trackingNumber: 1 });
+// trackingNumber already has unique: true in field definition — no duplicate index
 ShipmentSchema.index({ merchantId: 1, createdAt: -1 });
 ShipmentSchema.index({ courierId: 1, status: 1 });
 ShipmentSchema.index({ status: 1, createdAt: -1 });
 ShipmentSchema.index({ zoneId: 1, status: 1 });
 ShipmentSchema.index({ recipientPhone: 1 });
 
-export const Shipment: Model<IShipment> = mongoose.model<IShipment>('Shipment', ShipmentSchema);
+export const Shipment: Model<IShipment> = (mongoose.models.Shipment as mongoose.Model<IShipment>) || mongoose.model<IShipment>('Shipment', ShipmentSchema);

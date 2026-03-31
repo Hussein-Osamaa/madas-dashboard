@@ -69,8 +69,30 @@ export const config = {
   /** Zammit integration */
   zammit: {
     /** 64-char hex string (32 bytes) for AES-256-GCM encryption of stored credentials */
-    encryptionKey: process.env.ZAMMIT_ENCRYPTION_KEY || '',
+    encryptionKey: (() => {
+      const k = process.env.ZAMMIT_ENCRYPTION_KEY || '';
+      if (!k && process.env.NODE_ENV === 'production') {
+        console.warn('WARNING: ZAMMIT_ENCRYPTION_KEY is not set. Zammit credential encryption is disabled.');
+      }
+      return k;
+    })(),
     /** Zammit API base URL */
     apiBaseUrl: process.env.ZAMMIT_API_BASE_URL || 'https://api.zammit.shop',
   },
 };
+
+/* ── Production startup validation ────────────────────────────────── */
+if (process.env.NODE_ENV === 'production') {
+  if (!config.mongo.uri) {
+    console.error('FATAL: MONGODB_URI is required in production.');
+    process.exit(1);
+  }
+  if (config.jwt.accessSecret.length < 32) {
+    console.error('FATAL: JWT_ACCESS_SECRET must be at least 32 characters in production.');
+    process.exit(1);
+  }
+  if (config.jwt.refreshSecret.length < 32) {
+    console.error('FATAL: JWT_REFRESH_SECRET must be at least 32 characters in production.');
+    process.exit(1);
+  }
+}

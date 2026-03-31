@@ -24,7 +24,4 @@ RefreshTokenSchema.index({ userId: 1, accountType: 1 });
 // token already has unique: true → index created automatically
 RefreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const RefreshToken: Model<IRefreshToken> = mongoose.model<IRefreshToken>(
-  'RefreshToken',
-  RefreshTokenSchema
-);
+export const RefreshToken: Model<IRefreshToken> = (mongoose.models.RefreshToken as mongoose.Model<IRefreshToken>) || mongoose.model<IRefreshToken>('RefreshToken', RefreshTokenSchema);

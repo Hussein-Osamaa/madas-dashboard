@@ -54,7 +54,4 @@ const CartSessionSchema = new Schema<ICartSession>(
 CartSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 CartSessionSchema.index({ tenantId: 1, cartToken: 1 });
 
-export const CartSession: Model<ICartSession> = mongoose.model<ICartSession>(
-  'CartSession',
-  CartSessionSchema
-);
+export const CartSession: Model<ICartSession> = (mongoose.models.CartSession as mongoose.Model<ICartSession>) || mongoose.model<ICartSession>('CartSession', CartSessionSchema);

@@ -44,7 +44,7 @@ export async function login(email: string, password: string): Promise<LoginResul
     businessId: user.businessId, tenantId: user.tenantId,
   };
   const options: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'] };
-  const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, options);
+  const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, { ...options, algorithm: 'HS256' });
 
   const refreshTokenValue = uuidv4();
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -110,7 +110,7 @@ export async function refreshAccessToken(refreshTokenValue: string): Promise<{ a
     businessId: user.businessId, tenantId: user.tenantId,
   };
   const options: jwt.SignOptions = { expiresIn: config.jwt.accessExpiry as unknown as jwt.SignOptions['expiresIn'] };
-  const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, options);
+  const accessToken = jwt.sign(payload, config.jwt.accessSecret as jwt.Secret, { ...options, algorithm: 'HS256' });
 
   const decoded = jwt.decode(accessToken) as { exp?: number };
   const expiresIn = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 86400;
@@ -124,7 +124,7 @@ export async function logout(refreshTokenValue: string): Promise<void> {
 
 export function verifyAccessToken(token: string): { uid: string; email: string; type: string; businessId?: string; tenantId?: string } | null {
   try {
-    const decoded = jwt.verify(token, config.jwt.accessSecret as jwt.Secret) as { sub: string; email: string; type: string; businessId?: string; tenantId?: string };
+    const decoded = jwt.verify(token, config.jwt.accessSecret as jwt.Secret, { algorithms: ['HS256'] }) as { sub: string; email: string; type: string; businessId?: string; tenantId?: string };
     return {
       uid: decoded.sub,
       email: decoded.email,
@@ -230,11 +230,15 @@ export async function resetPasswordWithToken(
 ): Promise<{ success: boolean; error?: string }> {
   const normalizedEmail = email.toLowerCase().trim();
 
-  const resetDoc = await PasswordResetToken.findOne({ token, email: normalizedEmail, used: false });
+  // Atomic claim: mark token as used in a single operation to prevent race conditions.
+  // If two requests arrive simultaneously, only one will get the unredeemed token.
+  const resetDoc = await PasswordResetToken.findOneAndUpdate(
+    { token, email: normalizedEmail, used: false },
+    { $set: { used: true } },
+    { new: false }, // return the pre-update doc to check expiry
+  );
   if (!resetDoc) return { success: false, error: 'Invalid or expired reset link' };
   if (resetDoc.expiresAt < new Date()) {
-    resetDoc.used = true;
-    await resetDoc.save();
     return { success: false, error: 'Reset link has expired' };
   }
 
@@ -254,9 +258,6 @@ export async function resetPasswordWithToken(
       return { success: false, error: 'Account not found' };
     }
   }
-
-  resetDoc.used = true;
-  await resetDoc.save();
 
   return { success: true };
 }

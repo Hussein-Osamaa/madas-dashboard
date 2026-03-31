@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type NotificationStatus = 'queued' | 'sent' | 'failed' | 'bounced' | 'skipped';
+export type NotificationStatus = 'queued' | 'sent' | 'failed' | 'bounced' | 'skipped' | 'retrying';
 
 export interface INotificationLog extends Document {
   notificationId: string;
@@ -33,7 +33,7 @@ const NotificationLogSchema = new Schema<INotificationLog>(
     subject: { type: String },
     status: {
       type: String,
-      enum: ['queued', 'sent', 'failed', 'bounced', 'skipped'],
+      enum: ['queued', 'sent', 'failed', 'bounced', 'skipped', 'retrying'],
       required: true,
       default: 'queued',
     },

@@ -38,7 +38,4 @@ FirestoreDocSchema.index(
 // Partial index for product listing queries (non-deleted products sorted by name)
 FirestoreDocSchema.index({ businessId: 1, coll: 1, 'data.deleted': 1, 'data.name': 1 });
 
-export const FirestoreDoc: Model<IFirestoreDoc> = mongoose.model<IFirestoreDoc>(
-  'FirestoreDoc',
-  FirestoreDocSchema
-);
+export const FirestoreDoc: Model<IFirestoreDoc> = (mongoose.models.FirestoreDoc as mongoose.Model<IFirestoreDoc>) || mongoose.model<IFirestoreDoc>('FirestoreDoc', FirestoreDocSchema);

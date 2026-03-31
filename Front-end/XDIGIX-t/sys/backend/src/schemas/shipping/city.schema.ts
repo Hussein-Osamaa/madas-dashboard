@@ -22,4 +22,4 @@ const CitySchema = new Schema<ICity>(
 CitySchema.index({ countryCode: 1 });
 CitySchema.index({ countryCode: 1, name: 1 }, { unique: true });
 
-export const City: Model<ICity> = mongoose.model<ICity>('ShippingCity', CitySchema);
+export const City: Model<ICity> = (mongoose.models.ShippingCity as mongoose.Model<ICity>) || mongoose.model<ICity>('ShippingCity', CitySchema);

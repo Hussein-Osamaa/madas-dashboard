@@ -30,7 +30,7 @@ const WarehouseBinSchema = new Schema<IWarehouseBin>(
 WarehouseBinSchema.index({ warehouseId: 1, binCode: 1 }, { unique: true });
 WarehouseBinSchema.index({ zoneId: 1 });
 
-export const WarehouseBin: Model<IWarehouseBin> = mongoose.model<IWarehouseBin>('ShippingWarehouseBin', WarehouseBinSchema);
+export const WarehouseBin: Model<IWarehouseBin> = (mongoose.models.ShippingWarehouseBin as mongoose.Model<IWarehouseBin>) || mongoose.model<IWarehouseBin>('ShippingWarehouseBin', WarehouseBinSchema);
 
 // ─── Package scan record ──────────────────────────────────────────────────────
 
@@ -58,4 +58,4 @@ const PackageScanSchema = new Schema<IPackageScan>(
 PackageScanSchema.index({ shipmentId: 1 });
 PackageScanSchema.index({ binId: 1, scannedAt: -1 });
 
-export const PackageScan: Model<IPackageScan> = mongoose.model<IPackageScan>('PackageScan', PackageScanSchema);
+export const PackageScan: Model<IPackageScan> = (mongoose.models.PackageScan as mongoose.Model<IPackageScan>) || mongoose.model<IPackageScan>('PackageScan', PackageScanSchema);

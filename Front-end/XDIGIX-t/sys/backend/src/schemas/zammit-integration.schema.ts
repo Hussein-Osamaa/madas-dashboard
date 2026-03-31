@@ -79,4 +79,4 @@ ZammitIntegrationSchema.index({ tenantId: 1 });
 ZammitIntegrationSchema.index({ enabled: 1, lastSyncAt: 1 });
 
 export const ZammitIntegration: Model<IZammitIntegration> =
-  mongoose.model<IZammitIntegration>('ZammitIntegration', ZammitIntegrationSchema);
+  (mongoose.models.ZammitIntegration as mongoose.Model<IZammitIntegration>) || mongoose.model<IZammitIntegration>('ZammitIntegration', ZammitIntegrationSchema);

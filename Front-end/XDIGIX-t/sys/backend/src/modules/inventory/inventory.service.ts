@@ -69,6 +69,10 @@ async function createProduct(
   data: Partial<IProduct>,
   actor: string
 ): Promise<IProduct> {
+  // Plan enforcement: check product count limit
+  const { enforcementService } = await import('../platform-core/enforcement.service');
+  await enforcementService.enforceProductLimit(tenantId);
+
   if (!data.name) throw new Error('Product name is required');
   if (data.price == null || data.price < 0) throw new Error('Valid price is required');
 

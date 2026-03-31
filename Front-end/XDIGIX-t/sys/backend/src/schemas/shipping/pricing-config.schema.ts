@@ -23,4 +23,4 @@ const PricingConfigSchema = new Schema<IPricingConfig>(
   { timestamps: true }
 );
 
-export const PricingConfig: Model<IPricingConfig> = mongoose.model<IPricingConfig>('PricingConfig', PricingConfigSchema);
+export const PricingConfig: Model<IPricingConfig> = (mongoose.models.PricingConfig as mongoose.Model<IPricingConfig>) || mongoose.model<IPricingConfig>('PricingConfig', PricingConfigSchema);

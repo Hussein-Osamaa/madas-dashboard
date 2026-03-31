@@ -21,7 +21,4 @@ const SuperAdminInviteSchema = new Schema<ISuperAdminInvite>(
 
 SuperAdminInviteSchema.index({ email: 1, status: 1 });
 
-export const SuperAdminInvite: Model<ISuperAdminInvite> = mongoose.model<ISuperAdminInvite>(
-  'SuperAdminInvite',
-  SuperAdminInviteSchema
-);
+export const SuperAdminInvite: Model<ISuperAdminInvite> = (mongoose.models.SuperAdminInvite as mongoose.Model<ISuperAdminInvite>) || mongoose.model<ISuperAdminInvite>('SuperAdminInvite', SuperAdminInviteSchema);

@@ -118,7 +118,7 @@ const ReturnSchema = new Schema<IReturn>(
 );
 
 // Indexes
-ReturnSchema.index({ returnId: 1 }, { unique: true });
+// returnId already has unique: true in field definition
 ReturnSchema.index({ orderId: 1 });
 ReturnSchema.index({ tenantId: 1, status: 1 });
 

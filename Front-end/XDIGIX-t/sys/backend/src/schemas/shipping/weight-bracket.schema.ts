@@ -23,4 +23,4 @@ const WeightBracketSchema = new Schema<IWeightBracket>(
 
 WeightBracketSchema.index({ minWeight: 1, maxWeight: 1 });
 
-export const WeightBracket: Model<IWeightBracket> = mongoose.model<IWeightBracket>('WeightBracket', WeightBracketSchema);
+export const WeightBracket: Model<IWeightBracket> = (mongoose.models.WeightBracket as mongoose.Model<IWeightBracket>) || mongoose.model<IWeightBracket>('WeightBracket', WeightBracketSchema);

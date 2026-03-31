@@ -57,4 +57,4 @@ const DomainSchema = new Schema<IDomain>(
 DomainSchema.index({ domain: 1, tenantId: 1 }, { unique: true });
 DomainSchema.index({ tenantId: 1 });
 
-export const Domain: Model<IDomain> = mongoose.model<IDomain>('Domain', DomainSchema);
+export const Domain: Model<IDomain> = (mongoose.models.Domain as mongoose.Model<IDomain>) || mongoose.model<IDomain>('Domain', DomainSchema);

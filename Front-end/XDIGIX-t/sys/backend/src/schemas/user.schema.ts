@@ -35,4 +35,4 @@ UserSchema.index({ email: 1 });
 UserSchema.index({ businessId: 1 });
 UserSchema.index({ tenantId: 1 });
 
-export const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);
+export const User: Model<IUser> = (mongoose.models.User as mongoose.Model<IUser>) || mongoose.model<IUser>('User', UserSchema);

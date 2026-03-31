@@ -22,10 +22,7 @@ const PasswordResetTokenSchema = new Schema<IPasswordResetToken>(
 PasswordResetTokenSchema.index({ email: 1 });
 PasswordResetTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const PasswordResetToken: Model<IPasswordResetToken> = mongoose.model<IPasswordResetToken>(
-  'PasswordResetToken',
-  PasswordResetTokenSchema
-);
+export const PasswordResetToken: Model<IPasswordResetToken> = (mongoose.models.PasswordResetToken as mongoose.Model<IPasswordResetToken>) || mongoose.model<IPasswordResetToken>('PasswordResetToken', PasswordResetTokenSchema);
 
 export function generateResetToken(): string {
   return crypto.randomBytes(32).toString('hex');

@@ -248,5 +248,5 @@ export function generatePublicLookupToken(): string {
   return uuidv4();
 }
 
-export const StorefrontOrder = mongoose.model<IStorefrontOrder>('StorefrontOrder', StorefrontOrderSchema);
+export const StorefrontOrder = (mongoose.models.StorefrontOrder as mongoose.Model<IStorefrontOrder>) || mongoose.model<IStorefrontOrder>('StorefrontOrder', StorefrontOrderSchema);
 export default StorefrontOrder;

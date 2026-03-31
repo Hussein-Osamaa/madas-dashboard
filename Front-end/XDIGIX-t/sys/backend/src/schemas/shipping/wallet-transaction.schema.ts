@@ -34,4 +34,4 @@ const WalletTransactionSchema = new Schema<IWalletTransaction>(
 
 WalletTransactionSchema.index({ merchantId: 1, createdAt: -1 });
 
-export const WalletTransaction = mongoose.model<IWalletTransaction>('WalletTransaction', WalletTransactionSchema);
+export const WalletTransaction = (mongoose.models.WalletTransaction as mongoose.Model<IWalletTransaction>) || mongoose.model<IWalletTransaction>('WalletTransaction', WalletTransactionSchema);

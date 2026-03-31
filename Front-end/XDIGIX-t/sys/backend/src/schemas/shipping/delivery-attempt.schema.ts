@@ -34,4 +34,4 @@ const DeliveryAttemptSchema = new Schema<IDeliveryAttempt>(
 DeliveryAttemptSchema.index({ shipmentId: 1 });
 DeliveryAttemptSchema.index({ courierId: 1, timestamp: -1 });
 
-export const DeliveryAttempt: Model<IDeliveryAttempt> = mongoose.model<IDeliveryAttempt>('DeliveryAttempt', DeliveryAttemptSchema);
+export const DeliveryAttempt: Model<IDeliveryAttempt> = (mongoose.models.DeliveryAttempt as mongoose.Model<IDeliveryAttempt>) || mongoose.model<IDeliveryAttempt>('DeliveryAttempt', DeliveryAttemptSchema);

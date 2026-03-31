@@ -31,7 +31,4 @@ ProductActivityLogSchema.index({ productId: 1, createdAt: -1 });
 ProductActivityLogSchema.index({ action: 1, createdAt: -1 });
 ProductActivityLogSchema.index({ performedByUserId: 1, createdAt: -1 });
 
-export const ProductActivityLog: Model<IProductActivityLog> = mongoose.model<IProductActivityLog>(
-  'ProductActivityLog',
-  ProductActivityLogSchema
-);
+export const ProductActivityLog: Model<IProductActivityLog> = (mongoose.models.ProductActivityLog as mongoose.Model<IProductActivityLog>) || mongoose.model<IProductActivityLog>('ProductActivityLog', ProductActivityLogSchema);

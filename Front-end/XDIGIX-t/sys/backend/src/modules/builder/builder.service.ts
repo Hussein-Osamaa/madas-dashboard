@@ -131,6 +131,16 @@ export const builderService = {
     const site = await Site.findById(siteId);
     if (!site) throw new Error(`Site not found: ${siteId}`);
 
+    // Plan enforcement: check published site count limit
+    // Only enforce if this is a new publish (not a re-publish of an already-active site)
+    if (!site.activeVersion || site.activeVersion === 0) {
+      const tenantId = (site as Record<string, unknown>).tenantId as string;
+      if (tenantId) {
+        const { enforcementService } = await import('../platform-core/enforcement.service');
+        await enforcementService.enforceSiteLimit(tenantId);
+      }
+    }
+
     const hasSections =
       (site.sections && site.sections.length > 0) ||
       (site.pageSections && Object.keys(site.pageSections).length > 0);

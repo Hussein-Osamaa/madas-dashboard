@@ -29,4 +29,4 @@ ZoneSchema.index({ cityId: 1 });
 ZoneSchema.index({ cityId: 1, zoneName: 1 });
 ZoneSchema.index({ isRemote: 1 });
 
-export const Zone: Model<IZone> = mongoose.model<IZone>('ShippingZone', ZoneSchema);
+export const Zone: Model<IZone> = (mongoose.models.ShippingZone as mongoose.Model<IZone>) || mongoose.model<IZone>('ShippingZone', ZoneSchema);

@@ -52,4 +52,4 @@ CourierSchema.index({ courierType: 1 });
 CourierSchema.index({ assignedZoneIds: 1 });
 CourierSchema.index({ phone: 1 }, { unique: true });
 
-export const Courier: Model<ICourier> = mongoose.model<ICourier>('Courier', CourierSchema);
+export const Courier: Model<ICourier> = (mongoose.models.Courier as mongoose.Model<ICourier>) || mongoose.model<ICourier>('Courier', CourierSchema);

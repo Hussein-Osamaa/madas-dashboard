@@ -32,7 +32,4 @@ const ExternalTenantConfigSchema = new Schema<IExternalTenantConfig>(
 ExternalTenantConfigSchema.index({ tenantId: 1 });
 ExternalTenantConfigSchema.index({ apiToken: 1 });
 
-export const ExternalTenantConfig: Model<IExternalTenantConfig> = mongoose.model<IExternalTenantConfig>(
-  'ExternalTenantConfig',
-  ExternalTenantConfigSchema
-);
+export const ExternalTenantConfig: Model<IExternalTenantConfig> = (mongoose.models.ExternalTenantConfig as mongoose.Model<IExternalTenantConfig>) || mongoose.model<IExternalTenantConfig>('ExternalTenantConfig', ExternalTenantConfigSchema);

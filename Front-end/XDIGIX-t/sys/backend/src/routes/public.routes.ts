@@ -337,28 +337,41 @@ router.post('/:tenantId/cart/add', cartLimiter, async (req: Request, res: Respon
   const biz = await resolveBusiness(tenantId);
   if (!biz) { res.status(404).json({ error: 'Store not found' }); return; }
 
-  const { cartToken, productId, variantId, name, price, imageUrl, quantity } = req.body as {
+  const { cartToken, productId, variantId, quantity } = req.body as {
     cartToken?: string;
     productId:  string;
     variantId?: string;
-    name:       string;
-    price:      number;
-    imageUrl?:  string;
     quantity?:  number;
   };
 
-  if (!productId || !name || price === undefined) {
-    res.status(400).json({ error: 'productId, name, and price are required' });
+  if (!productId) {
+    res.status(400).json({ error: 'productId is required' });
     return;
   }
 
+  // Server-side price/name lookup — NEVER trust client-supplied prices
+  const productDoc = await FirestoreDoc.findOne(
+    { businessId: biz.businessId, coll: 'products', docId: productId },
+    { 'data.name': 1, 'data.price': 1, 'data.sellingPrice': 1, 'data.salePrice': 1, 'data.onSale': 1, 'data.images': 1, 'data.stock': 1, 'data.reservedStock': 1 },
+  ).lean();
+
+  if (!productDoc) {
+    res.status(404).json({ error: 'Product not found' });
+    return;
+  }
+
+  const pData = (productDoc as { data?: Record<string, unknown> })?.data ?? {};
+  const name = (pData.name as string) || 'Unknown Product';
+  // Use sale price if on sale, otherwise sellingPrice or price
+  const price = pData.onSale && pData.salePrice
+    ? Number(pData.salePrice)
+    : Number(pData.sellingPrice || pData.price || 0);
+  const imageUrl = Array.isArray(pData.images) && pData.images.length > 0
+    ? (pData.images[0] as string)
+    : undefined;
+
   // Stock availability check — prevent adding out-of-stock items
   try {
-    const productDoc = await FirestoreDoc.findOne(
-      { businessId: biz.businessId, coll: 'products', docId: productId },
-      { 'data.stock': 1, 'data.reservedStock': 1 },
-    ).lean();
-    const pData = (productDoc as { data?: Record<string, unknown> })?.data ?? {};
     const stockMap = (pData.stock ?? {}) as Record<string, number>;
     const reservedMap = (pData.reservedStock ?? {}) as Record<string, number>;
     const sizeKey = variantId || Object.keys(stockMap)[0] || '';
@@ -378,7 +391,7 @@ router.post('/:tenantId/cart/add', cartLimiter, async (req: Request, res: Respon
     cartToken ?? getCartToken(req),
     tenantId,
     biz.businessId,
-    { productId, variantId, name, price: Number(price), imageUrl, quantity },
+    { productId, variantId, name, price, imageUrl, quantity },
     biz.currency,
   );
   res.json(cart);

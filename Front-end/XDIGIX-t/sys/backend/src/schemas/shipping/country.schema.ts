@@ -26,4 +26,4 @@ const CountrySchema = new Schema<ICountry>(
 // code already has unique: true in field definition — no duplicate index needed
 CountrySchema.index({ isActive: 1 });
 
-export const Country: Model<ICountry> = mongoose.model<ICountry>('ShippingCountry', CountrySchema);
+export const Country: Model<ICountry> = (mongoose.models.ShippingCountry as mongoose.Model<ICountry>) || mongoose.model<ICountry>('ShippingCountry', CountrySchema);

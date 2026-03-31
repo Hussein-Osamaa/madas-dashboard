@@ -24,4 +24,4 @@ const CODRuleSchema = new Schema<ICODRule>(
   { timestamps: true }
 );
 
-export const CODRule: Model<ICODRule> = mongoose.model<ICODRule>('CODRule', CODRuleSchema);
+export const CODRule: Model<ICODRule> = (mongoose.models.CODRule as mongoose.Model<ICODRule>) || mongoose.model<ICODRule>('CODRule', CODRuleSchema);
