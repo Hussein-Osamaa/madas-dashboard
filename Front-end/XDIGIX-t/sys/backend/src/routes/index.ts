@@ -21,6 +21,7 @@ import financeRoutes from '../modules/finance/finance.routes';
 import fulfillmentRoutes from '../modules/fulfillment/fulfillment.routes';
 import shippingModuleRoutes from '../modules/shipping-module/shipping.routes';
 import notificationRoutes from '../modules/notifications/notification.routes';
+import adminRoutes from '../modules/company-admin/admin.routes';
 
 const router = Router();
 
@@ -76,6 +77,9 @@ router.use('/shipping-v2', shippingModuleRoutes);
 
 // Notifications API — auth required, tenant-scoped
 router.use('/notifications', notificationRoutes);
+
+// Company Admin API — admin/super_admin only, cross-module aggregation
+router.use('/admin', adminRoutes);
 
 // Cloud Functions compatibility: /addDomain, /verifyDomain, etc. (base URL replacement only)
 const qs = (req: { url?: string }) => (req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
