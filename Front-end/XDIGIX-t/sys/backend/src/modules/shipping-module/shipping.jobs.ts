@@ -57,28 +57,33 @@ export async function pollCarrierTracking(): Promise<number> {
  * and schedule them for re-delivery (set status back to out_for_delivery).
  */
 export async function processFailedDeliveryRetries(): Promise<number> {
-  const shipments = await Shipment.find({
-    status: 'failed_delivery',
-    $expr: { $lt: ['$retryCount', '$maxRetries'] },
-  });
-
-  if (shipments.length === 0) return 0;
-
   let processed = 0;
-  for (const shipment of shipments) {
-    try {
-      // Transition back to out_for_delivery for retry
-      shipment.status = 'out_for_delivery';
-      await shipment.save();
+  let done = false;
 
-      log.info(`Retry scheduled: shipment ${shipment.shipmentId}, attempt ${shipment.retryCount}/${shipment.maxRetries}`, {
-        tenantId: shipment.tenantId,
+  while (!done) {
+    // Atomic claim: only one worker processes each shipment
+    const claimed = await Shipment.findOneAndUpdate(
+      {
+        status: 'failed_delivery',
+        $expr: { $lt: ['$retryCount', '$maxRetries'] },
+      },
+      {
+        $set: { status: 'out_for_delivery' },
+        $inc: { retryCount: 1 },
+      },
+      { new: true },
+    );
+    if (!claimed) { done = true; break; }
+
+    try {
+      log.info(`Retry scheduled: shipment ${claimed.shipmentId}, attempt ${claimed.retryCount}/${claimed.maxRetries}`, {
+        tenantId: claimed.tenantId,
       });
       processed++;
     } catch (err) {
-      log.error(`Failed to schedule retry for shipment ${shipment.shipmentId}`, {
+      log.error(`Failed to schedule retry for shipment ${claimed.shipmentId}`, {
         error: (err as Error).message,
-        tenantId: shipment.tenantId,
+        tenantId: claimed.tenantId,
       });
     }
   }

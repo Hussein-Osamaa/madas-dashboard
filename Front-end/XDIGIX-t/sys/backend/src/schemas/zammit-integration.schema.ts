@@ -74,7 +74,7 @@ const ZammitIntegrationSchema = new Schema<IZammitIntegration>(
   { timestamps: true, _id: true }
 );
 
-ZammitIntegrationSchema.index({ businessId: 1 }, { unique: true });
+// businessId already has unique: true in field definition — no duplicate index needed
 ZammitIntegrationSchema.index({ tenantId: 1 });
 ZammitIntegrationSchema.index({ enabled: 1, lastSyncAt: 1 });
 

@@ -40,7 +40,7 @@ const CartItemSchema = new Schema<ICartItem>(
 
 const CartSessionSchema = new Schema<ICartSession>(
   {
-    cartToken:  { type: String, required: true, unique: true, index: true },
+    cartToken:  { type: String, required: true, unique: true },
     tenantId:   { type: String, required: true },
     businessId: { type: String, required: true },
     items:      { type: [CartItemSchema], default: [] },

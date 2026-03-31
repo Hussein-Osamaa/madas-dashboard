@@ -152,15 +152,23 @@ export const notificationService = {
    */
   async retryFailed(): Promise<number> {
     const now = new Date();
-    const failedLogs = await NotificationLog.find({
-      status: 'failed',
-      $expr: { $lt: ['$attempts', '$maxAttempts'] },
-      nextRetryAt: { $lte: now },
-    }).limit(50);
-
     let retried = 0;
 
-    for (const logEntry of failedLogs) {
+    // Process up to 50 failed notifications, claiming each atomically
+    for (let i = 0; i < 50; i++) {
+      // Atomic claim: transition failed → retrying so other workers skip it
+      const logEntry = await NotificationLog.findOneAndUpdate(
+        {
+          status: 'failed',
+          $expr: { $lt: ['$attempts', '$maxAttempts'] },
+          nextRetryAt: { $lte: now },
+        },
+        { $set: { status: 'retrying' } },
+        { new: false }, // get the pre-update doc for channel/recipient/etc
+      );
+      if (!logEntry) break; // no more eligible logs
+
+      // Use the claimed entry for retry
       // Re-fetch template body for retry (if template-based)
       const template = logEntry.templateId
         ? await templateService.findTemplate(logEntry.eventType || '', logEntry.channel)

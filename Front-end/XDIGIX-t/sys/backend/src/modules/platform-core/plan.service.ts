@@ -52,9 +52,12 @@ export const planService = {
    */
   async seedDefaultPlans(): Promise<void> {
     for (const planDef of DEFAULT_PLANS) {
-      const existing = await Plan.findOne({ planId: planDef.planId });
-      if (!existing) {
-        await Plan.create(planDef);
+      const res = await Plan.updateOne(
+        { planId: planDef.planId },
+        { $setOnInsert: planDef },
+        { upsert: true },
+      );
+      if (res.upsertedCount > 0) {
         log.info(`Seeded default plan: ${planDef.planId}`);
       }
     }

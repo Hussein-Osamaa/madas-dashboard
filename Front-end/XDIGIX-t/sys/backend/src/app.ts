@@ -23,6 +23,9 @@ import { Domain } from './schemas/domain.schema';
 import { Business } from './schemas/business.schema';
 import { FirestoreDoc } from './schemas/document.schema';
 
+/* ── Startup guard: prevent duplicate background jobs / event handlers ── */
+let _platformBooted = false;
+
 /**
  * Create the Express app (no HTTP listen, no Socket.io, no cron).
  * Used by both the traditional server (index.ts) and Vercel serverless (api/index.ts).
@@ -150,8 +153,22 @@ export function createApp(): Express {
     })
   );
 
-  app.get('/health', (_req, res) => {
-    res.json({ ok: true, timestamp: new Date().toISOString() });
+  app.get('/health', async (_req, res) => {
+    try {
+      const mongoose = await import('mongoose');
+      const dbReady = mongoose.default.connection.readyState === 1;
+      const status = dbReady ? 'healthy' : 'degraded';
+      res.status(dbReady ? 200 : 503).json({
+        status,
+        timestamp: new Date().toISOString(),
+        checks: {
+          mongodb: dbReady ? 'connected' : 'disconnected',
+          platform: _platformBooted ? 'booted' : 'starting',
+        },
+      });
+    } catch {
+      res.status(503).json({ status: 'unhealthy', timestamp: new Date().toISOString() });
+    }
   });
 
   /* ── Shared helpers for product pages ──────────────────────────── */
@@ -430,10 +447,26 @@ export function createApp(): Express {
   // ── Inventory: reservation expiry job ──
   // Lazy import to avoid circular dependencies during app construction
   setTimeout(async () => {
+    if (_platformBooted) return; // Guard: only boot once
+    _platformBooted = true;
     try {
       const { eventBus, planService } = await import('./modules/platform-core');
       eventBus.startWorker(2000); // Poll every 2s
       await planService.seedDefaultPlans();
+
+      // Tenant: process expired grace periods every 30 minutes
+      const { processExpiredGrace } = await import('./modules/platform-core/tenant.jobs');
+      setInterval(async () => {
+        try {
+          const expired = await processExpiredGrace();
+          if (expired > 0) {
+            const { createLogger } = await import('./lib/logger');
+            createLogger('tenant-jobs').info(`Processed ${expired} expired grace periods`);
+          }
+        } catch (err) {
+          console.error('[tenant-jobs] Grace expiry error:', (err as Error).message);
+        }
+      }, 30 * 60 * 1000); // Every 30 minutes
 
       // Inventory: process expired reservations every 5 minutes
       const { processExpiredReservations } = await import('./modules/inventory/inventory.jobs');
@@ -540,7 +573,7 @@ export function createApp(): Express {
         }
       }, 5 * 60 * 1000); // Every 5 minutes
     } catch (err) {
-      console.error('[platform-core] Failed to initialize:', (err as Error).message);
+      console.error('[platform-core] Failed to initialize:', (err as Error).message, (err as Error).stack);
     }
   }, 1000); // Delay 1s to let MongoDB connect first
 

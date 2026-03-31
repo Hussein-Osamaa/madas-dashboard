@@ -28,9 +28,13 @@ export async function processExpiredOrders(): Promise<number> {
   let expiredCount = 0;
 
   try {
-    // Find all orders awaiting payment
+    // Build cutoff per payment method — only fetch orders that are past their TTL
+    const oldestTTL = Math.max(...Object.values(EXPIRATION_TTL), DEFAULT_TTL);
+    const cutoff = new Date(now - oldestTTL);
+
     const pendingOrders = await StorefrontOrder.find({
       status: 'awaiting_payment',
+      createdAt: { $lt: cutoff },
     })
       .select('orderId paymentMethod createdAt')
       .lean();
@@ -41,6 +45,14 @@ export async function processExpiredOrders(): Promise<number> {
 
       if (orderAge > ttl) {
         try {
+          // Atomic claim: only expire if still awaiting_payment
+          const claimed = await StorefrontOrder.findOneAndUpdate(
+            { orderId: order.orderId, status: 'awaiting_payment' },
+            { $set: { status: 'expired' } },
+            { new: false },
+          );
+          if (!claimed) continue; // already changed by another worker or user action
+
           await ordersService.expireOrder(order.orderId);
           expiredCount++;
         } catch (err) {

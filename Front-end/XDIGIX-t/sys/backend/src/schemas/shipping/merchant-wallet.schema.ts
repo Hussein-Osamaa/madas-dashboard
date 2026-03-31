@@ -13,7 +13,7 @@ export interface IMerchantWallet extends Document {
 
 const MerchantWalletSchema = new Schema<IMerchantWallet>(
   {
-    merchantId:      { type: String, required: true, unique: true, index: true },
+    merchantId:      { type: String, required: true, unique: true },
     currency:        { type: String, default: 'EGP' },
     balance:         { type: Number, default: 0 },
     pendingBalance:  { type: Number, default: 0 },

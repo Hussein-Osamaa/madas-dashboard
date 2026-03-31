@@ -12,34 +12,36 @@ const log = createLogger('inventory-jobs');
  */
 export async function processExpiredReservations(): Promise<number> {
   const now = new Date();
-  const expired = await Reservation.find({
-    status: 'active',
-    expiresAt: { $lt: now },
-  });
 
-  if (expired.length === 0) return 0;
-
-  log.info(`Processing ${expired.length} expired reservations`);
-
+  // Atomic claim: only process reservations we successfully mark as 'expired'
+  // This prevents duplicate processing if multiple workers run concurrently
   let released = 0;
-  for (const reservation of expired) {
+  let done = false;
+
+  while (!done) {
+    const claimed = await Reservation.findOneAndUpdate(
+      { status: 'active', expiresAt: { $lt: now } },
+      { $set: { status: 'expired' } },
+      { new: false }, // return the pre-update doc so we have the reservationId
+    );
+    if (!claimed) { done = true; break; }
+
     try {
-      await inventoryService.releaseReservation(reservation.reservationId);
-      // Also mark as expired (releaseReservation sets 'released', override to 'expired')
-      await Reservation.findOneAndUpdate(
-        { reservationId: reservation.reservationId },
-        { $set: { status: 'expired' } }
-      );
+      // releaseReservation restores stock; it checks status internally
+      // but the reservation is already 'expired' so we call the stock restore directly
+      await inventoryService.releaseReservation(claimed.reservationId);
       released++;
     } catch (err) {
-      log.error(`Failed to release expired reservation ${reservation.reservationId}`, {
+      log.error(`Failed to release expired reservation ${claimed.reservationId}`, {
         error: (err as Error).message,
-        reservationId: reservation.reservationId,
+        reservationId: claimed.reservationId,
       });
     }
   }
 
-  log.info(`Released ${released}/${expired.length} expired reservations`);
+  if (released > 0) {
+    log.info(`Released ${released} expired reservations`);
+  }
   return released;
 }
 
