@@ -264,6 +264,8 @@ export const fulfillmentService = {
     await eventBus.safePublish('fulfillment.packed', {
       fulfillmentJobId,
       orderId: job.orderId,
+      tenantId: job.tenantId,
+      businessId: job.businessId,
       packageDetails: packageDetails || {},
     }, { tenantId: job.tenantId, correlationId });
 
@@ -376,11 +378,30 @@ export const fulfillmentService = {
     actor: string,
     correlationId?: string,
   ): Promise<void> {
+    // Look up return record to include product context for inventory handler
+    let returnContext: Record<string, unknown> = {};
+    try {
+      const { Return } = await import('../orders/return.schema');
+      const ret = await Return.findOne({ returnId }).lean();
+      if (ret) {
+        const item = ((ret as any).items || [])[lineItemIndex];
+        returnContext = {
+          tenantId: (ret as any).tenantId,
+          businessId: (ret as any).businessId,
+          orderId: (ret as any).orderId,
+          productId: item?.productId || '',
+          variantId: item?.variantId || '',
+          qty: item?.returnQuantity || 1,
+        };
+      }
+    } catch { /* Return schema may not be available — emit with minimal context */ }
+
     await eventBus.safePublish('return.inspected', {
       returnId,
       lineItemIndex,
       condition,
-    }, { correlationId });
+      ...returnContext,
+    }, { tenantId: returnContext.tenantId as string || '', correlationId });
 
     audit('inspect_return_item', 'return', returnId, actor, undefined, {
       lineItemIndex,

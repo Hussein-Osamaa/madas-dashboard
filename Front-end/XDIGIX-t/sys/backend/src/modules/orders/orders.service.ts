@@ -330,6 +330,8 @@ async function createOrder(
           paymentMethod: 'cod',
           total,
           currency,
+          reservationId,
+          customer: data.customer,
         }, { tenantId, correlationId });
 
         result.status = 'confirmed';
@@ -767,6 +769,9 @@ async function handleStripeWebhook(
         businessId: order.businessId,
         paymentMethod: 'stripe',
         total: order.total,
+        currency: order.currency,
+        reservationId: (order as any).reservationId,
+        customer: (order as any).customer,
       }, { tenantId, correlationId });
 
       await auditService.log({
@@ -970,6 +975,10 @@ async function confirmManualPayment(
     businessId: order.businessId,
     paymentMethod: order.paymentMethod,
     paymentReference,
+    total: order.total,
+    currency: order.currency,
+    reservationId: (order as any).reservationId,
+    customer: (order as any).customer,
   }, { tenantId: order.tenantId, correlationId });
 
   // Audit

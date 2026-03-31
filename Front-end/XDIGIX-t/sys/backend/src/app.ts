@@ -467,6 +467,14 @@ export function createApp(): Express {
       const { registerFinanceEventHandlers } = await import('./modules/finance/finance.events');
       registerFinanceEventHandlers();
 
+      // Orders: register event handlers for shipping milestones
+      const { registerOrdersEventHandlers } = await import('./modules/orders/orders.events');
+      registerOrdersEventHandlers();
+
+      // Inventory: register event handlers for delivery + returns
+      const { registerInventoryEventHandlers } = await import('./modules/inventory/inventory.events');
+      registerInventoryEventHandlers();
+
       // Fulfillment: register event handlers + overdue job check
       const { registerFulfillmentEventHandlers } = await import('./modules/fulfillment/fulfillment.events');
       registerFulfillmentEventHandlers();

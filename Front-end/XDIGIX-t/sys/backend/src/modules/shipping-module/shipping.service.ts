@@ -539,12 +539,16 @@ export const shippingService = {
 
     // Emit cod.collected for each shipment in the report
     for (const sid of reportData.shipmentIds) {
+      // Look up orderId from shipment for finance matching
+      const codShipment = await Shipment.findOne({ shipmentId: sid }).select('orderId currency').lean();
       await eventBus.safePublish('cod.collected', {
         shipmentId: sid,
+        orderId: (codShipment as any)?.orderId || '',
         tenantId,
         businessId,
         carrierId,
-        amount: reportData.actualAmount / reportData.shipmentIds.length, // pro-rata
+        amount: reportData.actualAmount / reportData.shipmentIds.length,
+        currency: (codShipment as any)?.currency || reportData.currency || 'SAR',
       }, { tenantId, correlationId });
     }
 
