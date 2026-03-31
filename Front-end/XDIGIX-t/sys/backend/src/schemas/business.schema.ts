@@ -10,6 +10,13 @@ export interface IBusiness extends Document {
   features?: Record<string, unknown>;
   systemAccess?: { dashboard?: boolean; finance?: boolean };
   suspensionReason?: string | null;
+  // Onboarding profile fields (Wave 3)
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  country?: string | null;
+  currency?: string | null;
+  slug?: string | null;
+  logoUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +42,13 @@ const BusinessSchema = new Schema<IBusiness>(
       finance: { type: Boolean },
     },
     suspensionReason: { type: String },
+    // Onboarding profile fields (Wave 3) — all optional, additive
+    contactEmail: { type: String, default: null },
+    contactPhone: { type: String, default: null },
+    country: { type: String, default: null },
+    currency: { type: String, default: null },
+    slug: { type: String, default: null },
+    logoUrl: { type: String, default: null },
   },
   { timestamps: true, _id: true }
 );

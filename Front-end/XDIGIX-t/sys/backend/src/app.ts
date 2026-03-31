@@ -154,6 +154,14 @@ export function createApp(): Express {
   app.use('/api/public', publicSupportRouter);
   app.use('/api/exports', exportRoutesM);
 
+  // Onboarding module — gated by ONBOARDING_ENABLED env var
+  const { default: onboardingRoutesM } = require('./modules/onboarding/onboarding.routes');
+  const { default: onboardingAdminRoutesM } = require('./modules/onboarding/onboarding-admin.routes');
+  const { default: onboardingWebhookRoutesM } = require('./modules/onboarding/onboarding-webhook.routes');
+  app.use('/api/onboarding', onboardingRoutesM);
+  app.use('/api/onboarding/webhooks', onboardingWebhookRoutesM);
+  app.use('/api/admin/onboarding', onboardingAdminRoutesM);
+
   app.use('/api', routes);
 
   // Serve locally-uploaded files (development fallback when S3 is not configured).
@@ -605,6 +613,20 @@ export function createApp(): Express {
           console.error('[exports] Expiry cleanup error:', (err as Error).message);
         }
       }, 6 * 60 * 60 * 1000); // Every 6 hours
+
+      // Onboarding: event handlers + template seeding + jobs
+      const { registerOnboardingEventHandlers } = await import('./modules/onboarding/onboarding.events');
+      registerOnboardingEventHandlers();
+      const { seedOnboardingTemplates } = await import('./modules/onboarding/onboarding-templates');
+      await seedOnboardingTemplates();
+
+      const { abandonStale, processExpiredTrials } = await import('./modules/onboarding/onboarding.jobs');
+      setInterval(async () => {
+        try { await abandonStale(); } catch (err) { console.error('[onboarding-jobs] Abandon error:', (err as Error).message); }
+      }, 24 * 60 * 60 * 1000); // Every 24 hours
+      setInterval(async () => {
+        try { await processExpiredTrials(); } catch (err) { console.error('[onboarding-jobs] Trial expiry error:', (err as Error).message); }
+      }, 60 * 60 * 1000); // Every 1 hour
     } catch (err) {
       console.error('[platform-core] Failed to initialize:', (err as Error).message, (err as Error).stack);
     }

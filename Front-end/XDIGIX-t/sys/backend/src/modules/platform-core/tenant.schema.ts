@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export type TenantStatus = 'active' | 'suspended' | 'cancelled';
-export type PlanActivation = 'paid' | 'grace' | 'default';
+export type PlanActivation = 'paid' | 'grace' | 'default' | 'trial';
 
 export interface ITenant extends Document {
   tenantId: string;
@@ -30,7 +30,7 @@ const TenantSchema = new Schema<ITenant>(
     plan: { type: String, default: 'free', required: true },
     planActivation: {
       type: String,
-      enum: ['paid', 'grace', 'default'],
+      enum: ['paid', 'grace', 'default', 'trial'],
       default: 'default',
       required: true,
     },
