@@ -20,6 +20,7 @@ import aiRoutes from './ai.routes';
 import financeRoutes from '../modules/finance/finance.routes';
 import fulfillmentRoutes from '../modules/fulfillment/fulfillment.routes';
 import shippingModuleRoutes from '../modules/shipping-module/shipping.routes';
+import notificationRoutes from '../modules/notifications/notification.routes';
 
 const router = Router();
 
@@ -72,6 +73,9 @@ router.use('/fulfillment', fulfillmentRoutes);
 
 // Shipping v2 API — auth required (except public tracking), tenant-scoped
 router.use('/shipping-v2', shippingModuleRoutes);
+
+// Notifications API — auth required, tenant-scoped
+router.use('/notifications', notificationRoutes);
 
 // Cloud Functions compatibility: /addDomain, /verifyDomain, etc. (base URL replacement only)
 const qs = (req: { url?: string }) => (req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');

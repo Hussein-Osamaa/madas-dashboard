@@ -513,6 +513,24 @@ export function createApp(): Express {
           console.error('[finance-jobs] Overdue invoice check error:', (err as Error).message);
         }
       }, 60 * 60 * 1000); // Every hour
+      // Notifications: register event handlers + seed templates + retry job
+      const { registerNotificationEventHandlers } = await import('./modules/notifications/notification.events');
+      registerNotificationEventHandlers();
+      const { templateService: tmplSvc } = await import('./modules/notifications/template.service');
+      await tmplSvc.seedDefaults();
+
+      const { notificationService: notifSvc } = await import('./modules/notifications/notification.service');
+      setInterval(async () => {
+        try {
+          const retried = await notifSvc.retryFailed();
+          if (retried > 0) {
+            const { createLogger } = await import('./lib/logger');
+            createLogger('notification-jobs').info(`Retried ${retried} failed notifications`);
+          }
+        } catch (err) {
+          console.error('[notification-jobs] Retry error:', (err as Error).message);
+        }
+      }, 5 * 60 * 1000); // Every 5 minutes
     } catch (err) {
       console.error('[platform-core] Failed to initialize:', (err as Error).message);
     }
